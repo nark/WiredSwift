@@ -1,0 +1,9 @@
+{
+  "commitish" : "1.0.0",
+  "Mac" : [
+    {
+      "name" : "CryptoSwift",
+      "hash" : "924e83a06a95e85e7eb7abe908e2a9652e0b7a32dfc4cdc565373cc0260d977a"
+    }
+  ]
+}

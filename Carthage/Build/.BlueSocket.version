@@ -1,0 +1,9 @@
+{
+  "commitish" : "1.0.49",
+  "Mac" : [
+    {
+      "name" : "Socket",
+      "hash" : "daa015698eb8c912fd0a54032b292975feea4110dcf0ec0145de7610987ff9fa"
+    }
+  ]
+}

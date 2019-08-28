@@ -1,0 +1,4 @@
+
+github "krzyzanowskim/CryptoSwift"
+github "IBM-Swift/BlueRSA"
+github "BiAtoms/Socket.swift" ~> 2.3

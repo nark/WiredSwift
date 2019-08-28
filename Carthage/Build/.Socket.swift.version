@@ -1,0 +1,9 @@
+{
+  "commitish" : "2.3.0",
+  "Mac" : [
+    {
+      "name" : "SocketSwift",
+      "hash" : "ed66d629c8558a645ac32bfcab8ca8cad046d2be0c4decf2cf273af951cee451"
+    }
+  ]
+}

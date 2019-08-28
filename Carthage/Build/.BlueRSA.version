@@ -1,0 +1,9 @@
+{
+  "commitish" : "1.0.34",
+  "Mac" : [
+    {
+      "name" : "CryptorRSA",
+      "hash" : "feb757ad02513caa35cbaf7d31a09e21900f09e04ffd58ee7b488b1174d22e7e"
+    }
+  ]
+}
