@@ -1,4 +1,3 @@
 github "BiAtoms/Socket.swift" "2.3.0"
 github "IBM-Swift/BlueRSA" "1.0.34"
-github "IBM-Swift/BlueSocket" "1.0.49"
 github "krzyzanowskim/CryptoSwift" "1.0.0"
