@@ -11,6 +11,7 @@
 		4C1319AA2316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C1319AD2316E79F00C9FA0C /* SocketSwift.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C1319AF231862DF00C9FA0C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 4C1319AE231862DF00C9FA0C /* README.md */; };
 		4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE422E10C3700BC2DD9 /* Connection.swift */; };
@@ -100,6 +101,7 @@
 
 /* Begin PBXFileReference section */
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
+		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4C4C3EDE22E10B2000BC2DD9 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
 		4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Socket.swift; sourceTree = "<group>"; };
 		4C4C3EE422E10C3700BC2DD9 /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 		4C74285522DCECE800D6E6F9 = {
 			isa = PBXGroup;
 			children = (
+				4C1319AE231862DF00C9FA0C /* README.md */,
 				4C4C3EDE22E10B2000BC2DD9 /* Cartfile */,
 				4C74286022DCECE800D6E6F9 /* WiredSwift */,
 				4CD0204E22DF04BD0008B36C /* Wired */,
@@ -370,6 +373,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C1319AF231862DF00C9FA0C /* README.md in Resources */,
 				4C74286622DCECE900D6E6F9 /* Assets.xcassets in Resources */,
 				4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */,
 			);

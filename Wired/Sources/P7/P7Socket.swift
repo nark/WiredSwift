@@ -82,6 +82,9 @@ public class P7Socket: NSObject {
         do {
             self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
             
+            try socket.set(option: .receiveTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
+            try socket.set(option: .sendTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
+            
             let addr = try! socket.addresses(for: self.hostname, port: Port(self.port)).first!
             try self.socket.connect(address: addr)
             
@@ -140,6 +143,8 @@ public class P7Socket: NSObject {
     
     
     public func write(_ message: P7Message) -> Bool {
+        usleep(100000)
+        
         do {
             if self.serialization == .XML {
                 let xml = message.xml()
@@ -190,6 +195,8 @@ public class P7Socket: NSObject {
     
     
     public func read() -> P7Message? {
+        usleep(100000)
+        
         var messageData = Data()
         
         do {

@@ -42,12 +42,12 @@ public class Connection: NSObject {
     public func connect(withUrl url: Url) -> Bool {
         self.url = url
         
-        self.socket             = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
+        self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
         
-        self.socket.username    = url.login
-        self.socket.password    = url.password
+        self.socket.username = url.login
+        self.socket.password = url.password
         
-        self.socket.cipherType      = .RSA_AES_256
+        self.socket.cipherType  = .RSA_AES_256
         self.socket.compression = .NONE
         
         if !self.socket.connect() {
@@ -93,11 +93,7 @@ public class Connection: NSObject {
         if !self.socket.write(message) {
             return false
         }
-        
-//        while self.socket.read() != nil {
-//
-//        }
-        
+    
         return true
     }
     
@@ -219,6 +215,8 @@ public class Connection: NSObject {
         message.addParameter(field: "wired.user.password", value: password)
         
         _ = self.socket.write(message)
+        
+        sleep(1)
         
         guard let response = self.socket.read() else {
             return false

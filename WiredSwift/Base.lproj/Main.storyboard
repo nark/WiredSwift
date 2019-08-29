@@ -642,7 +642,7 @@
                         <outlet property="delegate" destination="Voe-Tx-rLC" id="PrD-fu-P6m"/>
                     </connections>
                 </application>
-                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Wired_3" customModuleProvider="target"/>
+                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="WiredSwift" customModuleProvider="target"/>
                 <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
                 <customObject id="Ady-hI-5gd" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -692,7 +692,7 @@
         <!--Connect Controller-->
         <scene sceneID="hIz-AP-VOD">
             <objects>
-                <viewController id="XfG-lQ-9wD" customClass="ConnectController" customModule="Wired_3" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="XfG-lQ-9wD" customClass="ConnectController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" wantsLayer="YES" id="m2S-Jp-Qdl">
                         <rect key="frame" x="0.0" y="0.0" width="424" height="183"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -709,7 +709,7 @@
                             <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ij9-Os-Atg">
                                 <rect key="frame" x="120" y="109" width="284" height="22"/>
                                 <autoresizingMask key="autoresizingMask"/>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" title="admin" placeholderString="guest" drawsBackground="YES" id="pe2-Vt-9bV">
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="guest" drawsBackground="YES" id="pe2-Vt-9bV">
                                     <font key="font" usesAppearanceFont="YES"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -773,7 +773,7 @@ DQ
                             <secureTextField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7YK-Ga-JRu">
                                 <rect key="frame" x="120" y="78" width="284" height="22"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <secureTextFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" title="admin" drawsBackground="YES" usesSingleLineMode="YES" id="Yz4-H0-dsX">
+                                <secureTextFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" usesSingleLineMode="YES" id="Yz4-H0-dsX">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -782,12 +782,17 @@ DQ
                                     </allowedInputSourceLocales>
                                 </secureTextFieldCell>
                             </secureTextField>
+                            <progressIndicator wantsLayer="YES" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" maxValue="100" displayedWhenStopped="NO" bezeled="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="0Mb-SI-9m7">
+                                <rect key="frame" x="300" y="22" width="16" height="16"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            </progressIndicator>
                         </subviews>
                     </view>
                     <connections>
                         <outlet property="addressField" destination="3vv-df-Vaz" id="f6W-wr-tOg"/>
                         <outlet property="loginField" destination="Ij9-Os-Atg" id="KHF-Mg-kdP"/>
                         <outlet property="passwordField" destination="7YK-Ga-JRu" id="Gq1-ng-uch"/>
+                        <outlet property="progressIndicator" destination="0Mb-SI-9m7" id="YRY-eV-hQg"/>
                         <segue destination="mSt-TQ-Ymp" kind="show" identifier="showPublicChat" id="Tcg-nN-eqI"/>
                     </connections>
                 </viewController>
@@ -823,7 +828,7 @@ DQ
         <!--Chat Controller-->
         <scene sceneID="bqY-ta-lVK">
             <objects>
-                <viewController id="xE7-fu-zmd" customClass="ChatController" customModule="Wired_3" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="xE7-fu-zmd" customClass="ChatController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="sM7-3S-tlr">
                         <rect key="frame" x="0.0" y="0.0" width="699" height="464"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -846,7 +851,7 @@ DQ
                                 <rect key="frame" x="0.0" y="50" width="699" height="414"/>
                                 <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="jo3-nZ-3aA">
                                     <rect key="frame" x="0.0" y="0.0" width="699" height="414"/>
-                                    <autoresizingMask key="autoresizingMask"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="Fny-W1-hPV">
                                             <rect key="frame" x="0.0" y="0.0" width="699" height="414"/>
@@ -891,7 +896,7 @@ DQ
         <!--User Controller-->
         <scene sceneID="H5i-Wh-Lwp">
             <objects>
-                <viewController id="EE8-42-r4L" customClass="UserController" customModule="Wired_3" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="EE8-42-r4L" customClass="UserController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="8jW-TS-iYq">
                         <rect key="frame" x="0.0" y="0.0" width="200" height="336"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -900,7 +905,7 @@ DQ
                                 <rect key="frame" x="0.0" y="0.0" width="200" height="336"/>
                                 <clipView key="contentView" id="M1u-in-5la">
                                     <rect key="frame" x="0.0" y="0.0" width="200" height="336"/>
-                                    <autoresizingMask key="autoresizingMask"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="50" viewBased="YES" id="grI-5O-DFS">
                                             <rect key="frame" x="0.0" y="0.0" width="200" height="336"/>

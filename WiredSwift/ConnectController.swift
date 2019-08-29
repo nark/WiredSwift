@@ -10,6 +10,7 @@ import Cocoa
 import Wired
 
 class ConnectController: ConnectionController, ConnectionDelegate {
+    @IBOutlet weak var progressIndicator: NSProgressIndicator!
     @IBOutlet weak var addressField: NSTextField!
     @IBOutlet weak var loginField: NSTextField!
     @IBOutlet weak var passwordField: NSSecureTextField!
@@ -20,19 +21,32 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     
     
     @IBAction func connect(_ sender: Any) {
-        if addressField.stringValue.count   == 0 ||
-           loginField.stringValue.count     == 0 {
+        if addressField.stringValue.count == 0 {
             return
         }
         
-        let url         = Url(withString: "wired://\(addressField.stringValue)")
-        url.login       = loginField.stringValue
-        url.password    = passwordField.stringValue
+        let url = Url(withString: "wired://\(addressField.stringValue)")
+        
+        if loginField.stringValue.count == 0 {
+            // force guest login by default
+            url.login = "guest"
+        } else {
+            url.login = loginField.stringValue
+        }
+        
+        url.password = passwordField.stringValue
         
         self.connection = Connection(withSpec: spec, delegate: self)
         
-        if self.connection.connect(withUrl: url) {
-            self.performSegue(withIdentifier: "showPublicChat", sender: sender)
+        self.progressIndicator.startAnimation(sender)
+        
+        DispatchQueue.global().async {
+            if self.connection.connect(withUrl: url) {
+                DispatchQueue.main.async {
+                    self.progressIndicator.stopAnimation(sender)
+                    self.performSegue(withIdentifier: "showPublicChat", sender: sender)
+                }
+            }
         }
     }
     

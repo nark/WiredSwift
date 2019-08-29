@@ -11,7 +11,11 @@ import Cocoa
 
 extension NSTextView {
     func appendString(string:String) {
-        self.string += string
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font : NSFont(name: "Courier", size: 14) as Any
+        ]
+        
+        self.textStorage?.append(NSAttributedString(string: string + "\n", attributes: attrs))
         self.scrollRangeToVisible(NSRange(location:self.string.count, length: 0))
     }
 }
@@ -48,18 +52,37 @@ class ChatController: ConnectionController, ConnectionDelegate {
         }
     }
     
-    
+    private func chatCommand(_ command: String) -> P7Message? {
+        let comps = command.split(separator: " ")
+        
+        if comps[0] == "/me" {
+            let message = P7Message(withName: "wired.chat.send_me", spec: self.connection.spec)
+                        
+            message.addParameter(field: "wired.chat.id", value: UInt32(1))
+            message.addParameter(field: "wired.chat.me", value: String(comps[1]))
+            
+            return message
+        }
+        return nil
+    }
     
     
     
     @IBAction func chatAction(_ sender: Any) {
         if let textField = sender as? NSTextField, textField.stringValue.count > 0 {
-            let message = P7Message(withName: "wired.chat.send_say", spec: self.connection.spec)
+            var message:P7Message? = nil
             
-            message.addParameter(field: "wired.chat.id", value: UInt32(1))
-            message.addParameter(field: "wired.chat.say", value: textField.stringValue)
+            if textField.stringValue.starts(with: "/") {
+                message = self.chatCommand(textField.stringValue)
+            }
+            else {
+                message = P7Message(withName: "wired.chat.send_say", spec: self.connection.spec)
+                
+                message!.addParameter(field: "wired.chat.id", value: UInt32(1))
+                message!.addParameter(field: "wired.chat.say", value: textField.stringValue)
+            }
             
-            if self.connection.socket.write(message) {
+            if let m = message, self.connection.socket.write(m) {
                 textField.stringValue = ""
             }
         }
@@ -88,14 +111,44 @@ class ChatController: ConnectionController, ConnectionDelegate {
             }
             
             if let userNick = self.user(forID: userID)?.nick {
-                self.chatTextView.appendString(string: "\(userNick): \(sayString)\n")
+                self.chatTextView.appendString(string: "\(userNick): \(sayString)")
             }
         }
-        if  message.name == "wired.chat.user_list" ||
-            message.name == "wired.chat.user_join"  {
+        else if message.name == "wired.chat.topic" {
+            guard let userNick = message.string(forField: "wired.user.nick") else {
+                return
+            }
+            
+            guard let chatTopic = message.string(forField: "wired.chat.topic.topic") else {
+                return
+            }
+            
+            self.chatTextView.appendString(string: "<< Topic: \(chatTopic) by \(userNick) >>")
+        }
+        else if  message.name == "wired.chat.user_list" {
             let userInfo = UserInfo(message: message)
             
             self.users.append(userInfo)
+        }
+        else if message.name == "wired.chat.user_join" {
+            let userInfo = UserInfo(message: message)
+            
+            self.chatTextView.appendString(string: "<< \(userInfo.nick!) joined the chat >>")
+            
+            self.users.append(userInfo)
+        }
+        else if message.name == "wired.chat.user_leave" {
+            guard let userID = message.uint32(forField: "wired.user.id") else {
+                return
+            }
+            
+            if let user = self.user(forID: userID) {
+                self.chatTextView.appendString(string: "<< \(user.nick!) left the chat >>")
+            }
+            
+            if let index = users.index(where: {$0.userID == userID}) {
+                users.remove(at: index)
+            }
         }
     }
     

@@ -15,7 +15,6 @@ class UserController: ConnectionController, ConnectionDelegate, NSTableViewDeleg
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
     }
     
     
