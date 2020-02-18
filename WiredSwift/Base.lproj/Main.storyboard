@@ -673,12 +673,33 @@
             </objects>
             <point key="canvasLocation" x="678" y="-100"/>
         </scene>
+        <!--Window Controller-->
+        <scene sceneID="iqA-Bd-jBO">
+            <objects>
+                <windowController id="OHh-vB-dxB" sceneMemberID="viewController">
+                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="MgK-xH-cFg">
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+                        <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+                        <rect key="contentRect" x="425" y="461" width="480" height="270"/>
+                        <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
+                        <connections>
+                            <outlet property="delegate" destination="OHh-vB-dxB" id="rHK-tH-UYH"/>
+                        </connections>
+                    </window>
+                    <connections>
+                        <segue destination="GH4-1Q-jvo" kind="relationship" relationship="window.shadowedContentViewController" id="0aq-zy-DDm"/>
+                    </connections>
+                </windowController>
+                <customObject id="d0o-cM-yCw" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1301" y="-210"/>
+        </scene>
         <!--Split View Controller-->
         <scene sceneID="c5z-8e-BWo">
             <objects>
                 <splitViewController id="GH4-1Q-jvo" sceneMemberID="viewController">
                     <splitViewItems>
-                        <splitViewItem id="R5E-fh-swU"/>
+                        <splitViewItem canCollapse="YES" holdingPriority="200" id="R5E-fh-swU"/>
                         <splitViewItem id="RXM-Uh-8A9"/>
                     </splitViewItems>
                     <splitView key="splitView" dividerStyle="thin" vertical="YES" id="EAd-Gh-7Vl">
@@ -696,7 +717,7 @@
                 </splitViewController>
                 <customObject id="jd4-VN-q5N" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1525" y="-279"/>
+            <point key="canvasLocation" x="1301" y="249"/>
         </scene>
         <!--Resources Controller-->
         <scene sceneID="swF-bF-cRk">
@@ -706,20 +727,20 @@
                         <rect key="frame" x="0.0" y="0.0" width="150" height="400"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <scrollView ambiguous="YES" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N93-iE-Kx2">
+                            <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N93-iE-Kx2">
                                 <rect key="frame" x="0.0" y="0.0" width="150" height="400"/>
-                                <clipView key="contentView" ambiguous="YES" drawsBackground="NO" id="Tcf-Ka-79F">
-                                    <rect key="frame" x="1" y="1" width="148" height="398"/>
+                                <clipView key="contentView" drawsBackground="NO" id="Tcf-Ka-79F">
+                                    <rect key="frame" x="0.0" y="0.0" width="150" height="400"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <outlineView verticalHuggingPriority="750" ambiguous="YES" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" indentationPerLevel="16" outlineTableColumn="ck4-pO-pAI" id="v5H-SP-3xh">
-                                            <rect key="frame" x="0.0" y="0.0" width="148" height="398"/>
+                                        <outlineView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" multipleSelection="NO" autosaveColumns="NO" rowSizeStyle="automatic" viewBased="YES" indentationPerLevel="16" outlineTableColumn="ck4-pO-pAI" id="v5H-SP-3xh">
+                                            <rect key="frame" x="0.0" y="0.0" width="150" height="400"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
                                             <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                             <tableColumns>
-                                                <tableColumn width="145" minWidth="16" maxWidth="1000" id="ck4-pO-pAI">
+                                                <tableColumn width="147" minWidth="16" maxWidth="1000" id="ck4-pO-pAI">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
                                                         <font key="font" metaFont="smallSystem"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
@@ -733,11 +754,11 @@
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
                                                         <tableCellView identifier="HeaderCell" id="PIk-cO-wsI">
-                                                            <rect key="frame" x="1" y="1" width="145" height="17"/>
+                                                            <rect key="frame" x="1" y="1" width="147" height="17"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kPd-ER-9nE">
-                                                                    <rect key="frame" x="0.0" y="1" width="145" height="14"/>
+                                                                    <rect key="frame" x="0.0" y="1" width="147" height="14"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="HEADER CELL" id="g6H-LB-iTO">
                                                                         <font key="font" metaFont="smallSystemBold"/>
@@ -751,7 +772,7 @@
                                                             </connections>
                                                         </tableCellView>
                                                         <tableCellView identifier="DataCell" id="rMj-pf-Hb6">
-                                                            <rect key="frame" x="1" y="20" width="145" height="17"/>
+                                                            <rect key="frame" x="1" y="20" width="147" height="17"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <imageView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="54E-G2-Jfg">
@@ -760,7 +781,7 @@
                                                                     <imageCell key="cell" refusesFirstResponder="YES" imageScaling="proportionallyDown" image="NSActionTemplate" id="drj-dv-JHi"/>
                                                                 </imageView>
                                                                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="j7A-BP-inz">
-                                                                    <rect key="frame" x="25" y="0.0" width="120" height="17"/>
+                                                                    <rect key="frame" x="25" y="0.0" width="122" height="17"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="Pab-Da-PcT">
                                                                         <font key="font" metaFont="system"/>
@@ -786,7 +807,8 @@
                                     <nil key="backgroundColor"/>
                                 </clipView>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="150" id="gFh-xh-1yx"/>
+                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="250" id="Qjr-bU-Mwc"/>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="150" id="gFh-xh-1yx"/>
                                 </constraints>
                                 <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="dZn-u5-FW6">
                                     <rect key="frame" x="1" y="119" width="238" height="15"/>
@@ -798,6 +820,12 @@
                                 </scroller>
                             </scrollView>
                         </subviews>
+                        <constraints>
+                            <constraint firstAttribute="trailing" secondItem="N93-iE-Kx2" secondAttribute="trailing" id="5nH-kf-Onz"/>
+                            <constraint firstItem="N93-iE-Kx2" firstAttribute="leading" secondItem="BgH-Kc-kWa" secondAttribute="leading" id="Kp9-1u-EA4"/>
+                            <constraint firstItem="N93-iE-Kx2" firstAttribute="top" secondItem="BgH-Kc-kWa" secondAttribute="top" id="XbL-SH-YVQ"/>
+                            <constraint firstAttribute="bottom" secondItem="N93-iE-Kx2" secondAttribute="bottom" id="tJ3-g7-NN5"/>
+                        </constraints>
                     </view>
                     <connections>
                         <outlet property="resourcesOutlineView" destination="v5H-SP-3xh" id="mR5-Yi-ca1"/>
@@ -805,12 +833,12 @@
                 </viewController>
                 <customObject id="ISm-2L-Ob7" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2045" y="-415"/>
+            <point key="canvasLocation" x="1830" y="8"/>
         </scene>
-        <!--Connect Controller-->
+        <!--showPublicChat-->
         <scene sceneID="hIz-AP-VOD">
             <objects>
-                <viewController id="XfG-lQ-9wD" customClass="ConnectController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="showPublicChat" id="XfG-lQ-9wD" customClass="ConnectController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" wantsLayer="YES" id="m2S-Jp-Qdl">
                         <rect key="frame" x="0.0" y="0.0" width="424" height="183"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -911,7 +939,7 @@ DQ
                         <outlet property="loginField" destination="Ij9-Os-Atg" id="KHF-Mg-kdP"/>
                         <outlet property="passwordField" destination="7YK-Ga-JRu" id="Gq1-ng-uch"/>
                         <outlet property="progressIndicator" destination="0Mb-SI-9m7" id="YRY-eV-hQg"/>
-                        <segue destination="GH4-1Q-jvo" kind="show" identifier="showPublicChat" id="Krg-6t-Uz4"/>
+                        <segue destination="OHh-vB-dxB" kind="show" identifier="showPublicChat" id="Grk-AN-qBx"/>
                     </connections>
                 </viewController>
                 <customObject id="rPt-NT-nkU" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -941,7 +969,7 @@ DQ
                 </splitViewController>
                 <customObject id="lSy-Fu-Hgu" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2101" y="249"/>
+            <point key="canvasLocation" x="2103" y="576"/>
         </scene>
         <!--Chat Controller-->
         <scene sceneID="bqY-ta-lVK">
@@ -1009,7 +1037,7 @@ DQ
                 </viewController>
                 <customObject id="Wmn-QR-mjL" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3059.5" y="-60"/>
+            <point key="canvasLocation" x="3025" y="301"/>
         </scene>
         <!--User Controller-->
         <scene sceneID="H5i-Wh-Lwp">
@@ -1117,7 +1145,7 @@ DQ
                 </viewController>
                 <customObject id="u12-ld-a6b" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2810" y="418"/>
+            <point key="canvasLocation" x="2775" y="784"/>
         </scene>
     </scenes>
     <resources>

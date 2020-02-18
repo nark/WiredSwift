@@ -68,6 +68,7 @@
 		4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */; };
+		4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -151,6 +152,7 @@
 		4CFA18D4230C741800E2A2EC /* UserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInfo.swift; sourceTree = "<group>"; };
 		4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwCrypt.swift; sourceTree = "<group>"; };
 		4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourcesController.swift; sourceTree = "<group>"; };
+		4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionsController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -219,6 +221,7 @@
 			children = (
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
 				4CFA18C9230B389B00E2A2EC /* ConnectionController.swift */,
+				4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */,
 				4C74286322DCECE800D6E6F9 /* ConnectController.swift */,
 				4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */,
 				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
@@ -439,6 +442,7 @@
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
 				4CFA18C6230B085D00E2A2EC /* Data.swift in Sources */,
 				4CFA18C8230B359300E2A2EC /* ChatController.swift in Sources */,
+				4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */,
 				4CFA18CB230B389B00E2A2EC /* ConnectionController.swift in Sources */,
 				4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */,
 				4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */,

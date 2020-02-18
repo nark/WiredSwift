@@ -11,7 +11,7 @@ import Wired
 import Preferences
 
 extension PreferencePane.Identifier {
-    static let general = Identifier("general")
+    static let general  = Identifier("general")
     static let advanced = Identifier("advanced")
 }
 

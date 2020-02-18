@@ -9,6 +9,8 @@
 import Cocoa
 import Wired
 
+
+
 class ConnectController: ConnectionController, ConnectionDelegate {
     @IBOutlet weak var progressIndicator: NSProgressIndicator!
     @IBOutlet weak var addressField: NSTextField!
@@ -41,13 +43,12 @@ class ConnectController: ConnectionController, ConnectionDelegate {
         self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
         
         self.progressIndicator.startAnimation(sender)
-        
-        print(self.connection)
-        
+                
         DispatchQueue.global().async {
             if self.connection.connect(withUrl: url) {
                 DispatchQueue.main.async {
-                    print(self.connection)
+                    ConnectionsController.shared.addConnection(self.connection)
+                    
                     self.progressIndicator.stopAnimation(sender)
                     self.performSegue(withIdentifier: "showPublicChat", sender: sender)
                 }
@@ -59,18 +60,26 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     
     override func prepare(for segue: NSStoryboardSegue, sender: Any?) {
         if segue.identifier == "showPublicChat" {
-            
-            if let splitViewController = segue.destinationController as? NSSplitViewController {
-                if let splitViewController2 = splitViewController.splitViewItems[1].viewController as? NSSplitViewController {
-                    if let userController = splitViewController2.splitViewItems[1].viewController as? UserController {
-                        userController.representedObject = self.connection
+            if let mainWindowController = segue.destinationController as? NSWindowController {
+                if let splitViewController = mainWindowController.contentViewController as? NSSplitViewController {
+                    if let resourcesController = splitViewController.splitViewItems[0].viewController as? ResourcesController {
+                          resourcesController.representedObject = self.connection
                     }
+                      
+                    if let splitViewController2 = splitViewController.splitViewItems[1].viewController as? NSSplitViewController {
+                        if let userController = splitViewController2.splitViewItems[1].viewController as? UserController {
+                            userController.representedObject = self.connection
+                        }
 
-                    if let chatController = splitViewController2.splitViewItems[0].viewController as? ChatController {
-                        chatController.representedObject = self.connection
+                        if let chatController = splitViewController2.splitViewItems[0].viewController as? ChatController {
+                            chatController.representedObject = self.connection
+                        }
+                        
+                        mainWindowController.window?.title = self.connection.serverInfo.serverName
+
+                        self.view.window!.performClose(nil)
+                        mainWindowController.window?.mergeAllWindows(self)
                     }
-
-                    self.view.window!.performClose(nil)
                 }
             }
         }
@@ -86,6 +95,7 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     
     func connectionDisconnected(connection: Connection, error: Error?) {
         // print("connectionDisconnected")
+        ConnectionsController.shared.removeConnection(connection)
     }
     
     
