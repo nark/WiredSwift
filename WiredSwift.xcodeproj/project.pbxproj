@@ -69,6 +69,12 @@
 		4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */; };
 		4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */; };
+		4CFB161A23FC7D01000EE688 /* WiredSwift.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */; };
+		4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */; };
+		4CFB161E23FC843C000EE688 /* Bookmark+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161C23FC843C000EE688 /* Bookmark+CoreDataProperties.swift */; };
+		4CFB162023FC89A7000EE688 /* KeychainAccess.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */; };
+		4CFB162123FC89B7000EE688 /* KeychainAccess.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4CFB162323FC9883000EE688 /* ConnectionWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB162223FC9883000EE688 /* ConnectionWindowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -100,6 +106,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				4CFB162123FC89B7000EE688 /* KeychainAccess.framework in Embed Frameworks */,
 				4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */,
 				4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */,
 				4CD0205522DF04BD0008B36C /* Wired.framework in Embed Frameworks */,
@@ -153,6 +160,11 @@
 		4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwCrypt.swift; sourceTree = "<group>"; };
 		4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourcesController.swift; sourceTree = "<group>"; };
 		4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionsController.swift; sourceTree = "<group>"; };
+		4CFB161923FC7D01000EE688 /* WiredSwift.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = WiredSwift.xcdatamodel; sourceTree = "<group>"; };
+		4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bookmark+CoreDataClass.swift"; sourceTree = "<group>"; };
+		4CFB161C23FC843C000EE688 /* Bookmark+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bookmark+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = KeychainAccess.framework; path = Carthage/Build/Mac/KeychainAccess.framework; sourceTree = SOURCE_ROOT; };
+		4CFB162223FC9883000EE688 /* ConnectionWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionWindowController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +172,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4CFB162023FC89A7000EE688 /* KeychainAccess.framework in Frameworks */,
 				4CED2FC322E8F4B0000E5B9E /* CryptoSwift.framework in Frameworks */,
 				4CED2FC522E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */,
 				4CD0205422DF04BD0008B36C /* Wired.framework in Frameworks */,
@@ -222,6 +235,7 @@
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
 				4CFA18C9230B389B00E2A2EC /* ConnectionController.swift */,
 				4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */,
+				4CFB162223FC9883000EE688 /* ConnectionWindowController.swift */,
 				4C74286322DCECE800D6E6F9 /* ConnectController.swift */,
 				4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */,
 				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
@@ -229,12 +243,15 @@
 				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
 				4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */,
 				4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */,
+				4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */,
+				4CFB161C23FC843C000EE688 /* Bookmark+CoreDataProperties.swift */,
 				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
 				4C74286722DCECE900D6E6F9 /* Main.storyboard */,
 				4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */,
 				4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */,
 				4C74286A22DCECE900D6E6F9 /* Info.plist */,
 				4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */,
+				4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */,
 			);
 			path = WiredSwift;
 			sourceTree = "<group>";
@@ -245,6 +262,7 @@
 				4CD0204F22DF04BD0008B36C /* Wired.h */,
 				4C4C3EF622E1164700BC2DD9 /* Sources */,
 				4CD0205022DF04BD0008B36C /* Info.plist */,
+				4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */,
 				4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */,
 				4C1319A82316E4E700C9FA0C /* SocketSwift.framework */,
 				4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */,
@@ -367,7 +385,7 @@
 		4C74285622DCECE800D6E6F9 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1010;
+				LastSwiftUpdateCheck = 1130;
 				LastUpgradeCheck = 1030;
 				ORGANIZATIONNAME = "Read-Write";
 				TargetAttributes = {
@@ -436,16 +454,20 @@
 				4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
 				4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */,
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
+				4CFB161A23FC7D01000EE688 /* WiredSwift.xcdatamodeld in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UserController.swift in Sources */,
 				4C4C3EF122E1154900BC2DD9 /* P7Message.swift in Sources */,
+				4CFB161E23FC843C000EE688 /* Bookmark+CoreDataProperties.swift in Sources */,
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
 				4CFA18C6230B085D00E2A2EC /* Data.swift in Sources */,
 				4CFA18C8230B359300E2A2EC /* ChatController.swift in Sources */,
 				4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */,
+				4CFB162323FC9883000EE688 /* ConnectionWindowController.swift in Sources */,
 				4CFA18CB230B389B00E2A2EC /* ConnectionController.swift in Sources */,
 				4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */,
 				4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */,
+				4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */,
 				4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */,
 				4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */,
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
@@ -762,6 +784,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				4CFB161923FC7D01000EE688 /* WiredSwift.xcdatamodel */,
+			);
+			currentVersion = 4CFB161923FC7D01000EE688 /* WiredSwift.xcdatamodel */;
+			path = WiredSwift.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 4C74285622DCECE800D6E6F9 /* Project object */;
 }

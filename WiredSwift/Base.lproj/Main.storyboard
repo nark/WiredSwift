@@ -572,6 +572,20 @@
                                     </items>
                                 </menu>
                             </menuItem>
+                            <menuItem title="Bookmarks" id="ZzB-IM-8RE">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <menu key="submenu" title="Bookmarks" id="K60-wm-OrL">
+                                    <items>
+                                        <menuItem title="Add to bookmarks" id="Tn7-kc-AWg">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="addToBookmarks:" target="Ady-hI-5gd" id="m1M-J1-7T6"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="kgY-9K-l5C"/>
+                                    </items>
+                                </menu>
+                            </menuItem>
                             <menuItem title="View" id="H8h-7b-M4v">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="View" id="HyV-fh-RgO">
@@ -656,7 +670,7 @@
         <!--Window Controller-->
         <scene sceneID="R2V-B0-nI4">
             <objects>
-                <windowController id="B8D-0N-5wS" sceneMemberID="viewController">
+                <windowController storyboardIdentifier="ConnectWindowController" id="B8D-0N-5wS" sceneMemberID="viewController">
                     <window key="window" title="Connect" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" tabbingMode="preferred" id="IQv-IB-iLA">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES"/>
                         <rect key="contentRect" x="620" y="464" width="424" height="183"/>
@@ -676,8 +690,8 @@
         <!--Window Controller-->
         <scene sceneID="iqA-Bd-jBO">
             <objects>
-                <windowController id="OHh-vB-dxB" sceneMemberID="viewController">
-                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="MgK-xH-cFg">
+                <windowController id="OHh-vB-dxB" customClass="ConnectionWindowController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                    <window key="window" title="WiredSwift" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" frameAutosaveName="" animationBehavior="default" id="MgK-xH-cFg">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
                         <rect key="contentRect" x="425" y="461" width="480" height="270"/>
@@ -801,6 +815,7 @@
                                             <connections>
                                                 <outlet property="dataSource" destination="3vU-Ne-St7" id="hmV-eb-Xmz"/>
                                                 <outlet property="delegate" destination="3vU-Ne-St7" id="ZrH-hS-7Kl"/>
+                                                <outlet property="menu" destination="42n-O0-P2R" id="9eh-ZD-exF"/>
                                             </connections>
                                         </outlineView>
                                     </subviews>
@@ -832,13 +847,18 @@
                     </connections>
                 </viewController>
                 <customObject id="ISm-2L-Ob7" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+                <menu id="42n-O0-P2R">
+                    <connections>
+                        <outlet property="delegate" destination="3vU-Ne-St7" id="MdN-gC-jIq"/>
+                    </connections>
+                </menu>
             </objects>
             <point key="canvasLocation" x="1830" y="8"/>
         </scene>
         <!--showPublicChat-->
         <scene sceneID="hIz-AP-VOD">
             <objects>
-                <viewController title="showPublicChat" id="XfG-lQ-9wD" customClass="ConnectController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="showPublicChat" storyboardIdentifier="ConnectController" id="XfG-lQ-9wD" customClass="ConnectController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" wantsLayer="YES" id="m2S-Jp-Qdl">
                         <rect key="frame" x="0.0" y="0.0" width="424" height="183"/>
                         <autoresizingMask key="autoresizingMask"/>

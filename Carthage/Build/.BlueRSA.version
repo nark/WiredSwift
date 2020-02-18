@@ -2,7 +2,7 @@
   "Mac" : [
     {
       "name" : "CryptorRSA",
-      "hash" : "ba66c88527c8656db3b73f7ee6b2c5117d393ae41b617e106dd1c1e9f7f1d734"
+      "hash" : "ae85b100b30fced05484fb64a32244dbc7246f370a8fe585fe92a9b3649999d2"
     }
   ],
   "watchOS" : [
@@ -15,7 +15,7 @@
   "iOS" : [
     {
       "name" : "CryptorRSA",
-      "hash" : "c45bfcaa975575077a84fb63e8c30e8047c93ca3eaaa43995899812b03324a8b"
+      "hash" : "7280c9c46ddb3995625ceb13a9ef4bde32d49954922eedf75f1fd3aa3b8f3fb4"
     }
   ]
 }

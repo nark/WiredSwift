@@ -22,6 +22,32 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     }
     
     
+    public func connect(withBookmark bookmark: Bookmark) {
+        let url = bookmark.url()
+        
+        addressField.stringValue = "\(url.hostname):\(url.port)"
+        loginField.stringValue = url.login
+        passwordField.stringValue = url.password
+        
+        self.connection = Connection(withSpec: spec, delegate: self)
+        self.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? self.connection.nick
+        self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
+        
+        self.progressIndicator.startAnimation(self)
+                
+        DispatchQueue.global().async {
+            if self.connection.connect(withUrl: url) {
+                DispatchQueue.main.async {
+                    ConnectionsController.shared.addConnection(self.connection)
+                    
+                    self.progressIndicator.stopAnimation(self)
+                    self.performSegue(withIdentifier: "showPublicChat", sender: self)
+                }
+            }
+        }
+    }
+    
+    
     @IBAction func connect(_ sender: Any) {
         if addressField.stringValue.count == 0 {
             return
@@ -60,8 +86,10 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     
     override func prepare(for segue: NSStoryboardSegue, sender: Any?) {
         if segue.identifier == "showPublicChat" {
-            if let mainWindowController = segue.destinationController as? NSWindowController {
-                if let splitViewController = mainWindowController.contentViewController as? NSSplitViewController {
+            if let connectionWindowController = segue.destinationController as? ConnectionWindowController {
+                connectionWindowController.connection = self.connection
+                
+                if let splitViewController = connectionWindowController.contentViewController as? NSSplitViewController {
                     if let resourcesController = splitViewController.splitViewItems[0].viewController as? ResourcesController {
                           resourcesController.representedObject = self.connection
                     }
@@ -75,10 +103,10 @@ class ConnectController: ConnectionController, ConnectionDelegate {
                             chatController.representedObject = self.connection
                         }
                         
-                        mainWindowController.window?.title = self.connection.serverInfo.serverName
+                        connectionWindowController.window?.title = self.connection.serverInfo.serverName
 
                         self.view.window!.performClose(nil)
-                        mainWindowController.window?.mergeAllWindows(self)
+                        connectionWindowController.window?.mergeAllWindows(self)
                     }
                 }
             }

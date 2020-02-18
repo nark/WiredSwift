@@ -30,6 +30,8 @@ class ChatController: ConnectionController, ConnectionDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        UserDefaults.standard.addObserver(self, forKeyPath: "WSUserNick", options: NSKeyValueObservingOptions.new, context: nil)
     }
     
     
@@ -44,7 +46,6 @@ class ChatController: ConnectionController, ConnectionDelegate {
     
     override var representedObject: Any? {
         didSet {
-            //print("representedObject : \(self.representedObject)")
             if let c = self.representedObject as? Connection {
                 self.connection = c
                 
@@ -53,6 +54,31 @@ class ChatController: ConnectionController, ConnectionDelegate {
         }
     }
     
+    
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        print("observeValue: \(keyPath) -> \(change?[NSKeyValueChangeKey.newKey])")
+        if keyPath == "WSUserNick" {
+            if let nick = change?[NSKeyValueChangeKey.newKey] as? String {
+                if let m = self.setNickMessage(nick) {
+                  self.connection.socket.write(m)
+                }
+            }
+        }
+    }
+    
+    
+    private func setNickMessage(_ nick:String) -> P7Message? {
+        let message = P7Message(withName: "wired.user.set_nick", spec: self.connection.spec)
+        message.addParameter(field: "wired.user.nick", value: nick)
+        
+        if UserDefaults.standard.string(forKey: "WSUserNick") == nick {
+            UserDefaults.standard.set(nick, forKey: "WSUserNick")
+        }
+        
+        return message
+    }
+    
+
     private func chatCommand(_ command: String) -> P7Message? {
         let comps = command.split(separator: " ")
         
@@ -67,14 +93,8 @@ class ChatController: ConnectionController, ConnectionDelegate {
         }
         
         else if comps[0] == "/nick" {
-            let message = P7Message(withName: "wired.user.set_nick", spec: self.connection.spec)
             let value = command.deletingPrefix(comps[0]+" ")
-            
-            message.addParameter(field: "wired.user.nick", value: value)
-            
-            UserDefaults.standard.set(value, forKey: "WSUserNick")
-            
-            return message
+            return self.setNickMessage(value)
         }
             
         else if comps[0] == "/status" {

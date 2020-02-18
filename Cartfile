@@ -3,3 +3,4 @@ github "krzyzanowskim/CryptoSwift"
 github "IBM-Swift/BlueRSA"
 github "BiAtoms/Socket.swift" ~> 2.3
 github "sindresorhus/Preferences"
+github "kishikawakatsumi/KeychainAccess"

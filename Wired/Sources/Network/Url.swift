@@ -26,6 +26,11 @@ public class Url: NSObject {
     }
     
     
+    public func urlString() -> String {
+        return "wired://\(self.hostname):\(self.port)"
+    }
+    
+    
     private func decompose() {
         if let u = URL(string: self.base) {
             self.hostname   = u.host!

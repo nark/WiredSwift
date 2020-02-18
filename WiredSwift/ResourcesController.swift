@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource {
+class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate {
     @IBOutlet weak var resourcesOutlineView: NSOutlineView!
     
     struct ResourceIdentifiers {
@@ -32,21 +32,22 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
         
         NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateConnections), name: .didAddNewConnection, object: nil)
         NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateConnections), name: .didRemoveConnection, object: nil)
+        NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateConnections), name: .didAddNewBookmark, object: nil)
+        
+        resourcesOutlineView.target = self
+        resourcesOutlineView.doubleAction = #selector(doubleClickResource)
     }
     
     
     override func viewDidDisappear() {
         super.viewDidDisappear()
         
-        ConnectionsController.shared.removeConnection(self.connection)
-    }
-    
-    
-    @objc func didUpdateConnections(_ notification: Notification) {
-        if let _ = notification.object as? Connection {
-            self.resourcesOutlineView.reloadData()
+        if self.connection != nil {
+            ConnectionsController.shared.removeConnection(self.connection)
         }
     }
+    
+
 
     
     override func viewDidAppear() {
@@ -60,11 +61,38 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
         didSet {
             if let c = self.representedObject as? Connection {
                 self.connection = c
-                //self.connections.append(c)
                 c.delegates.append(self)
             }
         }
     }
+    
+    
+    
+    
+    
+    @objc private func doubleClickResource() {
+        if let clickedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.clickedRow) {
+            if let bookmark = clickedItem as? Bookmark {
+                let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
+                if let connectController = storyboard.instantiateController(withIdentifier: "ConnectWindowController") as? NSWindowController {
+                    connectController.showWindow(self)
+                    
+                    if let connectController = connectController.contentViewController as? ConnectController {
+                        connectController.connect(withBookmark: bookmark)
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    @objc func didUpdateConnections(_ notification: Notification) {
+        if let _ = notification.object as? Connection {
+            self.resourcesOutlineView.reloadData()
+        }
+    }
+    
+    
     
     
     // MARK: Connection Delegate -
@@ -97,7 +125,7 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
                 return ConnectionsController.shared.connections.count
             }
             else if c == ResourceIdentifiers.bookmarks {
-                return 0
+                return ConnectionsController.shared.bookmarks().count
             }
             else if c == ResourceIdentifiers.trackers {
                 return 0
@@ -115,6 +143,9 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
         if let c = item as? String {
             if c == ResourceIdentifiers.connections {
                 return ConnectionsController.shared.connections[index]
+            }
+            else if c == ResourceIdentifiers.bookmarks {
+                return ConnectionsController.shared.bookmarks()[index]
             }
         }
 
@@ -158,7 +189,38 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
             view = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "DataCell"), owner: self) as? NSTableCellView
             view?.textField?.stringValue = connection.serverInfo.serverName
         }
+        else if let bookmark = item as? Bookmark {
+            view = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "DataCell"), owner: self) as? NSTableCellView
+            if let name = bookmark.name {
+                view?.textField?.stringValue = name
+            }
+        }
         
         return view
+    }
+    
+    
+    // MARK: -
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        
+        if let selectedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.selectedRow) {
+            if let connection = selectedItem as? Connection {
+                
+            }
+            else if let _ = selectedItem as? Bookmark {
+                menu.addItem(withTitle: "Remove Bookmark", action: #selector(removeSelectedBookmark), keyEquivalent: "")
+            }
+        }
+    }
+    
+    
+    @objc private func removeSelectedBookmark() {
+        if let selectedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.selectedRow) {
+            if let bookmark = selectedItem as? Bookmark {
+                ConnectionsController.shared.removeBookmark(bookmark)
+                self.resourcesOutlineView.reloadData()
+            }
+        }
     }
 }
