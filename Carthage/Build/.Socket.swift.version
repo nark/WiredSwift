@@ -2,7 +2,7 @@
   "Mac" : [
     {
       "name" : "SocketSwift",
-      "hash" : "e167d200f5dca3dc65dc9d226e3f6b28ecfa433320f49c67f60cb22ec8c165b9"
+      "hash" : "de334f450e479665ff49a3709beb5345a766857443ae285ab58b6e9de57a3b2e"
     }
   ],
   "watchOS" : [
@@ -11,14 +11,14 @@
   "tvOS" : [
     {
       "name" : "SocketSwift",
-      "hash" : "a2e4ae89ee5b9722845baada8619257e10d55561d3cfd3a84af6f8f56dfd6a38"
+      "hash" : "61d039e51973ad7a7576e568a656e3fac42b8f04c29ab8c44d17637b048ed5c7"
     }
   ],
   "commitish" : "2.4.0",
   "iOS" : [
     {
       "name" : "SocketSwift",
-      "hash" : "6c70bb3ee4c0a02990d71fa16b4e29a7a3c7ba0fa677ebabdb33aa79d3eb6716"
+      "hash" : "ce71dc2e989e7a5e61c921dee3c865ca2587189591cd0eefd022fec2021694bb"
     }
   ]
 }

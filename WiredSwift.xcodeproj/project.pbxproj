@@ -10,6 +10,12 @@
 		4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99F023FBD4F30008A7A6 /* LICENSE */; };
 		4C0A99F223FBD4F30008A7A6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99F023FBD4F30008A7A6 /* LICENSE */; };
 		4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0A99F323FBF9410008A7A6 /* UserCellView.swift */; };
+		4C0A99F623FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */; };
+		4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */; };
+		4C0A99FA23FBFE6C0008A7A6 /* Preferences.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */; };
+		4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C0A99FE23FC01140008A7A6 /* AdvancedPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */; };
+		4C0A99FF23FC01140008A7A6 /* GeneralPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */; };
 		4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C1319AA2316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -92,6 +98,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */,
 				4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */,
 				4CD0205522DF04BD0008B36C /* Wired.framework in Embed Frameworks */,
 				4CED2FC922E8FA4D000E5B9E /* CryptorRSA.framework in Embed Frameworks */,
@@ -105,6 +112,11 @@
 /* Begin PBXFileReference section */
 		4C0A99F023FBD4F30008A7A6 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		4C0A99F323FBF9410008A7A6 /* UserCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCellView.swift; sourceTree = "<group>"; };
+		4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralPreferenceViewController.swift; sourceTree = "<group>"; };
+		4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedPreferenceViewController.swift; sourceTree = "<group>"; };
+		4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Preferences.framework; path = Carthage/Build/Mac/Preferences.framework; sourceTree = SOURCE_ROOT; };
+		4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = AdvancedPreferenceViewController.xib; sourceTree = "<group>"; };
+		4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = GeneralPreferenceViewController.xib; sourceTree = "<group>"; };
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4C4C3EDE22E10B2000BC2DD9 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
@@ -147,6 +159,7 @@
 				4CED2FC322E8F4B0000E5B9E /* CryptoSwift.framework in Frameworks */,
 				4CED2FC522E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */,
 				4CD0205422DF04BD0008B36C /* Wired.framework in Frameworks */,
+				4C0A99FA23FBFE6C0008A7A6 /* Preferences.framework in Frameworks */,
 				4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -208,8 +221,12 @@
 				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
 				4CFA18CD230B3B2900E2A2EC /* UserController.swift */,
 				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
+				4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */,
+				4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */,
 				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
 				4C74286722DCECE900D6E6F9 /* Main.storyboard */,
+				4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */,
+				4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */,
 				4C74286A22DCECE900D6E6F9 /* Info.plist */,
 				4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */,
 			);
@@ -222,6 +239,7 @@
 				4CD0204F22DF04BD0008B36C /* Wired.h */,
 				4C4C3EF622E1164700BC2DD9 /* Sources */,
 				4CD0205022DF04BD0008B36C /* Info.plist */,
+				4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */,
 				4C1319A82316E4E700C9FA0C /* SocketSwift.framework */,
 				4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */,
 				4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */,
@@ -382,7 +400,9 @@
 			files = (
 				4C1319AF231862DF00C9FA0C /* README.md in Resources */,
 				4C74286622DCECE900D6E6F9 /* Assets.xcassets in Resources */,
+				4C0A99FF23FC01140008A7A6 /* GeneralPreferenceViewController.xib in Resources */,
 				4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */,
+				4C0A99FE23FC01140008A7A6 /* AdvancedPreferenceViewController.xib in Resources */,
 				4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -403,6 +423,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C0A99F623FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift in Sources */,
 				4CFA18D5230C741800E2A2EC /* UserInfo.swift in Sources */,
 				4CFA18C5230B085D00E2A2EC /* String.swift in Sources */,
 				4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
@@ -416,6 +437,7 @@
 				4CFA18C8230B359300E2A2EC /* ChatController.swift in Sources */,
 				4CFA18CB230B389B00E2A2EC /* ConnectionController.swift in Sources */,
 				4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */,
+				4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */,
 				4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */,
 				4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */,
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
