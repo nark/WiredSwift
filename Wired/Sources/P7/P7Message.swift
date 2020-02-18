@@ -107,7 +107,21 @@ public class P7Message: NSObject {
         msg.addAttribute(XMLNode.attribute(withName: "name", stringValue: self.name) as! XMLNode)
         
         for (field, value) in self.parameters {
-            let p = XMLElement(name: "p7:field", stringValue: value as? String)
+            let p = XMLElement(name: "p7:field")
+            
+            if spec.fieldsByName[field]?.type == .string {
+                if let string = value as? String {
+                    p.setStringValue(string, resolvingEntities: false)
+                }
+            }
+            else if spec.fieldsByName[field]?.type == .int32 ||
+                    spec.fieldsByName[field]?.type == .uint32 {
+                if let val = value as? UInt32 {
+                    p.setStringValue(String(val), resolvingEntities: false)
+                }
+            }
+            // TODO: all types
+        
             p.addAttribute(XMLNode.attribute(withName: "name", stringValue: field) as! XMLNode)
             msg.addChild(p)
         }
@@ -186,7 +200,7 @@ public class P7Message: NSObject {
                                     data.append(d)
                                 }
                             } else if specField.type == .list { // list (x)
-                                
+
                             }
                         }
                     }
@@ -236,9 +250,7 @@ public class P7Message: NSObject {
     
     private func loadBinaryMessage(_ data: Data) {
         var offset = 0
-        
-        print(data.toHex())
-        
+                
         let messageIDData = data.subdata(in: 0..<4)
         
         offset += 4
@@ -310,14 +322,14 @@ public class P7Message: NSObject {
                             
                         }
                         else if specField.type == .data {
-                            print(fieldData.toHex())
+                            //print(fieldData.toHex())
                             self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .oobdata {
                             
                         }
                         else if specField.type == .list {
-                            
+                            //print(fieldData.toHex())
                         }
                         
                     }

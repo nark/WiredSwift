@@ -15,6 +15,7 @@ public protocol ConnectionDelegate {
     func connectionDisconnected(connection: Connection, error: Error?)
     
     func connectionDidReceiveMessage(connection: Connection, message: P7Message)
+    func connectionDidReceiveError(connection: Connection, message: P7Message)
 }
 
 public class Connection: NSObject {
@@ -115,6 +116,13 @@ public class Connection: NSObject {
         switch message.name {
         case "wired.send_ping":
             self.pingReply()
+            
+        case "wired.error":
+            for d in self.delegates {
+                DispatchQueue.main.async {
+                    d.connectionDidReceiveError(connection: self, message: message)
+                }
+            }
             
         default:
             for d in self.delegates {

@@ -92,5 +92,9 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
         // print("connectionDidReceiveMessage")
     }
+    
+    func connectionDidReceiveError(connection: Connection, message: P7Message) {
+        // print("connectionDidReceiveError")
+    }
 }
 

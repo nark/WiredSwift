@@ -185,7 +185,6 @@ public class Logger {
 
      */
     public func fileLog(message: String) -> Bool {
-        print("FILE LOG")
         if let fileURL = filePath {
 
             if getFileSize() > self.sizeLimit {
@@ -302,9 +301,6 @@ public class Logger {
         case .Month:
             t = range / 100000
         }
-
-        print("\(range)")
-        print("\(t)")
 
         if t >= 1 {
             if let path = shared.filePath {

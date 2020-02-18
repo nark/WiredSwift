@@ -48,6 +48,10 @@ class UserController: ConnectionController, ConnectionDelegate, NSTableViewDeleg
         
     }
     
+    func connectionDidReceiveError(connection: Connection, message: P7Message) {
+        
+    }
+    
     func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
         if  message.name == "wired.chat.user_list" ||
             message.name == "wired.chat.user_join"  {
@@ -75,6 +79,9 @@ class UserController: ConnectionController, ConnectionDelegate, NSTableViewDeleg
                     self.usersTableView.reloadData()
                 }
             }
+        }
+        else if message.name == "wired.account.privileges" {
+
         }
         else if message.name == "wired.chat.user_list.done" {
             self.usersTableView.reloadData()

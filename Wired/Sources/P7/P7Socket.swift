@@ -227,7 +227,6 @@ public class P7Socket: NSObject {
             else if self.serialization == .BINARY {
                 if bytesRead >= 4 {
                     let messageLength = Data(lengthBuffer).uint32.bigEndian
-                    //print("messageLength : \(messageLength)")
                     
                     var messageBuffer = [Byte](repeating: 0, count: Int(messageLength))
                     bytesRead = self.read(&messageBuffer, maxLength: Int(messageLength))

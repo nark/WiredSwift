@@ -134,6 +134,17 @@ class ChatController: ConnectionController, ConnectionDelegate {
         
     }
     
+    func connectionDidReceiveError(connection: Connection, message: P7Message) {
+        if let specError = spec.error(forMessage: message), let message = specError.name {
+            let alert = NSAlert()
+            alert.messageText = "Wired Alert"
+            alert.informativeText = "Wired Error: \(message)"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
+    }
+    
     func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
         if message.name == "wired.chat.say" {
             guard let userID = message.uint32(forField: "wired.user.id") else {

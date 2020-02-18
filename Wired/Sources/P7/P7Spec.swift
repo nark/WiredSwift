@@ -130,6 +130,11 @@ public class SpecMessage: SpecItem {
 
 
 
+public class SpecError: SpecItem {
+    
+}
+
+
 
 
 /**
@@ -166,6 +171,9 @@ public class P7Spec: NSObject, XMLParserDelegate {
     public var messages:        [SpecMessage]           = []
     public var messagesByName:  [String:SpecMessage]    = [:]
     public var messagesByID:    [Int:SpecMessage]       = [:]
+    
+    public var errors:          [SpecError]             = []
+    public var errorsByID:      [Int:SpecError]         = [:]
     
     private var currentMessage: SpecMessage?
     
@@ -319,7 +327,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
                 self.builtinProtocolVersion = v
             }
         } catch {
-            print("ERROR: Cannot parse built-in spec, fatal")
+            Logger.error("ERROR: Cannot parse built-in spec, fatal")
         }
         
         if let p = path {
@@ -348,6 +356,18 @@ public class P7Spec: NSObject, XMLParserDelegate {
     }
     
     
+    public func error(forMessage message: P7Message) -> SpecError?{
+        if let errorID = message.enumeration(forField: "wired.error") {
+            return errorsByID[Int(errorID)]
+        }
+        return nil
+    }
+    
+    public func errorMessage(forID id:UInt32) -> SpecError? {
+        return errorsByID[Int(id)]
+    }
+    
+    
     
     public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         if elementName == "p7:field" {
@@ -359,8 +379,30 @@ public class P7Spec: NSObject, XMLParserDelegate {
         else if elementName == "p7:parameter" {
             self.loadParam(attributeDict)
         }
+        else if elementName == "p7:enum" {
+            if let name = attributeDict["name"] {
+                if name.starts(with: "wired.error.") {
+                    self.loadError(attributeDict)
+                }
+            }
+        }
     }
     
+    
+    
+    private func loadError(_ attributes: [String : String]) {
+        guard let name = attributes["name"] else {
+            return
+        }
+        
+        guard let value = attributes["value"], let asInt = Int(value) else {
+            return
+        }
+        
+        let e = SpecError(name: name, spec: self, attributes: attributes)
+        errors.append(e)
+        errorsByID[asInt] = e
+    }
     
     
     private func loadFile(path: String) {
