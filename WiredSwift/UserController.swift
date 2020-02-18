@@ -95,15 +95,16 @@ class UserController: ConnectionController, ConnectionDelegate, NSTableViewDeleg
     }
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        var view: NSTableCellView?
+        var view: UserCellView?
         
-        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "UserCell"), owner: self) as? NSTableCellView
+        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "UserCell"), owner: self) as? UserCellView
         
-        view?.textField?.stringValue = self.users[row].nick
+        view?.userNick?.stringValue = self.users[row].nick
+        view?.userStatus?.stringValue = self.users[row].status
         
         if let base64ImageString = self.users[row].icon?.base64EncodedData() {
             if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
-                view?.imageView?.image = NSImage(data: data)
+                view?.userIcon?.image = NSImage(data: data)
             }
         }
         

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99F023FBD4F30008A7A6 /* LICENSE */; };
 		4C0A99F223FBD4F30008A7A6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99F023FBD4F30008A7A6 /* LICENSE */; };
+		4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0A99F323FBF9410008A7A6 /* UserCellView.swift */; };
 		4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C1319AA2316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -103,6 +104,7 @@
 
 /* Begin PBXFileReference section */
 		4C0A99F023FBD4F30008A7A6 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		4C0A99F323FBF9410008A7A6 /* UserCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCellView.swift; sourceTree = "<group>"; };
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4C4C3EDE22E10B2000BC2DD9 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
@@ -205,6 +207,7 @@
 				4C74286322DCECE800D6E6F9 /* ConnectController.swift */,
 				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
 				4CFA18CD230B3B2900E2A2EC /* UserController.swift */,
+				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
 				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
 				4C74286722DCECE900D6E6F9 /* Main.storyboard */,
 				4C74286A22DCECE900D6E6F9 /* Info.plist */,
@@ -408,6 +411,7 @@
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UserController.swift in Sources */,
 				4C4C3EF122E1154900BC2DD9 /* P7Message.swift in Sources */,
+				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
 				4CFA18C6230B085D00E2A2EC /* Data.swift in Sources */,
 				4CFA18C8230B359300E2A2EC /* ChatController.swift in Sources */,
 				4CFA18CB230B389B00E2A2EC /* ConnectionController.swift in Sources */,

@@ -928,12 +928,26 @@ DQ
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView identifier="UserCell" id="tuw-Wg-ZYA">
+                                                        <tableCellView identifier="UserCell" id="tuw-Wg-ZYA" customClass="UserCellView" customModule="WiredSwift" customModuleProvider="target">
                                                             <rect key="frame" x="1" y="1" width="197" height="50"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
+                                                                <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DAi-aG-hyE">
+                                                                    <rect key="frame" x="6" y="9" width="32" height="32"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="j2k-OZ-KFe"/>
+                                                                </imageView>
+                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ljC-7j-aMY">
+                                                                    <rect key="frame" x="44" y="7" width="152" height="17"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Status" id="fJu-nb-OG5">
+                                                                        <font key="font" metaFont="system"/>
+                                                                        <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
                                                                 <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="P2W-zw-YgB">
-                                                                    <rect key="frame" x="44" y="16" width="152" height="17"/>
+                                                                    <rect key="frame" x="44" y="27" width="152" height="17"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="User nick" id="cUN-r6-RJp">
                                                                         <font key="font" metaFont="system"/>
@@ -941,15 +955,13 @@ DQ
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
-                                                                <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DAi-aG-hyE">
-                                                                    <rect key="frame" x="6" y="9" width="32" height="32"/>
-                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="j2k-OZ-KFe"/>
-                                                                </imageView>
                                                             </subviews>
                                                             <connections>
                                                                 <outlet property="imageView" destination="DAi-aG-hyE" id="HQX-Ka-9b5"/>
                                                                 <outlet property="textField" destination="P2W-zw-YgB" id="QVQ-Ch-HLI"/>
+                                                                <outlet property="userIcon" destination="DAi-aG-hyE" id="5RM-sF-tsz"/>
+                                                                <outlet property="userNick" destination="P2W-zw-YgB" id="Dfs-r7-BJ1"/>
+                                                                <outlet property="userStatus" destination="ljC-7j-aMY" id="R1W-CW-S1z"/>
                                                             </connections>
                                                         </tableCellView>
                                                     </prototypeCellViews>
