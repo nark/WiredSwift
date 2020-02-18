@@ -42,9 +42,12 @@ class ConnectController: ConnectionController, ConnectionDelegate {
         
         self.progressIndicator.startAnimation(sender)
         
+        print(self.connection)
+        
         DispatchQueue.global().async {
             if self.connection.connect(withUrl: url) {
                 DispatchQueue.main.async {
+                    print(self.connection)
                     self.progressIndicator.stopAnimation(sender)
                     self.performSegue(withIdentifier: "showPublicChat", sender: sender)
                 }
@@ -56,20 +59,17 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     
     override func prepare(for segue: NSStoryboardSegue, sender: Any?) {
         if segue.identifier == "showPublicChat" {
-            if let windowController = segue.destinationController as? NSWindowController {
-                if let serverName = self.connection.serverInfo?.serverName {
-                    windowController.window?.title = serverName
-                }
-                
-                if let splitViewController = windowController.contentViewController as? NSSplitViewController {
-                    if let userController = splitViewController.splitViewItems[1].viewController as? UserController {
+            
+            if let splitViewController = segue.destinationController as? NSSplitViewController {
+                if let splitViewController2 = splitViewController.splitViewItems[1].viewController as? NSSplitViewController {
+                    if let userController = splitViewController2.splitViewItems[1].viewController as? UserController {
                         userController.representedObject = self.connection
                     }
 
-                    if let chatController = splitViewController.splitViewItems[0].viewController as? ChatController {
+                    if let chatController = splitViewController2.splitViewItems[0].viewController as? ChatController {
                         chatController.representedObject = self.connection
                     }
-                    
+
                     self.view.window!.performClose(nil)
                 }
             }

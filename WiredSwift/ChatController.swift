@@ -44,6 +44,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
     
     override var representedObject: Any? {
         didSet {
+            //print("representedObject : \(self.representedObject)")
             if let c = self.representedObject as? Connection {
                 self.connection = c
                 

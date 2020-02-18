@@ -67,6 +67,7 @@
 		4CFA18D6230C741800E2A2EC /* UserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D4230C741800E2A2EC /* UserInfo.swift */; };
 		4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
+		4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -149,6 +150,7 @@
 		4CFA18D1230C6ECE00E2A2EC /* ServerInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerInfo.swift; sourceTree = "<group>"; };
 		4CFA18D4230C741800E2A2EC /* UserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInfo.swift; sourceTree = "<group>"; };
 		4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwCrypt.swift; sourceTree = "<group>"; };
+		4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourcesController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -218,6 +220,7 @@
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
 				4CFA18C9230B389B00E2A2EC /* ConnectionController.swift */,
 				4C74286322DCECE800D6E6F9 /* ConnectController.swift */,
+				4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */,
 				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
 				4CFA18CD230B3B2900E2A2EC /* UserController.swift */,
 				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
@@ -428,6 +431,7 @@
 				4CFA18C5230B085D00E2A2EC /* String.swift in Sources */,
 				4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
 				4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
+				4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */,
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UserController.swift in Sources */,
