@@ -30,11 +30,19 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
         super.viewDidLoad()
         // Do view setup here.
         
-        NotificationCenter.default.addObserver(self, selector:  #selector(didAddNewConnection), name: .didAddNewConnection, object: nil)
+        NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateConnections), name: .didAddNewConnection, object: nil)
+        NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateConnections), name: .didRemoveConnection, object: nil)
     }
     
     
-    @objc func didAddNewConnection(_ notification: Notification) {
+    override func viewDidDisappear() {
+        super.viewDidDisappear()
+        
+        ConnectionsController.shared.removeConnection(self.connection)
+    }
+    
+    
+    @objc func didUpdateConnections(_ notification: Notification) {
         if let _ = notification.object as? Connection {
             self.resourcesOutlineView.reloadData()
         }
