@@ -57,12 +57,46 @@ class ChatController: ConnectionController, ConnectionDelegate {
         
         if comps[0] == "/me" {
             let message = P7Message(withName: "wired.chat.send_me", spec: self.connection.spec)
-                        
+            let value = command.deletingPrefix(comps[0]+" ")
+            
             message.addParameter(field: "wired.chat.id", value: UInt32(1))
-            message.addParameter(field: "wired.chat.me", value: String(comps[1]))
+            message.addParameter(field: "wired.chat.me", value: value)
             
             return message
         }
+        
+        else if comps[0] == "/nick" {
+            let message = P7Message(withName: "wired.user.set_nick", spec: self.connection.spec)
+            let value = command.deletingPrefix(comps[0]+" ")
+            
+            message.addParameter(field: "wired.user.nick", value: value)
+            
+            UserDefaults.standard.set(value, forKey: "WSUserNick")
+            
+            return message
+        }
+            
+        else if comps[0] == "/status" {
+            let message = P7Message(withName: "wired.user.set_status", spec: self.connection.spec)
+            let value = command.deletingPrefix(comps[0]+" ")
+            
+            message.addParameter(field: "wired.user.status", value: value)
+            
+            UserDefaults.standard.set(value, forKey: "WSUserStatus")
+            
+            return message
+        }
+        
+        else if comps[0] == "/topic" {
+            let message = P7Message(withName: "wired.chat.set_topic", spec: self.connection.spec)
+            let value = command.deletingPrefix(comps[0]+" ")
+            
+            message.addParameter(field: "wired.chat.id", value: UInt32(1))
+            message.addParameter(field: "wired.chat.topic.topic", value: value)
+            
+            return message
+        }
+        
         return nil
     }
     
@@ -114,6 +148,19 @@ class ChatController: ConnectionController, ConnectionDelegate {
                 self.chatTextView.appendString(string: "\(userNick): \(sayString)")
             }
         }
+        else if message.name == "wired.chat.me" {
+            guard let userID = message.uint32(forField: "wired.user.id") else {
+                return
+            }
+            
+            guard let sayString = message.string(forField: "wired.chat.me") else {
+                return
+            }
+            
+            if let userNick = self.user(forID: userID)?.nick {
+                self.chatTextView.appendString(string: "*** \(userNick) \(sayString)")
+            }
+        }
         else if message.name == "wired.chat.topic" {
             guard let userNick = message.string(forField: "wired.user.nick") else {
                 return
@@ -129,6 +176,15 @@ class ChatController: ConnectionController, ConnectionDelegate {
             let userInfo = UserInfo(message: message)
             
             self.users.append(userInfo)
+        }
+        else if  message.name == "wired.chat.user_status" {
+            guard let userID = message.uint32(forField: "wired.user.id") else {
+                return
+            }
+            
+            if let user = self.user(forID: userID) {
+                user.update(withMessage: message)
+            }
         }
         else if message.name == "wired.chat.user_join" {
             let userInfo = UserInfo(message: message)

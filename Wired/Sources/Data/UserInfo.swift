@@ -22,6 +22,10 @@ public class UserInfo {
     public init(message: P7Message) {
         self.message = message
         
+        self.update(withMessage: message)
+    }
+    
+    public func update(withMessage message: P7Message) {
         if let v = message.uint32(forField: "wired.user.id") {
             self.userID = v
         }

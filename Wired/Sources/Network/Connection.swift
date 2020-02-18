@@ -101,6 +101,7 @@ public class Connection: NSObject {
     private func listen() {
         DispatchQueue.global().async {
             while (true) {
+                Logger.debug("listen try to read")
                 if let message = self.socket.read() {
                     self.handleMessage(message)
                 }
@@ -216,7 +217,7 @@ public class Connection: NSObject {
         
         _ = self.socket.write(message)
         
-        sleep(1)
+        //sleep(1)
         
         guard let response = self.socket.read() else {
             return false
@@ -242,12 +243,10 @@ public class Connection: NSObject {
         
         _ = self.socket.write(message)
         
-        sleep(1)
-        
         guard let response = self.socket.read() else {
             return false
         }
-        
+                
         self.serverInfo = ServerInfo(message: response)
         
         return true

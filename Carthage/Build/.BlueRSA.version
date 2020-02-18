@@ -1,9 +1,21 @@
 {
-  "commitish" : "1.0.34",
   "Mac" : [
     {
       "name" : "CryptorRSA",
-      "hash" : "7e130d1b1084271db086c722e910283fe89075748a296179f09404b8cc243e2e"
+      "hash" : "1935ce43c0bfe54f031161c0f1760dd98a46e8d62be3020e343c41741832cb19"
+    }
+  ],
+  "watchOS" : [
+
+  ],
+  "tvOS" : [
+
+  ],
+  "commitish" : "1.0.35",
+  "iOS" : [
+    {
+      "name" : "CryptorRSA",
+      "hash" : "94be89f629c2784c1200fd5617b126f435636505c76bf72d8f2339c3c83a3db9"
     }
   ]
 }

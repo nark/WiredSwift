@@ -34,7 +34,7 @@ public class Url: NSObject {
             self.password   = u.password ?? ""
             self.scheme     = u.scheme!
         } else {
-            print("ERROR: Invalid URL")
+            Logger.error("ERROR: Invalid URL")
         }
     }
 }

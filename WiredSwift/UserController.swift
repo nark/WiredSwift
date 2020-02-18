@@ -54,6 +54,19 @@ class UserController: ConnectionController, ConnectionDelegate, NSTableViewDeleg
             let userInfo = UserInfo(message: message)
             
             self.users.append(userInfo)
+            
+            self.usersTableView.reloadData()
+        }
+        else if  message.name == "wired.chat.user_status" {
+            guard let userID = message.uint32(forField: "wired.user.id") else {
+                return
+            }
+            
+            if let user = self.user(forID: userID) {
+                user.update(withMessage: message)
+                
+                self.usersTableView.reloadData()
+            }
         }
         else if message.name == "wired.chat.user_leave" {
             if let userID = message.uint32(forField: "wired.user.id") {
@@ -85,6 +98,12 @@ class UserController: ConnectionController, ConnectionDelegate, NSTableViewDeleg
             if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
                 view?.imageView?.image = NSImage(data: data)
             }
+        }
+        
+        if self.users[row].idle == true {
+            view?.alphaValue = 0.5
+        } else {
+            view?.alphaValue = 1.0
         }
 
         return view

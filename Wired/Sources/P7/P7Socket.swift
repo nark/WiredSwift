@@ -84,6 +84,7 @@ public class P7Socket: NSObject {
             
             try socket.set(option: .receiveTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
             try socket.set(option: .sendTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
+            try socket.set(option: .receiveBufferSize, 327680)
             
             let addr = try! socket.addresses(for: self.hostname, port: Port(self.port)).first!
             try self.socket.connect(address: addr)
@@ -143,12 +144,12 @@ public class P7Socket: NSObject {
     
     
     public func write(_ message: P7Message) -> Bool {
-        usleep(100000)
+        //usleep(100000)
         
         do {
             if self.serialization == .XML {
                 let xml = message.xml()
-
+                
                 if let xmlData = xml.data(using: .utf8) {
                     try self.socket.write(xmlData.bytes)
                 }
@@ -179,7 +180,7 @@ public class P7Socket: NSObject {
                 try self.socket.write(lengthData.bytes)
                 try self.socket.write(messageData.bytes)
             }
-                
+            
         } catch let error {
             if let socketError = error as? Socket.Error {
                 Logger.error(socketError.description)
@@ -191,67 +192,70 @@ public class P7Socket: NSObject {
         return true
     }
     
-
+    
+    
+    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int) -> Int {
+        while let available = try? socket.wait(for: .read, timeout: 1.0) {
+            guard available else { continue } // timeout happend, try again
+            
+            let n = try? socket.read(buffer, size: len)
+            
+            return n ?? 0
+        }
+        
+        return 0
+    }
+    
     
     
     public func read() -> P7Message? {
-        usleep(100000)
+        // hack to handle remote connection for now
+        usleep(200000)
         
         var messageData = Data()
-        
-        do {
-            var lengthBuffer = [Byte](repeating: 0, count: 4)
-            var bytesRead = try socket.read(&lengthBuffer, size: 4)
-            
-            
-            
-            if bytesRead > 0 {
-                if self.serialization == .XML {
+        var lengthBuffer = [Byte](repeating: 0, count: 4)
+        var bytesRead = self.read(&lengthBuffer, maxLength: 4)
+
+        if bytesRead > 0 {
+            if self.serialization == .XML {
 //                    if let xml = String(bytes: messageData, encoding: .utf8) {
 //                        let response = P7Message(withXML: xml, spec: self.spec)
-//                        
+//
 //                        return response
 //                    }
-                }
-                else if self.serialization == .BINARY {
-                    if bytesRead >= 4 {
-                        let messageLength = Data(lengthBuffer).uint32.bigEndian
-                        
-                        var messageBuffer = [Byte](repeating: 0, count: Int(messageLength))
-                        bytesRead = try socket.read(&messageBuffer, size: Int(messageLength))
-                        
-                        messageData = Data(messageBuffer)
-                        
-                        // data to message object
-                        if messageData.count > 0 {
-                            // decryption
-                            if self.encryptionEnabled {
-                                guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
-                                    Logger.error("Cannot decrypt data")
-                                    return nil
-                                }
-                                messageData = decryptedMessageData
-                            }
-                            
-                            // init response message
-                            let response = P7Message(withData: messageData, spec: self.spec)
-                            
-                            Logger.debug("READ: \(response.name!)")
-                            
-                            return response
-                        }
-                    }
-                    else {
-                        Logger.error("Nothing read, abort")
-                    }
-                }
             }
-            
-        } catch let error {
-            if let socketError = error as? Socket.Error {
-                Logger.error(socketError.localizedDescription)
-            } else {
-                Logger.error(error.localizedDescription)
+            else if self.serialization == .BINARY {
+                if bytesRead >= 4 {
+                    let messageLength = Data(lengthBuffer).uint32.bigEndian
+                    //print("messageLength : \(messageLength)")
+                    
+                    var messageBuffer = [Byte](repeating: 0, count: Int(messageLength))
+                    bytesRead = self.read(&messageBuffer, maxLength: Int(messageLength))
+                    
+                    messageData = Data(messageBuffer)
+                    
+                    // data to message object
+                    if messageData.count > 0 {
+                        // decryption
+                        if self.encryptionEnabled {
+                            guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
+                                Logger.error("Cannot decrypt data")
+                                return nil
+                            }
+                            messageData = decryptedMessageData
+                        }
+                        
+                        // init response message
+                        let response = P7Message(withData: messageData, spec: self.spec)
+                        
+                        Logger.debug("READ: \(response.name!)")
+                        
+                        return response
+                    }
+                }
+                else {
+                    Logger.error("Nothing read, abort")
+                }
             }
         }
         
@@ -496,7 +500,4 @@ public class P7Socket: NSObject {
     private func configureChecksum() {
         self.checksumEnabled = true
     }
-    
-    
-    
 }

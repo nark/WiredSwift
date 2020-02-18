@@ -10,7 +10,14 @@ import Foundation
 
 
 
+/**
+ This class handles messages of the Wired protocol. A message
+ can be created empty, or loaded from XML string or serialized
+ Data object. The class provides a set of tools to manipulated
+ messages and their data.
 
+@author Rafaël Warnault (mailto:dev@read-write.fr)
+*/
 public class P7Message: NSObject {
     public var id: String!
     public var name: String!
@@ -214,14 +221,14 @@ public class P7Message: NSObject {
                         }
                     }
                 } else {
-                    print("ERROR: Unknow message")
+                    Logger.error("ERROR: Unknow message")
                 }
             } else {
-                print("ERROR: Missing message name")
+                Logger.error("ERROR: Missing message name")
             }
             
         } catch {
-            print("ERROR: Cannot parse XML message")
+            Logger.error("ERROR: Cannot parse XML message")
         }
     }
     
@@ -229,6 +236,8 @@ public class P7Message: NSObject {
     
     private func loadBinaryMessage(_ data: Data) {
         var offset = 0
+        
+        print(data.toHex())
         
         let messageIDData = data.subdata(in: 0..<4)
         
@@ -251,6 +260,8 @@ public class P7Message: NSObject {
                 
                 if let specField = spec.fieldsByID[fieldID] {
                     var fieldLength = 0
+                    
+                    //Logger.debug("READ field: \(specField.name) [\(fieldID)]")
                     
                     // read length if needed
                     if specField.type == .string || specField.type == .data || specField.type == .list {
@@ -299,6 +310,7 @@ public class P7Message: NSObject {
                             
                         }
                         else if specField.type == .data {
+                            print(fieldData.toHex())
                             self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .oobdata {
@@ -313,14 +325,14 @@ public class P7Message: NSObject {
                     offset += fieldLength
                     
                 } else {
-                    print("ERROR : Unknow field ID")
+                    Logger.error("ERROR : Unknow field ID: \(fieldID)")
                     return
                 }
                 
             }
         
         } else {
-            print("ERROR : Unknow message ID")
+            Logger.error("ERROR : Unknow message ID")
             return
         }
     }

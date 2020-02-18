@@ -37,6 +37,8 @@ class ConnectController: ConnectionController, ConnectionDelegate {
         url.password = passwordField.stringValue
         
         self.connection = Connection(withSpec: spec, delegate: self)
+        self.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? self.connection.nick
+        self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
         
         self.progressIndicator.startAnimation(sender)
         

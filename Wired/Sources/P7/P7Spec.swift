@@ -332,7 +332,16 @@ public class P7Spec: NSObject, XMLParserDelegate {
     }
     
     
-    
+    /**
+    Check whether the given specification name and version
+     are compatible with the current protocol.
+
+    - Parameters:
+        - name: The name of your spec (here, Wired)
+        - version: The version of the given spec
+
+    - Returns: A boolean set to `true` if compatible
+    */
     public func isCompatibleWithProtocol(withName name:String, version: String) -> Bool {
         // TODO: check compatibility
         return true
