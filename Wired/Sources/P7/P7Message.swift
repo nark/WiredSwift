@@ -11,10 +11,10 @@ import Foundation
 
 
 /**
- This class handles messages of the Wired protocol. A message
- can be created empty, or loaded from XML string or serialized
- Data object. The class provides a set of tools to manipulated
- messages and their data.
+ This class handles messages of the Wired protocol. A message can
+ be created empty for specification name, loaded from XML string or
+ serialized Data object. The class provides a set of tools to manipulate
+ messages and their data in those various formats.
 
 @author Rafaël Warnault (mailto:dev@read-write.fr)
 */
@@ -25,6 +25,7 @@ public class P7Message: NSObject {
     public var specMessage: SpecMessage!
     
     private var parameters: [String:Any] = [:]
+    
     
     public init(withName name: String, spec: P7Spec) {
         if let specMessage = spec.messagesByName[name] {
@@ -120,7 +121,7 @@ public class P7Message: NSObject {
                     p.setStringValue(String(val), resolvingEntities: false)
                 }
             }
-            // TODO: all types
+            // TODO: complete all types
         
             p.addAttribute(XMLNode.attribute(withName: "name", stringValue: field) as! XMLNode)
             msg.addChild(p)
@@ -338,6 +339,7 @@ public class P7Message: NSObject {
                             //print(fieldData.toHex())
                         }
                         
+                        // TODO: complete all types
                     }
                     
                     offset += fieldLength

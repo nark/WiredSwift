@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class InfoViewController: ConnectionController, ConnectionDelegate {
+class InfosViewController: ConnectionController, ConnectionDelegate {
     
     @IBOutlet weak var bannerImage: NSImageView!
     @IBOutlet weak var serverName: NSTextField!

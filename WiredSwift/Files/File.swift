@@ -1,5 +1,5 @@
 //
-//  FilesController.swift
+//  File.swift
 //  WiredSwift
 //
 //  Created by Rafael Warnault on 19/02/2020.
@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-
 
 extension Notification.Name {
     static let didLoadDirectory = Notification.Name("didLoadDirectory")
@@ -117,8 +116,6 @@ public class File: ConnectionObject, ConnectionDelegate {
             if child.parentPath() == self.path {
                 children.append(File(message, connection: self.connection))
             }
-            
-            //NotificationCenter.default.post(name: .didLoadDirectory, object: self)
         }
         else if message.name == "wired.file.file_list.done" {
             // send reload notification
@@ -130,31 +127,5 @@ public class File: ConnectionObject, ConnectionDelegate {
     
     public func connectionDidReceiveError(connection: Connection, message: P7Message) {
         
-    }
-}
-
-
-
-public class FilesController: ConnectionObject {
-    var rootFile:File!
-    
-    public override init(_ connection: Connection) {
-        super.init(connection)
-        
-        self.rootFile = File("/", connection: connection)
-    }
-    
-    public convenience init(withRoot root: String, connection: Connection) {
-        self.init(connection)
-                
-        self.rootFile = File(root, connection: connection)
-    }
-    
-    public func load(ofFile file:File?) {
-        if let f = file {
-            f.load()
-        } else {
-            rootFile.load()
-        }
     }
 }

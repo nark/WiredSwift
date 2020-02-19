@@ -745,7 +745,7 @@
                         <tabViewItem label="Boards" identifier="Boards" image="Boards" id="iNJ-Tq-Z8w"/>
                         <tabViewItem label="Files" identifier="Files" image="Folder" id="H0W-Jc-7xD"/>
                         <tabViewItem label="Transfers" identifier="Transfers" image="Transfers" id="nAk-3H-O3d"/>
-                        <tabViewItem label="Server Infos" identifier="Server Infos" image="NSInfo" id="kwh-Mn-xwa"/>
+                        <tabViewItem label="Infos" identifier="Server Infos" image="NSInfo" id="kwh-Mn-xwa"/>
                         <tabViewItem label="Settings" identifier="Settings" image="Settings" id="1eI-F4-NAf"/>
                     </tabViewItems>
                     <tabView key="tabView" type="noTabsNoBorder" id="XZ1-2T-hae">
@@ -776,13 +776,13 @@
             <objects>
                 <viewController title="Messages" id="g4d-sB-0ey" sceneMemberID="viewController">
                     <view key="view" id="N17-9e-1DH">
-                        <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                        <rect key="frame" x="0.0" y="0.0" width="767" height="512"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </view>
                 </viewController>
                 <customObject id="8CZ-Qn-Zq0" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="4135" y="-621"/>
+            <point key="canvasLocation" x="4293.5" y="-515"/>
         </scene>
         <!--Resources Controller-->
         <scene sceneID="swF-bF-cRk">
@@ -1271,7 +1271,7 @@ DQ
         <!--Info-->
         <scene sceneID="87Z-Qy-Zle">
             <objects>
-                <viewController title="Info" id="xaP-SN-ZI5" customClass="InfoViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Info" id="xaP-SN-ZI5" customClass="InfosViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="vOC-4C-Ri6">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="402"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1339,13 +1339,13 @@ DQ
             <objects>
                 <viewController title="Transfers" id="r5t-wK-RQX" sceneMemberID="viewController">
                     <view key="view" id="rVS-6N-2tM">
-                        <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                        <rect key="frame" x="0.0" y="0.0" width="771" height="484"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </view>
                 </viewController>
                 <customObject id="OMy-Ak-LkV" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3547" y="-984"/>
+            <point key="canvasLocation" x="3638" y="-946"/>
         </scene>
     </scenes>
     <resources>

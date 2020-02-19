@@ -42,7 +42,7 @@
 		4CD0205D22DF11920008B36C /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
 		4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0206022E0FCE20008B36C /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; };
-		4CD8C47723FD25BD002895C1 /* InfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47623FD25BD002895C1 /* InfoViewController.swift */; };
+		4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47623FD25BD002895C1 /* InfosViewController.swift */; };
 		4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47823FD2C31002895C1 /* FilesViewController.swift */; };
 		4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
 		4CED2FC022E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
@@ -58,6 +58,7 @@
 		4CED2FCD22E9A7FD000E5B9E /* P7Cipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */; };
 		4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB123FD57CA0097E37E /* FilesController.swift */; };
 		4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */; };
+		4CEF0AB623FDD4DD0097E37E /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB523FDD4DD0097E37E /* File.swift */; };
 		4CFA18C2230B07D100E2A2EC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4CFA18C5230B085D00E2A2EC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
@@ -150,7 +151,7 @@
 		4CD0205022DF04BD0008B36C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4CD0205A22DF07B60008B36C /* P7Spec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Spec.swift; sourceTree = "<group>"; };
 		4CD0205C22DF11920008B36C /* wired.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = wired.xml; sourceTree = "<group>"; };
-		4CD8C47623FD25BD002895C1 /* InfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoViewController.swift; sourceTree = "<group>"; };
+		4CD8C47623FD25BD002895C1 /* InfosViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfosViewController.swift; sourceTree = "<group>"; };
 		4CD8C47823FD2C31002895C1 /* FilesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesViewController.swift; sourceTree = "<group>"; };
 		4CED2FBE22E8EF90000E5B9E /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoSwift.framework; path = Carthage/Build/Mac/CryptoSwift.framework; sourceTree = SOURCE_ROOT; };
@@ -158,6 +159,7 @@
 		4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Cipher.swift; sourceTree = "<group>"; };
 		4CEF0AB123FD57CA0097E37E /* FilesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesController.swift; sourceTree = "<group>"; };
 		4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionObject.swift; sourceTree = "<group>"; };
+		4CEF0AB523FDD4DD0097E37E /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
 		4CFA18C1230B07D100E2A2EC /* String.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.swift; sourceTree = "<group>"; };
 		4CFA18C3230B07E500E2A2EC /* Data.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
 		4CFA18C7230B359300E2A2EC /* ChatController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatController.swift; sourceTree = "<group>"; };
@@ -202,6 +204,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4C374D9923FDD6A9006D3E7C /* Boards */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Boards;
+			sourceTree = "<group>";
+		};
 		4C4C3EF622E1164700BC2DD9 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -241,29 +250,19 @@
 			isa = PBXGroup;
 			children = (
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
-				4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */,
-				4CFA18C9230B389B00E2A2EC /* ConnectionController.swift */,
-				4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */,
-				4CFB162223FC9883000EE688 /* ConnectionWindowController.swift */,
-				4C74286322DCECE800D6E6F9 /* ConnectController.swift */,
-				4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */,
-				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
-				4CFA18CD230B3B2900E2A2EC /* UserController.swift */,
-				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
-				4CD8C47623FD25BD002895C1 /* InfoViewController.swift */,
-				4CD8C47823FD2C31002895C1 /* FilesViewController.swift */,
-				4CEF0AB123FD57CA0097E37E /* FilesController.swift */,
-				4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */,
-				4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */,
-				4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */,
-				4CFB161C23FC843C000EE688 /* Bookmark+CoreDataProperties.swift */,
-				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
-				4C74286722DCECE900D6E6F9 /* Main.storyboard */,
-				4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */,
-				4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */,
-				4C74286A22DCECE900D6E6F9 /* Info.plist */,
+				4CEF0ABA23FDD5EA0097E37E /* Connections */,
+				4CEF0ABC23FDD6190097E37E /* Chats */,
+				4CEF0ABB23FDD6000097E37E /* Users */,
+				4CEF0AC023FDD66F0097E37E /* Messages */,
+				4C374D9923FDD6A9006D3E7C /* Boards */,
+				4CEF0AB723FDD5950097E37E /* Files */,
+				4CEF0ABF23FDD6650097E37E /* Transfers */,
+				4CEF0ABD23FDD6430097E37E /* Infos */,
+				4CEF0AB823FDD5A50097E37E /* Preferences */,
+				4CEF0AB923FDD5B80097E37E /* Core Data */,
+				4CEF0ABE23FDD64E0097E37E /* UI */,
 				4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */,
-				4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */,
+				4C74286A22DCECE900D6E6F9 /* Info.plist */,
 			);
 			path = WiredSwift;
 			sourceTree = "<group>";
@@ -281,6 +280,98 @@
 				4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */,
 			);
 			path = Wired;
+			sourceTree = "<group>";
+		};
+		4CEF0AB723FDD5950097E37E /* Files */ = {
+			isa = PBXGroup;
+			children = (
+				4CD8C47823FD2C31002895C1 /* FilesViewController.swift */,
+				4CEF0AB123FD57CA0097E37E /* FilesController.swift */,
+				4CEF0AB523FDD4DD0097E37E /* File.swift */,
+			);
+			path = Files;
+			sourceTree = "<group>";
+		};
+		4CEF0AB823FDD5A50097E37E /* Preferences */ = {
+			isa = PBXGroup;
+			children = (
+				4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */,
+				4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */,
+			);
+			path = Preferences;
+			sourceTree = "<group>";
+		};
+		4CEF0AB923FDD5B80097E37E /* Core Data */ = {
+			isa = PBXGroup;
+			children = (
+				4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */,
+				4CFB161C23FC843C000EE688 /* Bookmark+CoreDataProperties.swift */,
+				4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */,
+			);
+			path = "Core Data";
+			sourceTree = "<group>";
+		};
+		4CEF0ABA23FDD5EA0097E37E /* Connections */ = {
+			isa = PBXGroup;
+			children = (
+				4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */,
+				4CFA18C9230B389B00E2A2EC /* ConnectionController.swift */,
+				4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */,
+				4CFB162223FC9883000EE688 /* ConnectionWindowController.swift */,
+				4C74286322DCECE800D6E6F9 /* ConnectController.swift */,
+				4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */,
+			);
+			path = Connections;
+			sourceTree = "<group>";
+		};
+		4CEF0ABB23FDD6000097E37E /* Users */ = {
+			isa = PBXGroup;
+			children = (
+				4CFA18CD230B3B2900E2A2EC /* UserController.swift */,
+				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
+			);
+			path = Users;
+			sourceTree = "<group>";
+		};
+		4CEF0ABC23FDD6190097E37E /* Chats */ = {
+			isa = PBXGroup;
+			children = (
+				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
+			);
+			path = Chats;
+			sourceTree = "<group>";
+		};
+		4CEF0ABD23FDD6430097E37E /* Infos */ = {
+			isa = PBXGroup;
+			children = (
+				4CD8C47623FD25BD002895C1 /* InfosViewController.swift */,
+			);
+			path = Infos;
+			sourceTree = "<group>";
+		};
+		4CEF0ABE23FDD64E0097E37E /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				4C74286722DCECE900D6E6F9 /* Main.storyboard */,
+				4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */,
+				4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */,
+				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		4CEF0ABF23FDD6650097E37E /* Transfers */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Transfers;
+			sourceTree = "<group>";
+		};
+		4CEF0AC023FDD66F0097E37E /* Messages */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Messages;
 			sourceTree = "<group>";
 		};
 		4CFA18BC230B076A00E2A2EC /* Crypto */ = {
@@ -464,6 +555,7 @@
 				4CFA18C5230B085D00E2A2EC /* String.swift in Sources */,
 				4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */,
 				4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
+				4CEF0AB623FDD4DD0097E37E /* File.swift in Sources */,
 				4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
 				4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */,
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
@@ -471,7 +563,7 @@
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UserController.swift in Sources */,
-				4CD8C47723FD25BD002895C1 /* InfoViewController.swift in Sources */,
+				4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */,
 				4C4C3EF122E1154900BC2DD9 /* P7Message.swift in Sources */,
 				4CFB161E23FC843C000EE688 /* Bookmark+CoreDataProperties.swift in Sources */,
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,

@@ -48,24 +48,9 @@ public class P7Cipher {
     
     
     public func decrypt(data: Data) -> Data? {
-        //print(data.toHex())
-        
         do {
             let aes = try AES(key: Array(self.cipherKey.data(using: .utf8)!), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
-            
             var dataArray = Array(data)
-            
-            // remove extra padded length if needed...
-//            if data.count % 16 != 0 {
-//                print("MODULO OK")
-//                dataArray.removeSubrange(data.count-4..<data.count)
-//                if dataArray.starts(with: [0x00, 0x00]) {
-//                    dataArray.removeSubrange(0..<4)
-//                } else {
-//                    dataArray.removeSubrange(data.count-4..<data.count)
-//                }
-//            }
-
             let decryptedData = try aes.decrypt(dataArray)
             
             return Data(decryptedData)

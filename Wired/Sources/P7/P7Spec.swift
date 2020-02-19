@@ -178,6 +178,18 @@ public class P7Spec: NSObject, XMLParserDelegate {
     private var currentMessage: SpecMessage?
     
     public var path: String?
+
+    /**
+     The following XML long string contains the built-in XSD
+     specification against which the Wired protocol is built.
+     
+     This part of the specification is responsible of the connection
+     handshake, setup of encryption, compression settings, and compatibility
+     check between peers.
+     
+     This scheame is automatically loaded alongside the hosted
+     specification loaded at `init()`
+     */
     public var p7xml: String = """
 <?xml version="1.0" encoding="UTF-8"?>
 <p7:protocol xmlns:p7="http://wired.read-write.fr/P7/Specification"
@@ -310,7 +322,15 @@ public class P7Spec: NSObject, XMLParserDelegate {
 """
     
     
-    
+    /**
+     Init a new specification object for a given XML
+     specification file.
+
+    - Parameters:
+        - path: The path of your XML specification file
+
+    - Returns: An instance of P7Spec
+    */
     public init(withPath path: String? = nil) {
         super.init()
         
@@ -356,6 +376,14 @@ public class P7Spec: NSObject, XMLParserDelegate {
     }
     
     
+    /**
+     Returns an error for a given P7 Message
+
+    - Parameters:
+        - message: The error message
+
+    - Returns: An instance of SpecError
+    */
     public func error(forMessage message: P7Message) -> SpecError?{
         if let errorID = message.enumeration(forField: "wired.error") {
             return errorsByID[Int(errorID)]
@@ -363,12 +391,11 @@ public class P7Spec: NSObject, XMLParserDelegate {
         return nil
     }
     
-    public func errorMessage(forID id:UInt32) -> SpecError? {
-        return errorsByID[Int(id)]
-    }
+
     
-    
-    
+    /**
+     XMLParser parser method
+    */
     public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
         if elementName == "p7:field" {
             self.loadField(attributeDict)

@@ -12,6 +12,7 @@ import Cocoa
 extension NSTextView {
     func appendString(string:String) {
         let attrs: [NSAttributedString.Key: Any] = [
+            NSAttributedString.Key.foregroundColor : NSColor.controlTextColor,
             .font : NSFont(name: "Courier", size: 14) as Any
         ]
         
@@ -31,7 +32,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+                        
         UserDefaults.standard.addObserver(self, forKeyPath: "WSUserNick", options: NSKeyValueObservingOptions.new, context: nil)
     }
     

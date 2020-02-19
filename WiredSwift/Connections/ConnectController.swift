@@ -111,7 +111,7 @@ class ConnectController: ConnectionController, ConnectionDelegate {
                         }
                         
                         for item in tabViewController.tabViewItems {
-                            if let connectionController = item.viewController as? InfoViewController {
+                            if let connectionController = item.viewController as? InfosViewController {
                                 connectionController.representedObject = self.connection
                             }
                             else if let connectionController = item.viewController as? FilesViewController {
