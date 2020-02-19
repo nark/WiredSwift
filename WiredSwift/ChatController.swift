@@ -23,6 +23,7 @@ extension NSTextView {
 
 class ChatController: ConnectionController, ConnectionDelegate {
     @IBOutlet var chatTextView: NSTextView!
+    @IBOutlet var chatInput: NSTextField!
     
     private var users:[UserInfo] = []
     
@@ -34,7 +35,11 @@ class ChatController: ConnectionController, ConnectionDelegate {
         UserDefaults.standard.addObserver(self, forKeyPath: "WSUserNick", options: NSKeyValueObservingOptions.new, context: nil)
     }
     
-    
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        
+        chatInput.becomeFirstResponder()
+    }
     
     override var representedObject: Any? {
         didSet {

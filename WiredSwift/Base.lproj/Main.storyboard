@@ -744,6 +744,7 @@
                         <tabViewItem label="Messages" identifier="Messages" image="Messages" id="wMt-Lo-Jbn"/>
                         <tabViewItem label="Boards" identifier="Boards" image="Boards" id="iNJ-Tq-Z8w"/>
                         <tabViewItem label="Files" identifier="Files" image="Folder" id="H0W-Jc-7xD"/>
+                        <tabViewItem label="Transfers" identifier="Transfers" image="Transfers" id="nAk-3H-O3d"/>
                         <tabViewItem label="Server Infos" identifier="Server Infos" image="NSInfo" id="kwh-Mn-xwa"/>
                         <tabViewItem label="Settings" identifier="Settings" image="Settings" id="1eI-F4-NAf"/>
                     </tabViewItems>
@@ -761,6 +762,7 @@
                         <segue destination="g4d-sB-0ey" kind="relationship" relationship="tabItems" id="0Sc-0q-Glo"/>
                         <segue destination="qki-Hn-Vmk" kind="relationship" relationship="tabItems" id="FIK-Qj-QXk"/>
                         <segue destination="DVd-lO-xhs" kind="relationship" relationship="tabItems" id="gJJ-hy-Hz7"/>
+                        <segue destination="r5t-wK-RQX" kind="relationship" relationship="tabItems" id="2Uy-7l-We9"/>
                         <segue destination="xaP-SN-ZI5" kind="relationship" relationship="tabItems" id="Itu-0c-y00"/>
                         <segue destination="tIF-Fn-L6g" kind="relationship" relationship="tabItems" id="XjP-Em-EIH"/>
                     </connections>
@@ -1048,12 +1050,12 @@ DQ
                         <rect key="frame" x="0.0" y="0.0" width="699" height="464"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="75H-lt-M0V">
+                            <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="75H-lt-M0V">
                                 <rect key="frame" x="0.0" y="0.0" width="699" height="42"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="42" id="gAw-kC-77q"/>
                                 </constraints>
-                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" drawsBackground="YES" id="Xmn-2G-9XQ">
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" focusRingType="none" drawsBackground="YES" id="Xmn-2G-9XQ">
                                     <font key="font" usesAppearanceFont="YES"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1101,6 +1103,7 @@ DQ
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="chatInput" destination="75H-lt-M0V" id="jwH-I0-CqR"/>
                         <outlet property="chatTextView" destination="Fny-W1-hPV" id="hDD-Ac-V3L"/>
                     </connections>
                 </viewController>
@@ -1331,6 +1334,19 @@ DQ
             </objects>
             <point key="canvasLocation" x="3660" y="-1425"/>
         </scene>
+        <!--Transfers-->
+        <scene sceneID="jvv-j0-r98">
+            <objects>
+                <viewController title="Transfers" id="r5t-wK-RQX" sceneMemberID="viewController">
+                    <view key="view" id="rVS-6N-2tM">
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </view>
+                </viewController>
+                <customObject id="OMy-Ak-LkV" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3547" y="-984"/>
+        </scene>
     </scenes>
     <resources>
         <image name="Boards" width="32" height="32"/>
@@ -1340,5 +1356,6 @@ DQ
         <image name="NSActionTemplate" width="14" height="14"/>
         <image name="NSInfo" width="32" height="32"/>
         <image name="Settings" width="32" height="32"/>
+        <image name="Transfers" width="32" height="32"/>
     </resources>
 </document>
