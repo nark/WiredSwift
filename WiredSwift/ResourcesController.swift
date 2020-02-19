@@ -37,15 +37,7 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
         resourcesOutlineView.target = self
         resourcesOutlineView.doubleAction = #selector(doubleClickResource)
     }
-    
-    
-    override func viewDidDisappear() {
-        super.viewDidDisappear()
-        
-        if self.connection != nil {
-            ConnectionsController.shared.removeConnection(self.connection)
-        }
-    }
+
     
 
 

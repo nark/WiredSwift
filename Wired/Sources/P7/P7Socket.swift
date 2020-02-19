@@ -210,7 +210,7 @@ public class P7Socket: NSObject {
     
     public func read() -> P7Message? {
         // hack to handle remote connection for now
-        usleep(200000)
+        usleep(100000)
         
         var messageData = Data()
         var lengthBuffer = [Byte](repeating: 0, count: 4)

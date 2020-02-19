@@ -42,6 +42,8 @@
 		4CD0205D22DF11920008B36C /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
 		4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0206022E0FCE20008B36C /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; };
+		4CD8C47723FD25BD002895C1 /* InfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47623FD25BD002895C1 /* InfoViewController.swift */; };
+		4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47823FD2C31002895C1 /* FilesViewController.swift */; };
 		4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
 		4CED2FC022E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
 		4CED2FC222E8F4AC000E5B9E /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
@@ -54,6 +56,8 @@
 		4CED2FCA22E8FA4F000E5B9E /* CryptoSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */; };
 		4CED2FCD22E9A7FD000E5B9E /* P7Cipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */; };
+		4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB123FD57CA0097E37E /* FilesController.swift */; };
+		4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */; };
 		4CFA18C2230B07D100E2A2EC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4CFA18C5230B085D00E2A2EC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
@@ -146,10 +150,14 @@
 		4CD0205022DF04BD0008B36C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4CD0205A22DF07B60008B36C /* P7Spec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Spec.swift; sourceTree = "<group>"; };
 		4CD0205C22DF11920008B36C /* wired.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = wired.xml; sourceTree = "<group>"; };
+		4CD8C47623FD25BD002895C1 /* InfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoViewController.swift; sourceTree = "<group>"; };
+		4CD8C47823FD2C31002895C1 /* FilesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesViewController.swift; sourceTree = "<group>"; };
 		4CED2FBE22E8EF90000E5B9E /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoSwift.framework; path = Carthage/Build/Mac/CryptoSwift.framework; sourceTree = SOURCE_ROOT; };
 		4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptorRSA.framework; path = Carthage/Build/Mac/CryptorRSA.framework; sourceTree = SOURCE_ROOT; };
 		4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Cipher.swift; sourceTree = "<group>"; };
+		4CEF0AB123FD57CA0097E37E /* FilesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesController.swift; sourceTree = "<group>"; };
+		4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionObject.swift; sourceTree = "<group>"; };
 		4CFA18C1230B07D100E2A2EC /* String.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = String.swift; sourceTree = "<group>"; };
 		4CFA18C3230B07E500E2A2EC /* Data.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Data.swift; sourceTree = "<group>"; };
 		4CFA18C7230B359300E2A2EC /* ChatController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatController.swift; sourceTree = "<group>"; };
@@ -233,6 +241,7 @@
 			isa = PBXGroup;
 			children = (
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
+				4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */,
 				4CFA18C9230B389B00E2A2EC /* ConnectionController.swift */,
 				4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */,
 				4CFB162223FC9883000EE688 /* ConnectionWindowController.swift */,
@@ -241,6 +250,9 @@
 				4CFA18C7230B359300E2A2EC /* ChatController.swift */,
 				4CFA18CD230B3B2900E2A2EC /* UserController.swift */,
 				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
+				4CD8C47623FD25BD002895C1 /* InfoViewController.swift */,
+				4CD8C47823FD2C31002895C1 /* FilesViewController.swift */,
+				4CEF0AB123FD57CA0097E37E /* FilesController.swift */,
 				4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */,
 				4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */,
 				4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */,
@@ -450,13 +462,16 @@
 				4C0A99F623FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift in Sources */,
 				4CFA18D5230C741800E2A2EC /* UserInfo.swift in Sources */,
 				4CFA18C5230B085D00E2A2EC /* String.swift in Sources */,
+				4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */,
 				4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
 				4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
 				4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */,
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4CFB161A23FC7D01000EE688 /* WiredSwift.xcdatamodeld in Sources */,
+				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UserController.swift in Sources */,
+				4CD8C47723FD25BD002895C1 /* InfoViewController.swift in Sources */,
 				4C4C3EF122E1154900BC2DD9 /* P7Message.swift in Sources */,
 				4CFB161E23FC843C000EE688 /* Bookmark+CoreDataProperties.swift in Sources */,
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
@@ -468,6 +483,7 @@
 				4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */,
 				4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */,
 				4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */,
+				4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */,
 				4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */,
 				4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */,
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,

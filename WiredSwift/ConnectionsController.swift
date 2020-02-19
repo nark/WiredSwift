@@ -17,6 +17,8 @@ class ConnectionsController {
     public static let shared = ConnectionsController()
     
     var connections:[Connection] = []
+    var filesControllers:[FilesController] = []
+    
     
     private init() {
 
@@ -37,9 +39,7 @@ class ConnectionsController {
     }
     
     public func addConnection(withBookmark bookmark: Bookmark) {
-//        let connection = Connection(withSpec: spec, delegate: self)
-//        connection.nick = bookmark.nick ?? UserDefaults.standard.string(forKey: "WSUserNick")
-//        connection.status = bookmark.status ?? UserDefaults.standard.string(forKey: "WSUserStatus")
+
     }
     
     
@@ -84,5 +84,25 @@ class ConnectionsController {
             
             context.delete(bookmark)
         }
+    }
+    
+    
+    // MARK: -
+    
+    public func filesController(forConnection connection:Connection) -> FilesController {
+        var filesController:FilesController? = nil
+        
+        let exists = filesControllers.contains { (fc) -> Bool in
+            if fc.connection == connection {
+                filesController = fc
+            }
+            return fc.connection == connection
+        }
+        
+        if !exists {
+            filesController = FilesController(connection)
+        }
+        
+        return filesController!
     }
 }

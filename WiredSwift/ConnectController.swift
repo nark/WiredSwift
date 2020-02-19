@@ -109,6 +109,15 @@ class ConnectController: ConnectionController, ConnectionDelegate {
                             self.view.window!.performClose(nil)
                             connectionWindowController.window?.mergeAllWindows(self)
                         }
+                        
+                        for item in tabViewController.tabViewItems {
+                            if let connectionController = item.viewController as? InfoViewController {
+                                connectionController.representedObject = self.connection
+                            }
+                            else if let connectionController = item.viewController as? FilesViewController {
+                                connectionController.representedObject = self.connection
+                            }
+                        }
                     }
                 }
             }

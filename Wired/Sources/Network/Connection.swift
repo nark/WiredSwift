@@ -9,7 +9,7 @@
 import Foundation
 import Dispatch
 
-public protocol ConnectionDelegate {
+public protocol ConnectionDelegate: class {
     func connectionDidConnect(connection: Connection)
     func connectionDidFailToConnect(connection: Connection, error: Error)
     func connectionDisconnected(connection: Connection, error: Error?)
@@ -36,6 +36,17 @@ public class Connection: NSObject {
         
         if let d = delegate {
             self.delegates.append(d)
+        }
+    }
+    
+    
+    public func addDelegate(_ delegate:ConnectionDelegate) {
+        self.delegates.append(delegate)
+    }
+    
+    public func removeDelegate(_ delegate:ConnectionDelegate) {
+        if let index = delegates.firstIndex(where: { $0 === delegate }) {
+            delegates.remove(at: index)
         }
     }
     
@@ -102,7 +113,7 @@ public class Connection: NSObject {
     private func listen() {
         DispatchQueue.global().async {
             while (true) {
-                Logger.debug("listen try to read")
+                //Logger.debug("listen try to read")
                 if let message = self.socket.read() {
                     self.handleMessage(message)
                 }

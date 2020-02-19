@@ -99,7 +99,7 @@ public class P7Message: NSObject {
     }
     
     
-    public func xml() -> String {
+    public func xml(pretty: Bool = false) -> String {
         let msg = XMLElement(name: "p7:message")
         let xml = XMLDocument(rootElement: msg)
         
@@ -125,8 +125,14 @@ public class P7Message: NSObject {
             p.addAttribute(XMLNode.attribute(withName: "name", stringValue: field) as! XMLNode)
             msg.addChild(p)
         }
-
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xml.xmlString(options: .nodePromoteSignificantWhitespace) + "\r\n"
+        
+        var options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue
+        
+        if pretty {
+            options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue | XMLNode.Options.nodePrettyPrint.rawValue
+        }
+        
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xml.xmlString(options: XMLNode.Options(rawValue: options)) + "\r\n"
     }
     
     

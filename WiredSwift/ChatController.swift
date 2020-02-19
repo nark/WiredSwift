@@ -35,14 +35,6 @@ class ChatController: ConnectionController, ConnectionDelegate {
     }
     
     
-    override func viewDidDisappear() {
-        if let c = self.connection {
-            c.disconnect()
-        }
-        super.viewDidDisappear()
-    }
-    
-    
     
     override var representedObject: Any? {
         didSet {

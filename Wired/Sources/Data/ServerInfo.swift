@@ -21,7 +21,7 @@ public class ServerInfo {
     public var supportRSRC: Bool!
     public var serverName: String!
     public var serverDescription: String!
-    public var serverBanner: String!
+    public var serverBanner: Data!
     
     private var message: P7Message!
     
@@ -64,7 +64,7 @@ public class ServerInfo {
             self.serverDescription = v
         }
         
-        if let v = message.string(forField: "wired.info.banner") {
+        if let v = message.data(forField: "wired.info.banner") {
             self.serverBanner = v
         }
     }

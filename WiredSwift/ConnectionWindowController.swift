@@ -16,5 +16,15 @@ class ConnectionWindowController: NSWindowController {
     
         // Implement this method to handle any initialization after your window controller's window has been loaded from its nib file.
     }
+    
+    
+    override func close() {
+        if self.connection != nil {
+            ConnectionsController.shared.removeConnection(self.connection)
+            self.connection.disconnect()
+        }
+    
+        super.close()
+    }
 
 }
