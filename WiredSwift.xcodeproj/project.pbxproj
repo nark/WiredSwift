@@ -133,6 +133,7 @@
 		4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = GeneralPreferenceViewController.xib; sourceTree = "<group>"; };
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		4C374D9B23FDE02E006D3E7C /* swift.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; name = swift.yml; path = .github/workflows/swift.yml; sourceTree = "<group>"; };
 		4C4C3EDE22E10B2000BC2DD9 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
 		4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Socket.swift; sourceTree = "<group>"; };
 		4C4C3EE422E10C3700BC2DD9 /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
@@ -231,6 +232,7 @@
 				4C0A99F023FBD4F30008A7A6 /* LICENSE */,
 				4C1319AE231862DF00C9FA0C /* README.md */,
 				4C4C3EDE22E10B2000BC2DD9 /* Cartfile */,
+				4C374D9B23FDE02E006D3E7C /* swift.yml */,
 				4C74286022DCECE800D6E6F9 /* WiredSwift */,
 				4CD0204E22DF04BD0008B36C /* Wired */,
 				4C74285F22DCECE800D6E6F9 /* Products */,
