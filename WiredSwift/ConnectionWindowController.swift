@@ -14,17 +14,30 @@ class ConnectionWindowController: NSWindowController {
     override func windowDidLoad() {
         super.windowDidLoad()
     
-        // Implement this method to handle any initialization after your window controller's window has been loaded from its nib file.
+        NotificationCenter.default.addObserver(self, selector: #selector(windowWillClose(notification:)), name: NSWindow.willCloseNotification, object: self.window)
+    }
+    
+
+    
+    @objc func windowWillClose(notification: Notification) -> Void {
+        if let w = notification.object as? NSWindow, w == self.window {
+            self.safeCloseWindow()
+            NotificationCenter.default.removeObserver(self)
+        }
     }
     
     
     override func close() {
-        if self.connection != nil {
-            ConnectionsController.shared.removeConnection(self.connection)
-            self.connection.disconnect()
-        }
+        self.safeCloseWindow()
     
         super.close()
     }
 
+    
+    private func safeCloseWindow() {
+        if self.connection != nil {
+            ConnectionsController.shared.removeConnection(self.connection)
+            self.connection.disconnect()
+        }
+    }
 }
