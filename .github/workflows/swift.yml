@@ -11,5 +11,7 @@ jobs:
     - uses: actions/checkout@master
     - name: Force Xcode 11
       run: sudo xcode-select -switch /Applications/Xcode_11.3.app
+    - name: Build dependencies
+      run: carthage update
     - name: Build App
       run: xcodebuild -project "WiredSwift.xcodeproj" -scheme "WiredSwift" -destination "generic/platform=macOS" -configuration Release build CODE_SIGNING_ALLOWED=NO
