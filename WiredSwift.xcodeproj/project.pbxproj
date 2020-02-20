@@ -21,6 +21,9 @@
 		4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C1319AD2316E79F00C9FA0C /* SocketSwift.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C1319AF231862DF00C9FA0C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 4C1319AE231862DF00C9FA0C /* README.md */; };
+		4C374D9D23FE7AE5006D3E7C /* TransfersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */; };
+		4C374D9F23FE7B1C006D3E7C /* Transfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374D9E23FE7B1C006D3E7C /* Transfer.swift */; };
+		4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */; };
 		4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE422E10C3700BC2DD9 /* Connection.swift */; };
@@ -134,6 +137,10 @@
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4C374D9B23FDE02E006D3E7C /* swift.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; name = swift.yml; path = .github/workflows/swift.yml; sourceTree = "<group>"; };
+		4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersController.swift; sourceTree = "<group>"; };
+		4C374D9E23FE7B1C006D3E7C /* Transfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transfer.swift; sourceTree = "<group>"; };
+		4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FilesPreferenceViewController.xib; sourceTree = "<group>"; };
+		4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesPreferenceViewController.swift; sourceTree = "<group>"; };
 		4C4C3EDE22E10B2000BC2DD9 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
 		4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Socket.swift; sourceTree = "<group>"; };
 		4C4C3EE422E10C3700BC2DD9 /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
@@ -299,6 +306,7 @@
 			children = (
 				4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */,
 				4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */,
+				4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */,
 			);
 			path = Preferences;
 			sourceTree = "<group>";
@@ -356,6 +364,7 @@
 			children = (
 				4C74286722DCECE900D6E6F9 /* Main.storyboard */,
 				4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */,
+				4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */,
 				4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */,
 				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
 			);
@@ -365,6 +374,8 @@
 		4CEF0ABF23FDD6650097E37E /* Transfers */ = {
 			isa = PBXGroup;
 			children = (
+				4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */,
+				4C374D9E23FE7B1C006D3E7C /* Transfer.swift */,
 			);
 			path = Transfers;
 			sourceTree = "<group>";
@@ -561,11 +572,13 @@
 				4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
 				4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */,
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
+				4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */,
 				4CFB161A23FC7D01000EE688 /* WiredSwift.xcdatamodeld in Sources */,
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UserController.swift in Sources */,
 				4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */,
+				4C374D9D23FE7AE5006D3E7C /* TransfersController.swift in Sources */,
 				4C4C3EF122E1154900BC2DD9 /* P7Message.swift in Sources */,
 				4CFB161E23FC843C000EE688 /* Bookmark+CoreDataProperties.swift in Sources */,
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
@@ -579,6 +592,7 @@
 				4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */,
 				4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */,
 				4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */,
+				4C374D9F23FE7B1C006D3E7C /* Transfer.swift in Sources */,
 				4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */,
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
 				4C74286222DCECE800D6E6F9 /* AppDelegate.swift in Sources */,

@@ -13,6 +13,7 @@ import KeychainAccess
 
 extension PreferencePane.Identifier {
     static let general  = Identifier("general")
+    static let files = Identifier("files")
     static let advanced = Identifier("advanced")
 }
 
@@ -27,6 +28,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
             GeneralPreferenceViewController(),
+            FilesPreferenceViewController(),
             AdvancedPreferenceViewController()
         ]
     )
