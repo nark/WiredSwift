@@ -37,8 +37,10 @@ class FilesViewController: ConnectionController, ConnectionDelegate, NSBrowserDe
         super.viewDidLoad()
         
         browser.setCellClass(FileCell.self)
+        browser.target = self
+        browser.doubleAction = #selector(doubleClickFile)
         
-        NotificationCenter.default.addObserver(self, selector:  #selector(didLoadDirectory), name: .didLoadDirectory, object: nil)
+        NotificationCenter.default.addObserver(self, selector:  #selector(didLoadDirectory(_:)), name: .didLoadDirectory, object: nil)
     }
     
     
@@ -79,6 +81,17 @@ class FilesViewController: ConnectionController, ConnectionDelegate, NSBrowserDe
             
             browser.reloadColumn(columnIndex)
             self.progressIndicator.stopAnimation(self)
+        }
+    }
+    
+    
+    @objc private func doubleClickFile() {
+        if let clickedItem = browser.item(atRow: browser.clickedRow, inColumn: browser.clickedColumn) {
+            if let file = clickedItem as? File {
+                if !file.isFolder() {
+                    TransfersController.shared.download(file)
+                }
+            }
         }
     }
     

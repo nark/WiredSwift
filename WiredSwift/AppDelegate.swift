@@ -33,6 +33,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ]
     )
     
+    override init() {
+        let downloadsDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        
+        // Default preferences
+        UserDefaults.standard.register(defaults: [
+            "WSUserNick": "WiredSwift",
+            "WSUserStatus": "Share The Wealth",
+            "WSDownloadDirectory": downloadsDirectory,
+        ])
+        
+        UserDefaults.standard.synchronize()
+    }
+    
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // Insert code here to initialize your application
     }
@@ -44,6 +57,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     
     // MARK: - IB Actions
+    @IBAction func showChat(_ sender: Any) {
+        
+    }
+    
+    @IBAction func showMessages(_ sender: Any) {
+        
+    }
+    
+    @IBAction func showBoards(_ sender: Any) {
+        
+    }
+    
+    @IBAction func showFiles(_ sender: Any) {
+        
+    }
+    
+    @IBAction func showTransfers(_ sender: Any) {
+        
+    }
+    
+    @IBAction func showInfos(_ sender: Any) {
+        
+    }
+    
+    @IBAction func showSettings(_ sender: Any) {
+        
+    }
+    
     
     @IBAction func addToBookmarks(_ sender: NSMenuItem) {
         let context = persistentContainer.viewContext
@@ -68,6 +109,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+    
     
     @IBAction func preferencesMenuItemActionHandler(_ sender: NSMenuItem) {
         preferencesWindowController.show()

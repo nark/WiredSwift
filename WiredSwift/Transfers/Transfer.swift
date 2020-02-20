@@ -25,4 +25,24 @@ public class Transfer: ConnectionObject {
         case Removing
         case Finished
     }
+    
+    let state:State!
+    let identifier:String!
+    
+    public override init(_ connection: Connection) {
+        self.state = .Waiting
+        self.identifier = UUID().uuidString
+            
+        super.init(connection)
+    }
+}
+
+
+public class DownloadTransfer : Transfer {
+    
+}
+
+
+public class UploadTransfer : Transfer {
+    
 }

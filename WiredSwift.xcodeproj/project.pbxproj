@@ -24,6 +24,8 @@
 		4C374D9D23FE7AE5006D3E7C /* TransfersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */; };
 		4C374D9F23FE7B1C006D3E7C /* Transfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374D9E23FE7B1C006D3E7C /* Transfer.swift */; };
 		4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */; };
+		4C374DA723FE8655006D3E7C /* TransfersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DA623FE8655006D3E7C /* TransfersViewController.swift */; };
+		4C374DA923FE9E7E006D3E7C /* TransferCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DA823FE9E7E006D3E7C /* TransferCell.swift */; };
 		4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE422E10C3700BC2DD9 /* Connection.swift */; };
@@ -141,6 +143,8 @@
 		4C374D9E23FE7B1C006D3E7C /* Transfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transfer.swift; sourceTree = "<group>"; };
 		4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FilesPreferenceViewController.xib; sourceTree = "<group>"; };
 		4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesPreferenceViewController.swift; sourceTree = "<group>"; };
+		4C374DA623FE8655006D3E7C /* TransfersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersViewController.swift; sourceTree = "<group>"; };
+		4C374DA823FE9E7E006D3E7C /* TransferCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferCell.swift; sourceTree = "<group>"; };
 		4C4C3EDE22E10B2000BC2DD9 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
 		4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Socket.swift; sourceTree = "<group>"; };
 		4C4C3EE422E10C3700BC2DD9 /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
@@ -374,8 +378,10 @@
 		4CEF0ABF23FDD6650097E37E /* Transfers */ = {
 			isa = PBXGroup;
 			children = (
+				4C374DA623FE8655006D3E7C /* TransfersViewController.swift */,
 				4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */,
 				4C374D9E23FE7B1C006D3E7C /* Transfer.swift */,
+				4C374DA823FE9E7E006D3E7C /* TransferCell.swift */,
 			);
 			path = Transfers;
 			sourceTree = "<group>";
@@ -590,6 +596,7 @@
 				4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */,
 				4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */,
 				4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */,
+				4C374DA723FE8655006D3E7C /* TransfersViewController.swift in Sources */,
 				4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */,
 				4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */,
 				4C374D9F23FE7B1C006D3E7C /* Transfer.swift in Sources */,
@@ -597,6 +604,7 @@
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
 				4C74286222DCECE800D6E6F9 /* AppDelegate.swift in Sources */,
 				4CD0206022E0FCE20008B36C /* P7Spec.swift in Sources */,
+				4C374DA923FE9E7E006D3E7C /* TransferCell.swift in Sources */,
 				4C4C3EEB22E1131B00BC2DD9 /* Const.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

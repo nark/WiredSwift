@@ -8,7 +8,12 @@
 
 import Cocoa
 
-class TransfersController {
+extension Notification.Name {
+    static let didAddTransfer = Notification.Name("didAddTransfer")
+}
+
+
+public class TransfersController {
     public static let shared = TransfersController()
     
     var transfers:[Transfer] = []
@@ -17,12 +22,38 @@ class TransfersController {
 
     }
     
+    public func download(_ file:File) -> Bool {
+        guard let downloadPath = self.defaultDownloadDestination(forFile: file) else {
+            return false
+        }
         
-    public func download(_ file:File, toPath:String) -> Bool {
+        return download(file, toPath: downloadPath)
+    }
+        
+    private func download(_ file:File, toPath:String? = nil) -> Bool {
+        let transfer = DownloadTransfer(file.connection)
+        
+        transfers.append(transfer)
+        
+        NotificationCenter.default.post(name: .didAddTransfer, object: transfer)
+        
         return true
     }
     
-    public func upload(_ path:String, toFile:File) -> Bool {
+    private func upload(_ path:String, toFile file:File) -> Bool {
+        let transfer = UploadTransfer(file.connection)
+        
+        NotificationCenter.default.post(name: .didAddTransfer, object: transfer)
+        
         return true
+    }
+    
+    
+    private func defaultDownloadDestination(forFile file:File) -> String? {
+        if let downloadDirectory = UserDefaults.standard.string(forKey: "WSDownloadDirectory") as NSString? {
+        
+            return downloadDirectory.appendingPathComponent(file.name)
+        }
+        return nil
     }
 }

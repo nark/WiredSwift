@@ -603,6 +603,43 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="hB3-LF-h0Y"/>
+                                        <menuItem title="Chat" keyEquivalent="t" id="OFt-Qb-Wp0">
+                                            <connections>
+                                                <action selector="showChat:" target="Ady-hI-5gd" id="OXF-f3-2j1"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Messages" keyEquivalent="e" id="TPL-IX-h3h">
+                                            <connections>
+                                                <action selector="showMessages:" target="Ady-hI-5gd" id="19d-zd-3Zk"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Boards" keyEquivalent="b" id="glT-74-grJ">
+                                            <connections>
+                                                <action selector="showBoards:" target="Ady-hI-5gd" id="cKF-pE-Ngr"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Files" keyEquivalent="f" id="IMb-TD-Ci6">
+                                            <connections>
+                                                <action selector="showFiles:" target="Ady-hI-5gd" id="kIx-2s-Zzr"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Transfers" keyEquivalent="s" id="162-Vh-Eh9">
+                                            <connections>
+                                                <action selector="showTransfers:" target="Ady-hI-5gd" id="gjA-PX-Z04"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Infos" keyEquivalent="i" id="W8B-bW-Mwe">
+                                            <connections>
+                                                <action selector="showInfos:" target="Ady-hI-5gd" id="wtf-aL-ivw"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Settings" keyEquivalent="," id="MIX-13-jna">
+                                            <modifierMask key="keyEquivalentModifierMask" shift="YES" command="YES"/>
+                                            <connections>
+                                                <action selector="showSettings:" target="Ady-hI-5gd" id="tVu-uW-RO8"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="qGn-AX-UZm"/>
                                         <menuItem title="Show Sidebar" keyEquivalent="s" id="kIP-vf-haE">
                                             <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
                                             <connections>
@@ -1337,18 +1374,18 @@ DQ
         <!--Transfers-->
         <scene sceneID="jvv-j0-r98">
             <objects>
-                <viewController title="Transfers" id="r5t-wK-RQX" customClass="TransfersController" sceneMemberID="viewController">
+                <viewController title="Transfers" id="r5t-wK-RQX" customClass="TransfersViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="rVS-6N-2tM">
                         <rect key="frame" x="0.0" y="0.0" width="771" height="484"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="82" horizontalPageScroll="10" verticalLineScroll="82" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="981-dJ-j6n">
+                            <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="62" horizontalPageScroll="10" verticalLineScroll="62" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="981-dJ-j6n">
                                 <rect key="frame" x="0.0" y="32" width="771" height="453"/>
                                 <clipView key="contentView" id="x7j-kv-FYM">
                                     <rect key="frame" x="0.0" y="0.0" width="771" height="453"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="80" viewBased="YES" id="cX7-gW-ed1">
+                                        <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" alternatingRowBackgroundColors="YES" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="60" viewBased="YES" id="cX7-gW-ed1">
                                             <rect key="frame" x="0.0" y="0.0" width="771" height="453"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
@@ -1368,20 +1405,61 @@ DQ
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView id="QOv-Dm-Cq7">
-                                                            <rect key="frame" x="1" y="1" width="767" height="17"/>
+                                                        <tableCellView identifier="TransferCell" id="QOv-Dm-Cq7" customClass="TransferCell" customModule="WiredSwift" customModuleProvider="target">
+                                                            <rect key="frame" x="1" y="1" width="767" height="60"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
-                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hfo-pm-fPp">
-                                                                    <rect key="frame" x="0.0" y="-63" width="767" height="80"/>
-                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
-                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Table View Cell" id="IB0-6X-SF8">
+                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="hfo-pm-fPp">
+                                                                    <rect key="frame" x="57" y="39" width="709" height="18"/>
+                                                                    <constraints>
+                                                                        <constraint firstAttribute="height" constant="18" id="4Hn-Ub-rLV"/>
+                                                                    </constraints>
+                                                                    <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="File name" id="IB0-6X-SF8">
                                                                         <font key="font" metaFont="system"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
+                                                                <progressIndicator wantsLayer="YES" maxValue="100" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="jKN-XT-IQi">
+                                                                    <rect key="frame" x="59" y="20" width="705" height="20"/>
+                                                                    <constraints>
+                                                                        <constraint firstAttribute="height" constant="18" id="L9h-82-qTK"/>
+                                                                    </constraints>
+                                                                </progressIndicator>
+                                                                <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="idY-Um-usA">
+                                                                    <rect key="frame" x="3" y="6" width="48" height="48"/>
+                                                                    <constraints>
+                                                                        <constraint firstAttribute="width" constant="48" id="2u0-ck-zYr"/>
+                                                                        <constraint firstAttribute="height" constant="48" id="cB0-Yu-M1m"/>
+                                                                    </constraints>
+                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSMultipleDocuments" id="Gkg-C7-YCj"/>
+                                                                </imageView>
+                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="Xtj-KD-l0r">
+                                                                    <rect key="frame" x="57" y="4" width="709" height="18"/>
+                                                                    <constraints>
+                                                                        <constraint firstAttribute="height" constant="18" id="b0G-Uw-0yQ"/>
+                                                                    </constraints>
+                                                                    <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Transfer infos" id="7Jf-7z-cek">
+                                                                        <font key="font" metaFont="smallSystem"/>
+                                                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
                                                             </subviews>
+                                                            <constraints>
+                                                                <constraint firstItem="jKN-XT-IQi" firstAttribute="leading" secondItem="idY-Um-usA" secondAttribute="trailing" constant="8" id="9DW-ns-K9c"/>
+                                                                <constraint firstAttribute="trailing" secondItem="Xtj-KD-l0r" secondAttribute="trailing" constant="3" id="AW7-Cu-xWG"/>
+                                                                <constraint firstAttribute="trailing" secondItem="hfo-pm-fPp" secondAttribute="trailing" constant="3" id="FOG-06-wuK"/>
+                                                                <constraint firstAttribute="bottom" secondItem="idY-Um-usA" secondAttribute="bottom" constant="6" id="Hy1-di-YsG"/>
+                                                                <constraint firstAttribute="bottom" secondItem="Xtj-KD-l0r" secondAttribute="bottom" constant="4" id="M77-oW-QjF"/>
+                                                                <constraint firstItem="Xtj-KD-l0r" firstAttribute="leading" secondItem="idY-Um-usA" secondAttribute="trailing" constant="8" id="NJU-Zh-pVy"/>
+                                                                <constraint firstItem="idY-Um-usA" firstAttribute="top" secondItem="QOv-Dm-Cq7" secondAttribute="top" constant="6" id="bc8-JX-Sg1"/>
+                                                                <constraint firstItem="jKN-XT-IQi" firstAttribute="top" secondItem="hfo-pm-fPp" secondAttribute="bottom" id="bxX-AS-2m6"/>
+                                                                <constraint firstItem="idY-Um-usA" firstAttribute="leading" secondItem="QOv-Dm-Cq7" secondAttribute="leading" constant="3" id="eQj-sC-hoT"/>
+                                                                <constraint firstItem="hfo-pm-fPp" firstAttribute="leading" secondItem="idY-Um-usA" secondAttribute="trailing" constant="8" id="ehN-rJ-yKf"/>
+                                                                <constraint firstAttribute="trailing" secondItem="jKN-XT-IQi" secondAttribute="trailing" constant="3" id="rcz-Y5-Rks"/>
+                                                                <constraint firstItem="hfo-pm-fPp" firstAttribute="top" secondItem="QOv-Dm-Cq7" secondAttribute="top" constant="3" id="xh1-4a-ahc"/>
+                                                            </constraints>
                                                             <connections>
                                                                 <outlet property="textField" destination="hfo-pm-fPp" id="7rT-a5-qTg"/>
                                                             </connections>
@@ -1389,6 +1467,10 @@ DQ
                                                     </prototypeCellViews>
                                                 </tableColumn>
                                             </tableColumns>
+                                            <connections>
+                                                <outlet property="dataSource" destination="r5t-wK-RQX" id="rfd-c0-WaL"/>
+                                                <outlet property="delegate" destination="r5t-wK-RQX" id="FfV-v6-Q74"/>
+                                            </connections>
                                         </tableView>
                                     </subviews>
                                 </clipView>
@@ -1409,6 +1491,9 @@ DQ
                             <constraint firstAttribute="bottom" secondItem="981-dJ-j6n" secondAttribute="bottom" constant="32" id="wi8-nx-CE4"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="transfersTableView" destination="cX7-gW-ed1" id="6wi-JZ-esA"/>
+                    </connections>
                 </viewController>
                 <customObject id="OMy-Ak-LkV" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1422,6 +1507,7 @@ DQ
         <image name="Messages" width="32" height="32"/>
         <image name="NSActionTemplate" width="14" height="14"/>
         <image name="NSInfo" width="32" height="32"/>
+        <image name="NSMultipleDocuments" width="32" height="32"/>
         <image name="Settings" width="32" height="32"/>
         <image name="Transfers" width="32" height="32"/>
     </resources>
