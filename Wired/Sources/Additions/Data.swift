@@ -76,6 +76,15 @@ extension Data {
         }
     }
     
+    var uint64: UInt64 {
+        get {
+            let i64array = self.withUnsafeBytes {
+                UnsafeBufferPointer<UInt64>(start: $0, count: self.count/2).map(UInt64.init(bigEndian:))
+            }
+            return i64array[0]
+        }
+    }
+        
     var uuid: NSUUID? {
         get {
             var bytes = [UInt8](repeating: 0, count: self.count)

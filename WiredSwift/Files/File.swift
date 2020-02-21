@@ -26,6 +26,9 @@ public class File: ConnectionObject, ConnectionDelegate {
     public var path: String!
     public var name: String!
     
+    public var dataTransferred:UInt64 = 0
+    public var rsrcTransferred:UInt64 = 0
+    
     init(_ path: String, connection: Connection) {
         super.init(connection)
                 
@@ -56,7 +59,7 @@ public class File: ConnectionObject, ConnectionDelegate {
             let message = P7Message(withName: "wired.file.list_directory", spec: self.connection.spec)
             message.addParameter(field: "wired.file.path", value: self.path)
             
-            let _ = self.connection.socket.write(message)
+            let _ = self.connection.send(message: message)
         }
     }
     

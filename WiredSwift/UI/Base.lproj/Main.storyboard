@@ -1461,7 +1461,11 @@ DQ
                                                                 <constraint firstItem="hfo-pm-fPp" firstAttribute="top" secondItem="QOv-Dm-Cq7" secondAttribute="top" constant="3" id="xh1-4a-ahc"/>
                                                             </constraints>
                                                             <connections>
+                                                                <outlet property="fileIcon" destination="idY-Um-usA" id="3Op-5v-2VE"/>
+                                                                <outlet property="fileName" destination="hfo-pm-fPp" id="L99-88-0do"/>
+                                                                <outlet property="progressIndicator" destination="jKN-XT-IQi" id="jaC-fK-wWA"/>
                                                                 <outlet property="textField" destination="hfo-pm-fPp" id="7rT-a5-qTg"/>
+                                                                <outlet property="transferInfo" destination="Xtj-KD-l0r" id="FGk-QQ-r0N"/>
                                                             </connections>
                                                         </tableCellView>
                                                     </prototypeCellViews>

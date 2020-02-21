@@ -58,7 +58,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
         if keyPath == "WSUserNick" {
             if let nick = change?[NSKeyValueChangeKey.newKey] as? String {
                 if let m = self.setNickMessage(nick) {
-                  self.connection.socket.write(m)
+                  self.connection.send(message: m)
                 }
             }
         }
@@ -135,7 +135,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
                 message!.addParameter(field: "wired.chat.say", value: textField.stringValue)
             }
             
-            if let m = message, self.connection.socket.write(m) {
+            if let m = message, self.connection.send(message: m) {
                 textField.stringValue = ""
             }
         }

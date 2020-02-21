@@ -23,6 +23,7 @@ public class Connection: NSObject {
     public var url:         Url!
     public var socket:      P7Socket!
     public var delegates:   [ConnectionDelegate] = []
+    public var interactive: Bool = true
     
     public var userID: UInt32!
     public var nick: String     = "Swift Wired"
@@ -60,7 +61,7 @@ public class Connection: NSObject {
         self.socket.password = url.password
         
         self.socket.cipherType  = .RSA_AES_256
-        self.socket.compression = .NONE
+        self.socket.compression = .NONE // 
         
         if !self.socket.connect() {
             return false
@@ -84,7 +85,9 @@ public class Connection: NSObject {
             return false
         }
         
-        self.listen()
+        if self.interactive == true {
+            self.listen()
+        }
         
         return true
 
@@ -96,13 +99,29 @@ public class Connection: NSObject {
     }
     
     
+    public func send(message:P7Message) -> Bool {
+        if self.socket.connected {
+            return self.socket.write(message)
+        }
+        return false
+    }
+    
+    
+    public func readMessage() -> P7Message? {
+        if self.socket.connected {
+            return self.socket.readMessage()
+        }
+        return nil
+    }
+    
+    
     
     public func joinChat(chatID: Int) -> Bool  {
         let message = P7Message(withName: "wired.chat.join_chat", spec: self.spec)
         
         message.addParameter(field: "wired.chat.id", value: UInt32(chatID))
         
-        if !self.socket.write(message) {
+        if !self.send(message: message) {
             return false
         }
     
@@ -112,9 +131,9 @@ public class Connection: NSObject {
     
     private func listen() {
         DispatchQueue.global().async {
-            while (true) {
-                //Logger.debug("listen try to read")
-                if let message = self.socket.read() {
+            while (self.interactive == true) {
+                Logger.debug("listen try to read")
+                if let message = self.socket.readMessage(), self.interactive == true {
                     self.handleMessage(message)
                 }
             }
@@ -134,7 +153,7 @@ public class Connection: NSObject {
                     d.connectionDidReceiveError(connection: self, message: message)
                 }
             }
-            
+                    
         default:
             for d in self.delegates {
                 DispatchQueue.main.async {
@@ -147,7 +166,7 @@ public class Connection: NSObject {
     
     
     private func pingReply() {
-        _ = self.socket.write(P7Message(withName: "wired.ping", spec: self.spec))
+        _ = self.send(message: P7Message(withName: "wired.ping", spec: self.spec))
     }
 
     
@@ -157,11 +176,11 @@ public class Connection: NSObject {
         
         message.addParameter(field: "wired.user.nick", value: self.nick)
         
-        if !self.socket.write(message) {
+        if !self.send(message: message) {
             return false
         }
         
-        if self.socket.read() == nil {
+        if self.socket.readMessage() == nil {
             return false
         }
         
@@ -174,11 +193,11 @@ public class Connection: NSObject {
         
         message.addParameter(field: "wired.user.status", value: self.status)
         
-        if !self.socket.write(message) {
+        if !self.send(message: message) {
             return false
         }
         
-        if self.socket.read() == nil {
+        if self.socket.readMessage() == nil {
             return false
         }
         
@@ -191,11 +210,11 @@ public class Connection: NSObject {
         
         message.addParameter(field: "wired.user.icon", value: Data(base64Encoded: Wired.defaultUserIcon, options: .ignoreUnknownCharacters))
         
-        if !self.socket.write(message) {
+        if !self.send(message: message) {
             return false
         }
         
-        if self.socket.read() == nil {
+        if self.socket.readMessage() == nil {
             return false
         }
         
@@ -234,11 +253,11 @@ public class Connection: NSObject {
                 
         message.addParameter(field: "wired.user.password", value: password)
         
-        _ = self.socket.write(message)
+        _ = self.send(message: message)
         
         //sleep(1)
         
-        guard let response = self.socket.read() else {
+        guard let response = self.socket.readMessage() else {
             return false
         }
         
@@ -260,9 +279,9 @@ public class Connection: NSObject {
         message.addParameter(field: "wired.info.arch", value: "x86_64")
         message.addParameter(field: "wired.info.supports_rsrc", value: false)
         
-        _ = self.socket.write(message)
+        _ = self.send(message: message)
         
-        guard let response = self.socket.read() else {
+        guard let response = self.socket.readMessage() else {
             return false
         }
                 

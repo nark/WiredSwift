@@ -89,6 +89,7 @@ public class P7Socket: NSObject {
             let addr = try! socket.addresses(for: self.hostname, port: Port(self.port)).first!
             try self.socket.connect(address: addr)
             
+            self.connected = true
             
             if handshake {
                 if !self.connectHandshake() {
@@ -159,7 +160,7 @@ public class P7Socket: NSObject {
                 var lengthData = Data()
                 lengthData.append(uint32: UInt32(messageData.count))
                 
-                Logger.debug("WRITE: \(message.name!)")
+                Logger.debug("WRITE [\(self.hash)]: \(message.name!)")
                 
                 if self.compressionEnabled {
                     
@@ -194,8 +195,8 @@ public class P7Socket: NSObject {
     
     
     
-    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int) -> Int {
-        while let available = try? socket.wait(for: .read, timeout: 1.0) {
+    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
+        while let available = try? socket.wait(for: .read, timeout: timeout) {
             guard available else { continue } // timeout happend, try again
             
             let n = try? socket.read(buffer, size: len)
@@ -208,7 +209,7 @@ public class P7Socket: NSObject {
     
     
     
-    public func read() -> P7Message? {
+    public func readMessage() -> P7Message? {
         // hack to handle remote connection for now
         usleep(200000)
         
@@ -218,11 +219,11 @@ public class P7Socket: NSObject {
 
         if bytesRead > 0 {
             if self.serialization == .XML {
-//                    if let xml = String(bytes: messageData, encoding: .utf8) {
-//                        let response = P7Message(withXML: xml, spec: self.spec)
-//
-//                        return response
-//                    }
+                if let xml = String(bytes: messageData, encoding: .utf8) {
+                    let message = P7Message(withXML: xml, spec: self.spec)
+
+                    return message
+                }
             }
             else if self.serialization == .BINARY {
                 if bytesRead >= 4 {
@@ -244,12 +245,14 @@ public class P7Socket: NSObject {
                             messageData = decryptedMessageData
                         }
                         
+                        print(messageData.toHex())
+                        
                         // init response message
-                        let response = P7Message(withData: messageData, spec: self.spec)
+                        let message = P7Message(withData: messageData, spec: self.spec)
                         
-                        Logger.debug("READ: \(response.name!)")
+                        Logger.debug("READ [\(self.hash)]: \(message.name!)")
                         
-                        return response
+                        return message
                     }
                 }
                 else {
@@ -259,6 +262,46 @@ public class P7Socket: NSObject {
         }
         
         return nil
+    }
+    
+    
+    
+    public func readOOB(_ data: Data, timeout:TimeInterval = 1.0) -> Int {
+        var messageData = Data()
+        var lengthBuffer = [Byte](repeating: 0, count: 4)
+        var bytesRead = self.read(&lengthBuffer, maxLength: 4)
+
+        if bytesRead >= 4 {
+            let messageLength = Data(lengthBuffer).uint32.bigEndian
+            
+            print("messageLength : \(messageLength)")
+            
+            var messageBuffer = [Byte](repeating: 0, count: Int(messageLength))
+            bytesRead = self.read(&messageBuffer, maxLength: Int(messageLength))
+            
+            messageData = Data(messageBuffer)
+            
+            // data to message object
+            if messageData.count > 0 {
+                // decryption
+                if self.encryptionEnabled {
+                    guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
+                        Logger.error("Cannot decrypt data")
+                        return -1
+                    }
+                    messageData = decryptedMessageData
+                }
+                
+                print(messageData.toHex())
+                
+                return messageData.count
+            }
+        }
+        else {
+            Logger.error("Nothing read, abort")
+        }
+        
+        return -1
     }
     
     
@@ -283,7 +326,7 @@ public class P7Socket: NSObject {
         
         _ = self.write(message)
         
-        guard let response = self.read() else {
+        guard let response = self.readMessage() else {
             Logger.error("Handshake Failed: Should Receive Message: p7.handshake.server_handshake")
             return false
         }
@@ -337,7 +380,7 @@ public class P7Socket: NSObject {
     
     
     private func connectKeyExchange() -> Bool  {
-        guard let response = self.read() else {
+        guard let response = self.readMessage() else {
             Logger.error("Handshake Failed: cannot read server key")
             return false
         }
@@ -406,7 +449,7 @@ public class P7Socket: NSObject {
         
         _ = self.write(message)
         
-        guard let response2 = self.read() else {
+        guard let response2 = self.readMessage() else {
             return false
         }
         
@@ -455,7 +498,7 @@ public class P7Socket: NSObject {
         
         _ = self.write(message)
         
-        guard let response = self.read() else {
+        guard let response = self.readMessage() else {
             return false
         }
         

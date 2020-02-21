@@ -15,13 +15,13 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         super.viewDidLoad()
         // Do view setup here.
         
-        NotificationCenter.default.addObserver(self, selector:  #selector(didAddTransfer(_:)), name: .didAddTransfer, object: nil)
+        NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateTransfers), name: .didUpdateTransfers, object: nil)
     }
     
     
-    @objc func didAddTransfer(_ notification: Notification) {
+    @objc func didUpdateTransfers(_ notification: Notification) {
         if let transfer = notification.object as? Transfer {
-            print("didAddTransfer: \(transfer)")
+            print("didUpdateTransfers: \(transfer)")
             transfersTableView.reloadData()
         }
     }
@@ -37,18 +37,17 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
 
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        var view: NSTableCellView?
+        var view: TransferCell?
         
-        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "TransferCell"), owner: self) as? UserCellView
+        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "TransferCell"), owner: self) as? TransferCell
         
-//        view?.userNick?.stringValue = self.users[row].nick
-//        view?.userStatus?.stringValue = self.users[row].status
-//
-//        if self.users[row].idle == true {
-//            view?.alphaValue = 0.5
-//        } else {
-//            view?.alphaValue = 1.0
-//        }
+        let transfer = TransfersController.shared.transfers[row]
+        
+        if let file = transfer.file {
+            view?.fileName.stringValue = file.name
+        }
+        
+        view?.transferInfo.stringValue = "\(transfer.state)"
 
         return view
     }

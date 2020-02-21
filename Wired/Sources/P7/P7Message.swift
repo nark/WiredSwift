@@ -91,6 +91,12 @@ public class P7Message: NSObject {
         return nil
     }
     
+    public func uint64(forField field: String) -> UInt64? {        
+        if let value = self.parameters[field] as? Data {
+            return value.uint64
+        }
+        return nil
+    }
     
     public func enumeration(forField field: String) -> UInt32? {
         if let value = self.parameters[field] as? UInt32 {
@@ -119,6 +125,17 @@ public class P7Message: NSObject {
                     spec.fieldsByName[field]?.type == .uint32 {
                 if let val = value as? UInt32 {
                     p.setStringValue(String(val), resolvingEntities: false)
+                }
+            }
+            else if spec.fieldsByName[field]?.type == .int64 ||
+                    spec.fieldsByName[field]?.type == .uint64 {
+                if let val = value as? UInt64 {
+                    p.setStringValue(String(val), resolvingEntities: false)
+                }
+            }
+            else if spec.fieldsByName[field]?.type == .oobdata {
+                if let val = value as? Data {
+                    p.setStringValue(val.toHex(), resolvingEntities: false)
                 }
             }
             // TODO: complete all types
@@ -333,7 +350,7 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .oobdata {
-                            
+                            self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .list {
                             //print(fieldData.toHex())

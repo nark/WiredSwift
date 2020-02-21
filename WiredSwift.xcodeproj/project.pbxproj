@@ -26,6 +26,8 @@
 		4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */; };
 		4C374DA723FE8655006D3E7C /* TransfersViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DA623FE8655006D3E7C /* TransfersViewController.swift */; };
 		4C374DA923FE9E7E006D3E7C /* TransferCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DA823FE9E7E006D3E7C /* TransferCell.swift */; };
+		4C374DAB23FED0D8006D3E7C /* TransferConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C374DAA23FED0D8006D3E7C /* TransferConnection.swift */; };
+		4C374DAD24006C74006D3E7C /* helpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C374DAC24006C74006D3E7C /* helpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE422E10C3700BC2DD9 /* Connection.swift */; };
@@ -145,6 +147,8 @@
 		4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesPreferenceViewController.swift; sourceTree = "<group>"; };
 		4C374DA623FE8655006D3E7C /* TransfersViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersViewController.swift; sourceTree = "<group>"; };
 		4C374DA823FE9E7E006D3E7C /* TransferCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferCell.swift; sourceTree = "<group>"; };
+		4C374DAA23FED0D8006D3E7C /* TransferConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferConnection.swift; sourceTree = "<group>"; };
+		4C374DAC24006C74006D3E7C /* helpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = helpers.h; sourceTree = "<group>"; };
 		4C4C3EDE22E10B2000BC2DD9 /* Cartfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Cartfile; sourceTree = "<group>"; };
 		4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Socket.swift; sourceTree = "<group>"; };
 		4C4C3EE422E10C3700BC2DD9 /* Connection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Connection.swift; sourceTree = "<group>"; };
@@ -284,6 +288,7 @@
 			isa = PBXGroup;
 			children = (
 				4CD0204F22DF04BD0008B36C /* Wired.h */,
+				4C374DAC24006C74006D3E7C /* helpers.h */,
 				4C4C3EF622E1164700BC2DD9 /* Sources */,
 				4CD0205022DF04BD0008B36C /* Info.plist */,
 				4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */,
@@ -378,9 +383,10 @@
 		4CEF0ABF23FDD6650097E37E /* Transfers */ = {
 			isa = PBXGroup;
 			children = (
-				4C374DA623FE8655006D3E7C /* TransfersViewController.swift */,
-				4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */,
+				4C374DAA23FED0D8006D3E7C /* TransferConnection.swift */,
 				4C374D9E23FE7B1C006D3E7C /* Transfer.swift */,
+				4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */,
+				4C374DA623FE8655006D3E7C /* TransfersViewController.swift */,
 				4C374DA823FE9E7E006D3E7C /* TransferCell.swift */,
 			);
 			path = Transfers;
@@ -456,6 +462,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4CD0205122DF04BD0008B36C /* Wired.h in Headers */,
+				4C374DAD24006C74006D3E7C /* helpers.h in Headers */,
 				4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -569,6 +576,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C374DAB23FED0D8006D3E7C /* TransferConnection.swift in Sources */,
 				4C0A99F623FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift in Sources */,
 				4CFA18D5230C741800E2A2EC /* UserInfo.swift in Sources */,
 				4CFA18C5230B085D00E2A2EC /* String.swift in Sources */,
