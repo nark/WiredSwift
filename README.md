@@ -13,6 +13,8 @@ Init pods:
 
 ## TODO
 
+* Files browsing
+* File transfers
 * Auto-reconnection
 * User permissions
 * Fix socket read timeout/buffer for remote connections

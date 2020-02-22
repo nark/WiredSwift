@@ -266,10 +266,12 @@ public class P7Socket: NSObject {
     
     
     
-    public func readOOB(_ data: Data, timeout:TimeInterval = 1.0) -> Int {
+    public func readOOB(timeout:TimeInterval = 1.0) -> Data {
         var messageData = Data()
         var lengthBuffer = [Byte](repeating: 0, count: 4)
         var bytesRead = self.read(&lengthBuffer, maxLength: 4)
+        
+        print("oob bytesRead : \(bytesRead)")
 
         if bytesRead >= 4 {
             let messageLength = Data(lengthBuffer).uint32.bigEndian
@@ -287,21 +289,21 @@ public class P7Socket: NSObject {
                 if self.encryptionEnabled {
                     guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
                         Logger.error("Cannot decrypt data")
-                        return -1
+                        return messageData
                     }
                     messageData = decryptedMessageData
                 }
                 
                 print(messageData.toHex())
-                
-                return messageData.count
+                                
+                return messageData
             }
         }
         else {
             Logger.error("Nothing read, abort")
         }
         
-        return -1
+        return messageData
     }
     
     

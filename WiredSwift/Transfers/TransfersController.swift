@@ -134,15 +134,12 @@ public class TransfersController {
     
     
     private func runDownload(_ transfer: Transfer) {
-        var buffer:Data = Data()
         var error:String? = nil
         var data = true
         var dataLength:UInt64? = 0
         var rsrcLength:UInt64? = 0
         var readBytes = 0
         var writtenBytes = 0
-        
-        print("runDownload")
         
         if transfer.transferConnection == nil {
             transfer.transferConnection = self.transfertConnectionForTransfer(transfer)
@@ -165,9 +162,7 @@ public class TransfersController {
             
             return
         }
-        
-        
-        
+                
         let message = P7Message(withName: "wired.transfer.download_file", spec: transfer.connection.spec)
         message.addParameter(field: "wired.file.path", value: transfer.file?.path)
         message.addParameter(field: "wired.transfer.data_offset", value: UInt64(0))
@@ -192,48 +187,16 @@ public class TransfersController {
         guard let runMessage = self.run(transfer.transferConnection!, forTransfer: transfer, untilReceivingMessageName: "wired.transfer.download") else {
             return
         }
-        
-        print("run : \(runMessage.xml(pretty: true))")
-        
+                
         dataLength = runMessage.uint64(forField: "wired.transfer.data")
         rsrcLength = runMessage.uint64(forField: "wired.transfer.rsrc")
-
-        print("dataLength: \(dataLength!)")
         
         let dataPath = self.defaultDownloadDestination(forFile: transfer.file!)
         let rsrcPath = FileManager.resourceForkPath(forPath: dataPath!)
         
         print("dataPath : \(dataPath!)")
         print("rsrcPath : \(rsrcPath)")
-        
-        let dataFD = open(dataPath!, O_WRONLY | O_APPEND | O_CREAT, 0666 as mode_t)
-        let rsrcFD = open(rsrcPath, O_WRONLY | O_APPEND | O_CREAT, 0666 as mode_t)
-        
-        print("dataFD : \(dataFD)")
-        print("rsrcFD : \(rsrcFD)")
                 
-//        if( (dataFD < 0 || lseek(dataFD, off_t(transfer.file!.dataTransferred), SEEK_SET) < 0) ||
-//            (rsrcFD < 0 || lseek(rsrcFD, off_t(transfer.file!.rsrcTransferred), SEEK_SET) < 0)) {
-//            error = "Transfer POSIX error"
-//
-//            if transfer.isTerminating() == false {
-//                transfer.state = .Disconnecting
-//            }
-//
-//            if dataFD >= 0 {
-//                close(dataFD)
-//            }
-//            if rsrcFD >= 0 {
-//                close(rsrcFD)
-//            }
-//
-//            self.finish(transfer, withError: error)
-//
-//            return
-//        }
-        
-        print("lseek")
-        
         if let finderInfo = message.data(forField: "wired.transfer.finderinfo") {
             if finderInfo.count > 0 {
                 // set finder info
@@ -245,9 +208,7 @@ public class TransfersController {
             
             // validate buttons here
         }
-        
-        print("before while")
-        
+                
         while(transfer.isTerminating() == false) {
             if data == true && dataLength == 0 {
                 data = false
@@ -258,11 +219,11 @@ public class TransfersController {
             }
             
             
-            readBytes = transfer.transferConnection!.socket.readOOB(buffer)
+            let oobdata = transfer.transferConnection!.socket.readOOB()
             
-            print(readBytes)
+            print(oobdata.count)
             
-            if readBytes <= 0 {
+            if oobdata.count <= 0 {
                 transfer.state = .Disconnecting
 
                 break
@@ -277,28 +238,56 @@ public class TransfersController {
 //                break
 //            }
             
-            buffer.withUnsafeBytes { rawBufferPointer in
-                let rawPtr = rawBufferPointer.baseAddress!
-                print("write")
-                writtenBytes = write(data ? dataFD : rsrcFD, rawPtr, readBytes)
-            }
+            print("oobdata : \(oobdata)")
             
-            if writtenBytes <= 0 {
-                if writtenBytes < 0 {
+            if FileManager.default.fileExists(atPath: dataPath!) {
+                if let fileHandle = FileHandle(forWritingAtPath: dataPath!) {
+                    fileHandle.seekToEndOfFile()
+                    fileHandle.write(oobdata)
+                    fileHandle.closeFile()
+                } else {
                     DispatchQueue.main.async {
                         error = "Transfer failed"
-                        
                         Logger.error(error!)
                     }
+                    break
                 }
-                break
+            } else {
+                do {
+                    try oobdata.write(to: URL(fileURLWithPath: dataPath!), options: .atomicWrite)
+                } catch let e {
+                    DispatchQueue.main.async {
+                        error = "Transfer failed: write error"
+                        Logger.error(error!)
+                    }
+                    
+                    break
+                }
             }
+            
+//            oobdata.write(to: URL, options: Data.WritingOptions.)
+//
+//            oobdata.withUnsafeBytes { rawBufferPointer in
+//                let rawPtr = rawBufferPointer.baseAddress!
+//                print("write")
+//                writtenBytes = write(data ? dataFD : rsrcFD, rawPtr, readBytes)
+//
+//                print("writtenBytes: \(writtenBytes)")
+//            }
+//
+//            if writtenBytes <= 0 {
+//                if writtenBytes < 0 {
+//                    DispatchQueue.main.async {
+//                        error = "Transfer failed"
+//
+//                        Logger.error(error!)
+//                    }
+//                }
+//                break
+//            }
             
             
         }
-        
-        close(dataFD)
-        close(rsrcFD)
         
         DispatchQueue.main.async {
             self.finish(transfer)
