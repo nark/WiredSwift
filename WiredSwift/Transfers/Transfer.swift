@@ -36,6 +36,9 @@ public class Transfer: ConnectionObject {
     public var localPath:String?
     public var remotePath:String?
     
+    public var dataTransferred:UInt64 = 0
+    public var rsrcTransferred:UInt64 = 0
+    public var actualTransferred:UInt64 = 0
     
     public  override init(_ connection: Connection) {
         super.init(connection)
@@ -51,7 +54,7 @@ public class Transfer: ConnectionObject {
 
     public func isTerminating() -> Bool {
         return (state == .Pausing || state == .Stopping ||
-            state == .Disconnecting || state == .Removing)
+                state == .Disconnecting || state == .Removing)
     }
 
     public func isStopped() -> Bool {

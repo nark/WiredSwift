@@ -13,8 +13,10 @@ Init pods:
 
 ## TODO
 
+* List type in P7 messages
 * Files browsing
 * File transfers
+* Socket compression
 * Auto-reconnection
 * User permissions
 * Fix socket read timeout/buffer for remote connections

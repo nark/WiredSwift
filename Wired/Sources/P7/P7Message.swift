@@ -325,15 +325,14 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData.uint32.bigEndian)
                         }
                         else if specField.type == .int64 {
-                            
+                            self.addParameter(field: specField.name, value: fieldData.uint64.bigEndian)
                         }
                         else if specField.type == .uint64 {
-                            
+                            self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .double {
                             
                         }
-                            
                         else if specField.type == .string {
                             if let string = String(bytes: fieldData, encoding: .utf8) {
                                 self.addParameter(field: specField.name, value: string)
@@ -346,7 +345,6 @@ public class P7Message: NSObject {
                             
                         }
                         else if specField.type == .data {
-                            //print(fieldData.toHex())
                             self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .oobdata {

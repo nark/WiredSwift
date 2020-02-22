@@ -26,6 +26,9 @@ public class File: ConnectionObject, ConnectionDelegate {
     public var path: String!
     public var name: String!
     
+    public var dataSize:UInt64 = 0
+    public var rsrcSize:UInt64 = 0
+    
     public var dataTransferred:UInt64 = 0
     public var rsrcTransferred:UInt64 = 0
     
@@ -47,6 +50,12 @@ public class File: ConnectionObject, ConnectionDelegate {
         }
         if let t = message.enumeration(forField: "wired.file.type") {
             self.type = File.FileType(rawValue: Int(t))
+        }
+        if let s = message.uint64(forField: "wired.file.data_size") {
+            self.dataSize = s
+        }
+        if let s = message.uint64(forField: "wired.file.rsrc_size") {
+            self.rsrcSize = s
         }
     }
 

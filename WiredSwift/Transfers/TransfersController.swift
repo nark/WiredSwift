@@ -106,6 +106,8 @@ public class TransfersController {
     
     
     private func finish(_ transfer: Transfer) {
+        print("finish")
+        
         transfer.transferConnection?.disconnect()
         transfer.state = .Finished
         
@@ -117,7 +119,7 @@ public class TransfersController {
             print("Transfer error: \(error)")
         }
         
-        NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
+        self.finish(transfer)
     }
     
     
@@ -185,28 +187,61 @@ public class TransfersController {
         }
         
         guard let runMessage = self.run(transfer.transferConnection!, forTransfer: transfer, untilReceivingMessageName: "wired.transfer.download") else {
+            if transfer.isTerminating() == false {
+                transfer.state = .Disconnecting
+            }
+                     
+            DispatchQueue.main.async {
+                self.finish(transfer)
+            }
+            
             return
         }
                 
         dataLength = runMessage.uint64(forField: "wired.transfer.data")
         rsrcLength = runMessage.uint64(forField: "wired.transfer.rsrc")
         
+        print("dataLength: \(dataLength)")
+        
         let dataPath = self.defaultDownloadDestination(forFile: transfer.file!)
         let rsrcPath = FileManager.resourceForkPath(forPath: dataPath!)
         
         print("dataPath : \(dataPath!)")
         print("rsrcPath : \(rsrcPath)")
+        
+        // check file size if it already exists
+        if FileManager.default.fileExists(atPath: dataPath!) {
+            do {
+                let attr = try FileManager.default.attributesOfItem(atPath: dataPath!)
+                let fileSize = attr[FileAttributeKey.size] as! UInt64
+                
+                if fileSize >= dataLength! {
+                    if transfer.isTerminating() == false {
+                        transfer.state = .Disconnecting
+                    }
+                              
+                    DispatchQueue.main.async {
+                        self.finish(transfer, withError: "file already exists at this location: \(dataPath!)")
+                    }
+                    
+                    return
+                }
+                
+            } catch {
+                print("Error: \(error)")
+            }
+        }
                 
         if let finderInfo = message.data(forField: "wired.transfer.finderinfo") {
             if finderInfo.count > 0 {
-                // set finder info
+                // TODO: set finder info
             }
         }
         
         if transfer.isTerminating() == false {
             transfer.state = .Running
             
-            // validate buttons here
+            // TODO: validate buttons here
         }
                 
         while(transfer.isTerminating() == false) {
@@ -218,8 +253,9 @@ public class TransfersController {
                 break
             }
             
-            
+            print("before read")
             let oobdata = transfer.transferConnection!.socket.readOOB()
+            print("after read")
             
             print(oobdata.count)
             
@@ -229,6 +265,7 @@ public class TransfersController {
                 break
             }
             
+            // TODO: fix this
 //            if((data && dataLength != nil && dataLength! < UInt32(readBytes)) || (data == false && rsrcLength != nil && rsrcLength! < UInt32(readBytes))) {
 //                DispatchQueue.main.async {
 //                    error = "Transfer failed"
@@ -237,9 +274,7 @@ public class TransfersController {
 //                }
 //                break
 //            }
-            
-            print("oobdata : \(oobdata)")
-            
+                                    
             if FileManager.default.fileExists(atPath: dataPath!) {
                 if let fileHandle = FileHandle(forWritingAtPath: dataPath!) {
                     fileHandle.seekToEndOfFile()
@@ -254,10 +289,10 @@ public class TransfersController {
                 }
             } else {
                 do {
-                    try oobdata.write(to: URL(fileURLWithPath: dataPath!), options: .atomicWrite)
+                    try oobdata.write(to: URL(fileURLWithPath: data ? dataPath! : rsrcPath), options: .atomicWrite)
                 } catch let e {
                     DispatchQueue.main.async {
-                        error = "Transfer failed: write error"
+                        error = "Transfer failed: \(e)"
                         Logger.error(error!)
                     }
                     
@@ -265,28 +300,25 @@ public class TransfersController {
                 }
             }
             
-//            oobdata.write(to: URL, options: Data.WritingOptions.)
-//
-//            oobdata.withUnsafeBytes { rawBufferPointer in
-//                let rawPtr = rawBufferPointer.baseAddress!
-//                print("write")
-//                writtenBytes = write(data ? dataFD : rsrcFD, rawPtr, readBytes)
-//
-//                print("writtenBytes: \(writtenBytes)")
-//            }
-//
-//            if writtenBytes <= 0 {
-//                if writtenBytes < 0 {
-//                    DispatchQueue.main.async {
-//                        error = "Transfer failed"
-//
-//                        Logger.error(error!)
-//                    }
-//                }
-//                break
-//            }
+            // append transfered data
+            if data {
+                transfer.dataTransferred += UInt64(oobdata.count)
+            } else {
+                transfer.rsrcTransferred += UInt64(oobdata.count)
+            }
             
+            transfer.actualTransferred += UInt64(oobdata.count)
             
+            print("transfered: \(transfer.dataTransferred + transfer.rsrcTransferred)")
+            print("file size: \(transfer.file!.dataSize + transfer.file!.rsrcSize)")
+            
+            if transfer.dataTransferred + transfer.rsrcTransferred >= transfer.file!.dataSize + transfer.file!.rsrcSize {
+                print("Transfer done")
+                
+                transfer.state = .Disconnecting
+
+                break
+            }
         }
         
         DispatchQueue.main.async {

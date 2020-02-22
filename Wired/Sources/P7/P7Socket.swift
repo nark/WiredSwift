@@ -245,7 +245,7 @@ public class P7Socket: NSObject {
                             messageData = decryptedMessageData
                         }
                         
-                        print(messageData.toHex())
+                        // print(messageData.toHex())
                         
                         // init response message
                         let message = P7Message(withData: messageData, spec: self.spec)
@@ -269,14 +269,10 @@ public class P7Socket: NSObject {
     public func readOOB(timeout:TimeInterval = 1.0) -> Data {
         var messageData = Data()
         var lengthBuffer = [Byte](repeating: 0, count: 4)
-        var bytesRead = self.read(&lengthBuffer, maxLength: 4)
+        var bytesRead = self.read(&lengthBuffer, maxLength: 4, timeout: timeout)
         
-        print("oob bytesRead : \(bytesRead)")
-
         if bytesRead >= 4 {
             let messageLength = Data(lengthBuffer).uint32.bigEndian
-            
-            print("messageLength : \(messageLength)")
             
             var messageBuffer = [Byte](repeating: 0, count: Int(messageLength))
             bytesRead = self.read(&messageBuffer, maxLength: Int(messageLength))
@@ -293,9 +289,7 @@ public class P7Socket: NSObject {
                     }
                     messageData = decryptedMessageData
                 }
-                
-                print(messageData.toHex())
-                                
+                                                
                 return messageData
             }
         }
