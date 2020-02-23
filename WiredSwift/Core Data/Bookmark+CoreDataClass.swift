@@ -13,6 +13,7 @@ import KeychainAccess
 
 @objc(Bookmark)
 public class Bookmark: NSManagedObject {
+    
     public func url() -> Url {
         let keychain = Keychain(server: "wired://\(self.hostname!)", protocolType: .irc)
         let url = Url(withString: "wired://\(self.hostname!)")

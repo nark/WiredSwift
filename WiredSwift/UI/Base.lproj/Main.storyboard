@@ -604,37 +604,42 @@
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="hB3-LF-h0Y"/>
                                         <menuItem title="Chat" keyEquivalent="t" id="OFt-Qb-Wp0">
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showChat:" target="Ady-hI-5gd" id="OXF-f3-2j1"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Messages" keyEquivalent="e" id="TPL-IX-h3h">
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showMessages:" target="Ady-hI-5gd" id="19d-zd-3Zk"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Boards" keyEquivalent="b" id="glT-74-grJ">
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showBoards:" target="Ady-hI-5gd" id="cKF-pE-Ngr"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Files" keyEquivalent="f" id="IMb-TD-Ci6">
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showFiles:" target="Ady-hI-5gd" id="kIx-2s-Zzr"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Transfers" keyEquivalent="s" id="162-Vh-Eh9">
+                                        <menuItem title="Transfers" keyEquivalent="S" id="162-Vh-Eh9">
                                             <connections>
                                                 <action selector="showTransfers:" target="Ady-hI-5gd" id="gjA-PX-Z04"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Infos" keyEquivalent="i" id="W8B-bW-Mwe">
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showInfos:" target="Ady-hI-5gd" id="wtf-aL-ivw"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Settings" keyEquivalent="," id="MIX-13-jna">
-                                            <modifierMask key="keyEquivalentModifierMask" shift="YES" command="YES"/>
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showSettings:" target="Ady-hI-5gd" id="tVu-uW-RO8"/>
                                             </connections>

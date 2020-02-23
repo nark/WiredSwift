@@ -12,7 +12,6 @@ import CoreData
 
 
 extension Bookmark {
-
     @nonobjc public class func fetchRequest() -> NSFetchRequest<Bookmark> {
         return NSFetchRequest<Bookmark>(entityName: "Bookmark")
     }

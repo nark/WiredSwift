@@ -88,8 +88,12 @@ class FilesViewController: ConnectionController, ConnectionDelegate, NSBrowserDe
     @objc private func doubleClickFile() {
         if let clickedItem = browser.item(atRow: browser.clickedRow, inColumn: browser.clickedColumn) {
             if let file = clickedItem as? File {
-                if !file.isFolder() {
-                    TransfersController.shared.download(file)
+                if !file.isFolder() { // for now
+                    if TransfersController.shared.download(file) {
+                        if let d = NSApp.delegate as? AppDelegate {
+                            d.showTransfers(self)
+                        }
+                    }
                 }
             }
         }

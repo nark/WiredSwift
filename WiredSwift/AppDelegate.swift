@@ -25,6 +25,8 @@ public let spec = P7Spec()
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
+    public static let shared:AppDelegate = NSApp.delegate as! AppDelegate
+    
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
             GeneralPreferenceViewController(),
@@ -58,31 +60,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - IB Actions
     @IBAction func showChat(_ sender: Any) {
-        
+        self.setTabView(atIndex: 0)
     }
     
     @IBAction func showMessages(_ sender: Any) {
-        
+        self.setTabView(atIndex: 1)
     }
     
     @IBAction func showBoards(_ sender: Any) {
-        
+        self.setTabView(atIndex: 2)
     }
     
     @IBAction func showFiles(_ sender: Any) {
-        
+        self.setTabView(atIndex: 3)
     }
     
     @IBAction func showTransfers(_ sender: Any) {
-        
+        self.setTabView(atIndex: 4)
     }
     
     @IBAction func showInfos(_ sender: Any) {
-        
+        self.setTabView(atIndex: 5)
     }
     
     @IBAction func showSettings(_ sender: Any) {
-        
+        self.setTabView(atIndex: 6)
     }
     
     
@@ -113,6 +115,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @IBAction func preferencesMenuItemActionHandler(_ sender: NSMenuItem) {
         preferencesWindowController.show()
+    }
+    
+    
+    // MARK: - Privates
+    private func setTabView(atIndex index:Int) {
+        if let currentWindowController = currentWindowController() {
+            if let splitViewController = currentWindowController.contentViewController as? NSSplitViewController {
+                if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
+                    tabViewController.selectedTabViewItemIndex = index
+                }
+            }
+        }
+    }
+    
+    private func currentWindowController() -> ConnectionWindowController? {
+        if let window = NSApp.mainWindow, let connectionWindowController = window.windowController as? ConnectionWindowController {
+            return connectionWindowController
+        }
+        return nil
     }
     
     

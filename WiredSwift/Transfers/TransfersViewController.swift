@@ -31,7 +31,7 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     // MARK: -
     
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return TransfersController.shared.transfers.count
+        return TransfersController.shared.transfers().count
     }
 
 
@@ -41,7 +41,7 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         
         view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "TransferCell"), owner: self) as? TransferCell
         
-        let transfer = TransfersController.shared.transfers[row]
+        let transfer = TransfersController.shared.transfers()[row]
         
         if let file = transfer.file {
             view?.fileName.stringValue = file.name

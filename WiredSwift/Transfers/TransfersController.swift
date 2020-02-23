@@ -41,7 +41,7 @@ extension FileManager {
 public class TransfersController {
     public static let shared = TransfersController()
     
-    var transfers:[Transfer] = []
+    //var transfers:[Transfer] = []
     var queue:DispatchQueue = DispatchQueue(label: "transfers-queue", qos: .utility)
     
     private init() {
@@ -58,13 +58,31 @@ public class TransfersController {
     }
         
     
+    public func transfers() -> [Transfer] {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Transfer")
+        
+        let context = AppDelegate.shared.persistentContainer.viewContext
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            let transfers = results as! [Transfer]
+            
+            return transfers
+            
+        } catch let error as NSError {
+            print("Could not fetch \(error)")
+        }
+        
+        return []
+    }
+    
+    
     private func download(_ file:File, toPath:String? = nil) -> Bool {
-        let transfer = DownloadTransfer(file.connection)
+        let transfer = DownloadTransfer(context: AppDelegate.shared.persistentContainer.viewContext)
         
+        transfer.connection = file.connection
         transfer.file = file
-        
-        transfers.append(transfer)
-                
+                        
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
         
         self.request(transfer)
@@ -74,8 +92,10 @@ public class TransfersController {
     
     
     private func upload(_ path:String, toFile file:File) -> Bool {
-        let transfer = UploadTransfer(file.connection)
+        let transfer = UploadTransfer(context: AppDelegate.shared.persistentContainer.viewContext)
             
+        transfer.connection = file.connection
+        
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
         
         self.request(transfer)
@@ -302,12 +322,12 @@ public class TransfersController {
             
             // append transfered data
             if data {
-                transfer.dataTransferred += UInt64(oobdata.count)
+                transfer.dataTransferred += Int64(oobdata.count)
             } else {
-                transfer.rsrcTransferred += UInt64(oobdata.count)
+                transfer.rsrcTransferred += Int64(oobdata.count)
             }
             
-            transfer.actualTransferred += UInt64(oobdata.count)
+            transfer.actualTransferred += Int64(oobdata.count)
             
             print("transfered: \(transfer.dataTransferred + transfer.rsrcTransferred)")
             print("file size: \(transfer.file!.dataSize + transfer.file!.rsrcSize)")
