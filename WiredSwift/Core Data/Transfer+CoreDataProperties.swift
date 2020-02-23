@@ -12,7 +12,40 @@ import CoreData
 
 
 extension Transfer {
-    @objc public enum State: Int32 {
+    @objc public enum State: Int32, CustomStringConvertible {
+        public var description: String {
+          switch self {
+          case .Waiting:
+              return "Waiting"
+          case .LocallyQueued:
+              return "LocallyQueued"
+          case .Queued:
+              return "Queued"
+          case .Listing:
+              return "Listing"
+          case .CreatingDirectories:
+            return "CreatingDirectories"
+          case .Running:
+            return "Running"
+          case .Pausing:
+            return "Pausing"
+          case .Paused:
+            return "Paused"
+          case .Stopping:
+            return "Stopping"
+          case .Stopped:
+            return "Stopped"
+          case .Disconnecting:
+            return "Disconnecting"
+          case .Disconnected:
+            return "Disconnected"
+          case .Removing:
+            return "Removing"
+          case .Finished:
+            return "Finished"
+            }
+        }
+        
         case Waiting
         case LocallyQueued
         case Queued

@@ -30,6 +30,38 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     
     // MARK: -
     
+    @IBAction func startTransfer(_ sender: Any) {
+
+    }
+    
+    @IBAction func stopTransfer(_ sender: Any) {
+
+    }
+    
+    @IBAction func pauseTransfer(_ sender: Any) {
+
+    }
+    
+    @IBAction func removeTransfer(_ sender: Any) {
+        if transfersTableView.selectedRow != -1 {
+            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
+            
+            TransfersController.shared.remove(selectedTransfer)
+        }
+    }
+    
+    @IBAction func clearTransfers(_ sender: Any) {
+        for t in TransfersController.shared.transfers() {
+            if t.state == .Finished {
+                TransfersController.shared.remove(t)
+            }
+        }
+    }
+    
+    
+    
+    // MARK: -
+    
     func numberOfRows(in tableView: NSTableView) -> Int {
         return TransfersController.shared.transfers().count
     }
@@ -47,7 +79,7 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
             view?.fileName.stringValue = file.name
         }
         
-        view?.transferInfo.stringValue = "\(transfer.state)"
+        view?.transferInfo.stringValue = transfer.transferStatus()
 
         return view
     }

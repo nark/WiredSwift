@@ -1492,12 +1492,87 @@ DQ
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                             </scrollView>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9Qd-UJ-7yN">
+                                <rect key="frame" x="20" y="5" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="bX7-Ez-ZZi"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="StartTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="5jE-Bw-00A">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="startTransfer:" target="r5t-wK-RQX" id="vFq-ck-0B2"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="6cV-1k-dRY">
+                                <rect key="frame" x="56" y="5" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="PHb-xW-he1"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="StopTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="wZ5-pV-YId">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="stopTransfer:" target="r5t-wK-RQX" id="93d-j6-mcu"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fwh-HM-dlK">
+                                <rect key="frame" x="92" y="5" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="ssG-zb-ogO"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="PauseTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="0Og-gO-VU1">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="pauseTransfer:" target="r5t-wK-RQX" id="Pdn-No-YLP"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="fcn-Ht-4lW">
+                                <rect key="frame" x="128" y="5" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="SJP-2Y-WoM"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="RemoveTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="AqH-x5-ad5">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="removeTransfer:" target="r5t-wK-RQX" id="ihX-iP-W4O"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3T6-Sy-zGl">
+                                <rect key="frame" x="164" y="5" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="DpU-65-T0U"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="ClearTransfers" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="bBS-yY-wsT">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="clearTransfers:" target="r5t-wK-RQX" id="WnC-wH-cv1"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
+                            <constraint firstItem="3T6-Sy-zGl" firstAttribute="leading" secondItem="fcn-Ht-4lW" secondAttribute="trailing" constant="8" id="29K-IG-D6j"/>
                             <constraint firstItem="981-dJ-j6n" firstAttribute="leading" secondItem="rVS-6N-2tM" secondAttribute="leading" id="7uo-Ac-wUX"/>
+                            <constraint firstItem="6cV-1k-dRY" firstAttribute="leading" secondItem="9Qd-UJ-7yN" secondAttribute="trailing" constant="8" id="AWq-cF-D6w"/>
+                            <constraint firstItem="9Qd-UJ-7yN" firstAttribute="leading" secondItem="rVS-6N-2tM" secondAttribute="leading" constant="20" id="Cns-lb-4Fw"/>
                             <constraint firstAttribute="trailing" secondItem="981-dJ-j6n" secondAttribute="trailing" id="DEC-3a-gFk"/>
+                            <constraint firstAttribute="bottom" secondItem="fwh-HM-dlK" secondAttribute="bottom" constant="6" id="FIr-nk-rxf"/>
+                            <constraint firstItem="fcn-Ht-4lW" firstAttribute="leading" secondItem="fwh-HM-dlK" secondAttribute="trailing" constant="8" id="FbM-CV-b62"/>
                             <constraint firstItem="981-dJ-j6n" firstAttribute="top" secondItem="rVS-6N-2tM" secondAttribute="top" constant="-1" id="Obp-5e-8nW"/>
+                            <constraint firstAttribute="bottom" secondItem="3T6-Sy-zGl" secondAttribute="bottom" constant="6" id="S6o-Gf-N7q"/>
+                            <constraint firstAttribute="bottom" secondItem="fcn-Ht-4lW" secondAttribute="bottom" constant="6" id="T3L-uV-7jq"/>
+                            <constraint firstAttribute="bottom" secondItem="6cV-1k-dRY" secondAttribute="bottom" constant="6" id="YMR-38-x5h"/>
+                            <constraint firstItem="fwh-HM-dlK" firstAttribute="leading" secondItem="6cV-1k-dRY" secondAttribute="trailing" constant="8" id="vaR-o1-asV"/>
                             <constraint firstAttribute="bottom" secondItem="981-dJ-j6n" secondAttribute="bottom" constant="32" id="wi8-nx-CE4"/>
+                            <constraint firstAttribute="bottom" secondItem="9Qd-UJ-7yN" secondAttribute="bottom" constant="6" id="zsx-jX-GlG"/>
                         </constraints>
                     </view>
                     <connections>
@@ -1512,12 +1587,17 @@ DQ
     <resources>
         <image name="Boards" width="32" height="32"/>
         <image name="Chat" width="32" height="32"/>
+        <image name="ClearTransfers" width="25" height="25"/>
         <image name="Folder" width="512" height="512"/>
         <image name="Messages" width="32" height="32"/>
         <image name="NSActionTemplate" width="14" height="14"/>
         <image name="NSInfo" width="32" height="32"/>
         <image name="NSMultipleDocuments" width="32" height="32"/>
+        <image name="PauseTransfer" width="25" height="25"/>
+        <image name="RemoveTransfer" width="25" height="25"/>
         <image name="Settings" width="32" height="32"/>
+        <image name="StartTransfer" width="25" height="25"/>
+        <image name="StopTransfer" width="25" height="25"/>
         <image name="Transfers" width="32" height="32"/>
     </resources>
 </document>

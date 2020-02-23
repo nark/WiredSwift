@@ -49,15 +49,6 @@ public class TransfersController {
     }
     
     
-    public func download(_ file:File) -> Bool {
-        guard let downloadPath = self.defaultDownloadDestination(forFile: file) else {
-            return false
-        }
-        
-        return download(file, toPath: downloadPath)
-    }
-        
-    
     public func transfers() -> [Transfer] {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Transfer")
         
@@ -74,6 +65,33 @@ public class TransfersController {
         }
         
         return []
+    }
+    
+    public func remove(_ transfer:Transfer) {
+        if transfer.isWorking() {
+            transfer.state = .Removing
+        }
+        else {
+            let context = AppDelegate.shared.persistentContainer.viewContext
+            
+            context.delete(transfer)
+        }
+        
+        NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
+    }
+    
+    
+    public func download(_ file:File) -> Bool {
+        guard let downloadPath = self.defaultDownloadDestination(forFile: file) else {
+            return false
+        }
+        
+        return download(file, toPath: downloadPath)
+    }
+        
+    
+    public func upload(_ file:String) -> Bool {
+        return false
     }
     
     
@@ -135,8 +153,9 @@ public class TransfersController {
     }
     
     private func finish(_ transfer: Transfer, withError error:String? = nil) {
-        if error != nil {
-            print("Transfer error: \(error)")
+        if let e = error {
+            transfer.error = e
+            print("Transfer error: \(e)")
         }
         
         self.finish(transfer)

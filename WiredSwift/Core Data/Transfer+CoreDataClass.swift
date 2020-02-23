@@ -15,6 +15,11 @@ public class Transfer: NSManagedObject {
     public var connection: Connection!
     public var transferConnection: TransferConnection?
     public var file:File?
+    public var error:String = ""
+    
+    public func transferStatus() -> String {
+        return "\(state) \(error)"
+    }
     
     public func isWorking() -> Bool {
         return (state == .Waiting || state == .Queued ||
