@@ -75,9 +75,32 @@ public class File: ConnectionObject, ConnectionDelegate {
     
     public func icon() -> NSImage? {
         if self.type == .file {
-            return NSWorkspace.shared.icon(forFileType: NSFileTypeForHFSTypeCode(OSType(kGenericDocumentIcon)))
+            return NSWorkspace.shared.icon(forFileType: self.fileType())
         }
         return NSWorkspace.shared.icon(forFileType: NSFileTypeForHFSTypeCode(OSType(kGenericFolderIcon)))
+    }
+    
+    
+    public func fileType() -> String {
+        if self.type == .file {
+            let ext = (self.path as NSString).pathExtension as CFString
+            if let uti = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, ext, nil) {
+                if let r = UTTypeCopyDescription(uti.takeRetainedValue())?.takeRetainedValue() as String? {
+                    return r
+                }
+            }
+        }
+        else if self.type == .directory {
+            return "Directory"
+        }
+        else if self.type == .uploads {
+            return "Uploads"
+        }
+        else if self.type == .dropbox {
+            return "Dropbox"
+        }
+        
+        return "Unknow"
     }
     
     

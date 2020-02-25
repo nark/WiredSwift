@@ -61,7 +61,7 @@ public class Connection: NSObject {
         self.socket.password = url.password
         
         self.socket.cipherType  = .RSA_AES_256
-        self.socket.compression = .NONE // 
+        self.socket.compression = .NONE //
         
         if !self.socket.connect() {
             return false
@@ -131,7 +131,7 @@ public class Connection: NSObject {
     
     private func listen() {
         DispatchQueue.global().async {
-            while (self.interactive == true) {
+            while (self.interactive == true && self.socket.connected == true) {
                 Logger.debug("listen try to read")
                 if let message = self.socket.readMessage(), self.interactive == true {
                     self.handleMessage(message)

@@ -7,7 +7,7 @@
 //
 //
 
-import Foundation
+import Cocoa
 import CoreData
 
 
@@ -15,10 +15,11 @@ public class Transfer: NSManagedObject {
     public var connection: Connection!
     public var transferConnection: TransferConnection?
     public var file:File?
+    public var progressIndicator:NSProgressIndicator?
     public var error:String = ""
     
     public func transferStatus() -> String {
-        return "\(state) \(error)"
+        return "\(state) \(percent)% \(error)"
     }
     
     public func isWorking() -> Bool {

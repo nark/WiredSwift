@@ -31,15 +31,37 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     // MARK: -
     
     @IBAction func startTransfer(_ sender: Any) {
-
+        if transfersTableView.selectedRow != -1 {
+            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
+            
+            selectedTransfer.state = .Waiting
+            
+            TransfersController.shared.start(selectedTransfer)
+        }
+        
+        transfersTableView.setNeedsDisplay(transfersTableView.frame)
     }
     
     @IBAction func stopTransfer(_ sender: Any) {
-
+        if transfersTableView.selectedRow != -1 {
+            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
+            
+            selectedTransfer.state = .Waiting
+            
+           // TransfersController.shared.stop(selectedTransfer)
+        }
+        
+        transfersTableView.setNeedsDisplay(transfersTableView.frame)
     }
     
     @IBAction func pauseTransfer(_ sender: Any) {
-
+        if transfersTableView.selectedRow != -1 {
+            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
+            
+            selectedTransfer.state = .Pausing
+        }
+        
+        transfersTableView.setNeedsDisplay(transfersTableView.frame)
     }
     
     @IBAction func removeTransfer(_ sender: Any) {
@@ -75,10 +97,13 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         
         let transfer = TransfersController.shared.transfers()[row]
         
-        if let file = transfer.file {
-            view?.fileName.stringValue = file.name
+        if let name = transfer.name {
+            view?.fileName.stringValue = name
         }
         
+        transfer.progressIndicator?.usesThreadedAnimation = true
+        transfer.progressIndicator?.startAnimation(self)
+        transfer.progressIndicator = view?.progressIndicator
         view?.transferInfo.stringValue = transfer.transferStatus()
 
         return view

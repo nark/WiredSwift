@@ -20,21 +20,6 @@ extension Notification.Name {
 
 
 
-extension FileManager {
-    public static func resourceForkPath(forPath path:String) -> String {
-        var nspath = path as NSString
-        
-        nspath = nspath.appendingPathComponent("..namedfork") as NSString
-        nspath = nspath.appendingPathComponent("rsrc") as NSString
-        
-        return nspath as String
-    }
-    
-    
-    public func setFinderInfo(_ finderInfo: Data, atPath path:String) -> Bool {
-        return true
-    }
-}
 
 
 
@@ -89,18 +74,17 @@ public class TransfersController {
         return download(file, toPath: downloadPath)
     }
         
+
     
-    public func upload(_ file:String) -> Bool {
-        return false
-    }
-    
-    
-    private func download(_ file:File, toPath:String? = nil) -> Bool {
+    public func download(_ file:File, toPath:String? = nil) -> Bool {
         let transfer = DownloadTransfer(context: AppDelegate.shared.persistentContainer.viewContext)
         
+        transfer.name = file.name!
         transfer.connection = file.connection
         transfer.file = file
                         
+        try? AppDelegate.shared.persistentContainer.viewContext.save()
+        
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
         
         self.request(transfer)
@@ -109,10 +93,20 @@ public class TransfersController {
     }
     
     
-    private func upload(_ path:String, toFile file:File) -> Bool {
+    public func upload(_ path:String, toDirectory destination:File) -> Bool {
+        let remotePath = (destination.path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
         let transfer = UploadTransfer(context: AppDelegate.shared.persistentContainer.viewContext)
-            
-        transfer.connection = file.connection
+        
+        transfer.name = (path as NSString).lastPathComponent
+        transfer.connection = destination.connection
+        transfer.remotePath = remotePath
+        transfer.localPath = path
+        
+        let file = File(remotePath, connection: destination.connection)
+        transfer.file = file
+        transfer.size = Int64(FileManager.sizeOfFile(atPath: path))
+        
+        try? AppDelegate.shared.persistentContainer.viewContext.save()
         
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
         
@@ -126,18 +120,19 @@ public class TransfersController {
     private func request(_ transfer: Transfer) {
         if transfer.file?.isFolder() == true {
             
+            
         } else {
             self.start(transfer)
         }
     }
     
     
-    private func start(_ transfer: Transfer) {
-        NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
-
+    public func start(_ transfer: Transfer) {
         if !transfer.isTerminating() {
             transfer.state = .Waiting
         }
+        
+        NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
         
         self.transferThread(transfer)
     }
@@ -179,8 +174,6 @@ public class TransfersController {
         var data = true
         var dataLength:UInt64? = 0
         var rsrcLength:UInt64? = 0
-        var readBytes = 0
-        var writtenBytes = 0
         
         if transfer.transferConnection == nil {
             transfer.transferConnection = self.transfertConnectionForTransfer(transfer)
@@ -204,20 +197,15 @@ public class TransfersController {
             return
         }
                 
-        let message = P7Message(withName: "wired.transfer.download_file", spec: transfer.connection.spec)
-        message.addParameter(field: "wired.file.path", value: transfer.file?.path)
-        message.addParameter(field: "wired.transfer.data_offset", value: UInt64(0))
-        message.addParameter(field: "wired.transfer.rsrc_offset", value: UInt64(0))
-
-        if transfer.transferConnection?.send(message: message) == false {
+        if self.sendDownloadFileMessage(onConnection: connection!, forTransfer: transfer) == false {
             if (transfer.isTerminating() == false) {
                 transfer.state = .Disconnecting
             }
             
             DispatchQueue.main.async {
-                error = "Transfer cannot download_file"
+                let error = "Transfer cannot download_file"
                 
-                Logger.error(error!)
+                Logger.error(error)
                 
                 self.finish(transfer, withError: error)
             }
@@ -239,14 +227,9 @@ public class TransfersController {
                 
         dataLength = runMessage.uint64(forField: "wired.transfer.data")
         rsrcLength = runMessage.uint64(forField: "wired.transfer.rsrc")
-        
-        print("dataLength: \(dataLength)")
-        
+                
         let dataPath = self.defaultDownloadDestination(forFile: transfer.file!)
         let rsrcPath = FileManager.resourceForkPath(forPath: dataPath!)
-        
-        print("dataPath : \(dataPath!)")
-        print("rsrcPath : \(rsrcPath)")
         
         // check file size if it already exists
         if FileManager.default.fileExists(atPath: dataPath!) {
@@ -271,7 +254,7 @@ public class TransfersController {
             }
         }
                 
-        if let finderInfo = message.data(forField: "wired.transfer.finderinfo") {
+        if let finderInfo = runMessage.data(forField: "wired.transfer.finderinfo") {
             if finderInfo.count > 0 {
                 // TODO: set finder info
             }
@@ -280,7 +263,10 @@ public class TransfersController {
         if transfer.isTerminating() == false {
             transfer.state = .Running
             
-            // TODO: validate buttons here
+            // TODO: validate buttons here?
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
+            }
         }
                 
         while(transfer.isTerminating() == false) {
@@ -292,12 +278,12 @@ public class TransfersController {
                 break
             }
             
-            print("before read")
-            let oobdata = transfer.transferConnection!.socket.readOOB()
-            print("after read")
-            
-            print(oobdata.count)
-            
+            guard let oobdata = transfer.transferConnection!.socket.readOOB() else {
+                transfer.state = .Disconnecting
+                
+                break
+            }
+                        
             if oobdata.count <= 0 {
                 transfer.state = .Disconnecting
 
@@ -338,7 +324,7 @@ public class TransfersController {
                     break
                 }
             }
-            
+                        
             // append transfered data
             if data {
                 transfer.dataTransferred += Int64(oobdata.count)
@@ -346,11 +332,19 @@ public class TransfersController {
                 transfer.rsrcTransferred += Int64(oobdata.count)
             }
             
+            let totalTransferSize = transfer.file!.dataSize + transfer.file!.rsrcSize
             transfer.actualTransferred += Int64(oobdata.count)
             
-            print("transfered: \(transfer.dataTransferred + transfer.rsrcTransferred)")
-            print("file size: \(transfer.file!.dataSize + transfer.file!.rsrcSize)")
+            let percent =  Double(transfer.actualTransferred) / Double(totalTransferSize) * 100.0
+            transfer.percent = percent
             
+            if let progressIndicator = transfer.progressIndicator {
+                DispatchQueue.main.async {
+                    progressIndicator.isIndeterminate = false
+                    progressIndicator.doubleValue = percent
+                }
+            }
+                        
             if transfer.dataTransferred + transfer.rsrcTransferred >= transfer.file!.dataSize + transfer.file!.rsrcSize {
                 print("Transfer done")
                 
@@ -366,8 +360,86 @@ public class TransfersController {
     }
     
     
-    private func runUpload(_ transfert: Transfer) {
+    private func runUpload(_ transfer: Transfer) {
+        var error:String? = nil
+        var dataOffset:UInt64? = 0
+        var rsrcOffset:UInt64? = 0
+        var dataLength:UInt64? = 0
+        var rsrcLength:UInt64? = 0
+        
         print("runUpload")
+        
+        if transfer.transferConnection == nil {
+            transfer.transferConnection = self.transfertConnectionForTransfer(transfer)
+        }
+        
+        let connection = transfer.transferConnection
+        
+        transfer.transferConnection?.interactive = false
+        
+        if (connection?.connect(withUrl: transfer.connection.url) == false) {
+            transfer.state = .Stopped
+
+            DispatchQueue.main.async {
+                error = "Transfer cannot connect"
+
+                Logger.error(error!)
+
+                self.finish(transfer, withError: error)
+            }
+
+            return
+        }
+        
+        guard let runMessage = self.run(transfer.transferConnection!, forTransfer: transfer, untilReceivingMessageName: "wired.transfer.upload_ready") else {
+            if transfer.isTerminating() == false {
+                transfer.state = .Disconnecting
+            }
+                     
+            DispatchQueue.main.async {
+                self.finish(transfer)
+            }
+            
+            return
+        }
+        
+        dataOffset = runMessage.uint64(forField: "wired.transfer.data_offset")
+        rsrcOffset = runMessage.uint64(forField: "wired.transfer.rsrc_offset")
+        
+//        dataLength = [file uploadDataSize] - dataOffset;
+//        rsrcLength = [file uploadRsrcSize] - rsrcOffset;
+        
+        DispatchQueue.main.async {
+            self.finish(transfer)
+        }
+    }
+    
+    
+    private func sendDownloadFileMessage(onConnection connection:TransferConnection, forTransfer transfer:Transfer) -> Bool {
+        let message = P7Message(withName: "wired.transfer.download_file", spec: transfer.connection.spec)
+        message.addParameter(field: "wired.file.path", value: transfer.file?.path)
+        message.addParameter(field: "wired.transfer.data_offset", value: UInt64(transfer.dataTransferred))
+        message.addParameter(field: "wired.transfer.rsrc_offset", value: UInt64(transfer.rsrcTransferred))
+
+        if transfer.transferConnection?.send(message: message) == false {
+            return false
+        }
+        
+        return true
+    }
+    
+    
+    private func sendUploadFileMessage(onConnection connection:TransferConnection, forTransfer transfer:Transfer) -> Bool {
+        let message = P7Message(withName: "wired.transfer.upload_file", spec: transfer.connection.spec)
+        message.addParameter(field: "wired.file.path", value: transfer.file?.path)
+        message.addParameter(field: "wired.transfer.data_size", value: UInt64(transfer.size))
+        message.addParameter(field: "wired.transfer.rsrc_size", value: 0)
+
+        if transfer.transferConnection?.send(message: message) == false {
+            return false
+        }
+        
+        return true
     }
     
     

@@ -1049,6 +1049,7 @@ DQ
                     </view>
                     <connections>
                         <outlet property="addressField" destination="3vv-df-Vaz" id="f6W-wr-tOg"/>
+                        <outlet property="connectButton" destination="V6H-Eh-S1M" id="hHf-rR-GBW"/>
                         <outlet property="loginField" destination="Ij9-Os-Atg" id="KHF-Mg-kdP"/>
                         <outlet property="passwordField" destination="7YK-Ga-JRu" id="Gq1-ng-uch"/>
                         <outlet property="progressIndicator" destination="0Mb-SI-9m7" id="YRY-eV-hQg"/>
@@ -1274,6 +1275,19 @@ DQ
             </objects>
             <point key="canvasLocation" x="4135" y="-1"/>
         </scene>
+        <!--View Controller-->
+        <scene sceneID="gnF-3s-HSl">
+            <objects>
+                <viewController id="JD5-N5-Lwj" sceneMemberID="viewController">
+                    <view key="view" id="cO6-f2-gnq">
+                        <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </view>
+                </viewController>
+                <customObject id="yOp-12-Si5" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2744" y="276"/>
+        </scene>
         <!--Files-->
         <scene sceneID="Dt2-7e-tz6">
             <objects>
@@ -1282,7 +1296,7 @@ DQ
                         <rect key="frame" x="0.0" y="0.0" width="786" height="547"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <browser verticalHuggingPriority="750" allowsExpansionToolTips="YES" enabled="YES" hasHorizontalScroller="YES" allowsEmptySelection="YES" defaultColumnWidth="150" minColumnWidth="150" allowsTypeSelect="YES" columnResizingType="user" translatesAutoresizingMaskIntoConstraints="NO" id="5HJ-0Z-562">
+                            <browser verticalHuggingPriority="750" allowsExpansionToolTips="YES" enabled="YES" hasHorizontalScroller="YES" allowsEmptySelection="YES" defaultColumnWidth="250" minColumnWidth="250" allowsTypeSelect="YES" columnResizingType="user" translatesAutoresizingMaskIntoConstraints="NO" id="5HJ-0Z-562">
                                 <rect key="frame" x="-1" y="31" width="788" height="517"/>
                                 <connections>
                                     <outlet property="delegate" destination="DVd-lO-xhs" id="n9N-Af-dc9"/>
@@ -1291,13 +1305,43 @@ DQ
                             <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="XqN-UA-GMH">
                                 <rect key="frame" x="760" y="8" width="16" height="16"/>
                             </progressIndicator>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="AvT-4p-RRg">
+                                <rect key="frame" x="20" y="6" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="Yg5-ht-7UM"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="Download" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="pX6-Xv-ZjI">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="download:" target="DVd-lO-xhs" id="IiH-OQ-kYs"/>
+                                </connections>
+                            </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="eLi-ul-aNh">
+                                <rect key="frame" x="56" y="6" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="mSZ-dp-9T5"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="Upload" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="x7L-fS-YdX">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="cellTitle"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="upload:" target="DVd-lO-xhs" id="aBd-8p-PYF"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="XqN-UA-GMH" secondAttribute="bottom" constant="8" id="7qt-xr-8of"/>
                             <constraint firstItem="5HJ-0Z-562" firstAttribute="leading" secondItem="OSO-On-1Mx" secondAttribute="leading" constant="-1" id="BFO-mc-IHp"/>
                             <constraint firstAttribute="trailing" secondItem="5HJ-0Z-562" secondAttribute="trailing" constant="-1" id="D3H-I2-4ev"/>
+                            <constraint firstAttribute="bottom" secondItem="AvT-4p-RRg" secondAttribute="bottom" constant="7" id="OTn-eo-wdh"/>
                             <constraint firstItem="5HJ-0Z-562" firstAttribute="top" secondItem="OSO-On-1Mx" secondAttribute="top" constant="-1" id="b8e-AU-F0O"/>
                             <constraint firstAttribute="trailing" secondItem="XqN-UA-GMH" secondAttribute="trailing" constant="10" id="eVy-jc-yMK"/>
+                            <constraint firstAttribute="bottom" secondItem="eLi-ul-aNh" secondAttribute="bottom" constant="7" id="t6h-fw-Yxp"/>
+                            <constraint firstItem="AvT-4p-RRg" firstAttribute="leading" secondItem="OSO-On-1Mx" secondAttribute="leading" constant="20" id="zAV-4N-biR"/>
+                            <constraint firstItem="eLi-ul-aNh" firstAttribute="leading" secondItem="AvT-4p-RRg" secondAttribute="trailing" constant="8" id="zeI-Pn-CtC"/>
                             <constraint firstAttribute="bottom" secondItem="5HJ-0Z-562" secondAttribute="bottom" constant="31" id="zrC-7t-0Bf"/>
                         </constraints>
                     </view>
@@ -1425,7 +1469,7 @@ DQ
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
-                                                                <progressIndicator wantsLayer="YES" maxValue="100" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="jKN-XT-IQi">
+                                                                <progressIndicator wantsLayer="YES" maxValue="100" indeterminate="YES" style="bar" translatesAutoresizingMaskIntoConstraints="NO" id="jKN-XT-IQi">
                                                                     <rect key="frame" x="59" y="20" width="705" height="20"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" constant="18" id="L9h-82-qTK"/>
@@ -1588,6 +1632,7 @@ DQ
         <image name="Boards" width="32" height="32"/>
         <image name="Chat" width="32" height="32"/>
         <image name="ClearTransfers" width="25" height="25"/>
+        <image name="Download" width="25" height="25"/>
         <image name="Folder" width="512" height="512"/>
         <image name="Messages" width="32" height="32"/>
         <image name="NSActionTemplate" width="14" height="14"/>
@@ -1599,5 +1644,6 @@ DQ
         <image name="StartTransfer" width="25" height="25"/>
         <image name="StopTransfer" width="25" height="25"/>
         <image name="Transfers" width="32" height="32"/>
+        <image name="Upload" width="25" height="25"/>
     </resources>
 </document>

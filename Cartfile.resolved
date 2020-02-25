@@ -1,3 +1,4 @@
+github "1024jp/GzipSwift" "5.1.1"
 github "BiAtoms/Socket.swift" "2.4.0"
 github "IBM-Swift/BlueRSA" "1.0.35"
 github "kishikawakatsumi/KeychainAccess" "v4.1.0"

@@ -16,6 +16,7 @@ class ConnectController: ConnectionController, ConnectionDelegate {
     @IBOutlet weak var addressField: NSTextField!
     @IBOutlet weak var loginField: NSTextField!
     @IBOutlet weak var passwordField: NSSecureTextField!
+    @IBOutlet weak var connectButton: NSButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -69,6 +70,7 @@ class ConnectController: ConnectionController, ConnectionDelegate {
         self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
         
         self.progressIndicator.startAnimation(sender)
+        connectButton.isEnabled = false
                 
         DispatchQueue.global().async {
             if self.connection.connect(withUrl: url) {
@@ -77,6 +79,11 @@ class ConnectController: ConnectionController, ConnectionDelegate {
                     
                     self.progressIndicator.stopAnimation(sender)
                     self.performSegue(withIdentifier: "showPublicChat", sender: sender)
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.connectButton.isEnabled = true
+                    self.progressIndicator.stopAnimation(self)
                 }
             }
         }

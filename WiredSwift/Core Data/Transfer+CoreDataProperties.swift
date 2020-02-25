@@ -67,6 +67,7 @@ extension Transfer {
     }
 
     @NSManaged public var state: State
+    @NSManaged public var name: String?
     @NSManaged public var identifier: UUID?
     @NSManaged public var isFolder: Bool
     @NSManaged public var localPath: String?
@@ -76,6 +77,6 @@ extension Transfer {
     @NSManaged public var actualTransferred: Int64
     @NSManaged public var startDate: Date?
     @NSManaged public var accumulatedTime: Double
-    @NSManaged public var percent: Float
-
+    @NSManaged public var percent: Double
+    @NSManaged public var size: Int64
 }
