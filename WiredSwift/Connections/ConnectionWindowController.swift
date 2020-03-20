@@ -15,6 +15,8 @@ class ConnectionWindowController: NSWindowController {
         super.windowDidLoad()
     
         NotificationCenter.default.addObserver(self, selector: #selector(windowWillClose(notification:)), name: NSWindow.willCloseNotification, object: self.window)
+        
+        self.window?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
     }
     
 
@@ -32,11 +34,18 @@ class ConnectionWindowController: NSWindowController {
     
         super.close()
     }
+    
+    
+    
+    @IBAction func tabAction(_ sender: Any) {
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "SelectedToolbarItemChanged"), object: self.window)
+    }
 
     
     private func safeCloseWindow() {
         if self.connection != nil {
             ConnectionsController.shared.removeConnection(self.connection)
+            
             self.connection.disconnect()
         }
     }

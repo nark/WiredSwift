@@ -65,12 +65,30 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
     @objc private func doubleClickResource() {
         if let clickedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.clickedRow) {
             if let bookmark = clickedItem as? Bookmark {
+                // handle already connected ?
+                if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
+                    if let tabGroup = cwc.window?.tabGroup {
+                        tabGroup.selectedWindow = cwc.window
+                        return
+                    }
+                }
+                
                 let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
                 if let connectController = storyboard.instantiateController(withIdentifier: "ConnectWindowController") as? NSWindowController {
                     connectController.showWindow(self)
                     
                     if let connectController = connectController.contentViewController as? ConnectController {
                         connectController.connect(withBookmark: bookmark)
+                    }
+                }
+            }
+            // reveal connection on double click
+            else if let connection = clickedItem as? Connection {
+                if let cwc = AppDelegate.windowController(forConnection: connection) {
+                    if cwc.connection == connection {
+                        if let tabGroup = cwc.window?.tabGroup {
+                            tabGroup.selectedWindow = cwc.window
+                        }
                     }
                 }
             }
@@ -190,6 +208,9 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
         
         return view
     }
+    
+    
+
     
     
     // MARK: -

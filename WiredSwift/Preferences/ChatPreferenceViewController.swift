@@ -21,10 +21,10 @@ final class ChatPreferenceViewController: NSViewController, PreferencePane {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let data = UserDefaults.standard.data(forKey: "WSChatEventFontColor"),
-              let eventFontColor = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? NSColor {
-            eventColorWell.color = eventFontColor
-        }
+//        if let data = UserDefaults.standard.data(forKey: "WSChatEventFontColor"),
+//              let eventFontColor = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? NSColor {
+//            //eventColorWell.color = eventFontColor
+//        }
     }
     
 }

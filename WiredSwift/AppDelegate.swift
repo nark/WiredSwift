@@ -123,6 +123,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     
+    
+    // MARK: - Static Connection Helpers
+    public static func windowController(forConnection connection:Connection) -> ConnectionWindowController? {
+        for w in NSApp.windows {
+            if let cwc = w.windowController as? ConnectionWindowController {
+                if cwc.connection == connection {
+                    return cwc
+                }
+            }
+        }
+        return nil
+    }
+    
+    
+    public static func windowController(forBookmark bookmark:Bookmark) -> ConnectionWindowController? {
+        for w in NSApp.windows {
+            if let cwc = w.windowController as? ConnectionWindowController {
+                if "\(cwc.connection.url.hostname):\(cwc.connection.url.port)" == bookmark.hostname! && cwc.connection.url.login == bookmark.login! {
+                    return cwc
+                }
+            }
+        }
+        return nil
+    }
+    
+    
+    
     // MARK: - Privates
     private func setTabView(atIndex index:Int) {
         if let currentWindowController = currentWindowController() {
