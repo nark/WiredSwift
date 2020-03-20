@@ -338,15 +338,11 @@ public class P7Socket: NSObject {
     public func readOOB(timeout:TimeInterval = 1.0) -> Data? {
         var messageData = Data()
         var lengthBuffer = [Byte](repeating: 0, count: 4)
-        var bytesRead = self.read(&lengthBuffer, maxLength: 4, timeout: timeout)
+        let bytesRead = self.read(&lengthBuffer, maxLength: 4, timeout: timeout)
         
         if bytesRead >= 4 {
             let messageLength = Data(lengthBuffer).uint32.bigEndian
-            
-            var messageBuffer = [Byte](repeating: 0, count: Int(messageLength))
-            bytesRead = self.read(&messageBuffer, maxLength: Int(messageLength))
-            
-            messageData = Data(messageBuffer)
+            messageData = try! self.readData(size: Int(messageLength))
             
             // data to message object
             if messageData.count > 0 {
@@ -437,9 +433,7 @@ public class P7Socket: NSObject {
                 // self.checksum = P7Socket.Checksum(rawValue: chs)!
             }
         }
-        
-        print("self.compression: \(self.compression)")
-        
+                
         if let remoteCheck = response.bool(forField: "p7.handshake.compatibility_check"), remoteCheck == false {
             self.remoteCompatibilityCheck = false
         }

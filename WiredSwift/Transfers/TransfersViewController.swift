@@ -21,7 +21,6 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     
     @objc func didUpdateTransfers(_ notification: Notification) {
         if let transfer = notification.object as? Transfer {
-            print("didUpdateTransfers: \(transfer)")
             transfersTableView.reloadData()
         }
     }

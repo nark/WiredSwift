@@ -17,11 +17,11 @@ Init dependencies:
 * Files browsing: poor native support on macOS
 * File transfers: download/upload files and directories with local and remote queue
 * Socket compression: not implemented yet (gzip)
+* Socket checksum: not implemented yet 
 * Auto-reconnection: we jumps for networks to networks these days...
 * Better use of user privileges on client side
-* Fix socket read timeout/buffer for remote connections (Socket.swift line:214 - usleep(200000))
 * Write unit tests and enforce Github actions plan
-* Write minimal server code(embed mac server in client? — but still as a separated process)
+* Write minimal server code (embed mac server in client? — but still as a separated process)
 * Always try to be as close as pure Swift foundation when it relies to Wired framework
 
 ## License

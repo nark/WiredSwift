@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="15705" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="15705"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="ChatMessageItem" customModule="WiredSwift" customModuleProvider="target">
+            <connections>
+                <outlet property="messageLabel" destination="0ig-hI-6Bt" id="yEV-LH-V9x"/>
+                <outlet property="nickLabel" destination="0I4-Qc-v18" id="IhQ-at-Jw8"/>
+                <outlet property="view" destination="Hz6-mo-xeY" id="0bl-1N-x8E"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customView id="Hz6-mo-xeY">
+            <rect key="frame" x="0.0" y="0.0" width="341" height="80"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+            <subviews>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0I4-Qc-v18">
+                    <rect key="frame" x="18" y="44" width="93" height="16"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="16" id="5Qh-sx-rZR"/>
+                    </constraints>
+                    <textFieldCell key="cell" lineBreakMode="clipping" title="Nick" id="HZA-X9-55p">
+                        <font key="font" metaFont="systemMedium" size="13"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+                <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="0ig-hI-6Bt">
+                    <rect key="frame" x="18" y="20" width="305" height="16"/>
+                    <textFieldCell key="cell" title="Text tesxt text " id="RsQ-hT-rHf">
+                        <font key="font" usesAppearanceFont="YES"/>
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                    </textFieldCell>
+                </textField>
+            </subviews>
+            <constraints>
+                <constraint firstAttribute="bottom" secondItem="0ig-hI-6Bt" secondAttribute="bottom" constant="20" id="73A-4j-XfQ"/>
+                <constraint firstItem="0ig-hI-6Bt" firstAttribute="top" secondItem="0I4-Qc-v18" secondAttribute="bottom" constant="8" id="898-HC-7IW"/>
+                <constraint firstItem="0I4-Qc-v18" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" constant="20" id="C9x-Za-yJx"/>
+                <constraint firstAttribute="trailing" secondItem="0I4-Qc-v18" secondAttribute="trailing" constant="232" id="Ihh-JC-iO8"/>
+                <constraint firstItem="0I4-Qc-v18" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="20" id="XbP-La-dmL"/>
+                <constraint firstItem="0ig-hI-6Bt" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="20" id="ePd-Si-ijE"/>
+                <constraint firstAttribute="trailing" secondItem="0ig-hI-6Bt" secondAttribute="trailing" constant="20" id="g93-xT-9zJ"/>
+            </constraints>
+            <point key="canvasLocation" x="67.5" y="1"/>
+        </customView>
+    </objects>
+</document>

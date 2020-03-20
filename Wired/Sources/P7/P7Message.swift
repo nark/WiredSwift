@@ -158,8 +158,6 @@ public class P7Message: NSObject {
     public func bin() -> Data {
         var data = Data()
         
-        print("self.message.name = \(name!)")
-        
         // append message ID
         if let messageID = UInt32(self.id) {
             data.append(uint32: messageID, bigEndian: true)

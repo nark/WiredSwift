@@ -132,7 +132,7 @@ public class Connection: NSObject {
     private func listen() {
         DispatchQueue.global().async {
             while (self.interactive == true && self.socket.connected == true) {
-                Logger.debug("listen try to read")
+                //Logger.debug("listen try to read")
                 if let message = self.socket.readMessage(), self.interactive == true {
                     self.handleMessage(message)
                 }

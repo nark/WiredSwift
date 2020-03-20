@@ -603,42 +603,43 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="hB3-LF-h0Y"/>
-                                        <menuItem title="Chat" keyEquivalent="t" id="OFt-Qb-Wp0">
+                                        <menuItem title="Chat" keyEquivalent="1" id="OFt-Qb-Wp0">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showChat:" target="Ady-hI-5gd" id="OXF-f3-2j1"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Messages" keyEquivalent="e" id="TPL-IX-h3h">
+                                        <menuItem title="Messages" keyEquivalent="2" id="TPL-IX-h3h">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showMessages:" target="Ady-hI-5gd" id="19d-zd-3Zk"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Boards" keyEquivalent="b" id="glT-74-grJ">
+                                        <menuItem title="Boards" keyEquivalent="3" id="glT-74-grJ">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showBoards:" target="Ady-hI-5gd" id="cKF-pE-Ngr"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Files" keyEquivalent="f" id="IMb-TD-Ci6">
+                                        <menuItem title="Files" keyEquivalent="4" id="IMb-TD-Ci6">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showFiles:" target="Ady-hI-5gd" id="kIx-2s-Zzr"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Transfers" keyEquivalent="S" id="162-Vh-Eh9">
+                                        <menuItem title="Transfers" keyEquivalent="5" id="162-Vh-Eh9">
+                                            <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showTransfers:" target="Ady-hI-5gd" id="gjA-PX-Z04"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Infos" keyEquivalent="i" id="W8B-bW-Mwe">
+                                        <menuItem title="Infos" keyEquivalent="6" id="W8B-bW-Mwe">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showInfos:" target="Ady-hI-5gd" id="wtf-aL-ivw"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Settings" keyEquivalent="," id="MIX-13-jna">
+                                        <menuItem title="Settings" keyEquivalent="7" id="MIX-13-jna">
                                             <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                             <connections>
                                                 <action selector="showSettings:" target="Ady-hI-5gd" id="tVu-uW-RO8"/>
@@ -849,7 +850,7 @@
                                             <tableColumns>
                                                 <tableColumn width="147" minWidth="16" maxWidth="1000" id="ck4-pO-pAI">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="message" size="11"/>
+                                                        <font key="font" metaFont="label" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1107,13 +1108,13 @@ DQ
                                     </connections>
                                 </textFieldCell>
                             </textField>
-                            <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LJB-Q0-QWb">
+                            <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="BFl-ok-agc">
                                 <rect key="frame" x="0.0" y="50" width="699" height="414"/>
-                                <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="jo3-nZ-3aA">
+                                <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="S9i-Z1-p8i">
                                     <rect key="frame" x="0.0" y="0.0" width="699" height="414"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
-                                        <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="Fny-W1-hPV">
+                                        <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" spellingCorrection="YES" smartInsertDelete="YES" id="7O5-48-Whr">
                                             <rect key="frame" x="0.0" y="0.0" width="699" height="414"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
@@ -1124,35 +1125,34 @@ DQ
                                         </textView>
                                     </subviews>
                                 </clipView>
-                                <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="zF9-ae-q10">
+                                <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="ezK-QG-0EI">
                                     <rect key="frame" x="-100" y="-100" width="240" height="16"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
-                                <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="7Ab-5d-iZH">
+                                <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="swn-pP-PcP">
                                     <rect key="frame" x="683" y="0.0" width="16" height="414"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                             </scrollView>
                         </subviews>
                         <constraints>
-                            <constraint firstItem="75H-lt-M0V" firstAttribute="top" secondItem="LJB-Q0-QWb" secondAttribute="bottom" constant="8" id="M7b-48-fHE"/>
-                            <constraint firstItem="75H-lt-M0V" firstAttribute="top" secondItem="LJB-Q0-QWb" secondAttribute="bottom" constant="8" id="Vtb-OM-IHQ"/>
-                            <constraint firstAttribute="trailing" secondItem="LJB-Q0-QWb" secondAttribute="trailing" id="c2C-Ek-WjC"/>
+                            <constraint firstItem="75H-lt-M0V" firstAttribute="top" secondItem="BFl-ok-agc" secondAttribute="bottom" constant="8" id="A7Q-h7-v3k"/>
+                            <constraint firstItem="BFl-ok-agc" firstAttribute="leading" secondItem="sM7-3S-tlr" secondAttribute="leading" id="XtJ-FY-WyV"/>
                             <constraint firstAttribute="trailing" secondItem="75H-lt-M0V" secondAttribute="trailing" id="jgk-qJ-2h4"/>
-                            <constraint firstItem="LJB-Q0-QWb" firstAttribute="leading" secondItem="sM7-3S-tlr" secondAttribute="leading" id="kbw-RL-G5Q"/>
                             <constraint firstAttribute="bottom" secondItem="75H-lt-M0V" secondAttribute="bottom" id="nV3-PP-Yyh"/>
                             <constraint firstItem="75H-lt-M0V" firstAttribute="leading" secondItem="sM7-3S-tlr" secondAttribute="leading" id="ns4-s1-bPK"/>
-                            <constraint firstItem="LJB-Q0-QWb" firstAttribute="top" secondItem="sM7-3S-tlr" secondAttribute="top" id="qR7-78-krH"/>
+                            <constraint firstItem="BFl-ok-agc" firstAttribute="top" secondItem="sM7-3S-tlr" secondAttribute="top" id="yHn-2F-wAr"/>
+                            <constraint firstAttribute="trailing" secondItem="BFl-ok-agc" secondAttribute="trailing" id="zPI-5S-M6c"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="chatInput" destination="75H-lt-M0V" id="jwH-I0-CqR"/>
-                        <outlet property="chatTextView" destination="Fny-W1-hPV" id="hDD-Ac-V3L"/>
+                        <outlet property="chatTextView" destination="7O5-48-Whr" id="Mf4-En-QzT"/>
                     </connections>
                 </viewController>
                 <customObject id="Wmn-QR-mjL" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="5262" y="-1403"/>
+            <point key="canvasLocation" x="5261.5" y="-1403"/>
         </scene>
         <!--User Controller-->
         <scene sceneID="H5i-Wh-Lwp">
@@ -1177,7 +1177,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="197" minWidth="40" maxWidth="1000" id="eA5-Ow-sef">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="message" size="11"/>
+                                                        <font key="font" metaFont="label" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1312,7 +1312,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="Download" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="pX6-Xv-ZjI">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="download:" target="DVd-lO-xhs" id="IiH-OQ-kYs"/>
@@ -1325,7 +1325,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="Upload" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="x7L-fS-YdX">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="upload:" target="DVd-lO-xhs" id="aBd-8p-PYF"/>
@@ -1339,7 +1339,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="NSRefreshTemplate" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="2Tm-0y-K22">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="reload:" target="DVd-lO-xhs" id="3mZ-J4-jgJ"/>
@@ -1459,7 +1459,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="767" minWidth="40" maxWidth="1000" id="hcD-Cb-GI0">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="message" size="11"/>
+                                                        <font key="font" metaFont="label" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1505,7 +1505,7 @@ DQ
                                                                         <constraint firstAttribute="height" constant="18" id="b0G-Uw-0yQ"/>
                                                                     </constraints>
                                                                     <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Transfer infos" id="7Jf-7z-cek">
-                                                                        <font key="font" metaFont="message" size="11"/>
+                                                                        <font key="font" metaFont="label" size="11"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
@@ -1559,7 +1559,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="StartTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="5jE-Bw-00A">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="startTransfer:" target="r5t-wK-RQX" id="vFq-ck-0B2"/>
@@ -1572,7 +1572,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="StopTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="wZ5-pV-YId">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="stopTransfer:" target="r5t-wK-RQX" id="93d-j6-mcu"/>
@@ -1585,7 +1585,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="PauseTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="0Og-gO-VU1">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="pauseTransfer:" target="r5t-wK-RQX" id="Pdn-No-YLP"/>
@@ -1598,7 +1598,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="RemoveTransfer" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="AqH-x5-ad5">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="removeTransfer:" target="r5t-wK-RQX" id="ihX-iP-W4O"/>
@@ -1611,7 +1611,7 @@ DQ
                                 </constraints>
                                 <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="ClearTransfers" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="bBS-yY-wsT">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="controlContent"/>
+                                    <font key="font" metaFont="label" size="12"/>
                                 </buttonCell>
                                 <connections>
                                     <action selector="clearTransfers:" target="r5t-wK-RQX" id="WnC-wH-cv1"/>
