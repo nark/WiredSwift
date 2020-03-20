@@ -24,11 +24,11 @@ public class FilesController: ConnectionObject {
         self.rootFile = File(root, connection: connection)
     }
     
-    public func load(ofFile file:File?) {
+    public func load(ofFile file:File?, reload:Bool = false) {
         if let f = file {
-            f.load()
+            f.load(reload: reload)
         } else {
-            rootFile.load()
+            rootFile.load(reload: reload)
         }
     }
 }

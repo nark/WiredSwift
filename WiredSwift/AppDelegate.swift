@@ -12,9 +12,10 @@ import Preferences
 import KeychainAccess
 
 extension PreferencePane.Identifier {
-    static let general  = Identifier("general")
-    static let files = Identifier("files")
-    static let advanced = Identifier("advanced")
+    static let general      = Identifier("general")
+    static let chat         = Identifier("chat")
+    static let files        = Identifier("files")
+    static let advanced     = Identifier("advanced")
 }
 
 extension Notification.Name {
@@ -30,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
             GeneralPreferenceViewController(),
+            ChatPreferenceViewController(),
             FilesPreferenceViewController(),
             AdvancedPreferenceViewController()
         ]
@@ -43,6 +45,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             "WSUserNick": "WiredSwift",
             "WSUserStatus": "Share The Wealth",
             "WSDownloadDirectory": downloadsDirectory,
+            "WSChatFontName": "Courier",
+            "WSChatFontSize": 14.0,
+            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false)
         ])
         
         UserDefaults.standard.synchronize()

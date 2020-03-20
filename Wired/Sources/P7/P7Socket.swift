@@ -14,6 +14,7 @@ import CommonCrypto
 import CZlib
 
 
+
 public class P7Socket: NSObject {
     public enum Serialization:Int {
         case XML            = 0
@@ -52,7 +53,7 @@ public class P7Socket: NSObject {
     public var checksum: Checksum = .NONE
     public var sslCipher: P7Cipher!
     public var timeout: Int = 10
-    public var errors: [Error] = []
+    public var errors: [WiredError] = []
     
     public var compressionEnabled: Bool = false
     public var compressionConfigured: Bool = false
@@ -70,6 +71,7 @@ public class P7Socket: NSObject {
     
     private var socket: Socket!
     private var publicKey: String!
+    private var dropped:Data = Data()
     
     private var deflateStream:z_stream = zlib.z_stream()
     private var inflateStream:z_stream = zlib.z_stream()
@@ -81,49 +83,49 @@ public class P7Socket: NSObject {
     }
 
     
-    public func connect(withHadshake handshake: Bool = true) -> Bool {
+    public func connect(withHandshake handshake: Bool = true) -> Bool {
         do {
             self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
             
             try socket.set(option: .receiveTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
             try socket.set(option: .sendTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
             try socket.set(option: .receiveBufferSize, 327680)
+            try socket.set(option: .sendBufferSize, 327680)
             
             let addr = try! socket.addresses(for: self.hostname, port: Port(self.port)).first!
+            
             try self.socket.connect(address: addr)
-            
+
             self.connected = true
-            
+
             if handshake {
                 if !self.connectHandshake() {
                     Logger.error("Handshake failed")
                     return false
                 }
-                
-               print("Handshake OKKKKK")
-                
+
                 if self.compression != .NONE {
                     self.configureCompression()
                 }
-                
+
                 if self.checksum != .NONE {
                     self.configureChecksum()
                 }
-                
+
                 if self.cipherType != .NONE {
                     if !self.connectKeyExchange() {
                         Logger.error("Key Exchange failed")
                         return false
                     }
                 }
-                
+
                 if self.remoteCompatibilityCheck {
                     if !self.sendCompatibilityCheck() {
                         Logger.error("Remote Compatibility Check failed")
                         return false
                     }
                 }
-                
+
                 if self.localCompatibilityCheck {
                     if !self.receiveCompatibilityCheck() {
                         Logger.error("Local Compatibility Check failed")
@@ -137,6 +139,7 @@ public class P7Socket: NSObject {
             } else {
                 Logger.error(error.localizedDescription)
             }
+            return false
         }
         
         return true
@@ -148,6 +151,7 @@ public class P7Socket: NSObject {
         self.socket.close()
         self.connected = false
     }
+    
     
     
     public func write(_ message: P7Message) -> Bool {
@@ -167,9 +171,7 @@ public class P7Socket: NSObject {
                 lengthData.append(uint32: UInt32(messageData.count))
                 
                 Logger.debug("WRITE [\(self.hash)]: \(message.name!)")
-                
-                print("self.compressionEnabled : \(self.compressionEnabled)")
-                
+                                
                 // deflate
                 if self.compressionEnabled {
                     guard let deflatedMessageData = self.deflate(messageData) else {
@@ -193,8 +195,9 @@ public class P7Socket: NSObject {
                     lengthData.append(uint32: UInt32(messageData.count))
                 }
                 
-                try self.socket.write(lengthData.bytes)
-                try self.socket.write(messageData.bytes)
+                _ = self.write(lengthData.bytes, maxLength: lengthData.count)
+                _ = self.write(messageData.bytes, maxLength: messageData.count)
+                
             }
             
         } catch let error {
@@ -208,30 +211,14 @@ public class P7Socket: NSObject {
         return true
     }
     
-    
-    
-    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
-        while let available = try? socket.wait(for: .read, timeout: timeout) {
-            guard available else { continue } // timeout happend, try again
-            
-            let n = try? socket.read(buffer, size: len)
-            
-            return n ?? 0
-        }
-        
-        return 0
-    }
-    
+
     
     
     public func readMessage() -> P7Message? {
-        // hack to handle remote connection for now
-        usleep(200000)
-        
         var messageData = Data()
         var lengthBuffer = [Byte](repeating: 0, count: 4)
-        var bytesRead = self.read(&lengthBuffer, maxLength: 4)
-
+        let bytesRead = self.read(&lengthBuffer, maxLength: 4)
+        
         if bytesRead > 0 {
             if self.serialization == .XML {
                 if let xml = String(bytes: messageData, encoding: .utf8) {
@@ -243,11 +230,7 @@ public class P7Socket: NSObject {
             else if self.serialization == .BINARY {
                 if bytesRead >= 4 {
                     let messageLength = Data(lengthBuffer).uint32.bigEndian
-                    
-                    var messageBuffer = [Byte](repeating: 0, count: Int(messageLength))
-                    bytesRead = self.read(&messageBuffer, maxLength: Int(messageLength))
-                    
-                    messageData = Data(messageBuffer)
+                    messageData = try! self.readData(size: Int(messageLength))
                     
                     // data to message object
                     if messageData.count > 0 {
@@ -270,7 +253,6 @@ public class P7Socket: NSObject {
                             messageData = inflatedMessageData
                         }
                         
-                                                
                         // init response message
                         let message = P7Message(withData: messageData, spec: self.spec)
                         
@@ -286,6 +268,69 @@ public class P7Socket: NSObject {
         }
         
         return nil
+    }
+    
+    
+    
+    private func write(_ buffer: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 10.0) -> Int {
+        while let available = try? socket.wait(for: .write, timeout: timeout) {
+            guard available else { continue } // timeout happend, try again
+            
+            let n = try? socket.write(buffer, size: len)
+            
+            return n ?? 0
+        }
+        
+        return 0
+    }
+    
+    
+    
+    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int, timeout:TimeInterval = 10.0) -> Int {
+        while let available = try? socket.wait(for: .read, timeout: timeout) {
+            guard available else { continue } // timeout happend, try again
+
+            let n = try? socket.read(buffer, size: len)
+
+            return n ?? 0
+        }
+        
+        return 0
+    }
+    
+    
+    // I have pretty much had to rewrite my own read() function here
+    private func readData(size: Int, timeout:TimeInterval = 10.0) throws -> Data {
+        while let available = try? socket.wait(for: .read, timeout: timeout) {
+            guard available else { continue } // timeout happend, try again
+                
+            var data = Data()
+            var readBytes = 0
+            var nLength = size
+
+            while readBytes < size && nLength > 0 {
+                var messageBuffer = [Byte](repeating: 0, count: nLength)
+                
+                readBytes += try ing { recv(socket.fileDescriptor, &messageBuffer, nLength, MSG_WAITALL) }
+                nLength    = size - readBytes
+                
+                //print("readBytes : \(readBytes)")
+                //print("nLength : \(nLength)")
+                
+                let subdata = Data(bytes: messageBuffer, count: readBytes)
+                if subdata.count > nLength {
+                    _ = subdata.dropLast(nLength)
+                }
+            
+                //print("subdata : \(subdata.toHex())")
+                
+                data.append(subdata)
+            }
+            
+            return data
+        }
+            
+        return Data()
     }
     
     

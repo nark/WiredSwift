@@ -221,10 +221,13 @@ public class P7Message: NSObject {
                                     data.append(d)
                                 }
                             } else if specField.type == .oobdata { // oobdata (8)
-                                let str = (value as! String)
-                                if let d = str.nullTerminated {
+                                if let d = value as? Data {
                                     data.append(d)
                                 }
+//                                let str = (value as! String)
+//                                if let d = str.nullTerminated {
+//                                    data.append(d)
+//                                }
                             } else if specField.type == .list { // list (x)
 
                             }
@@ -362,7 +365,7 @@ public class P7Message: NSObject {
                     offset += fieldLength
                     
                 } else {
-                    Logger.error("ERROR : Unknow field ID: \(fieldID)")
+                    Logger.error("ERROR : Unknow field ID: \(String(describing: fieldID))")
                     return
                 }
                 

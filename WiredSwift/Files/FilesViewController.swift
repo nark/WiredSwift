@@ -74,6 +74,11 @@ class FilesViewController: ConnectionController, ConnectionDelegate, NSBrowserDe
     
     
     // MARK: -
+    @IBAction func reload(_ sender: Any) {
+        print("reload")
+        self.filesController.load(ofFile: nil, reload: true)
+        self.progressIndicator.startAnimation(self)
+    }
     
     @IBAction func download(_ sender: Any) {
         if let file = selectedFile() {

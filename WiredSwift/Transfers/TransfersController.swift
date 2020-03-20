@@ -97,14 +97,16 @@ public class TransfersController {
         let remotePath = (destination.path as NSString).appendingPathComponent((path as NSString).lastPathComponent)
         let transfer = UploadTransfer(context: AppDelegate.shared.persistentContainer.viewContext)
         
+        let file = File(remotePath, connection: destination.connection)
+        file.uploadDataSize = FileManager.sizeOfFile(atPath: path)
+        file.uploadDataSize = 0
+        
         transfer.name = (path as NSString).lastPathComponent
         transfer.connection = destination.connection
         transfer.remotePath = remotePath
         transfer.localPath = path
-        
-        let file = File(remotePath, connection: destination.connection)
         transfer.file = file
-        transfer.size = Int64(FileManager.sizeOfFile(atPath: path))
+        transfer.size = Int64(file.uploadDataSize + file.uploadRsrcSize)
         
         try? AppDelegate.shared.persistentContainer.viewContext.save()
         
@@ -118,8 +120,7 @@ public class TransfersController {
     
     
     private func request(_ transfer: Transfer) {
-        if transfer.file?.isFolder() == true {
-            
+        if transfer.isFolder {
             
         } else {
             self.start(transfer)
@@ -243,6 +244,7 @@ public class TransfersController {
                     }
                               
                     DispatchQueue.main.async {
+                        transfer.percent = 100
                         self.finish(transfer, withError: "file already exists at this location: \(dataPath!)")
                     }
                     
@@ -391,7 +393,23 @@ public class TransfersController {
             return
         }
         
-        guard let runMessage = self.run(transfer.transferConnection!, forTransfer: transfer, untilReceivingMessageName: "wired.transfer.upload_ready") else {
+        if self.sendUploadFileMessage(onConnection: connection!, forTransfer: transfer) == false {
+            if (transfer.isTerminating() == false) {
+                transfer.state = .Disconnecting
+            }
+            
+            DispatchQueue.main.async {
+                let error = "Transfer cannot upload_file"
+                
+                Logger.error(error)
+                
+                self.finish(transfer, withError: error)
+            }
+            
+            return
+        }
+        
+        guard let message = self.run(transfer.transferConnection!, forTransfer: transfer, untilReceivingMessageName: "wired.transfer.upload_ready") else {
             if transfer.isTerminating() == false {
                 transfer.state = .Disconnecting
             }
@@ -403,15 +421,41 @@ public class TransfersController {
             return
         }
         
-        dataOffset = runMessage.uint64(forField: "wired.transfer.data_offset")
-        rsrcOffset = runMessage.uint64(forField: "wired.transfer.rsrc_offset")
+        dataOffset = message.uint64(forField: "wired.transfer.data_offset")
+        rsrcOffset = message.uint64(forField: "wired.transfer.rsrc_offset")
         
-//        dataLength = [file uploadDataSize] - dataOffset;
-//        rsrcLength = [file uploadRsrcSize] - rsrcOffset;
+        dataLength = transfer.file!.uploadDataSize - dataOffset!
+        rsrcLength = transfer.file!.uploadRsrcSize - rsrcOffset!
         
-        DispatchQueue.main.async {
-            self.finish(transfer)
+        if transfer.file!.dataTransferred == 0 {
+            transfer.file!.dataTransferred = dataOffset!
+            transfer.dataTransferred = transfer.dataTransferred + Int64(dataOffset!)
+        } else {
+            transfer.file!.dataTransferred = dataOffset!
+            transfer.dataTransferred = Int64(dataOffset!)
         }
+        
+        if self.sendUploadMessage(onConnection: connection!, forTransfer: transfer, dataLength: dataLength!, rsrcLength: rsrcLength!) == false {
+            if (transfer.isTerminating() == false) {
+                transfer.state = .Disconnecting
+            }
+            
+            DispatchQueue.main.async {
+                let error = "Transfer cannot upload"
+                
+                Logger.error(error)
+                
+                self.finish(transfer, withError: error)
+            }
+            
+            return
+        }
+        
+        
+        
+//        DispatchQueue.main.async {
+//            self.finish(transfer)
+//        }
     }
     
     
@@ -433,7 +477,22 @@ public class TransfersController {
         let message = P7Message(withName: "wired.transfer.upload_file", spec: transfer.connection.spec)
         message.addParameter(field: "wired.file.path", value: transfer.file?.path)
         message.addParameter(field: "wired.transfer.data_size", value: UInt64(transfer.size))
-        message.addParameter(field: "wired.transfer.rsrc_size", value: 0)
+        message.addParameter(field: "wired.transfer.rsrc_size", value: UInt64(0))
+
+        if transfer.transferConnection?.send(message: message) == false {
+            return false
+        }
+        
+        return true
+    }
+    
+    
+    private func sendUploadMessage(onConnection connection:TransferConnection, forTransfer transfer:Transfer, dataLength:UInt64, rsrcLength:UInt64) -> Bool {
+        let message = P7Message(withName: "wired.transfer.upload", spec: transfer.connection.spec)
+        message.addParameter(field: "wired.file.path", value: transfer.file?.path)
+        message.addParameter(field: "wired.transfer.data", value: dataLength.bigEndian)
+        message.addParameter(field: "wired.transfer.rsrc", value: rsrcLength.bigEndian)
+        message.addParameter(field: "wired.transfer.finderinfo", value: FileManager.default.finderInfo(atPath: transfer.file!.path))
 
         if transfer.transferConnection?.send(message: message) == false {
             return false
@@ -469,6 +528,7 @@ public class TransfersController {
                 }
                 
             } else if message.name == "wired.error" {
+                print("Transfer error")
                 if let error = transfer.connection.spec.error(forMessage: message) {
                     print("Transfer error: \(error.name!)")
                 }
@@ -489,9 +549,9 @@ public class TransfersController {
         return connection
     }
     
+    
     private func defaultDownloadDestination(forFile file:File) -> String? {
         if let downloadDirectory = UserDefaults.standard.string(forKey: "WSDownloadDirectory") as NSString? {
-        
             return (downloadDirectory.expandingTildeInPath as NSString).appendingPathComponent(file.name)
         }
         return nil

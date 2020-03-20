@@ -10,12 +10,26 @@ import Cocoa
 
 
 extension NSTextView {
-    func appendString(string:String) {
-        let attrs: [NSAttributedString.Key: Any] = [
-            NSAttributedString.Key.foregroundColor : NSColor.controlTextColor,
-            .font : NSFont(name: "Courier", size: 14) as Any
-        ]
+    func appendString(string:String, isEvent:Bool = false) {
+        guard let fontName = UserDefaults.standard.string(forKey: "WSChatFontName") else {
+            return
+        }
         
+        guard let data = UserDefaults.standard.data(forKey: "WSChatEventFontColor"),
+              let eventFontColor = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) else {
+            return
+        }
+        
+        let fontSize = UserDefaults.standard.float(forKey: "WSChatFontName")
+        let attrs: [NSAttributedString.Key: Any] = [
+            NSAttributedString.Key.foregroundColor : isEvent ? eventFontColor : NSColor.controlTextColor,
+            .font : NSFont(name: fontName, size: CGFloat(fontSize)) as Any
+        ]
+                
+        self.appendString(string: string, withAttributes: attrs)
+    }
+    
+    func appendString(string:String, withAttributes attrs: [NSAttributedString.Key: Any]) {
         self.textStorage?.append(NSAttributedString(string: string + "\n", attributes: attrs))
         self.scrollRangeToVisible(NSRange(location:self.string.count, length: 0))
     }
@@ -54,11 +68,11 @@ class ChatController: ConnectionController, ConnectionDelegate {
     
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        print("observeValue: \(keyPath) -> \(change?[NSKeyValueChangeKey.newKey])")
+        //print("observeValue: \(keyPath) -> \(change?[NSKeyValueChangeKey.newKey])")
         if keyPath == "WSUserNick" {
             if let nick = change?[NSKeyValueChangeKey.newKey] as? String {
                 if let m = self.setNickMessage(nick) {
-                  self.connection.send(message: m)
+                  _ = self.connection.send(message: m)
                 }
             }
         }
@@ -200,7 +214,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
                 return
             }
             
-            self.chatTextView.appendString(string: "<< Topic: \(chatTopic) by \(userNick) >>")
+            self.chatTextView.appendString(string: "<< Topic: \(chatTopic) by \(userNick) >>", isEvent: true)
         }
         else if  message.name == "wired.chat.user_list" {
             let userInfo = UserInfo(message: message)
@@ -219,7 +233,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
         else if message.name == "wired.chat.user_join" {
             let userInfo = UserInfo(message: message)
             
-            self.chatTextView.appendString(string: "<< \(userInfo.nick!) joined the chat >>")
+            self.chatTextView.appendString(string: "<< \(userInfo.nick!) joined the chat >>", isEvent: true)
             
             self.users.append(userInfo)
         }
@@ -229,7 +243,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
             }
             
             if let user = self.user(forID: userID) {
-                self.chatTextView.appendString(string: "<< \(user.nick!) left the chat >>")
+                self.chatTextView.appendString(string: "<< \(user.nick!) left the chat >>", isEvent: true)
             }
             
             if let index = users.index(where: {$0.userID == userID}) {

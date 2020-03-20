@@ -19,7 +19,13 @@ public class Transfer: NSManagedObject {
     public var error:String = ""
     
     public func transferStatus() -> String {
-        return "\(state) \(percent)% \(error)"
+        var s = "\(state) \(percent)%"
+        
+        if error != "" {
+            s = "\(s) - \(error)"
+        }
+        
+        return s
     }
     
     public func isWorking() -> Bool {

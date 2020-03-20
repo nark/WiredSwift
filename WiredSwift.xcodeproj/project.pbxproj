@@ -23,6 +23,11 @@
 		4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C1319AD2316E79F00C9FA0C /* SocketSwift.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C1319AF231862DF00C9FA0C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 4C1319AE231862DF00C9FA0C /* README.md */; };
+		4C2000952421530B00A4D77A /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000942421530B00A4D77A /* WiredError.swift */; };
+		4C2000962421588C00A4D77A /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000942421530B00A4D77A /* WiredError.swift */; };
+		4C200099242162BB00A4D77A /* ChatPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */; };
+		4C20009A2421661C00A4D77A /* ChatPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C200097242162A500A4D77A /* ChatPreferenceViewController.xib */; };
+		4C20009B2421661C00A4D77A /* FilesPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */; };
 		4C36AEF82401CB6300AEC18E /* Transfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */; };
 		4C36AEF92401CB6300AEC18E /* Transfer+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */; };
 		4C36AEFE2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */; };
@@ -157,6 +162,9 @@
 		4C12FE8824045ABA000CDDCA /* FilePreviewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FilePreviewController.xib; sourceTree = "<group>"; };
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		4C2000942421530B00A4D77A /* WiredError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiredError.swift; sourceTree = "<group>"; };
+		4C200097242162A500A4D77A /* ChatPreferenceViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ChatPreferenceViewController.xib; sourceTree = "<group>"; };
+		4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferenceViewController.swift; sourceTree = "<group>"; };
 		4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UploadTransfer+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -304,7 +312,6 @@
 		4C74286022DCECE800D6E6F9 /* WiredSwift */ = {
 			isa = PBXGroup;
 			children = (
-				4C6A89E62405612400780FEF /* Extensions */,
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
 				4CEF0ABA23FDD5EA0097E37E /* Connections */,
 				4CEF0ABC23FDD6190097E37E /* Chats */,
@@ -316,6 +323,7 @@
 				4CEF0ABD23FDD6430097E37E /* Infos */,
 				4CEF0AB823FDD5A50097E37E /* Preferences */,
 				4CEF0AB923FDD5B80097E37E /* Core Data */,
+				4C6A89E62405612400780FEF /* Extensions */,
 				4CEF0ABE23FDD64E0097E37E /* UI */,
 				4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */,
 				4C74286A22DCECE900D6E6F9 /* Info.plist */,
@@ -354,6 +362,7 @@
 			isa = PBXGroup;
 			children = (
 				4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */,
+				4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */,
 				4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */,
 				4C374DA423FE80B1006D3E7C /* FilesPreferenceViewController.swift */,
 			);
@@ -420,6 +429,7 @@
 				4C74286722DCECE900D6E6F9 /* Main.storyboard */,
 				4C12FE8824045ABA000CDDCA /* FilePreviewController.xib */,
 				4C0A99FD23FC01140008A7A6 /* GeneralPreferenceViewController.xib */,
+				4C200097242162A500A4D77A /* ChatPreferenceViewController.xib */,
 				4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */,
 				4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */,
 				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
@@ -485,6 +495,7 @@
 			children = (
 				4CED2FBE22E8EF90000E5B9E /* Logger.swift */,
 				4C4C3EEA22E1131B00BC2DD9 /* Const.swift */,
+				4C2000942421530B00A4D77A /* WiredError.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -614,10 +625,12 @@
 			files = (
 				4C1319AF231862DF00C9FA0C /* README.md in Resources */,
 				4C74286622DCECE900D6E6F9 /* Assets.xcassets in Resources */,
+				4C20009B2421661C00A4D77A /* FilesPreferenceViewController.xib in Resources */,
 				4C12FE8A24045ABA000CDDCA /* FilePreviewController.xib in Resources */,
 				4C0A99FF23FC01140008A7A6 /* GeneralPreferenceViewController.xib in Resources */,
 				4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */,
 				4C0A99FE23FC01140008A7A6 /* AdvancedPreferenceViewController.xib in Resources */,
+				4C20009A2421661C00A4D77A /* ChatPreferenceViewController.xib in Resources */,
 				4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -671,11 +684,13 @@
 				4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */,
 				4C374DA723FE8655006D3E7C /* TransfersViewController.swift in Sources */,
 				4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */,
+				4C200099242162BB00A4D77A /* ChatPreferenceViewController.swift in Sources */,
 				4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */,
 				4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */,
 				4C36AEFF2401CE4300AEC18E /* UploadTransfer+CoreDataProperties.swift in Sources */,
 				4C36AEFE2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift in Sources */,
 				4C36AF002401CE4300AEC18E /* DownloadTransfer+CoreDataClass.swift in Sources */,
+				4C2000962421588C00A4D77A /* WiredError.swift in Sources */,
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
 				4C74286222DCECE800D6E6F9 /* AppDelegate.swift in Sources */,
 				4C36AF012401CE4300AEC18E /* DownloadTransfer+CoreDataProperties.swift in Sources */,
@@ -694,6 +709,7 @@
 				4CED2FCD22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
 				4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4C4C3EE622E10C3700BC2DD9 /* Connection.swift in Sources */,
+				4C2000952421530B00A4D77A /* WiredError.swift in Sources */,
 				4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */,
 				4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
 				4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */,

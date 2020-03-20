@@ -28,7 +28,9 @@ public class File: ConnectionObject, ConnectionDelegate {
     
     public var dataSize:UInt64 = 0
     public var rsrcSize:UInt64 = 0
-    
+
+    public var uploadDataSize:UInt64 = 0
+    public var uploadRsrcSize:UInt64 = 0
     public var dataTransferred:UInt64 = 0
     public var rsrcTransferred:UInt64 = 0
     
@@ -61,8 +63,12 @@ public class File: ConnectionObject, ConnectionDelegate {
 
     
     
-    public func load() {
-        if self.type != .file && self.children.count == 0 {
+    public func load(reload:Bool = false) {
+        if self.type != .file && (self.children.count == 0 || reload == true) {
+            if reload == true {
+                children = []
+            }
+            
             connection.addDelegate(self)
             
             let message = P7Message(withName: "wired.file.list_directory", spec: self.connection.spec)
