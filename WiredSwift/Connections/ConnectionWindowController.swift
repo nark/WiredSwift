@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class ConnectionWindowController: NSWindowController {
+class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate {
     public var connection: Connection!
     
     override func windowDidLoad() {
@@ -21,18 +21,29 @@ class ConnectionWindowController: NSWindowController {
     
 
     
-    @objc func windowWillClose(notification: Notification) -> Void {
+    @objc private func windowWillClose(notification: Notification) -> Void {
         if let w = notification.object as? NSWindow, w == self.window {
-            self.safeCloseWindow()
+            self.disconnect()
             NotificationCenter.default.removeObserver(self)
         }
     }
     
     
-    override func close() {
-        self.safeCloseWindow()
-    
-        super.close()
+    func windowDidBecomeKey(_ notification: Notification) {
+        if self.window == notification.object as? NSWindow {
+            if let splitViewController = self.contentViewController as? NSSplitViewController {
+                if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
+                    if let identifier = tabViewController.tabView.tabViewItem(at: tabViewController.selectedTabViewItemIndex).identifier as? String {
+                        if identifier == "Chat" {
+                            AppDelegate.resetUnread(forKey: "WSUnreadChatMessages", forConnection: self.connection)
+                        }
+                        else if identifier == "Messages" {
+                            AppDelegate.resetUnread(forKey: "WSUnreadPrivateMessages", forConnection: self.connection)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     
@@ -40,9 +51,14 @@ class ConnectionWindowController: NSWindowController {
     @IBAction func tabAction(_ sender: Any) {
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "SelectedToolbarItemChanged"), object: self.window)
     }
+    
+    
+    @IBAction func disconnect(_ sender: Any) {
+        self.window?.close()
+    }
 
     
-    private func safeCloseWindow() {
+    public func disconnect() {
         if self.connection != nil {
             ConnectionsController.shared.removeConnection(self.connection)
             

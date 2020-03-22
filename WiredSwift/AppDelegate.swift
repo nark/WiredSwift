@@ -25,7 +25,7 @@ extension Notification.Name {
 public let spec = P7Spec()
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     public static let shared:AppDelegate = NSApp.delegate as! AppDelegate
     
     lazy var preferencesWindowController = PreferencesWindowController(
@@ -44,13 +44,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.register(defaults: [
             "WSUserNick": "WiredSwift",
             "WSUserStatus": "Share The Wealth",
+            "WSUserIcon": try! NSKeyedArchiver.archivedData(withRootObject: AppDelegate.defaultUserIconData() as Any, requiringSecureCoding: false),
+            "WSCheckActiveConnectionsBeforeQuit": true,
             "WSDownloadDirectory": downloadsDirectory,
             "WSChatFontName": "Courier",
             "WSChatFontSize": 14.0,
-            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false)
+            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false),
+            "WSUnreadChatMessages": 0
         ])
         
         UserDefaults.standard.synchronize()
+    }
+    
+    private static func defaultUserIconData() -> Data? {
+        return Data(base64Encoded: Wired.defaultUserIcon, options: .ignoreUnknownCharacters)
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -66,30 +73,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - IB Actions
     @IBAction func showChat(_ sender: Any) {
         self.setTabView(atIndex: 0)
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
     }
     
     @IBAction func showMessages(_ sender: Any) {
         self.setTabView(atIndex: 1)
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Messages")
     }
     
     @IBAction func showBoards(_ sender: Any) {
         self.setTabView(atIndex: 2)
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Boards")
     }
     
     @IBAction func showFiles(_ sender: Any) {
         self.setTabView(atIndex: 3)
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Files")
     }
     
     @IBAction func showTransfers(_ sender: Any) {
         self.setTabView(atIndex: 4)
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Transfers")
     }
     
     @IBAction func showInfos(_ sender: Any) {
         self.setTabView(atIndex: 5)
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Infos")
     }
     
     @IBAction func showSettings(_ sender: Any) {
         self.setTabView(atIndex: 6)
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Settings")
     }
     
     
@@ -97,7 +111,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let context = persistentContainer.viewContext
         
         if let splitVC = NSApp.mainWindow?.contentViewController as? NSSplitViewController {
-            if let connVC = splitVC.splitViewItems[0].viewController as? ConnectionController {
+            if let connVC = splitVC.splitViewItems[0].viewController as? ConnectionViewController {
                 if let connection = connVC.connection {
                     let bookmark:Bookmark = NSEntityDescription.insertNewObject(
                         forEntityName: "Bookmark", into: context) as! Bookmark
@@ -118,10 +132,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     
+    @IBAction func connectBookmark(_ sender: NSMenuItem) {
+        if let bookmark = sender.representedObject as? Bookmark {
+            ConnectionsController.shared.connectBookmark(bookmark)
+        }
+    }
+    
+    
     @IBAction func preferencesMenuItemActionHandler(_ sender: NSMenuItem) {
         preferencesWindowController.show()
     }
     
+    
+    
+    // MARK: - Menu Delegate
+    
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        
+        let item = menu.addItem(withTitle: "Add To Bookmark", action: #selector(addToBookmarks(_:)), keyEquivalent: "B")
+        item.keyEquivalentModifierMask = NSEvent.ModifierFlags.option
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        var i = 0
+        for bookmark in ConnectionsController.shared.bookmarks() {
+            let item = menu.addItem(withTitle: bookmark.name!, action: #selector(connectBookmark), keyEquivalent: "\(i)")
+            item.keyEquivalentModifierMask = NSEvent.ModifierFlags.command
+            item.representedObject = bookmark
+            i += 1
+        }
+    }
     
     
     // MARK: - Static Connection Helpers
@@ -149,8 +190,85 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     
+    public static func updateBadge(ofItemWithIdentifier toolbarIdentifier:String, withValue count:Int, forConnection connection:Connection) {
+        if let window = AppDelegate.windowController(forConnection: connection)?.window {
+            if let toolbar = window.toolbar {
+                for item in toolbar.items {
+                    if item.itemIdentifier.rawValue == toolbarIdentifier {
+                        item.image = MSCBadgedTemplateImage.image(named: NSImage.Name(toolbarIdentifier), withCount: count)
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    public static func incrementUnread(forKey key:String, withValue count:Int = 1, forConnection connection:Connection) {
+        var value = UserDefaults.standard.integer(forKey: key)
+        
+        value += count
+        
+        UserDefaults.standard.set(value, forKey: key)
+        
+        if value > 0 {
+            if key == "WSUnreadChatMessages" {
+                AppDelegate.updateBadge(ofItemWithIdentifier: "Chat", withValue: value, forConnection: connection)
+                
+            }
+            else if key == "WSUnreadPrivateMessages" {
+                AppDelegate.updateBadge(ofItemWithIdentifier: "Messages", withValue: value, forConnection: connection)
+            }
+        }
+        
+        AppDelegate.updateValueOfTab(forConnection: connection)
+        AppDelegate.updateDockBadge()
+    }
+    
+    
+    public static func resetUnread(forKey key:String, forConnection connection:Connection) {
+        UserDefaults.standard.set(0, forKey: key)
+        
+        if key == "WSUnreadChatMessages" {
+            AppDelegate.updateBadge(ofItemWithIdentifier: "Chat", withValue: 0, forConnection: connection)
+        }
+        else if key == "WSUnreadPrivateMessages" {
+            AppDelegate.updateBadge(ofItemWithIdentifier: "Messages", withValue: 0, forConnection: connection)
+        }
+        
+        AppDelegate.updateValueOfTab(forConnection: connection)
+        AppDelegate.updateDockBadge()
+    }
+    
+    
+    public static func updateValueOfTab(forConnection connection:Connection) {
+        let unreadChatMessages = UserDefaults.standard.integer(forKey: "WSUnreadChatMessages")
+        let unreadPrivateMessages = UserDefaults.standard.integer(forKey: "WSUnreadPrivateMessages")
+        let total = unreadChatMessages + unreadPrivateMessages
+        
+        if let window = AppDelegate.windowController(forConnection: connection)?.window as? ConnectionWindow {
+            if total > 0 {
+                window.tab.attributedTitle = NSAttributedString(string: "(\(total)) \(connection.serverInfo.serverName!)")
+            } else {
+                window.tab.attributedTitle = NSAttributedString(string: "\(connection.serverInfo.serverName!)")
+            }
+        }
+    }
+
+    
+    private static func updateDockBadge() {
+        let unreadChatMessages = UserDefaults.standard.integer(forKey: "WSUnreadChatMessages")
+        let unreadPrivateMessages = UserDefaults.standard.integer(forKey: "WSUnreadPrivateMessages")
+        let total = unreadChatMessages + unreadPrivateMessages
+
+        NSApp.dockTile.badgeLabel = total > 0 ? String(total) : ""
+    }
+    
     
     // MARK: - Privates
+    private func setTabView(withIdentifier identifier:String) {
+        
+    }
+    
     private func setTabView(atIndex index:Int) {
         if let currentWindowController = currentWindowController() {
             if let splitViewController = currentWindowController.contentViewController as? NSSplitViewController {
@@ -167,7 +285,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         return nil
     }
-    
+
     
     
     // MARK: - Core Data stack

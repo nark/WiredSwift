@@ -26,11 +26,19 @@ public class Connection: NSObject {
     public var interactive: Bool = true
     
     public var userID: UInt32!
+    public var userInfo: UserInfo?
+    
     public var nick: String     = "Swift Wired"
     public var status: String   = ""
     public var icon: String     = Wired.defaultUserIcon
     
     public var serverInfo: ServerInfo!
+    
+    public var URI:String {
+        get {
+            return "\(self.url.login)@\(self.url.hostname):\(self.url.port)"
+        }
+    }
     
     public init(withSpec spec: P7Spec, delegate: ConnectionDelegate? = nil) {
         self.spec = spec
@@ -99,6 +107,11 @@ public class Connection: NSObject {
     }
     
     
+    public func isConnected() -> Bool {
+        return self.socket.connected
+    }
+    
+    
     public func send(message:P7Message) -> Bool {
         if self.socket.connected {
             return self.socket.write(message)
@@ -113,6 +126,7 @@ public class Connection: NSObject {
         }
         return nil
     }
+
     
     
     
@@ -289,4 +303,9 @@ public class Connection: NSObject {
         
         return true
     }
+    
+    
+    // MARK: -
+
+    
 }

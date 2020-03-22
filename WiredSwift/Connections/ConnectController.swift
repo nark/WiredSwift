@@ -11,7 +11,7 @@ import Wired
 
 
 
-class ConnectController: ConnectionController, ConnectionDelegate {
+class ConnectController: ConnectionViewController, ConnectionDelegate {
     @IBOutlet weak var progressIndicator: NSProgressIndicator!
     @IBOutlet weak var addressField: NSTextField!
     @IBOutlet weak var loginField: NSTextField!
@@ -103,11 +103,11 @@ class ConnectController: ConnectionController, ConnectionDelegate {
                       
                     if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
                         if let splitViewController2 = tabViewController.tabViewItems[0].viewController as? NSSplitViewController {
-                            if let userController = splitViewController2.splitViewItems[1].viewController as? UserController {
+                            if let userController = splitViewController2.splitViewItems[1].viewController as? UsersViewController {
                                 userController.representedObject = self.connection
                             }
 
-                            if let chatController = splitViewController2.splitViewItems[0].viewController as? ChatController {
+                            if let chatController = splitViewController2.splitViewItems[0].viewController as? ChatViewController {
                                 chatController.representedObject = self.connection
                             }
                             
@@ -120,6 +120,11 @@ class ConnectController: ConnectionController, ConnectionDelegate {
                         for item in tabViewController.tabViewItems {
                             if let connectionController = item.viewController as? InfosViewController {
                                 connectionController.representedObject = self.connection
+                            }
+                            else if let messagesSplitViewController = item.viewController as? MessagesSplitViewController {
+                                if let conversationsViewController = messagesSplitViewController.splitViewItems[1].viewController as? ConversationsViewController {
+                                    conversationsViewController.representedObject = self.connection
+                                }
                             }
                             else if let connectionController = item.viewController as? FilesViewController {
                                 connectionController.representedObject = self.connection

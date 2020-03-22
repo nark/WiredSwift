@@ -11,14 +11,16 @@ import Cocoa
 extension Notification.Name {
     static let didAddNewConnection = Notification.Name("didAddNewConnection")
     static let didRemoveConnection = Notification.Name("didRemoveConnection")
+    
+    static let shouldSelectConversation = Notification.Name("shouldSelectConversation")
 }
 
 class ConnectionsController {
     public static let shared = ConnectionsController()
     
     var connections:[Connection] = []
+    var usersControllers:[UsersController] = []
     var filesControllers:[FilesController] = []
-    
     
     private init() {
 
@@ -79,15 +81,105 @@ class ConnectionsController {
     
     
     public func removeBookmark(_ bookmark:Bookmark) {
-        if let appDelegate = NSApp.delegate as? AppDelegate  {
-            let context = appDelegate.persistentContainer.viewContext
+        AppDelegate.shared.persistentContainer.viewContext.delete(bookmark)
+    }
+    
+    
+    public func connectBookmark(_ bookmark:Bookmark) {
+        // handle already connected ?
+        if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
+            if let tabGroup = cwc.window?.tabGroup {
+                tabGroup.selectedWindow = cwc.window
+                return
+            }
+        }
+        
+        let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
+        if let connectController = storyboard.instantiateController(withIdentifier: "ConnectWindowController") as? NSWindowController {
+            connectController.showWindow(self)
             
-            context.delete(bookmark)
+            if let connectController = connectController.contentViewController as? ConnectController {
+                connectController.connect(withBookmark: bookmark)
+            }
         }
     }
     
     
+    
+    // MARK: - Messages
+    
+    public func conversations() -> [Conversation] {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Conversation")
+        
+        guard let appDelegate = NSApp.delegate as? AppDelegate else {
+            return []
+        }
+        
+        let context = appDelegate.persistentContainer.viewContext
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            let conversations = results as! [Conversation]
+            
+            return conversations
+            
+        } catch let error as NSError {
+            print("Could not fetch \(error)")
+        }
+        
+        return []
+    }
+    
+    
+    public func conversation(withNick nick: String, onConnection connection:Connection) -> Conversation? {
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Conversation")
+        fetchRequest.predicate = NSPredicate(format: "nick == %@ AND uri == %@", nick, connection.URI)
+        fetchRequest.fetchLimit = 1
+        
+        guard let appDelegate = NSApp.delegate as? AppDelegate else {
+            return nil
+        }
+        
+        let context = appDelegate.persistentContainer.viewContext
+        
+        do {
+            let results = try context.fetch(fetchRequest)
+            if let r = results.first, let conversation = results.first as? Conversation {
+                return conversation
+            }
+            
+        } catch let error as NSError {
+            print("Could not fetch \(error)")
+        }
+        
+        return nil
+    }
+    
+    
+    public func removeConversation(_ conversation:Conversation) {
+        AppDelegate.shared.persistentContainer.viewContext.delete(conversation)
+    }
+    
+    
     // MARK: -
+    public func usersController(forConnection connection:Connection) -> UsersController {
+        var usersController:UsersController? = nil
+        
+        let exists = usersControllers.contains { (fc) -> Bool in
+            if fc.connection == connection {
+                usersController = fc
+            }
+            return fc.connection == connection
+        }
+        
+        if !exists {
+            usersController = UsersController(connection)
+            usersControllers.append(usersController!)
+        }
+        
+        return usersController!
+    }
+    
     
     public func filesController(forConnection connection:Connection) -> FilesController {
         var filesController:FilesController? = nil
@@ -101,8 +193,11 @@ class ConnectionsController {
         
         if !exists {
             filesController = FilesController(connection)
+            filesControllers.append(filesController!)
         }
         
         return filesController!
     }
+    
+    
 }

@@ -28,6 +28,5 @@ class TabViewController: NSTabViewController {
                 }
             }
         }
-        
     }
 }

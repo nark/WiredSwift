@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate {
+class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate {
     @IBOutlet weak var resourcesOutlineView: NSOutlineView!
     
     struct ResourceIdentifiers {
@@ -21,8 +21,8 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
     let categories = [
         ResourceIdentifiers.connections,
         ResourceIdentifiers.bookmarks,
-        ResourceIdentifiers.trackers,
-        ResourceIdentifiers.history
+//        ResourceIdentifiers.trackers,
+//        ResourceIdentifiers.history
     ]
     
     // MARK: View Lifecycle -
@@ -65,22 +65,7 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
     @objc private func doubleClickResource() {
         if let clickedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.clickedRow) {
             if let bookmark = clickedItem as? Bookmark {
-                // handle already connected ?
-                if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
-                    if let tabGroup = cwc.window?.tabGroup {
-                        tabGroup.selectedWindow = cwc.window
-                        return
-                    }
-                }
-                
-                let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
-                if let connectController = storyboard.instantiateController(withIdentifier: "ConnectWindowController") as? NSWindowController {
-                    connectController.showWindow(self)
-                    
-                    if let connectController = connectController.contentViewController as? ConnectController {
-                        connectController.connect(withBookmark: bookmark)
-                    }
-                }
+                ConnectionsController.shared.connectBookmark(bookmark)
             }
             // reveal connection on double click
             else if let connection = clickedItem as? Connection {
@@ -98,6 +83,9 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
     
     @objc func didUpdateConnections(_ notification: Notification) {
         if let _ = notification.object as? Connection {
+            self.resourcesOutlineView.reloadData()
+        }
+        else if let _ = notification.object as? Bookmark {
             self.resourcesOutlineView.reloadData()
         }
     }
@@ -209,6 +197,11 @@ class ResourcesController: ConnectionController, ConnectionDelegate, NSOutlineVi
         return view
     }
     
+    
+    
+    func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat {
+        return 24
+    }
     
 
     

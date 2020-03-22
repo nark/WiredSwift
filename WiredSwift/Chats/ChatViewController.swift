@@ -7,41 +7,14 @@
 //
 
 import Cocoa
+import MessageKit_macOS
 
 
-extension NSTextView {
-    func appendString(string:String, isEvent:Bool = false) {
-        guard let fontName = UserDefaults.standard.string(forKey: "WSChatFontName") else {
-            return
-        }
-        
-        guard let data = UserDefaults.standard.data(forKey: "WSChatEventFontColor"),
-              let eventFontColor = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) else {
-            return
-        }
-        
-        let fontSize = UserDefaults.standard.float(forKey: "WSChatFontName")
-        let attrs: [NSAttributedString.Key: Any] = [
-            NSAttributedString.Key.foregroundColor : isEvent ? eventFontColor : NSColor.controlTextColor,
-            .font : NSFont(name: fontName, size: CGFloat(fontSize)) as Any
-        ]
-                
-        self.appendString(string: string, withAttributes: attrs)
-    }
+class ChatViewController: ConnectionViewController, ConnectionDelegate {
+    @IBOutlet var chatInput: GrowingTextField!
+    @IBOutlet weak var sendButton: NSButton!
     
-    func appendString(string:String, withAttributes attrs: [NSAttributedString.Key: Any]) {
-        self.textStorage?.append(NSAttributedString(string: string + "\n", attributes: attrs))
-        self.scrollRangeToVisible(NSRange(location:self.string.count, length: 0))
-    }
-}
-
-
-class ChatController: ConnectionController, ConnectionDelegate {
-    @IBOutlet var chatTextView: NSTextView!
-    @IBOutlet var chatInput: NSTextField!
-    
-    private var users:[UserInfo] = []
-    
+    weak var conversationViewController: ConversationViewController!
     
     
     override func viewDidLoad() {
@@ -50,16 +23,24 @@ class ChatController: ConnectionController, ConnectionDelegate {
         UserDefaults.standard.addObserver(self, forKeyPath: "WSUserNick", options: NSKeyValueObservingOptions.new, context: nil)
     }
     
+    
     override func viewDidAppear() {
         super.viewDidAppear()
         
-        chatInput.becomeFirstResponder()
+        if self.connection != nil {
+            chatInput.becomeFirstResponder()
+            
+            AppDelegate.resetUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
+        }
     }
+    
     
     override var representedObject: Any? {
         didSet {
             if let c = self.representedObject as? Connection {
                 self.connection = c
+                
+                self.conversationViewController.connection = self.connection
                 
                 c.delegates.append(self)
             }
@@ -75,6 +56,14 @@ class ChatController: ConnectionController, ConnectionDelegate {
                   _ = self.connection.send(message: m)
                 }
             }
+        }
+    }
+    
+    
+    override func prepare(for segue: NSStoryboardSegue, sender: Any?) {        
+        if let conversationViewController = segue.destinationController as? ConversationViewController {
+            self.conversationViewController = conversationViewController
+            self.conversationViewController.connection = self.connection
         }
     }
     
@@ -134,6 +123,11 @@ class ChatController: ConnectionController, ConnectionDelegate {
     }
     
     
+    @IBAction func showEmojis(_ sender: Any) {
+        NSApp.orderFrontCharacterPalette(self.chatInput)
+    }
+    
+    
     
     @IBAction func chatAction(_ sender: Any) {
         if let textField = sender as? NSTextField, textField.stringValue.count > 0 {
@@ -164,7 +158,7 @@ class ChatController: ConnectionController, ConnectionDelegate {
     }
     
     func connectionDisconnected(connection: Connection, error: Error?) {
-        
+
     }
     
     func connectionDidReceiveError(connection: Connection, message: P7Message) {
@@ -179,6 +173,8 @@ class ChatController: ConnectionController, ConnectionDelegate {
     }
     
     func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
+        let uc = ConnectionsController.shared.usersController(forConnection: self.connection)
+        
         if message.name == "wired.chat.say" {
             guard let userID = message.uint32(forField: "wired.user.id") else {
                 return
@@ -188,8 +184,15 @@ class ChatController: ConnectionController, ConnectionDelegate {
                 return
             }
             
-            if let userNick = self.user(forID: userID)?.nick {
-                self.chatTextView.appendString(string: "\(userNick): \(sayString)")
+            if let userInfo = uc.user(forID: userID) {
+                conversationViewController.addChatMessage(message: sayString, fromUser: userInfo, me: (userInfo.userID == self.connection.userID))
+                
+                // add unread
+                if userInfo.userID != self.connection.userID {
+                    if self.chatInput.currentEditor() == nil || self.view.window?.isKeyWindow == false {
+                        AppDelegate.incrementUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
+                    }
+                }
             }
         }
         else if message.name == "wired.chat.me" {
@@ -201,8 +204,15 @@ class ChatController: ConnectionController, ConnectionDelegate {
                 return
             }
             
-            if let userNick = self.user(forID: userID)?.nick {
-                self.chatTextView.appendString(string: "*** \(userNick) \(sayString)")
+            if let userInfo = uc.user(forID: userID) {
+                conversationViewController.addChatMessage(message: "→ \(userInfo.nick!) \(sayString)", fromUser: userInfo, me: (userInfo.userID == self.connection.userID))
+                
+                // add unread
+                if userInfo.userID != self.connection.userID {
+                    if NSApp.isActive == false || self.view.window?.isKeyWindow == false {
+                        AppDelegate.incrementUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
+                    }
+                }
             }
         }
         else if message.name == "wired.chat.topic" {
@@ -214,51 +224,33 @@ class ChatController: ConnectionController, ConnectionDelegate {
                 return
             }
             
-            self.chatTextView.appendString(string: "<< Topic: \(chatTopic) by \(userNick) >>", isEvent: true)
+            conversationViewController.addEventMessage(message: "<< Topic: \(chatTopic) by \(userNick) >>")
         }
         else if  message.name == "wired.chat.user_list" {
-            let userInfo = UserInfo(message: message)
-            
-            self.users.append(userInfo)
+
         }
         else if  message.name == "wired.chat.user_status" {
-            guard let userID = message.uint32(forField: "wired.user.id") else {
-                return
-            }
-            
-            if let user = self.user(forID: userID) {
-                user.update(withMessage: message)
-            }
+
         }
         else if message.name == "wired.chat.user_join" {
             let userInfo = UserInfo(message: message)
+            conversationViewController.addEventMessage(message: "<< \(userInfo.nick!) joined the chat >>")
             
-            self.chatTextView.appendString(string: "<< \(userInfo.nick!) joined the chat >>", isEvent: true)
-            
-            self.users.append(userInfo)
+            NotificationCenter.default.post(name: NSNotification.Name("UserJoinedPublicChat"), object: [self.connection, userInfo])
         }
         else if message.name == "wired.chat.user_leave" {
             guard let userID = message.uint32(forField: "wired.user.id") else {
                 return
             }
             
-            if let user = self.user(forID: userID) {
-                self.chatTextView.appendString(string: "<< \(user.nick!) left the chat >>", isEvent: true)
-            }
-            
-            if let index = users.index(where: {$0.userID == userID}) {
-                users.remove(at: index)
-            }
-        }
-    }
-    
-    
-    private func user(forID uid: UInt32) -> UserInfo? {
-        for u in users {
-            if u.userID == uid {
-                return u
+            let uc = ConnectionsController.shared.usersController(forConnection: self.connection)
+            if let u = uc.user(forID: userID) {
+                conversationViewController.addEventMessage(message: "<< \(u.nick!) left the chat >>")
+                uc.userLeave(message: message)
+                
+                NotificationCenter.default.post(name: NSNotification.Name("UserLeftPublicChat"), object: self.connection)
             }
         }
-        return nil
+        
     }
 }

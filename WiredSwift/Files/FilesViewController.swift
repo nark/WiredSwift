@@ -27,7 +27,7 @@ class FileCell: NSBrowserCell {
 }
 
 
-class FilesViewController: ConnectionController, ConnectionDelegate, NSBrowserDelegate {
+class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrowserDelegate {
     @IBOutlet weak var browser: NSBrowser!
     @IBOutlet weak var progressIndicator: NSProgressIndicator!
     
