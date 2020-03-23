@@ -62,6 +62,7 @@
 		4C74286622DCECE900D6E6F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C74286522DCECE900D6E6F9 /* Assets.xcassets */; };
 		4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C74286722DCECE900D6E6F9 /* Main.storyboard */; };
 		4C7A45A9242925DA008F0FFE /* MessageKit_macOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C7A45AB242937CA008F0FFE /* TimeAgo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7A45AA242937CA008F0FFE /* TimeAgo.swift */; };
 		4C8829E824254A0B00B4EF36 /* TabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E724254A0B00B4EF36 /* TabViewController.swift */; };
 		4C8829EA2425672700B4EF36 /* ConnectionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E92425672700B4EF36 /* ConnectionWindow.swift */; };
 		4CA4153624261F25005B9048 /* MessageKit_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; };
@@ -245,6 +246,7 @@
 		4C74286822DCECE900D6E6F9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4C74286A22DCECE900D6E6F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WiredSwift.entitlements; sourceTree = "<group>"; };
+		4C7A45AA242937CA008F0FFE /* TimeAgo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeAgo.swift; sourceTree = "<group>"; };
 		4C8829E724254A0B00B4EF36 /* TabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewController.swift; sourceTree = "<group>"; };
 		4C8829E92425672700B4EF36 /* ConnectionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionWindow.swift; sourceTree = "<group>"; };
 		4C990ED12405D7380059BC8B /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
@@ -347,6 +349,7 @@
 		4C6A89E62405612400780FEF /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				4C7A45AA242937CA008F0FFE /* TimeAgo.swift */,
 				4C8829E724254A0B00B4EF36 /* TabViewController.swift */,
 				4CA4153A24262238005B9048 /* GrowingTextField.swift */,
 				4CA4153824262223005B9048 /* GrowingTextView.swift */,
@@ -792,6 +795,7 @@
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UsersViewController.swift in Sources */,
 				4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */,
+				4C7A45AB242937CA008F0FFE /* TimeAgo.swift in Sources */,
 				4C374D9D23FE7AE5006D3E7C /* TransfersController.swift in Sources */,
 				4C4C3EF122E1154900BC2DD9 /* P7Message.swift in Sources */,
 				4C009B6024278B4200DAAB74 /* MessagesSplitViewController.swift in Sources */,

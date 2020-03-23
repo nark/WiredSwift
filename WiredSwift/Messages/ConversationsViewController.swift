@@ -84,7 +84,9 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
         let conversation = ConversationsController.shared.conversations()[row]
         
         view?.userNick?.stringValue = conversation.nick!
-        //view?.userStatus?.stringValue = conversation.date!
+        if let t = conversation.lastMessageTime() {
+            view?.userDate?.stringValue = t
+        }
         
         let unreads = conversation.unreads()
         if unreads > 0 {
@@ -204,6 +206,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         cdObject.body = messageString
                         cdObject.nick = userInfo.nick
                         cdObject.userID = Int32(userInfo.userID)
+                        cdObject.date = Date()
                         cdObject.me = false
                         cdObject.read = NSApp.isActive && self.view.window != nil && self.view.window!.isKeyWindow
                                                     

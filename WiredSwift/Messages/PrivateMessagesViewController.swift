@@ -231,6 +231,7 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                     cdObject.body = textField.stringValue
                     cdObject.nick = self.connection.userInfo!.nick
                     cdObject.userID = Int32(self.connection.userID)
+                    cdObject.date = Date()
                     cdObject.me = true
                     cdObject.read = true
                         

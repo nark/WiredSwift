@@ -44,4 +44,20 @@ public class Conversation: NSManagedObject {
         
         return 0
     }
+    
+    
+    public func lastMessageTime() -> String? {
+        if let last = self.messages?.lastObject as? Message {
+            if let date = last.date {
+                let elapsed = Int(Date().timeIntervalSince(date))
+                
+                if elapsed > 3600 * 24 {
+                    return AppDelegate.dateTimeFormatter.string(from: date)
+                } else {
+                    return timeAgoSince(date)
+                }
+            }
+        }
+        return nil
+    }
 }

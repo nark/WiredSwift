@@ -35,6 +35,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     static let notificationCenter = UNUserNotificationCenter.current()
     static let options: UNAuthorizationOptions = [.alert, .sound, .badge]
     
+    static let dateTimeFormatter = DateFormatter()
+    
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
             GeneralPreferenceViewController(),
@@ -66,6 +68,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
                 "+1":  "👍"
             ]
         ])
+        
+        AppDelegate.dateTimeFormatter.dateStyle = .medium
+        AppDelegate.dateTimeFormatter.timeStyle = .medium
 
         UserDefaults.standard.synchronize()
     }
