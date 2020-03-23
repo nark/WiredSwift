@@ -143,6 +143,13 @@
 			remoteGlobalIDString = 7C4C96DF2024BB04009CEB2C;
 			remoteInfo = "MessageKit-macOSTests";
 		};
+		4CC7BE212428DD6E003D874C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 7C4C96D62024BB03009CEB2C;
+			remoteInfo = "MessageKit-macOS";
+		};
 		4CD0205222DF04BD0008B36C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4C74285622DCECE800D6E6F9 /* Project object */;
@@ -632,6 +639,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				4CC7BE222428DD6E003D874C /* PBXTargetDependency */,
 				4CD0205322DF04BD0008B36C /* PBXTargetDependency */,
 			);
 			name = WiredSwift;
@@ -854,6 +862,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		4CC7BE222428DD6E003D874C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "MessageKit-macOS";
+			targetProxy = 4CC7BE212428DD6E003D874C /* PBXContainerItemProxy */;
+		};
 		4CD0205322DF04BD0008B36C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 4CD0204C22DF04BD0008B36C /* Wired */;
