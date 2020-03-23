@@ -114,13 +114,16 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
         else if let conversation = n.object as? Conversation {
             self.conversation = conversation
             
+            if self.conversation.connection == nil {
+                self.conversation.connection = self.connection
+            }
+            
             if conversation.connection != nil {
                 self.connection = conversation.connection
                 self.conversationViewController.connection = self.connection
                 
                 self.connection.removeDelegate(self)
                 self.connection.delegates.append(self)
-                
             }
             
             self.conversationViewController.loadMessages(from: conversation)
@@ -137,10 +140,9 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
         self.chatInput.isEnabled = false
         self.sendButton.isEnabled = false
         self.emojiButton.isEnabled = false
-        
-        print("update self.conversation : \(self.conversation)")
-        
+                
         if let conversation = self.conversation {
+            print("conversation.connection : \(conversation.connection)")
             if conversation.connection != nil && conversation.connection.isConnected() {
                 self.chatInput.isEnabled = true
                 self.sendButton.isEnabled = true
@@ -148,7 +150,6 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                 
                 self.chatInput.becomeFirstResponder()
             }
-            print("will load messages")
         }
     }
     

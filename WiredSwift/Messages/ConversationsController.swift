@@ -44,19 +44,13 @@ class ConversationsController {
             for connection in ConnectionsController.shared.connections {
                 if conversation.uri == connection.URI {
                     let uc = ConnectionsController.shared.usersController(forConnection: connection)
-                    
-                    print("reload userJoinedPublicChat")
-                    
+                                        
                     if let user = uc.user(withNick: conversation.nick!) {
                         conversation.userID = user.userID
                         conversation.connection = connection
-                        
-                        print("connection found !")
                     } else {
                         conversation.connection = nil
                         conversation.userID = nil
-                        
-                        print("connection not found !")
                     }
                 }
             }

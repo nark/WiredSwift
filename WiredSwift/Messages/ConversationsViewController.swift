@@ -18,8 +18,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
-        
+
         NotificationCenter.default.addObserver(
             self, selector: #selector(shouldSelectConversation(_:)),
             name: NSNotification.Name("ShouldSelectConversation"), object: nil)
@@ -30,16 +29,11 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
         super.viewDidAppear()
         
         ConversationsController.shared.reload()
-        if self.connection != nil {
-            AppDelegate.resetUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
-        }
-//        conversationsTableView.reloadData()
     }
     
     override var representedObject: Any? {
         didSet {
             if let c = self.representedObject as? Connection {
-                print("ConversationsViewController set connection OK")
                 self.connection = c
                 
                 self.connection.addDelegate(self)
@@ -49,7 +43,6 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
     
     
     // MARK: -
-    
     @objc func shouldSelectConversation(_ n:Notification) {
         ConversationsController.shared.reload()
         conversationsTableView.reloadData()
@@ -92,6 +85,13 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
         
         view?.userNick?.stringValue = conversation.nick!
         //view?.userStatus?.stringValue = conversation.date!
+        
+        let unreads = conversation.unreads()
+        if unreads > 0 {
+            view?.unreadBadge?.stringValue = "\(unreads)"
+        } else {
+           view?.unreadBadge?.stringValue = ""
+        }
 
         if let base64ImageString = conversation.icon?.base64EncodedData() {
             if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
@@ -104,8 +104,21 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
     
     
     func tableViewSelectionDidChange(_ notification: Notification) {
-        if let conversation = self.selectedConversation {
-            //conversation.connection = self.connection
+        if let conversation = self.selectedConversation {            
+            DispatchQueue.global(qos: .userInitiated).async {
+            
+                _ = conversation.markAllAsRead()
+                                
+                DispatchQueue.main.async {
+                    try? AppDelegate.shared.persistentContainer.viewContext.save()
+                    if let index = ConversationsController.shared.conversations().index(of: conversation) {
+                        self.conversationsTableView.reloadData(forRowIndexes: [index], columnIndexes: [0])
+                        AppDelegate.updateUnreadMessages(forConnection: self.connection)
+                    }
+                }
+            }
+            
+            conversation.connection = self.connection
             NotificationCenter.default.post(name: .selectedConversationDidChange, object: conversation)
         }
         else {
@@ -128,7 +141,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
     
     // MARK: -
     
-    private var selectedConversation:Conversation? {
+    public var selectedConversation:Conversation? {
         get {
             if self.conversationsTableView.selectedRow > -1 {
                 return ConversationsController.shared.conversations()[self.conversationsTableView.selectedRow]
@@ -165,26 +178,47 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                 }
                 
                 if let userInfo = ConnectionsController.shared.usersController(forConnection: connection).user(forID: userID) {
-                    if let conversation = ConnectionsController.shared.conversation(withNick: userInfo.nick, onConnection: connection) {
-                        conversation.connection = connection
+                    let context = AppDelegate.shared.persistentContainer.viewContext
+                    var conversation = ConnectionsController.shared.conversation(withNick: userInfo.nick, onConnection: connection)
+                    
+                    if conversation == nil {
+                        conversation = NSEntityDescription.insertNewObject(
+                            forEntityName: "Conversation", into: context) as? Conversation
+
+                        conversation!.nick = userInfo.nick!
+                        conversation!.icon = userInfo.icon
+                        conversation!.uri = connection.URI
+                        conversation?.userID = connection.userID
                         
-                        let context = AppDelegate.shared.persistentContainer.viewContext
-                        if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
-                            cdObject.body = messageString
-                            cdObject.nick = userInfo.nick
-                            cdObject.userID = Int32(userInfo.userID)
-                            cdObject.me = false
-                            cdObject.read = NSApp.isActive == false || self.view.window?.isKeyWindow == false
-                            
-                            conversation.addToMessages(cdObject)
-                                                                          
-                            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ReceivedPrivateMessage"), object: [connection, cdObject])
-                            
-                            // add unread
-                            if NSApp.isActive == false || self.view.window?.isKeyWindow == false {
-                                AppDelegate.incrementUnread(forKey: "WSUnreadPrivateMessages", forConnection: connection)
-                            }
+                        conversation?.connection = connection
+                        
+                        AppDelegate.shared.saveAction(self as AnyObject)
+                        
+                        ConversationsController.shared.reload()
+                        conversationsTableView.reloadData()
+                    }
+                    
+                    conversation!.connection = connection
+                    
+                    if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
+                        cdObject.body = messageString
+                        cdObject.nick = userInfo.nick
+                        cdObject.userID = Int32(userInfo.userID)
+                        cdObject.me = false
+                        cdObject.read = NSApp.isActive && self.view.window!.isKeyWindow
+                                                    
+                        conversation!.addToMessages(cdObject)
+                        
+                        try? context.save()
+                        
+                        if let index = ConversationsController.shared.conversations().index(of: conversation!) {
+                            self.conversationsTableView.reloadData(forRowIndexes: [index], columnIndexes: [0])
                         }
+                                                                      
+                        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ReceivedPrivateMessage"), object: [connection, cdObject])
+                        
+                        // add unread
+                        AppDelegate.updateUnreadMessages(forConnection: connection)
                     }
                 }
             }

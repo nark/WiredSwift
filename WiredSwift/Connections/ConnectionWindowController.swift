@@ -33,12 +33,32 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
         if self.window == notification.object as? NSWindow {
             if let splitViewController = self.contentViewController as? NSSplitViewController {
                 if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
+                    // check if selected toolbar identifier is selected
                     if let identifier = tabViewController.tabView.tabViewItem(at: tabViewController.selectedTabViewItemIndex).identifier as? String {
                         if identifier == "Chat" {
-                            AppDelegate.resetUnread(forKey: "WSUnreadChatMessages", forConnection: self.connection)
+                            AppDelegate.resetChatUnread(forKey: "WSUnreadChatMessages", forConnection: self.connection)
                         }
                         else if identifier == "Messages" {
-                            AppDelegate.resetUnread(forKey: "WSUnreadPrivateMessages", forConnection: self.connection)
+                            // hmm, we prefer to unread them by conversation, right ?
+                            if let messageSplitView = tabViewController.tabViewItems[1].viewController as? MessagesSplitViewController {
+                                if let conversationsViewController = messageSplitView.splitViewItems[1].viewController as? ConversationsViewController {
+                                    if let conversation = conversationsViewController.selectedConversation {
+                                        // mark conversation messages as read, only if conversation is selected
+                                        DispatchQueue.global(qos: .userInitiated).async {
+                                            _ = conversation.markAllAsRead()
+                                            
+                                            DispatchQueue.main.async {
+                                                try? AppDelegate.shared.persistentContainer.viewContext.save()
+                                                
+                                                if let index = ConversationsController.shared.conversations().index(of: conversation) {
+                                                    conversationsViewController.conversationsTableView.reloadData(forRowIndexes: [index], columnIndexes: [0])
+                                                    AppDelegate.updateUnreadMessages(forConnection: self.connection)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

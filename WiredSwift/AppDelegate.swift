@@ -28,6 +28,9 @@ public let spec = P7Spec()
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     public static let shared:AppDelegate = NSApp.delegate as! AppDelegate
     
+    public static var unreadChatMessages = 0
+    public static var unreadPrivateMessages = 0
+    
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
             GeneralPreferenceViewController(),
@@ -49,8 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             "WSDownloadDirectory": downloadsDirectory,
             "WSChatFontName": "Courier",
             "WSChatFontSize": 14.0,
-            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false),
-            "WSUnreadChatMessages": 0
+            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false)
         ])
         
         UserDefaults.standard.synchronize()
@@ -190,12 +192,59 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     
+    
+    public static func incrementChatUnread(withValue count:Int = 1, forConnection connection:Connection) {
+        unreadChatMessages += count
+                
+        AppDelegate.updateBadge(ofItemWithIdentifier: "Chat", withValue: unreadChatMessages, forConnection: connection)
+        AppDelegate.updateValueOfTab(forConnection: connection)
+        AppDelegate.updateDockBadge()
+    }
+    
+    public static func decrementChatUnread(withValue count:Int = 1, forConnection connection:Connection) {
+        unreadChatMessages -= count
+                
+        AppDelegate.updateBadge(ofItemWithIdentifier: "Chat", withValue: unreadChatMessages, forConnection: connection)
+        AppDelegate.updateValueOfTab(forConnection: connection)
+        AppDelegate.updateDockBadge()
+    }
+    
+    
+    public static func resetChatUnread(forKey key:String, forConnection connection:Connection) {
+        unreadChatMessages = 0
+        
+        AppDelegate.updateBadge(ofItemWithIdentifier: "Chat", withValue: 0, forConnection: connection)
+        AppDelegate.updateValueOfTab(forConnection: connection)
+        AppDelegate.updateDockBadge()
+    }
+    
+    
+    @objc public static func updateUnreadMessages(forConnection connection:Connection) {
+        var count = 0
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Message")
+        fetchRequest.predicate = NSPredicate(format: "read == %d", false)
+        if let c = try? AppDelegate.shared.persistentContainer.viewContext.count(for: fetchRequest) {
+            count = c
+        }
+                
+        unreadPrivateMessages = count
+        
+        AppDelegate.updateBadge(ofItemWithIdentifier: "Messages", withValue: unreadPrivateMessages, forConnection: connection)
+        AppDelegate.updateValueOfTab(forConnection: connection)
+        AppDelegate.updateDockBadge()
+    }
+    
+    
     public static func updateBadge(ofItemWithIdentifier toolbarIdentifier:String, withValue count:Int, forConnection connection:Connection) {
         if let window = AppDelegate.windowController(forConnection: connection)?.window {
             if let toolbar = window.toolbar {
                 for item in toolbar.items {
                     if item.itemIdentifier.rawValue == toolbarIdentifier {
-                        item.image = MSCBadgedTemplateImage.image(named: NSImage.Name(toolbarIdentifier), withCount: count)
+                        if count > 0 {
+                            item.image = MSCBadgedTemplateImage.image(named: NSImage.Name(toolbarIdentifier), withCount: count)
+                        } else {
+                            item.image = NSImage(named: toolbarIdentifier)
+                        }
                     }
                 }
             }
@@ -203,46 +252,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     
-    public static func incrementUnread(forKey key:String, withValue count:Int = 1, forConnection connection:Connection) {
-        var value = UserDefaults.standard.integer(forKey: key)
-        
-        value += count
-        
-        UserDefaults.standard.set(value, forKey: key)
-        
-        if value > 0 {
-            if key == "WSUnreadChatMessages" {
-                AppDelegate.updateBadge(ofItemWithIdentifier: "Chat", withValue: value, forConnection: connection)
-                
-            }
-            else if key == "WSUnreadPrivateMessages" {
-                AppDelegate.updateBadge(ofItemWithIdentifier: "Messages", withValue: value, forConnection: connection)
-            }
-        }
-        
-        AppDelegate.updateValueOfTab(forConnection: connection)
-        AppDelegate.updateDockBadge()
-    }
-    
-    
-    public static func resetUnread(forKey key:String, forConnection connection:Connection) {
-        UserDefaults.standard.set(0, forKey: key)
-        
-        if key == "WSUnreadChatMessages" {
-            AppDelegate.updateBadge(ofItemWithIdentifier: "Chat", withValue: 0, forConnection: connection)
-        }
-        else if key == "WSUnreadPrivateMessages" {
-            AppDelegate.updateBadge(ofItemWithIdentifier: "Messages", withValue: 0, forConnection: connection)
-        }
-        
-        AppDelegate.updateValueOfTab(forConnection: connection)
-        AppDelegate.updateDockBadge()
-    }
-    
-    
     public static func updateValueOfTab(forConnection connection:Connection) {
-        let unreadChatMessages = UserDefaults.standard.integer(forKey: "WSUnreadChatMessages")
-        let unreadPrivateMessages = UserDefaults.standard.integer(forKey: "WSUnreadPrivateMessages")
         let total = unreadChatMessages + unreadPrivateMessages
         
         if let window = AppDelegate.windowController(forConnection: connection)?.window as? ConnectionWindow {
@@ -255,11 +265,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     
-    private static func updateDockBadge() {
-        let unreadChatMessages = UserDefaults.standard.integer(forKey: "WSUnreadChatMessages")
-        let unreadPrivateMessages = UserDefaults.standard.integer(forKey: "WSUnreadPrivateMessages")
+    public static func updateDockBadge() {
         let total = unreadChatMessages + unreadPrivateMessages
-
         NSApp.dockTile.badgeLabel = total > 0 ? String(total) : ""
     }
     

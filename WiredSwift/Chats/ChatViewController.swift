@@ -30,7 +30,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate {
         if self.connection != nil {
             chatInput.becomeFirstResponder()
             
-            AppDelegate.resetUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
+            AppDelegate.resetChatUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
         }
     }
     
@@ -190,7 +190,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate {
                 // add unread
                 if userInfo.userID != self.connection.userID {
                     if self.chatInput.currentEditor() == nil || self.view.window?.isKeyWindow == false {
-                        AppDelegate.incrementUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
+                        AppDelegate.incrementChatUnread(forConnection: connection)
                     }
                 }
             }
@@ -210,7 +210,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate {
                 // add unread
                 if userInfo.userID != self.connection.userID {
                     if NSApp.isActive == false || self.view.window?.isKeyWindow == false {
-                        AppDelegate.incrementUnread(forKey: "WSUnreadChatMessages", forConnection: connection)
+                        AppDelegate.incrementChatUnread(forConnection: connection)
                     }
                 }
             }

@@ -131,6 +131,14 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
                             }
                         }
                     }
+                    
+                    AppDelegate.updateUnreadMessages(forConnection: connection)
+                    
+//                    let value = UserDefaults.standard.integer(forKey: "WSUnreadPrivateMessages")
+//                    if value > 0 {
+//                        AppDelegate.updateBadge(ofItemWithIdentifier: "Messages", withValue: value, forConnection: self.connection)
+//                    }
+                    
                 }
             }
         }
