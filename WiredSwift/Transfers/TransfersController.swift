@@ -245,7 +245,7 @@ public class TransfersController {
                               
                     DispatchQueue.main.async {
                         transfer.percent = 100
-                        self.finish(transfer, withError: "file already exists at this location: \(dataPath!)")
+                        self.finish(transfer, withError: "File already exists at this location: \(dataPath!)")
                     }
                     
                     return

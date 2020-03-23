@@ -218,7 +218,10 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ReceivedPrivateMessage"), object: [connection, cdObject])
                         
                         // add unread
-                        AppDelegate.updateUnreadMessages(forConnection: connection)
+                        if NSApp.isActive == false || self.view.window?.isKeyWindow == false {
+                            AppDelegate.notify(title: "New Message", subtitle: userInfo.nick!, text: messageString)
+                            AppDelegate.updateUnreadMessages(forConnection: connection)
+                        }
                     }
                 }
             }

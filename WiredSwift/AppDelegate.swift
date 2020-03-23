@@ -10,6 +10,7 @@ import Cocoa
 import Wired
 import Preferences
 import KeychainAccess
+import UserNotifications
 
 extension PreferencePane.Identifier {
     static let general      = Identifier("general")
@@ -30,6 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     
     public static var unreadChatMessages = 0
     public static var unreadPrivateMessages = 0
+    
+    static let notificationCenter = UNUserNotificationCenter.current()
+    static let options: UNAuthorizationOptions = [.alert, .sound, .badge]
     
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
@@ -63,7 +67,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // Insert code here to initialize your application
+        // request notifications
+        AppDelegate.notificationCenter.requestAuthorization(options: AppDelegate.options) {
+            (didAllow, error) in
+            if !didAllow {
+                print("User has declined notifications")
+            }
+        }
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
@@ -268,6 +278,44 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     public static func updateDockBadge() {
         let total = unreadChatMessages + unreadPrivateMessages
         NSApp.dockTile.badgeLabel = total > 0 ? String(total) : ""
+    }
+    
+    
+    public static func notify(title:String, subtitle:String? = nil, text:String) {
+        let content = UNMutableNotificationContent()
+        
+        content.title = title
+        content.body = text
+        content.sound = UNNotificationSound.default
+        content.badge = 1
+
+        if let s = subtitle {
+            content.subtitle = s
+        }
+        
+        let identifier = "Local Notification"
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+        notificationCenter.add(request) { (error) in
+            if let error = error {
+                print("Error \(error.localizedDescription)")
+            }
+        }
+        
+//        let notification = NSUserNotification()
+//        notification.identifier = "unique-id"
+//        notification.title = title
+//
+//        if let s = subtitle {
+//            notification.subtitle = s
+//        }
+//
+//        notification.informativeText = text
+//        notification.soundName = NSUserNotificationDefaultSoundName
+//        notification.contentImage = NSImage(named: "AppIcon")
+//
+//        AppDelegate.notificationCenter.
     }
     
     

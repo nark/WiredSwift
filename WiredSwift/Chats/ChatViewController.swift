@@ -189,8 +189,9 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate {
                 
                 // add unread
                 if userInfo.userID != self.connection.userID {
-                    if self.chatInput.currentEditor() == nil || self.view.window?.isKeyWindow == false {
+                    if self.chatInput.currentEditor() == nil || NSApp.isActive == false || self.view.window?.isKeyWindow == false {
                         AppDelegate.incrementChatUnread(forConnection: connection)
+                        AppDelegate.notify(title: "New Chat Message", subtitle: userInfo.nick!, text: sayString)
                     }
                 }
             }
