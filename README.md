@@ -4,6 +4,11 @@ Wired Swift is an implementation of the Wired 2.0 protocol written in Swift 5. A
 
 **WARNING, WiredSwift is a work-in-progress at this moment, and you should not expect anything from it right now. The road to a new Wired codebase is long journey and any help is welcome.**
 
+## Requirements
+
+* macOS 10.14
+* Xcode 
+
 ## Getting started
 
 Init dependencies:
@@ -23,6 +28,8 @@ Init dependencies:
 * Write unit tests and enforce Github actions plan
 * Write minimal server code (embed mac server in client? — but still as a separated process)
 * Always try to be as close as pure Swift foundation when it relies to Wired framework
+* Make Wired a separated repository from the framework with Carthage, Package and Pods support
+* 
 
 ## License
 

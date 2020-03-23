@@ -54,9 +54,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             "WSUserIcon": try! NSKeyedArchiver.archivedData(withRootObject: AppDelegate.defaultUserIconData() as Any, requiringSecureCoding: false),
             "WSCheckActiveConnectionsBeforeQuit": true,
             "WSDownloadDirectory": downloadsDirectory,
-            "WSChatFontName": "Courier",
-            "WSChatFontSize": 14.0,
-            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false),
             "WSEmojiSubstitutionsEnabled": true,
             "WSEmojiSubstitutions": [
                 ":-)": "😊",
@@ -65,10 +62,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
                 ";)":  "😉",
                 ":-D": "😀",
                 ":D":  "😀",
-                "<3":  "❤️"
+                "<3":  "❤️",
+                "+1":  "👍"
             ]
         ])
-        
+
         UserDefaults.standard.synchronize()
     }
     
@@ -96,12 +94,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     // MARK: - IB Actions
     @IBAction func showChat(_ sender: Any) {
-        print("showChat: \(NSApp.keyWindow)")
-        print("showChat: \(NSApp.mainWindow)")
-        
         self.setTabView(atIndex: 0)
         
-        NSApp.keyWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
+        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
     }
     
     @IBAction func showMessages(_ sender: Any) {
