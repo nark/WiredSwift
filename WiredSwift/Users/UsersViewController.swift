@@ -86,6 +86,10 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
             self.usersController!.updateStatus(message: message)
             self.usersTableView.reloadData()
         }
+        else if  message.name == "wired.chat.user_icon" {
+            self.usersController!.updateStatus(message: message)
+            self.usersTableView.reloadData()
+        }
         else if message.name == "wired.chat.user_leave" {
             // self.usersController!.userLeave(message: message)
             // self.usersTableView.reloadData()

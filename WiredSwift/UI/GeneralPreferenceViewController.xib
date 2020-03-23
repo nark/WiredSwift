@@ -67,7 +67,11 @@
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
-                        <binding destination="xMH-OU-1oJ" name="value" keyPath="values.WSUserStatus" id="fr4-uA-rEn"/>
+                        <binding destination="xMH-OU-1oJ" name="value" keyPath="values.WSUserStatus" id="ZML-p0-Crc">
+                            <dictionary key="options">
+                                <bool key="NSContinuouslyUpdatesValue" value="YES"/>
+                            </dictionary>
+                        </binding>
                     </connections>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5gf-Iy-VJa">
@@ -82,7 +86,14 @@
                 <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="QXF-S8-j7O">
                     <rect key="frame" x="179" y="102" width="48" height="48"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="NSUser" id="zOg-mh-dfC"/>
+                    <imageCell key="cell" selectable="YES" editable="YES" alignment="left" imageScaling="proportionallyDown" id="zOg-mh-dfC"/>
+                    <connections>
+                        <binding destination="xMH-OU-1oJ" name="value" keyPath="values.WSUserIcon" id="JY8-eb-HlZ">
+                            <dictionary key="options">
+                                <string key="NSValueTransformerName">NSKeyedUnarchiveFromData</string>
+                            </dictionary>
+                        </binding>
+                    </connections>
                 </imageView>
                 <box verticalHuggingPriority="750" fixedFrame="YES" boxType="separator" translatesAutoresizingMaskIntoConstraints="NO" id="1yc-zc-X7f">
                     <rect key="frame" x="179" y="99" width="233" height="5"/>
@@ -117,7 +128,4 @@
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="xMH-OU-1oJ"/>
     </objects>
-    <resources>
-        <image name="NSUser" width="32" height="32"/>
-    </resources>
 </document>

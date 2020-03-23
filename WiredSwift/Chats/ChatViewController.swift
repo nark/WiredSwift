@@ -23,6 +23,8 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
         
         NotificationCenter.default.addObserver(self, selector: #selector(controlTextDidChange(_:)), name: NSTextView.didChangeSelectionNotification, object: nil)
         UserDefaults.standard.addObserver(self, forKeyPath: "WSUserNick", options: NSKeyValueObservingOptions.new, context: nil)
+        UserDefaults.standard.addObserver(self, forKeyPath: "WSUserStatus", options: NSKeyValueObservingOptions.new, context: nil)
+        UserDefaults.standard.addObserver(self, forKeyPath: "WSUserIcon", options: NSKeyValueObservingOptions.new, context: nil)
     }
     
     
@@ -56,6 +58,26 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
             if let nick = change?[NSKeyValueChangeKey.newKey] as? String {
                 if let m = self.setNickMessage(nick) {
                   _ = self.connection.send(message: m)
+                }
+            }
+        }
+        else if keyPath == "WSUserStatus" {
+            if let status = change?[NSKeyValueChangeKey.newKey] as? String {
+                if let m = self.setStatusMessage(status) {
+                  _ = self.connection.send(message: m)
+                }
+            }
+        }
+        else if keyPath == "WSUserIcon" {
+            if let icon = change?[NSKeyValueChangeKey.newKey] as? Data {
+                // NOTE : this one was a hell
+                if let image = try! NSKeyedUnarchiver.unarchivedObject(ofClass: NSImage.self, from: icon) {
+                    let b64String = image.tiffRepresentation(using: NSBitmapImageRep.TIFFCompression.none, factor: 0)!.base64EncodedString()
+                    if let b64Data = Data(base64Encoded: b64String, options: .ignoreUnknownCharacters) {
+                        if let m = self.setIconMessage(b64Data) {
+                            _ = self.connection.send(message: m)
+                        }
+                    }
                 }
             }
         }
@@ -121,7 +143,33 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
         return message
     }
     
-
+    
+    private func setStatusMessage(_ status:String) -> P7Message? {
+        let message = P7Message(withName: "wired.user.set_status", spec: self.connection.spec)
+        message.addParameter(field: "wired.user.status", value: status)
+        
+        if UserDefaults.standard.string(forKey: "WSUserStatus") == status {
+            UserDefaults.standard.set(status, forKey: "WSUserStatus")
+        }
+        
+        
+        return message
+    }
+    
+    
+    private func setIconMessage(_ icon:Data) -> P7Message? {
+        let message = P7Message(withName: "wired.user.set_icon", spec: self.connection.spec)
+        
+        message.addParameter(field: "wired.user.icon", value: icon)
+        
+//        if UserDefaults.standard.string(forKey: "WSUserStatus") == status {
+//            UserDefaults.standard.set(status, forKey: "WSUserStatus")
+//        }
+        
+        return message
+    }
+    
+    
     private func chatCommand(_ command: String) -> P7Message? {
         let comps = command.split(separator: " ")
         

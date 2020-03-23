@@ -23,6 +23,23 @@ extension Notification.Name {
     static let didAddNewBookmark = Notification.Name("didAddNewBookmark")
 }
 
+extension UserDefaults {
+    func image(forKey key: String) -> NSImage? {
+        var image: NSImage?
+        if let imageData = data(forKey: key) {
+            image = try! NSKeyedUnarchiver.unarchivedObject(ofClass: NSImage.self, from: imageData)
+        }
+        return image
+    }
+    func set(image: NSImage?, forKey key: String) {
+        var imageData: NSData?
+        if let image = image {
+            imageData = try! NSKeyedArchiver.archivedData(withRootObject: image, requiringSecureCoding: false) as NSData
+        }
+        set(imageData, forKey: key)
+    }
+}
+
 public let spec = P7Spec()
 
 @NSApplicationMain
@@ -53,7 +70,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         UserDefaults.standard.register(defaults: [
             "WSUserNick": "WiredSwift",
             "WSUserStatus": "Share The Wealth",
-            "WSUserIcon": try! NSKeyedArchiver.archivedData(withRootObject: AppDelegate.defaultUserIconData() as Any, requiringSecureCoding: false),
             "WSCheckActiveConnectionsBeforeQuit": true,
             "WSDownloadDirectory": downloadsDirectory,
             "WSEmojiSubstitutionsEnabled": true,
@@ -69,14 +85,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             ]
         ])
         
+        UserDefaults.standard.synchronize()
+        
+        // default icon
+        if UserDefaults.standard.image(forKey: "WSUserIcon") == nil {
+            UserDefaults.standard.set(image: AppDelegate.defaultIcon, forKey: "WSUserIcon")
+        }
+    
+        
         AppDelegate.dateTimeFormatter.dateStyle = .medium
         AppDelegate.dateTimeFormatter.timeStyle = .medium
-
-        UserDefaults.standard.synchronize()
     }
     
-    private static func defaultUserIconData() -> Data? {
-        return Data(base64Encoded: Wired.defaultUserIcon, options: .ignoreUnknownCharacters)
+    public static var currentIcon:NSImage? {
+        get {
+            return UserDefaults.standard.image(forKey: "WSUserIcon")
+        }
+    }
+    
+    private static var defaultUserIconData:Data? {
+        get {
+            return Data(base64Encoded: Wired.defaultUserIcon, options: .ignoreUnknownCharacters)
+        }
+    }
+    
+    private static var defaultIcon:NSImage? {
+        get {
+            if let imageData = defaultUserIconData {
+                return NSImage(data: imageData)
+            }
+            
+            return nil
+        }
     }
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {

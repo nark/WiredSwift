@@ -222,7 +222,7 @@ public class Connection: NSObject {
     private func setIcon() -> Bool {
         let message = P7Message(withName: "wired.user.set_icon", spec: self.spec)
         
-        message.addParameter(field: "wired.user.icon", value: Data(base64Encoded: Wired.defaultUserIcon, options: .ignoreUnknownCharacters))
+        message.addParameter(field: "wired.user.icon", value: Data(base64Encoded: self.icon, options: .ignoreUnknownCharacters))
         
         if !self.send(message: message) {
             return false

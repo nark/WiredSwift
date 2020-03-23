@@ -75,6 +75,10 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
         self.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? self.connection.nick
         self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
         
+        if let b64string = AppDelegate.currentIcon?.tiffRepresentation(using: NSBitmapImageRep.TIFFCompression.none, factor: 0)?.base64EncodedString() {
+            self.connection.icon = b64string
+        }
+            
         self.progressIndicator.startAnimation(sender)
         connectButton.isEnabled = false
                 
