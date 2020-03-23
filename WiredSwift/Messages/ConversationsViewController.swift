@@ -205,7 +205,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         cdObject.nick = userInfo.nick
                         cdObject.userID = Int32(userInfo.userID)
                         cdObject.me = false
-                        cdObject.read = NSApp.isActive && self.view.window!.isKeyWindow
+                        cdObject.read = NSApp.isActive && self.view.window != nil && self.view.window!.isKeyWindow
                                                     
                         conversation!.addToMessages(cdObject)
                         
@@ -218,7 +218,8 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ReceivedPrivateMessage"), object: [connection, cdObject])
                         
                         // add unread
-                        if NSApp.isActive == false || self.view.window?.isKeyWindow == false {
+                        
+                        if NSApp.isActive == false || self.view.window?.isKeyWindow == false || AppDelegate.selectedToolbarIdentifier(forConnection: connection) != "Messages" {
                             AppDelegate.notify(identifier: "privateMessage", title: "New Message", subtitle: userInfo.nick!, text: messageString, connection: connection)
                             AppDelegate.updateUnreadMessages(forConnection: connection)
                         }

@@ -92,7 +92,21 @@ public class P7Socket: NSObject {
             try socket.set(option: .receiveBufferSize, 327680)
             try socket.set(option: .sendBufferSize, 327680)
             
-            let addr = try! socket.addresses(for: self.hostname, port: Port(self.port)).first!
+            var addr:SocketAddress!
+            
+            do {
+                addr = try socket.addresses(for: self.hostname, port: Port(self.port)).first!
+            } catch let e {
+                if let socketError = e as? Socket.Error {
+                    self.errors.append(WiredError(withTitle: "Socket Error", message: socketError.description))
+                    Logger.error(socketError.description)
+                } else {
+                    self.errors.append(WiredError(withTitle: "Socket Error", message: e.localizedDescription))
+                    Logger.error(e.localizedDescription)
+                }
+                return false
+            }
+            
             
             try self.socket.connect(address: addr)
 
@@ -135,8 +149,10 @@ public class P7Socket: NSObject {
             }
         } catch let error {
             if let socketError = error as? Socket.Error {
+                self.errors.append(WiredError(withTitle: "Socket Error", message: socketError.description))
                 Logger.error(socketError.description)
             } else {
+                self.errors.append(WiredError(withTitle: "Socket Error", message: error.localizedDescription))
                 Logger.error(error.localizedDescription)
             }
             return false

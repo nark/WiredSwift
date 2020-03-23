@@ -1607,6 +1607,9 @@ DQ
                         <subviews>
                             <browser verticalHuggingPriority="750" allowsExpansionToolTips="YES" enabled="YES" hasHorizontalScroller="YES" allowsEmptySelection="YES" defaultColumnWidth="250" minColumnWidth="250" allowsTypeSelect="YES" columnResizingType="user" translatesAutoresizingMaskIntoConstraints="NO" id="5HJ-0Z-562">
                                 <rect key="frame" x="-1" y="31" width="788" height="517"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="517" id="LIj-3x-FXQ"/>
+                                </constraints>
                                 <connections>
                                     <outlet property="delegate" destination="DVd-lO-xhs" id="n9N-Af-dc9"/>
                                 </connections>

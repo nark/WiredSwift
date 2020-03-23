@@ -61,6 +61,7 @@
 		4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286322DCECE800D6E6F9 /* ConnectController.swift */; };
 		4C74286622DCECE900D6E6F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C74286522DCECE900D6E6F9 /* Assets.xcassets */; };
 		4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C74286722DCECE900D6E6F9 /* Main.storyboard */; };
+		4C7A45A9242925DA008F0FFE /* MessageKit_macOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C8829E824254A0B00B4EF36 /* TabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E724254A0B00B4EF36 /* TabViewController.swift */; };
 		4C8829EA2425672700B4EF36 /* ConnectionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E92425672700B4EF36 /* ConnectionWindow.swift */; };
 		4CA4153624261F25005B9048 /* MessageKit_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; };
@@ -181,6 +182,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				4C7A45A9242925DA008F0FFE /* MessageKit_macOS.framework in Embed Frameworks */,
 				4CF673722403FF4200A8EDC2 /* Gzip.framework in Embed Frameworks */,
 				4CFB162123FC89B7000EE688 /* KeychainAccess.framework in Embed Frameworks */,
 				4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */,

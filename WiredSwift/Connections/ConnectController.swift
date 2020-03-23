@@ -37,12 +37,18 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
         self.progressIndicator.startAnimation(self)
                 
         DispatchQueue.global().async {
-            if self.connection.connect(withUrl: url) {
+            if self.connection.connect(withUrl: url) == true {
                 DispatchQueue.main.async {
                     ConnectionsController.shared.addConnection(self.connection)
                     
                     self.progressIndicator.stopAnimation(self)
                     self.performSegue(withIdentifier: "showPublicChat", sender: self)
+                }
+            } else {
+                DispatchQueue.main.async {
+                    if let wiredError = self.connection.socket.errors.first {
+                        AppDelegate.showWiredError(wiredError)
+                    }
                 }
             }
         }
@@ -82,6 +88,10 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
                 }
             } else {
                 DispatchQueue.main.async {
+                    if let wiredError = self.connection.socket.errors.first {
+                        AppDelegate.showWiredError(wiredError)
+                    }
+                    
                     self.connectButton.isEnabled = true
                     self.progressIndicator.stopAnimation(self)
                 }
@@ -165,5 +175,6 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
     func connectionDidReceiveError(connection: Connection, message: P7Message) {
         // print("connectionDidReceiveError")
     }
+
 }
 

@@ -189,6 +189,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     // MARK: - Static Connection Helpers
+    public static func showWiredError(_ error:WiredError) {
+        let alert = NSAlert()
+        alert.messageText = error.title
+        alert.informativeText = error.message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+    
     public static func windowController(forConnection connection:Connection) -> ConnectionWindowController? {
         for w in NSApp.windows {
             if let cwc = w.windowController as? ConnectionWindowController {
@@ -219,6 +228,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
                     return cwc
                 }
             }
+        }
+        return nil
+    }
+    
+    
+    public static func selectedToolbarIdentifier(forConnection connection: Connection) -> String? {
+        if let wc = AppDelegate.windowController(forConnection: connection) {
+            return wc.window?.toolbar?.selectedItemIdentifier?.rawValue
         }
         return nil
     }
