@@ -75,23 +75,33 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     
     @objc func controlTextDidChange(_ n: Notification) {
         if (n.object as? NSTextField) == self.chatInput {
-            if self.chatInput.stringValue.count > 3 {
-                if textDidEndEditingTimer != nil {
-                    textDidEndEditingTimer.invalidate()
-                    textDidEndEditingTimer = nil
+            self.chatInputDidEndEditing()
+        }
+    }
+    
+    private func chatInputDidEndEditing() {
+        if self.chatInput.stringValue.count > 3 {
+            if textDidEndEditingTimer != nil {
+                textDidEndEditingTimer.invalidate()
+                textDidEndEditingTimer = nil
+            }
+            
+            if UserDefaults.standard.bool(forKey: "WSEmojiSubstitutionsEnabled") {
+                textDidEndEditingTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { (timer) in
+                    self.substituteEmojis()
                 }
-                
-                if UserDefaults.standard.bool(forKey: "WSEmojiSubstitutionsEnabled") {
-                    textDidEndEditingTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { (timer) in
-                        if let lastWord = self.chatInput.stringValue.split(separator: " ").last {
-                            if let emoji = AppDelegate.emoji(forKey: String(lastWord)) {
-                                let string = (self.chatInput.stringValue as NSString).replacingOccurrences(of: String(lastWord), with: emoji)
-                                self.chatInput.stringValue = string
-                            }
-                        }
-                    }
-                }
+            }
 
+        }
+    }
+    
+    private func substituteEmojis() {
+        if UserDefaults.standard.bool(forKey: "WSEmojiSubstitutionsEnabled") {
+            if let lastWord = self.chatInput.stringValue.split(separator: " ").last {
+                if let emoji = AppDelegate.emoji(forKey: String(lastWord)) {
+                    let string = (self.chatInput.stringValue as NSString).replacingOccurrences(of: String(lastWord), with: emoji)
+                    self.chatInput.stringValue = string
+                }
             }
         }
     }
@@ -169,6 +179,8 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
                 message = self.chatCommand(textField.stringValue)
             }
             else {
+                self.substituteEmojis()
+                
                 message = P7Message(withName: "wired.chat.send_say", spec: self.connection.spec)
                 
                 message!.addParameter(field: "wired.chat.id", value: UInt32(1))
