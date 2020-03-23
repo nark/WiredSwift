@@ -310,7 +310,8 @@ public class TransfersController {
 //                }
 //                break
 //            }
-                                    
+                  
+            // actually write data
             if FileManager.default.fileExists(atPath: dataPath!) {
                 if let fileHandle = FileHandle(forWritingAtPath: dataPath!) {
                     fileHandle.seekToEndOfFile()
@@ -338,7 +339,7 @@ public class TransfersController {
                 }
             }
                         
-            // append transfered data
+            // update transfered data offsets
             if data {
                 transfer.dataTransferred += Int64(oobdata.count)
             } else {
@@ -351,6 +352,7 @@ public class TransfersController {
             let percent =  Double(transfer.actualTransferred) / Double(totalTransferSize) * 100.0
             transfer.percent = percent
             
+            // update progress in view
             if let progressIndicator = transfer.progressIndicator {
                 DispatchQueue.main.async {
                     progressIndicator.isIndeterminate = false

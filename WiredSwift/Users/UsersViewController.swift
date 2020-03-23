@@ -118,7 +118,7 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
                     view?.userIcon?.image = NSImage(data: data)
                 }
             }
-            
+                        
             if user.idle == true {
                 view?.alphaValue = 0.5
             } else {

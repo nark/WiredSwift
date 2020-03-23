@@ -77,8 +77,8 @@ public class P7Message: NSObject {
     
     
     public func bool(forField field: String) -> Bool? {
-        if let value = self.parameters[field] as? Bool {
-            return value
+        if let value = self.parameters[field] as? UInt8 {
+            return value == 1 ? true : false
         }
         return nil
     }
@@ -316,10 +316,10 @@ public class P7Message: NSObject {
                         let fieldData = data.subdata(in: offset..<offset+fieldLength)
                         
                         if specField.type == .bool {
-                            
+                            self.addParameter(field: specField.name, value: fieldData.uint8.bigEndian)
                         }
                         else if specField.type == .enum32 {
-                            
+                            // self.addParameter(field: specField.name, value: fieldData.uint32.bigEndian)
                         }
                         else if specField.type == .int32 {
                             self.addParameter(field: specField.name, value: fieldData.uint32.bigEndian)
