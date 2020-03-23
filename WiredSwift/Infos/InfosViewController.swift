@@ -13,6 +13,10 @@ class InfosViewController: ConnectionViewController, ConnectionDelegate {
     @IBOutlet weak var bannerImage: NSImageView!
     @IBOutlet weak var serverName: NSTextField!
 
+    @IBOutlet weak var protocolLabel: NSTextField!
+    @IBOutlet weak var cipherLabel: NSTextField!
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
@@ -35,6 +39,9 @@ class InfosViewController: ConnectionViewController, ConnectionDelegate {
     private func updateView() {
         if self.connection != nil {
             self.serverName.stringValue = self.connection.serverInfo.serverName
+            
+            self.protocolLabel.stringValue = "\(self.connection.serverInfo.applicationName!) \(self.connection.serverInfo.applicationVersion!)"
+            self.cipherLabel.stringValue = "\(P7Socket.CipherType.pretty(self.connection.socket.cipherType))"
             
             let image = NSImage(data: self.connection.serverInfo.serverBanner)
             self.bannerImage.image = image

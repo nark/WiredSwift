@@ -39,6 +39,23 @@ public class P7Socket: NSObject {
         case RSA_AES_256    = 2
         case RSA_BF_128     = 3
         case RSA_3DES_192   = 4
+        
+        public static func pretty(_ type:CipherType) -> String {
+            switch type {
+            case .NONE:
+                return "None"
+            case .RSA_AES_128:
+                return "RSA-AES-128 bits"
+            case .RSA_AES_192:
+                return "RSA-AES-192 bits"
+            case .RSA_AES_256:
+                return "RSA-AES-256 bits"
+            case .RSA_BF_128:
+                return "RSA-BF-128 bits"
+            default:
+                return "None"
+            }
+        }
     }
     
     

@@ -250,10 +250,10 @@ extension ConversationViewController: MessagesDisplayDelegate {
 
     if message is ChatMessage || message is PrivateMessage {
         if message.sender.id == "111111" {
-            let archivedData = UserDefaults.standard.data(forKey: "WSUserIcon")
-            let imageData = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(archivedData!) as? Data
-            let image = NSImage(data: imageData!)
-            avatar = Avatar(image: image)
+//            let archivedData = UserDefaults.standard.data(forKey: "WSUserIcon")
+//            let imageData = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(archivedData!) as? Data
+//            let image = NSImage(data: imageData!)
+            avatar = Avatar(image: AppDelegate.currentIcon)
             
         } else {
             if let userId = UInt32(message.sender.id) {
