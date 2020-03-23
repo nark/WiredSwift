@@ -175,29 +175,36 @@ extension ConversationViewController: MessagesDataSource {
   
   func cellBottomLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
     
-    if isFromCurrentSender(message: message) {
-      
-      let font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
-      let color = NSColor.tertiaryLabelColor
-      var attributes: [NSAttributedString.Key : Any] = [.font : font,
-                                                        .foregroundColor: color]
-      
-      attributes[.toolTip] = formatter.string(from: message.sentDate)
-      
-      return NSAttributedString(string: "Sent", attributes: attributes)
+//    if isFromCurrentSender(message: message) {
+//
+//      let font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+//      let color = NSColor.tertiaryLabelColor
+//      var attributes: [NSAttributedString.Key : Any] = [.font : font,
+//                                                        .foregroundColor: color]
+//
+//      attributes[.toolTip] = formatter.string(from: message.sentDate)
+//
+//      return NSAttributedString(string: "Sent", attributes: attributes)
+//    }
+//
+//    return nil
+    struct ConversationDateFormatter {
+        static let formatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            return formatter
+        }()
     }
     
-    return nil
-    //      struct ConversationDateFormatter {
-    //        static let formatter: DateFormatter = {
-    //          let formatter = DateFormatter()
-    //          formatter.dateStyle = .medium
-    //          return formatter
-    //        }()
-    //      }
-    //      let formatter = ConversationDateFormatter.formatter
-    //      let dateString = formatter.string(from: message.sentDate)
-    //      return NSAttributedString(string: dateString, attributes: [NSAttributedString.Key.font: NSFont.userFont(ofSize: 10)!])
+    let font = NSFont.systemFont(ofSize: 10)
+    let color = NSColor.secondaryLabelColor
+    let attributes: [NSAttributedString.Key : Any] = [
+        .font : font,
+        .foregroundColor: color]
+
+    let formatter = ConversationDateFormatter.formatter
+    let dateString = formatter.string(from: message.sentDate)
+    return NSAttributedString(string: dateString, attributes: attributes)
   }
   
 }
@@ -250,9 +257,6 @@ extension ConversationViewController: MessagesDisplayDelegate {
 
     if message is ChatMessage || message is PrivateMessage {
         if message.sender.id == "111111" {
-//            let archivedData = UserDefaults.standard.data(forKey: "WSUserIcon")
-//            let imageData = try! NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(archivedData!) as? Data
-//            let image = NSImage(data: imageData!)
             avatar = Avatar(image: AppDelegate.currentIcon)
             
         } else {
@@ -268,6 +272,7 @@ extension ConversationViewController: MessagesDisplayDelegate {
     }
     
     avatarView.set(avatar: avatar)
+    //avatarView.placeholderTextColor = NSColor.textColor
     avatarView.layer?.backgroundColor = NSColor.clear.cgColor
     avatarView.cursor = NSCursor.pointingHand
   }
