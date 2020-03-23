@@ -1217,7 +1217,7 @@ DQ
                                             <action selector="chatAction:" target="xE7-fu-zmd" id="dSL-RC-P3c"/>
                                         </connections>
                                     </button>
-                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="OAh-Hn-WpC" customClass="GrowingTextField" customModule="WiredSwift" customModuleProvider="target">
+                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="OAh-Hn-WpC">
                                         <rect key="frame" x="20" y="14" width="560" height="22"/>
                                         <textFieldCell key="cell" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" focusRingType="none" placeholderString="Type message here" bezelStyle="round" id="EXA-4v-fXz">
                                             <font key="font" metaFont="system"/>
@@ -1226,6 +1226,7 @@ DQ
                                         </textFieldCell>
                                         <connections>
                                             <action selector="chatAction:" target="xE7-fu-zmd" id="HCp-Tv-XUo"/>
+                                            <outlet property="delegate" destination="xE7-fu-zmd" id="c7J-QZ-2P5"/>
                                         </connections>
                                     </textField>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="npg-ZJ-hvi">

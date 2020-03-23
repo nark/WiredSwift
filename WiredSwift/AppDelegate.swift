@@ -56,7 +56,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             "WSDownloadDirectory": downloadsDirectory,
             "WSChatFontName": "Courier",
             "WSChatFontSize": 14.0,
-            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false)
+            "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false),
+            "WSEmojiSubstitutions": [
+                ":-)": "😊",
+                ":)":  "😊",
+                ";-)": "😉",
+                ";)":  "😉",
+                ":-D": "😀",
+                ":D":  "😀",
+                "<3":  "❤️"
+            ]
         ])
         
         UserDefaults.standard.synchronize()
@@ -320,6 +329,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             }
         }
     }
+    
+    
+    public static func emoji(forKey key: String) -> String? {
+        if let dict = UserDefaults.standard.object(forKey: "WSEmojiSubstitutions") as? [String:String] {
+            return dict[key]
+        }
+        
+        return nil
+    }
+    
     
     
     // MARK: - UNUserNotificationCenterDelegate

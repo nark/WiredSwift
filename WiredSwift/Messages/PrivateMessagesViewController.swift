@@ -8,17 +8,21 @@
 
 import Cocoa
 
-class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegate {
+class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegate, NSTextFieldDelegate {
     @IBOutlet var chatInput: GrowingTextField!
     @IBOutlet weak var sendButton: NSButton!
     @IBOutlet weak var emojiButton: NSButton!
     
     weak var conversationViewController: ConversationViewController!
     var conversation:Conversation!
+    var textDidEndEditingTimer:Timer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+        
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(controlTextDidChange(_:)),
+            name: NSTextView.didChangeSelectionNotification, object: nil)
         
         NotificationCenter.default.addObserver(
             self, selector: #selector(selectedConversationDidChange(_:)),
@@ -36,9 +40,34 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             self, selector: #selector(userLeftPublicChat(_:)),
             name: NSNotification.Name("UserLeftPublicChat"), object: nil)
         
+        self.chatInput.delegate = self
         self.updateView()
     }
     
+    
+    
+    // MARK: -
+    
+    @objc func controlTextDidChange(_ n: Notification) {
+        if (n.object as? NSTextField) == self.chatInput {
+            if self.chatInput.stringValue.count > 3 {
+                if textDidEndEditingTimer != nil {
+                    textDidEndEditingTimer.invalidate()
+                    textDidEndEditingTimer = nil
+                }
+                
+                textDidEndEditingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { (timer) in
+                    if let lastWord = self.chatInput.stringValue.split(separator: " ").last {
+                        if let emoji = AppDelegate.emoji(forKey: String(lastWord)) {
+                            let string = (self.chatInput.stringValue as NSString).replacingOccurrences(of: String(lastWord), with: emoji)
+                            self.chatInput.stringValue = string
+                        }
+                    }
+                }
+
+            }
+        }
+    }
     
     
     // MARK: -
@@ -131,6 +160,7 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
 
         self.updateView()
     }
+    
     
     
     

@@ -9,17 +9,19 @@
 import Cocoa
 import MessageKit_macOS
 
-
-class ChatViewController: ConnectionViewController, ConnectionDelegate {
-    @IBOutlet var chatInput: GrowingTextField!
+class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFieldDelegate {
+    @IBOutlet var chatInput: NSTextField!
     @IBOutlet weak var sendButton: NSButton!
     
     weak var conversationViewController: ConversationViewController!
-    
+    var textDidEndEditingTimer:Timer!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-                        
+        
+        self.chatInput.delegate = self
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(controlTextDidChange(_:)), name: NSTextView.didChangeSelectionNotification, object: nil)
         UserDefaults.standard.addObserver(self, forKeyPath: "WSUserNick", options: NSKeyValueObservingOptions.new, context: nil)
     }
     
@@ -47,7 +49,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate {
         }
     }
     
-    
+    // MARK: -
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         //print("observeValue: \(keyPath) -> \(change?[NSKeyValueChangeKey.newKey])")
         if keyPath == "WSUserNick" {
@@ -67,6 +69,34 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate {
         }
     }
     
+    
+    
+    // MARK: -
+    
+    @objc func controlTextDidChange(_ n: Notification) {
+        if (n.object as? NSTextField) == self.chatInput {
+            if self.chatInput.stringValue.count > 3 {
+                if textDidEndEditingTimer != nil {
+                    textDidEndEditingTimer.invalidate()
+                    textDidEndEditingTimer = nil
+                }
+                
+                textDidEndEditingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { (timer) in
+                    if let lastWord = self.chatInput.stringValue.split(separator: " ").last {
+                        if let emoji = AppDelegate.emoji(forKey: String(lastWord)) {
+                            let string = (self.chatInput.stringValue as NSString).replacingOccurrences(of: String(lastWord), with: emoji)
+                            self.chatInput.stringValue = string
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+    
+    
+    
+    // MARK: -
     
     private func setNickMessage(_ nick:String) -> P7Message? {
         let message = P7Message(withName: "wired.user.set_nick", spec: self.connection.spec)
