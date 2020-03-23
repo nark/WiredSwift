@@ -149,18 +149,13 @@ public class TransfersController {
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
     }
     
-    private func finish(_ transfer: Transfer, withError error:String? = nil) {
+    private func finish(_ transfer: Transfer, withError error:WiredError? = nil) {
         if let e = error {
-            transfer.error = e
+            transfer.error = e.message
             
-            AppDelegate.notify(
-                identifier: "transferError",
-                title: "Transfer Error",
-                subtitle: transfer.localPath,
-                text: transfer.error,
-                connection: transfer.connection)
+            AppDelegate.showWiredError(e)
             
-            print("Transfer error: \(e)")
+            Logger.error(e)
         }
         
         self.finish(transfer)
@@ -180,7 +175,7 @@ public class TransfersController {
     
     
     private func runDownload(_ transfer: Transfer) {
-        var error:String? = nil
+        var error:WiredError? = nil
         var data = true
         var dataLength:UInt64? = 0
         var rsrcLength:UInt64? = 0
@@ -197,7 +192,7 @@ public class TransfersController {
             transfer.state = .Stopped
             
             DispatchQueue.main.async {
-                error = "Transfer cannot connect"
+                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot connect")
                 
                 Logger.error(error!)
                 
@@ -213,9 +208,9 @@ public class TransfersController {
             }
             
             DispatchQueue.main.async {
-                let error = "Transfer cannot download_file"
+                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot download_file")
                 
-                Logger.error(error)
+                Logger.error(error!)
                 
                 self.finish(transfer, withError: error)
             }
@@ -255,7 +250,11 @@ public class TransfersController {
                     DispatchQueue.main.async {
                         transfer.percent = 100
                         
-                        self.finish(transfer, withError: "File already exists at this location: \(dataPath!)")
+                        error = WiredError(withTitle: "Transfer Error", message: "File already exists at this location: \(dataPath!)")
+                        
+                        Logger.error(error!)
+                        
+                        self.finish(transfer, withError: error)
                     }
                     
                     return
@@ -319,7 +318,8 @@ public class TransfersController {
                     fileHandle.closeFile()
                 } else {
                     DispatchQueue.main.async {
-                        error = "Transfer failed"
+                        error = WiredError(withTitle: "Transfer Error", message: "Transfer failed")
+                        
                         Logger.error(error!)
                     }
                     break
@@ -329,7 +329,8 @@ public class TransfersController {
                     try oobdata.write(to: URL(fileURLWithPath: data ? dataPath! : rsrcPath), options: .atomicWrite)
                 } catch let e {
                     DispatchQueue.main.async {
-                        error = "Transfer failed: \(e)"
+                        error = WiredError(withTitle: "Transfer Error", message: "Transfer failed")
+                        
                         Logger.error(error!)
                     }
                     
@@ -373,7 +374,7 @@ public class TransfersController {
     
     
     private func runUpload(_ transfer: Transfer) {
-        var error:String? = nil
+        var error:WiredError? = nil
         var dataOffset:UInt64? = 0
         var rsrcOffset:UInt64? = 0
         var dataLength:UInt64? = 0
@@ -393,8 +394,8 @@ public class TransfersController {
             transfer.state = .Stopped
 
             DispatchQueue.main.async {
-                error = "Transfer cannot connect"
-
+                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot connect")
+                
                 Logger.error(error!)
 
                 self.finish(transfer, withError: error)
@@ -409,9 +410,9 @@ public class TransfersController {
             }
             
             DispatchQueue.main.async {
-                let error = "Transfer cannot upload_file"
+                error = WiredError(withTitle: "Transfer Error", message: "Transfer upload_file")
                 
-                Logger.error(error)
+                Logger.error(error!)
                 
                 self.finish(transfer, withError: error)
             }
@@ -451,9 +452,9 @@ public class TransfersController {
             }
             
             DispatchQueue.main.async {
-                let error = "Transfer cannot upload"
+                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot upload")
                 
-                Logger.error(error)
+                Logger.error(error!)
                 
                 self.finish(transfer, withError: error)
             }

@@ -126,12 +126,19 @@ public class Logger {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.ERROR)
         }
     }
+    
+    public static func error(_ error:WiredError, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+        if LogLevel.ERROR.rawValue <= shared.maxLevel {
+            shared.output(string: error.message, error.title, file, function, line: line, severity: LogLevel.ERROR)
+        }
+    }
 
     public static func fatal(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.FATAL.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.FATAL)
         }
     }
+    
 
 
     /**
