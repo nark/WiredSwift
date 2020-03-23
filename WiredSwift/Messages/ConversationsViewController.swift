@@ -219,7 +219,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         
                         // add unread
                         if NSApp.isActive == false || self.view.window?.isKeyWindow == false {
-                            AppDelegate.notify(title: "New Message", subtitle: userInfo.nick!, text: messageString)
+                            AppDelegate.notify(identifier: "privateMessage", title: "New Message", subtitle: userInfo.nick!, text: messageString, connection: connection)
                             AppDelegate.updateUnreadMessages(forConnection: connection)
                         }
                     }

@@ -26,7 +26,7 @@ extension Notification.Name {
 public let spec = P7Spec()
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotificationCenterDelegate {
     public static let shared:AppDelegate = NSApp.delegate as! AppDelegate
     
     public static var unreadChatMessages = 0
@@ -74,6 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 print("User has declined notifications")
             }
         }
+        AppDelegate.notificationCenter.delegate = self
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
@@ -82,10 +83,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     
     
     
+    
     // MARK: - IB Actions
     @IBAction func showChat(_ sender: Any) {
+        print("showChat: \(NSApp.keyWindow)")
+        print("showChat: \(NSApp.mainWindow)")
+        
         self.setTabView(atIndex: 0)
-        NSApp.mainWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
+        
+        NSApp.keyWindow?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
     }
     
     @IBAction func showMessages(_ sender: Any) {
@@ -190,6 +196,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     
+    public static func windowController(forURI URI:String) -> ConnectionWindowController? {
+        for w in NSApp.windows {
+            if let cwc = w.windowController as? ConnectionWindowController {
+                if cwc.connection.URI == URI {
+                    return cwc
+                }
+            }
+        }
+        return nil
+    }
+    
     public static func windowController(forBookmark bookmark:Bookmark) -> ConnectionWindowController? {
         for w in NSApp.windows {
             if let cwc = w.windowController as? ConnectionWindowController {
@@ -281,41 +298,59 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     
     
-    public static func notify(title:String, subtitle:String? = nil, text:String) {
+    public static func notify(identifier:String, title:String, subtitle:String? = nil, text:String, connection:Connection) {
         let content = UNMutableNotificationContent()
-        
+
         content.title = title
         content.body = text
         content.sound = UNNotificationSound.default
-        content.badge = 1
-
+        content.categoryIdentifier = connection.URI
+        
         if let s = subtitle {
             content.subtitle = s
         }
         
-        let identifier = "Local Notification"
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-
+    
+        notificationCenter.removeAllPendingNotificationRequests()
         notificationCenter.add(request) { (error) in
             if let error = error {
                 print("Error \(error.localizedDescription)")
             }
         }
-        
-//        let notification = NSUserNotification()
-//        notification.identifier = "unique-id"
-//        notification.title = title
-//
-//        if let s = subtitle {
-//            notification.subtitle = s
-//        }
-//
-//        notification.informativeText = text
-//        notification.soundName = NSUserNotificationDefaultSoundName
-//        notification.contentImage = NSImage(named: "AppIcon")
-//
-//        AppDelegate.notificationCenter.
+    }
+    
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        if response.notification.request.identifier == "chatMessage" {
+            // find window for URI
+            if let window = AppDelegate.windowController(forURI: response.notification.request.content.categoryIdentifier)?.window {
+                // select Chat toolbar item
+                window.makeKey()
+                AppDelegate.shared.perform(#selector(AppDelegate.showChat(_:)), with: self, afterDelay: 0.1)
+            }
+        } else if response.notification.request.identifier == "privateMessage" {
+            if let window = AppDelegate.windowController(forURI: response.notification.request.content.categoryIdentifier)?.window {
+                // select Message toolbar item
+                window.makeKey()
+                AppDelegate.shared.perform(#selector(AppDelegate.showMessages(_:)), with: self, afterDelay: 0.1)
+            }
+        } else if response.notification.request.identifier == "transferError" {
+            if let window = AppDelegate.windowController(forURI: response.notification.request.content.categoryIdentifier)?.window {
+                // select Message toolbar item
+                window.makeKey()
+                AppDelegate.shared.perform(#selector(AppDelegate.showTransfers(_:)), with: self, afterDelay: 0.1)
+            }
+        }
+    }
+    
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if notification.request.identifier == "transferError" {
+            completionHandler(.alert)
+        }
     }
     
     

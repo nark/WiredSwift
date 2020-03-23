@@ -145,12 +145,21 @@ public class TransfersController {
         transfer.transferConnection?.disconnect()
         transfer.state = .Finished
         
+        try? AppDelegate.shared.persistentContainer.viewContext.save()
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
     }
     
     private func finish(_ transfer: Transfer, withError error:String? = nil) {
         if let e = error {
             transfer.error = e
+            
+            AppDelegate.notify(
+                identifier: "transferError",
+                title: "Transfer Error",
+                subtitle: transfer.localPath,
+                text: transfer.error,
+                connection: transfer.connection)
+            
             print("Transfer error: \(e)")
         }
         
@@ -245,6 +254,7 @@ public class TransfersController {
                               
                     DispatchQueue.main.async {
                         transfer.percent = 100
+                        
                         self.finish(transfer, withError: "File already exists at this location: \(dataPath!)")
                     }
                     
@@ -344,12 +354,12 @@ public class TransfersController {
                 DispatchQueue.main.async {
                     progressIndicator.isIndeterminate = false
                     progressIndicator.doubleValue = percent
+                    transfer.transferStatusField?.stringValue = transfer.transferStatus()
                 }
             }
                         
+            // transfer done
             if transfer.dataTransferred + transfer.rsrcTransferred >= transfer.file!.dataSize + transfer.file!.rsrcSize {
-                print("Transfer done")
-                
                 transfer.state = .Disconnecting
 
                 break

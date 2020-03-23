@@ -16,6 +16,7 @@ public class Transfer: NSManagedObject {
     public var transferConnection: TransferConnection?
     public var file:File?
     public var progressIndicator:NSProgressIndicator?
+    public var transferStatusField:NSTextField?
     public var error:String = ""
     
     public func transferStatus() -> String {

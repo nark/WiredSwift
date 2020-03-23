@@ -103,6 +103,8 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         transfer.progressIndicator?.usesThreadedAnimation = true
         transfer.progressIndicator?.startAnimation(self)
         transfer.progressIndicator = view?.progressIndicator
+        transfer.transferStatusField = view?.transferInfo
+        
         view?.transferInfo.stringValue = transfer.transferStatus()
 
         return view
