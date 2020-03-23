@@ -57,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             "WSChatFontName": "Courier",
             "WSChatFontSize": 14.0,
             "WSChatEventFontColor": try! NSKeyedArchiver.archivedData(withRootObject: NSColor.lightGray, requiringSecureCoding: false),
+            "WSEmojiSubstitutionsEnabled": true,
             "WSEmojiSubstitutions": [
                 ":-)": "😊",
                 ":)":  "😊",

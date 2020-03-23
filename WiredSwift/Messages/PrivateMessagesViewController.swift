@@ -56,15 +56,16 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                     textDidEndEditingTimer = nil
                 }
                 
-                textDidEndEditingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { (timer) in
-                    if let lastWord = self.chatInput.stringValue.split(separator: " ").last {
-                        if let emoji = AppDelegate.emoji(forKey: String(lastWord)) {
-                            let string = (self.chatInput.stringValue as NSString).replacingOccurrences(of: String(lastWord), with: emoji)
-                            self.chatInput.stringValue = string
+                if UserDefaults.standard.bool(forKey: "WSEmojiSubstitutionsEnabled") {
+                    textDidEndEditingTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: false) { (timer) in
+                        if let lastWord = self.chatInput.stringValue.split(separator: " ").last {
+                            if let emoji = AppDelegate.emoji(forKey: String(lastWord)) {
+                                let string = (self.chatInput.stringValue as NSString).replacingOccurrences(of: String(lastWord), with: emoji)
+                                self.chatInput.stringValue = string
+                            }
                         }
                     }
                 }
-
             }
         }
     }
