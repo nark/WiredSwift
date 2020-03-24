@@ -18,6 +18,8 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
     @IBOutlet weak var passwordField: NSSecureTextField!
     @IBOutlet weak var connectButton: NSButton!
     
+    public var connectionWindowController:ConnectionWindowController!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
@@ -88,7 +90,12 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
                     ConnectionsController.shared.addConnection(self.connection)
                     
                     self.progressIndicator.stopAnimation(sender)
-                    self.performSegue(withIdentifier: "showPublicChat", sender: sender)
+                    
+                    self.view.window?.orderOut(sender)
+                    self.connectionWindowController.window?.endSheet(self.view.window!, returnCode: NSApplication.ModalResponse.OK)
+                    
+                    // distribute connection to sub components
+                    self.connectionWindowController.attach(connection: self.connection)
                 }
             } else {
                 DispatchQueue.main.async {
@@ -104,53 +111,13 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
     }
     
     
-    
-    override func prepare(for segue: NSStoryboardSegue, sender: Any?) {
-        if segue.identifier == "showPublicChat" {
-            if let connectionWindowController = segue.destinationController as? ConnectionWindowController {
-                connectionWindowController.connection = self.connection
-                
-                if let splitViewController = connectionWindowController.contentViewController as? NSSplitViewController {
-                    if let resourcesController = splitViewController.splitViewItems[0].viewController as? ResourcesController {
-                          resourcesController.representedObject = self.connection
-                    }
-                      
-                    if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
-                        if let splitViewController2 = tabViewController.tabViewItems[0].viewController as? NSSplitViewController {
-                            if let userController = splitViewController2.splitViewItems[1].viewController as? UsersViewController {
-                                userController.representedObject = self.connection
-                            }
-
-                            if let chatController = splitViewController2.splitViewItems[0].viewController as? ChatViewController {
-                                chatController.representedObject = self.connection
-                            }
-                            
-                            connectionWindowController.window?.title = self.connection.serverInfo.serverName
-
-                            self.view.window!.performClose(nil)
-                            connectionWindowController.window?.mergeAllWindows(self)
-                        }
-                        
-                        for item in tabViewController.tabViewItems {
-                            if let connectionController = item.viewController as? InfosViewController {
-                                connectionController.representedObject = self.connection
-                            }
-                            else if let messagesSplitViewController = item.viewController as? MessagesSplitViewController {
-                                if let conversationsViewController = messagesSplitViewController.splitViewItems[1].viewController as? ConversationsViewController {
-                                    conversationsViewController.representedObject = self.connection
-                                }
-                            }
-                            else if let connectionController = item.viewController as? FilesViewController {
-                                connectionController.representedObject = self.connection
-                            }
-                        }
-                    }
-                    
-                    AppDelegate.updateUnreadMessages(forConnection: connection)
-                }
-            }
-        }
+    @IBAction func cancel(_ sender: Any) {
+        self.view.window?.orderOut(sender)
+        
+        self.connectionWindowController.window?.endSheet(self.view.window!, returnCode: NSApplication.ModalResponse.cancel)
     }
+    
+    
     
     func connectionDidConnect(connection: Connection) {
         // print("connectionDidConnect")

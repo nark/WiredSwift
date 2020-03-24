@@ -10,6 +10,49 @@ import Cocoa
 
 class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate {
     public var connection: Connection!
+    public var bookmark: Bookmark!
+
+    
+    public static func connectConnectionWindowController(withBookmark bookmark:Bookmark) -> ConnectionWindowController? {
+        if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
+            if let tabGroup = cwc.window?.tabGroup {
+                tabGroup.selectedWindow = cwc.window
+            }
+            return cwc
+        }
+        
+        let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
+        if let connectionWindowController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ConnectionWindowController")) as? ConnectionWindowController {
+            let url = bookmark.url()
+            
+            connectionWindowController.connection = Connection(withSpec: spec, delegate: connectionWindowController as? ConnectionDelegate)
+            connectionWindowController.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? connectionWindowController.connection.nick
+            connectionWindowController.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? connectionWindowController.connection.status
+                                
+            DispatchQueue.global().async {
+                if connectionWindowController.connection.connect(withUrl: url) == true {
+                    DispatchQueue.main.async {
+                        ConnectionsController.shared.addConnection(connectionWindowController.connection)
+                        
+                        connectionWindowController.attach(connection: connectionWindowController.connection)
+                        //connectionWindowController.window?.mergeAllWindows(self)
+                        connectionWindowController.showWindow(connectionWindowController)
+                        //connectionWindowController.window?.toolbar?.validateVisibleItems()
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        if let wiredError = connectionWindowController.connection.socket.errors.first {
+                            AppDelegate.showWiredError(wiredError)
+                        }
+                    }
+                }
+            }
+            
+            return connectionWindowController
+        }
+        
+        return nil
+    }
     
     
     override func windowDidLoad() {
@@ -24,6 +67,29 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
             name: .linkConnectionDidClose, object: nil)
         
         self.window?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
+        
+        self.perform(#selector(showConnectSheet), with: nil, afterDelay: 0.2)
+    }
+
+    
+    
+    @objc private func showConnectSheet() {
+        print("windowDidLoad showConnectSheet: \(self.connection)")
+        
+        if self.connection == nil {
+            let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
+            if let connectWindowController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ConnectWindowController")) as? NSWindowController {
+                if let connectViewController = connectWindowController.window?.contentViewController as? ConnectController {
+                    connectViewController.connectionWindowController = self
+                    
+                    self.window!.beginSheet(connectWindowController.window!) { (modalResponse) in
+                        if modalResponse == .cancel {
+                            self.close()
+                        }
+                    }
+                }
+            }
+        }
     }
     
 
@@ -53,7 +119,9 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
                     // check if selected toolbar identifier is selected
                     if let identifier = tabViewController.tabView.tabViewItem(at: tabViewController.selectedTabViewItemIndex).identifier as? String {
                         if identifier == "Chat" {
-                            AppDelegate.resetChatUnread(forKey: "WSUnreadChatMessages", forConnection: self.connection)
+                            if self.connection != nil {
+                                AppDelegate.resetChatUnread(forKey: "WSUnreadChatMessages", forConnection: self.connection)
+                            }
                         }
                         else if identifier == "Messages" {
                             // hmm, we prefer to unread them by conversation, right ?
@@ -117,6 +185,8 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
     
             } else {
                 item.isEnabled = false
+                item.label = "Reconnecting"
+                
                 DispatchQueue.global().async {
                     if self.connection.connect(withUrl: self.connection.url) {
                         DispatchQueue.main.async {
@@ -133,7 +203,8 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
                     } else {
                         DispatchQueue.main.async {
                             NotificationCenter.default.post(name: .linkConnectionDidFailReconnect, object: self.connection)
-                            item.isEnabled = false
+                            item.isEnabled = true
+                            item.label = "Reconnect"
                         }
                     }
                 }
@@ -142,6 +213,46 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
     }
 
     
+    
+    public func attach(connection:Connection) {
+        self.connection = connection
+        
+        if let splitViewController = self.contentViewController as? NSSplitViewController {
+            if let resourcesController = splitViewController.splitViewItems[0].viewController as? ResourcesController {
+                  resourcesController.representedObject = self.connection
+            }
+              
+            if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
+                if let splitViewController2 = tabViewController.tabViewItems[0].viewController as? NSSplitViewController {
+                    if let userController = splitViewController2.splitViewItems[1].viewController as? UsersViewController {
+                        userController.representedObject = self.connection
+                    }
+
+                    if let chatController = splitViewController2.splitViewItems[0].viewController as? ChatViewController {
+                        chatController.representedObject = self.connection
+                    }
+                    
+                    self.window?.title = self.connection.serverInfo.serverName
+                }
+                
+                for item in tabViewController.tabViewItems {
+                    if let connectionController = item.viewController as? InfosViewController {
+                        connectionController.representedObject = self.connection
+                    }
+                    else if let messagesSplitViewController = item.viewController as? MessagesSplitViewController {
+                        if let conversationsViewController = messagesSplitViewController.splitViewItems[1].viewController as? ConversationsViewController {
+                            conversationsViewController.representedObject = self.connection
+                        }
+                    }
+                    else if let connectionController = item.viewController as? FilesViewController {
+                        connectionController.representedObject = self.connection
+                    }
+                }
+            }
+            
+            AppDelegate.updateUnreadMessages(forConnection: connection)
+        }
+    }
     
     public func disconnect() {
         if self.connection != nil {
@@ -160,6 +271,10 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
                 }
         }
         return nil
+    }
+    
+    func validateToolbarItem(_ item: NSToolbarItem) -> Bool {
+        return true
     }
     
 }

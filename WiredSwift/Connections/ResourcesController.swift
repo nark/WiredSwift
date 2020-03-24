@@ -65,7 +65,8 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     @objc private func doubleClickResource() {
         if let clickedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.clickedRow) {
             if let bookmark = clickedItem as? Bookmark {
-                ConnectionsController.shared.connectBookmark(bookmark)
+                ConnectionWindowController.connectConnectionWindowController(withBookmark: bookmark)
+                //ConnectionsController.shared.connectBookmark(bookmark)
             }
             // reveal connection on double click
             else if let connection = clickedItem as? Connection {

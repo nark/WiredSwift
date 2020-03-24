@@ -160,7 +160,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     private func safeTerminateApp(_ sender: NSApplication) -> NSApplication.TerminateReply  {
         for w in NSApp.windows {
             if let cwc = w.windowController as? ConnectionWindowController {
-                cwc.connection.disconnect()
+                if cwc.connection != nil {
+                    cwc.connection.disconnect()
+                }
             }
         }
         
@@ -176,6 +178,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     // MARK: - IB Actions
+    @IBAction func connect(_ sender: Any) {
+
+    }
+    
+    
     @IBAction func showChat(_ sender: Any) {
         self.setTabView(atIndex: 0)
         
@@ -240,7 +247,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     @IBAction func connectBookmark(_ sender: NSMenuItem) {
         if let bookmark = sender.representedObject as? Bookmark {
-            ConnectionsController.shared.connectBookmark(bookmark)
+            ConnectionWindowController.connectConnectionWindowController(withBookmark: bookmark)
         }
     }
     
@@ -275,7 +282,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     private static func hasActiveConnections() -> Bool {
         for w in NSApp.windows {
             if let cwc = w.windowController as? ConnectionWindowController {
-                if cwc.connection.isConnected() {
+                if cwc.connection != nil && cwc.connection.isConnected() {
                     return true
                 }
             }
@@ -318,7 +325,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     public static func windowController(forBookmark bookmark:Bookmark) -> ConnectionWindowController? {
         for w in NSApp.windows {
             if let cwc = w.windowController as? ConnectionWindowController {
-                if "\(cwc.connection.url.hostname):\(cwc.connection.url.port)" == bookmark.hostname! && cwc.connection.url.login == bookmark.login! {
+                if cwc.connection != nil && "\(cwc.connection.url.hostname):\(cwc.connection.url.port)" == bookmark.hostname! && cwc.connection.url.login == bookmark.login! {
                     return cwc
                 }
             }

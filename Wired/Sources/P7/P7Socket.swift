@@ -254,7 +254,7 @@ public class P7Socket: NSObject {
         
         var lengthBuffer = [Byte](repeating: 0, count: 4)
         let bytesRead = self.read(&lengthBuffer, maxLength: 4)
-        
+                
         if bytesRead > 0 {
             if self.serialization == .XML {
                 if let xml = String(bytes: messageData, encoding: .utf8) {

@@ -11,7 +11,7 @@ import Cocoa
 class ConnectionWindow: NSWindow {
     override func close() {
         if let cwc = self.windowController as? ConnectionWindowController {
-            if cwc.connection.isConnected() {
+            if cwc.connection != nil && cwc.connection.isConnected() {
                 if UserDefaults.standard.bool(forKey: "WSCheckActiveConnectionsBeforeQuit") == true {
                     let alert = NSAlert()
                     alert.messageText = "Are you sure you want to disconnect?"
@@ -30,6 +30,8 @@ class ConnectionWindow: NSWindow {
                     cwc.disconnect()
                     super.close()
                 }
+            } else {
+                super.close()
             }
         } else {
             super.close()

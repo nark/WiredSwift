@@ -118,9 +118,12 @@ public class Connection: NSObject {
     public func disconnect() {
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
+        }
+        
+        self.stopListening()
+        self.socket.disconnect()
             
-            self.socket.disconnect()
-            
+        DispatchQueue.main.async {
             NotificationCenter.default.post(name: .linkConnectionDidClose, object: self)
         }
     }
@@ -163,11 +166,7 @@ public class Connection: NSObject {
     
     
     private func listen() {
-        if let l = listener {
-            l.cancel()
-            
-            listener = nil
-        }
+        self.stopListening()
         
         // we use a worker to ensure previous thread was terminated
         listener = DispatchWorkItem {
@@ -176,11 +175,25 @@ public class Connection: NSObject {
                     if self.interactive == true {
                         self.handleMessage(message)
                     }
+               } else {
+                    //NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
+                    if self.isConnected() {
+                        self.disconnect()
+                    }
+                    //NotificationCenter.default.post(name: .linkConnectionDidClose, object: self)
                }
            }
         }
         
         DispatchQueue.global().async(execute: listener)
+    }
+    
+    
+    public func stopListening() {
+        if let l = listener {
+            l.cancel()
+            listener = nil
+        }
     }
     
     
