@@ -9,6 +9,16 @@
 import Foundation
 import Dispatch
 
+
+extension Notification.Name {
+    static let linkConnectionWillDisconnect     = Notification.Name("linkConnectionWillDisconnect")
+    static let linkConnectionDidClose           = Notification.Name("linkConnectionDidClose")
+    static let linkConnectionDidReconnect       = Notification.Name("linkConnectionDidReconnect")
+    static let linkConnectionDidFailReconnect   = Notification.Name("linkConnectionDidFailReconnect")
+}
+
+
+
 public protocol ConnectionDelegate: class {
     func connectionDidConnect(connection: Connection)
     func connectionDidFailToConnect(connection: Connection, error: Error)
@@ -17,6 +27,7 @@ public protocol ConnectionDelegate: class {
     func connectionDidReceiveMessage(connection: Connection, message: P7Message)
     func connectionDidReceiveError(connection: Connection, message: P7Message)
 }
+
 
 public class Connection: NSObject {
     public var spec:        P7Spec
@@ -33,6 +44,8 @@ public class Connection: NSObject {
     public var icon: String     = Wired.defaultUserIcon
     
     public var serverInfo: ServerInfo!
+    
+    private var listener:DispatchWorkItem!
     
     public var URI:String {
         get {
@@ -61,7 +74,7 @@ public class Connection: NSObject {
     
     
     public func connect(withUrl url: Url) -> Bool {
-        self.url = url
+        self.url    = url
         
         self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
         
@@ -103,7 +116,13 @@ public class Connection: NSObject {
     
     
     public func disconnect() {
-        self.socket.disconnect()
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
+            
+            self.socket.disconnect()
+            
+            NotificationCenter.default.post(name: .linkConnectionDidClose, object: self)
+        }
     }
     
     
@@ -144,14 +163,24 @@ public class Connection: NSObject {
     
     
     private func listen() {
-        DispatchQueue.global().async {
-            while (self.interactive == true && self.socket.connected == true) {
-                //Logger.debug("listen try to read")
-                if let message = self.socket.readMessage(), self.interactive == true {
-                    self.handleMessage(message)
-                }
-            }
+        if let l = listener {
+            l.cancel()
+            
+            listener = nil
         }
+        
+        // we use a worker to ensure previous thread was terminated
+        listener = DispatchWorkItem {
+           while (self.interactive == true && self.socket.connected == true) {
+               if let message = self.socket.readMessage() {
+                    if self.interactive == true {
+                        self.handleMessage(message)
+                    }
+               }
+           }
+        }
+        
+        DispatchQueue.global().async(execute: listener)
     }
     
     
@@ -278,6 +307,10 @@ public class Connection: NSObject {
         if let uid = response.uint32(forField: "wired.user.id") {
             self.userID = uid
         }
+        
+        // read account priviledges
+        _ = self.socket.readMessage()
+
                 
         return true
     }

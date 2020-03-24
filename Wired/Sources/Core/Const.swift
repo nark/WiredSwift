@@ -94,4 +94,5 @@ NpEuUzxm5d4s+rbh/uFYP7z9nkikXDUarUgl5NiRE/c
 UKkWd5KPloQA8QAXt3UpJYct+O7nmSqt965Ofh2TgX4
 k6d3UEBImrAAAAAElFTkSuQmCC
 """
+    public static let transfersFileExtension = "WiredTransfer"
 }

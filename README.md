@@ -1,8 +1,10 @@
 # Wired Swift
 
-Wired Swift is an implementation of the Wired 2.0 protocol written in Swift 5. At the moment, it provides a very minimal set of classes to manage client connection and basic communication with Wired 2.0 servers.
+Wired Swift is an implementation of the Wired 2.0 protocol written in Swift 5.
 
 **WARNING, WiredSwift is a work-in-progress at this moment, and you should not expect anything from it right now. The road to a new Wired codebase is long journey and any help is welcome.**
+
+Wired Swift is primarilly a Swift framework named `Wired` wich provides a very minimal set of classes to manage client connection and basic communication with Wired 2.0 servers. The Wired 2.0 protocol is a binary client/server serialized network protocol implementing BSS-style services like public chat, private messaging and file transfers. It was originally created by Axel Andersson as C/Objective-C codebase which this project tends to translate to pure a Swift implementation.
 
 ## Requirements
 
@@ -29,7 +31,6 @@ Init dependencies:
 * Write minimal server code (embed mac server in client? — but still as a separated process)
 * Always try to be as close as pure Swift foundation when it relies to Wired framework
 * Make Wired a separated repository from the framework with Carthage, Package and Pods support
-* 
 
 ## License
 

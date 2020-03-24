@@ -27,15 +27,50 @@ public class TransfersController {
     public static let shared = TransfersController()
     
     //var transfers:[Transfer] = []
-    var queue:DispatchQueue = DispatchQueue(label: "transfers-queue", qos: .utility)
+    let semaphore = DispatchSemaphore(value: 2)
+    var queue:DispatchQueue = DispatchQueue(label: "transfers-queue", qos: .utility, attributes: .concurrent)
     
     private init() {
+        NotificationCenter.default.addObserver(
+            self, selector:#selector(linkConnectionWillDisconnect(_:)) ,
+            name: .linkConnectionWillDisconnect, object: nil)
+        
+        NotificationCenter.default.addObserver(
+            self, selector:#selector(linkConnectionDidClose(_:)) ,
+            name: .linkConnectionDidClose, object: nil)
+        
+        for transfer in self.transfers() {
+            if transfer.state == .Disconnecting {
+                transfer.state = .Disconnected
+            }
+        }
+                
+        try? AppDelegate.shared.persistentContainer.viewContext.save()
+    }
+    
+    
+    @objc func linkConnectionWillDisconnect(_ n:Notification) {
+        if let connection = n.object as? Connection {
+            for transfer in self.transfers() {
+                if transfer.connection == connection && transfer.isWorking() {
+                    transfer.state = .Disconnecting
+                    
+                    try? AppDelegate.shared.persistentContainer.viewContext.save()
+                    NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
+                }
+            }
+        }
+    }
+    
+    
+    @objc func linkConnectionDidClose(_ n:Notification) {
 
     }
     
     
     public func transfers() -> [Transfer] {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Transfer")
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "startDate", ascending: false)]
         
         let context = AppDelegate.shared.persistentContainer.viewContext
         
@@ -52,6 +87,7 @@ public class TransfersController {
         return []
     }
     
+    
     public func remove(_ transfer:Transfer) {
         if transfer.isWorking() {
             transfer.state = .Removing
@@ -67,22 +103,24 @@ public class TransfersController {
     
     
     public func download(_ file:File) -> Bool {
-        guard let downloadPath = self.defaultDownloadDestination(forFile: file) else {
+        guard let downloadPath = self.temporaryDownloadDestination(forPath: file.path!) else {
             return false
         }
         
         return download(file, toPath: downloadPath)
     }
         
-
     
     public func download(_ file:File, toPath:String? = nil) -> Bool {
         let transfer = DownloadTransfer(context: AppDelegate.shared.persistentContainer.viewContext)
         
         transfer.name = file.name!
         transfer.connection = file.connection
+        transfer.uri = file.connection.URI
         transfer.file = file
-                        
+        transfer.remotePath = file.path!
+        transfer.startDate = Date()
+        
         try? AppDelegate.shared.persistentContainer.viewContext.save()
         
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
@@ -107,7 +145,8 @@ public class TransfersController {
         transfer.localPath = path
         transfer.file = file
         transfer.size = Int64(file.uploadDataSize + file.uploadRsrcSize)
-        
+        transfer.startDate = Date()
+            
         try? AppDelegate.shared.persistentContainer.viewContext.save()
         
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
@@ -119,16 +158,27 @@ public class TransfersController {
     
     
     
-    private func request(_ transfer: Transfer) {
+    public func request(_ transfer: Transfer) {
         if transfer.isFolder {
             
         } else {
+            // recover connection if needed
+            if transfer.connection == nil {
+                if let cwc = AppDelegate.windowController(forURI: transfer.uri!) {
+                    transfer.connection = cwc.connection
+                    
+                    // let fc = ConnectionsController.shared.filesController(forConnection: cwc.connection)
+                    //transfer.file =
+                }
+            }
+            
             self.start(transfer)
         }
     }
     
     
     public func start(_ transfer: Transfer) {
+        
         if !transfer.isTerminating() {
             transfer.state = .Waiting
         }
@@ -140,10 +190,19 @@ public class TransfersController {
     
     
     private func finish(_ transfer: Transfer) {
-        print("finish")
-        
-        transfer.transferConnection?.disconnect()
-        transfer.state = .Finished
+        if transfer.state == .Pausing || transfer.state == .Paused {
+            transfer.transferConnection?.disconnect()
+            transfer.state = .Paused
+            
+        }
+        else if transfer.state == .Stopping || transfer.state == .Stopped {
+            transfer.transferConnection?.disconnect()
+            transfer.state = .Stopped
+            
+        } else {
+            transfer.transferConnection?.disconnect()
+            transfer.state = .Finished
+        }
         
         try? AppDelegate.shared.persistentContainer.viewContext.save()
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
@@ -163,6 +222,8 @@ public class TransfersController {
     
     
     private func transferThread(_ transfer: Transfer) {
+        semaphore.wait()
+        
         queue.async {
             if transfer is DownloadTransfer {
                 self.runDownload(transfer)
@@ -179,6 +240,7 @@ public class TransfersController {
         var data = true
         var dataLength:UInt64? = 0
         var rsrcLength:UInt64? = 0
+        let start:TimeInterval = Date.timeIntervalSinceReferenceDate
         
         if transfer.transferConnection == nil {
             transfer.transferConnection = self.transfertConnectionForTransfer(transfer)
@@ -188,8 +250,11 @@ public class TransfersController {
         
         transfer.transferConnection?.interactive = false
         
+        // create a secondary connection
         if (connection?.connect(withUrl: transfer.connection.url) == false) {
             transfer.state = .Stopped
+            
+            self.semaphore.signal()
             
             DispatchQueue.main.async {
                 error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot connect")
@@ -202,10 +267,25 @@ public class TransfersController {
             return
         }
                 
+        // recover remote file on transfer connection if needed
+        if transfer.file == nil {
+            let message = P7Message(withName: "wired.file.get_info", spec: transfer.transferConnection!.spec)
+            message.addParameter(field: "wired.file.path", value: transfer.remotePath)
+            
+            if transfer.transferConnection!.send(message: message) == true {
+                if let response = transfer.transferConnection!.readMessage() {
+                    transfer.file = File(response, connection: transfer.transferConnection!)
+                }
+            }
+        }
+            
+        // request download
         if self.sendDownloadFileMessage(onConnection: connection!, forTransfer: transfer) == false {
             if (transfer.isTerminating() == false) {
                 transfer.state = .Disconnecting
             }
+            
+            self.semaphore.signal()
             
             DispatchQueue.main.async {
                 error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot download_file")
@@ -218,10 +298,13 @@ public class TransfersController {
             return
         }
         
+        // run download
         guard let runMessage = self.run(transfer.transferConnection!, forTransfer: transfer, untilReceivingMessageName: "wired.transfer.download") else {
             if transfer.isTerminating() == false {
                 transfer.state = .Disconnecting
             }
+            
+            self.semaphore.signal()
                      
             DispatchQueue.main.async {
                 self.finish(transfer)
@@ -229,42 +312,99 @@ public class TransfersController {
             
             return
         }
-                
+                        
         dataLength = runMessage.uint64(forField: "wired.transfer.data")
         rsrcLength = runMessage.uint64(forField: "wired.transfer.rsrc")
-                
-        let dataPath = self.defaultDownloadDestination(forFile: transfer.file!)
+        
+        let dataPath = self.temporaryDownloadDestination(forPath: transfer.remotePath!)
         let rsrcPath = FileManager.resourceForkPath(forPath: dataPath!)
         
-        // check file size if it already exists
-        if FileManager.default.fileExists(atPath: dataPath!) {
-            do {
-                let attr = try FileManager.default.attributesOfItem(atPath: dataPath!)
-                let fileSize = attr[FileAttributeKey.size] as! UInt64
-                
-                if fileSize >= dataLength! {
-                    if transfer.isTerminating() == false {
-                        transfer.state = .Disconnecting
-                    }
-                              
-                    DispatchQueue.main.async {
-                        transfer.percent = 100
-                        
-                        error = WiredError(withTitle: "Transfer Error", message: "File already exists at this location: \(dataPath!)")
-                        
-                        Logger.error(error!)
-                        
-                        self.finish(transfer, withError: error)
-                    }
+        // check if final file alreayd exists, ask for overwrite
+        if let finalPath = self.defaultDownloadDestination(forPath: transfer.remotePath!) {
+            if FileManager.default.fileExists(atPath: finalPath) {
+                do {
+                    let attr = try FileManager.default.attributesOfItem(atPath: finalPath)
+                    let fileSize = attr[FileAttributeKey.size] as! UInt64
                     
-                    return
+                    if fileSize == dataLength! {
+                        transfer.state = .Stopped
+                        
+                        self.semaphore.signal()
+                                                
+                        DispatchQueue.main.async {
+                            transfer.state = .Stopped
+                            
+                            self.finish(transfer)
+                            
+                            let alert = NSAlert()
+                            alert.messageText = "File already exists"
+                            alert.informativeText = "Do you want to overwrite '\(finalPath)'?"
+                            alert.alertStyle = .warning
+                            alert.addButton(withTitle: "Overwrite")
+                            alert.addButton(withTitle: "Cancel")
+                            
+                            if let mainWindow = NSApp.mainWindow {
+                                AppDelegate.shared.showTransfers(self)
+                                alert.beginSheetModal(for: mainWindow) { (modalResponse: NSApplication.ModalResponse) -> Void in
+                                    if modalResponse == .alertFirstButtonReturn {
+                                        // remove existing file
+                                        do {
+                                            try FileManager.default.removeItem(atPath: finalPath)
+                                            
+                                            transfer.state = .Waiting
+                                            
+                                            self.request(transfer)
+                                            
+                                        } catch let e {
+                                            error = WiredError(withTitle: "Transfer Error", message: "\(e)")
+                                            
+                                            transfer.state = .Disconnecting
+                                            
+                                            self.finish(transfer, withError: error)
+                                        }
+                                        
+                                        return
+                                        
+                                    } else {
+                                        do {
+                                            try FileManager.default.removeItem(atPath: dataPath!)
+                                            transfer.dataTransferred = 0
+                                            transfer.rsrcTransferred = 0
+                                            transfer.actualTransferred = 0
+                                            transfer.speed = 0
+                                            transfer.percent = 0
+                                            transfer.state = .Stopped
+                                            
+                                            self.finish(transfer)
+                                            
+                                        } catch let e {
+                                            error = WiredError(withTitle: "Transfer Error", message: "\(e)")
+                                            
+                                            transfer.state = .Disconnecting
+                                            
+                                            self.finish(transfer, withError: error)
+                                        }
+
+                                        
+                                        return
+                                    }
+                                }
+                            }
+                        }
+                    
+                    }
+                } catch let e {
+                    self.semaphore.signal()
+                    
+                    error = WiredError(withTitle: "Transfer Error", message: "IO Error: \(e)")
+                    
+                    Logger.error(error!)
+                    
+                    self.finish(transfer, withError: error)
                 }
-                
-            } catch {
-                print("Error: \(error)")
             }
         }
-                
+        
         if let finderInfo = runMessage.data(forField: "wired.transfer.finderinfo") {
             if finderInfo.count > 0 {
                 // TODO: set finder info
@@ -279,7 +419,7 @@ public class TransfersController {
                 NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
             }
         }
-                
+                        
         while(transfer.isTerminating() == false) {
             if data == true && dataLength == 0 {
                 data = false
@@ -301,16 +441,6 @@ public class TransfersController {
                 break
             }
             
-            // TODO: fix this
-//            if((data && dataLength != nil && dataLength! < UInt32(readBytes)) || (data == false && rsrcLength != nil && rsrcLength! < UInt32(readBytes))) {
-//                DispatchQueue.main.async {
-//                    error = "Transfer failed"
-//
-//                    Logger.error(error!)
-//                }
-//                break
-//            }
-                  
             // actually write data
             if FileManager.default.fileExists(atPath: dataPath!) {
                 if let fileHandle = FileHandle(forWritingAtPath: dataPath!) {
@@ -330,7 +460,7 @@ public class TransfersController {
                     try oobdata.write(to: URL(fileURLWithPath: data ? dataPath! : rsrcPath), options: .atomicWrite)
                 } catch let e {
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Transfer Error", message: "Transfer failed")
+                        error = WiredError(withTitle: "Transfer Error", message: "Transfer failed \(e)")
                         
                         Logger.error(error!)
                     }
@@ -349,9 +479,12 @@ public class TransfersController {
             let totalTransferSize = transfer.file!.dataSize + transfer.file!.rsrcSize
             transfer.actualTransferred += Int64(oobdata.count)
             
-            let percent =  Double(transfer.actualTransferred) / Double(totalTransferSize) * 100.0
-            transfer.percent = percent
+            let percent         =  Double(transfer.actualTransferred) / Double(totalTransferSize) * 100.0
+            transfer.percent    = percent
             
+            let speed           = (Double(transfer.actualTransferred) / (Date.timeIntervalSinceReferenceDate - start)) * 8.0
+            transfer.speed      = 0.5 * speed + (1 - 0.5) * transfer.speed
+                        
             // update progress in view
             if let progressIndicator = transfer.progressIndicator {
                 DispatchQueue.main.async {
@@ -364,10 +497,26 @@ public class TransfersController {
             // transfer done
             if transfer.dataTransferred + transfer.rsrcTransferred >= transfer.file!.dataSize + transfer.file!.rsrcSize {
                 transfer.state = .Disconnecting
+                                
+                // move to final path
+                do {
+                    try FileManager.default.moveItem(atPath: dataPath!, toPath: self.defaultDownloadDestination(forPath: transfer.remotePath!)!)
+                } catch let e {
+                    DispatchQueue.main.async {
+                        error = WiredError(withTitle: "Transfer Error", message: "Transfer rename failed \(e)")
+                        
+                        Logger.error(error!)
+                    }
+                }
+                
 
                 break
             }
         }
+        
+        self.semaphore.signal()
+        
+        try? AppDelegate.shared.persistentContainer.viewContext.save()
         
         DispatchQueue.main.async {
             self.finish(transfer)
@@ -474,10 +623,10 @@ public class TransfersController {
     
     private func sendDownloadFileMessage(onConnection connection:TransferConnection, forTransfer transfer:Transfer) -> Bool {
         let message = P7Message(withName: "wired.transfer.download_file", spec: transfer.connection.spec)
-        message.addParameter(field: "wired.file.path", value: transfer.file?.path)
+        message.addParameter(field: "wired.file.path", value: transfer.remotePath)
         message.addParameter(field: "wired.transfer.data_offset", value: UInt64(transfer.dataTransferred))
         message.addParameter(field: "wired.transfer.rsrc_offset", value: UInt64(transfer.rsrcTransferred))
-
+        
         if transfer.transferConnection?.send(message: message) == false {
             return false
         }
@@ -563,9 +712,19 @@ public class TransfersController {
     }
     
     
-    private func defaultDownloadDestination(forFile file:File) -> String? {
+    private func temporaryDownloadDestination(forPath path:String) -> String? {
         if let downloadDirectory = UserDefaults.standard.string(forKey: "WSDownloadDirectory") as NSString? {
-            return (downloadDirectory.expandingTildeInPath as NSString).appendingPathComponent(file.name)
+            let fileName = (path as NSString).lastPathComponent
+            return (downloadDirectory.expandingTildeInPath as NSString).appendingPathComponent(fileName).appendingFormat(".%@", Wired.transfersFileExtension)
+        }
+        return nil
+    }
+    
+    
+    private func defaultDownloadDestination(forPath path:String) -> String? {
+        if let downloadDirectory = UserDefaults.standard.string(forKey: "WSDownloadDirectory") as NSString? {
+            let fileName = (path as NSString).lastPathComponent
+            return (downloadDirectory.expandingTildeInPath as NSString).appendingPathComponent(fileName)
         }
         return nil
     }

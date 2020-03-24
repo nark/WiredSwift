@@ -13,19 +13,24 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     
     private var usersController:UsersController?
 
+    
+    // MARK: - View Controller
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        NotificationCenter.default.addObserver(self, selector: #selector(userLeftPublicChat(_:)), name: NSNotification.Name("UserLeftPublicChat"), object: nil)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(userLeftPublicChat(_:)),
+            name: NSNotification.Name("UserLeftPublicChat"), object: nil)
+        
+        NotificationCenter.default.addObserver(
+            self, selector:#selector(linkConnectionDidClose(notification:)) ,
+            name: .linkConnectionDidClose, object: nil)
         
         self.usersTableView.target = self
         self.usersTableView.doubleAction = #selector(tableDoubleClick(_:))
     }
     
-    
-    override func viewDidAppear() {
-        
-    }
     
     override var representedObject: Any? {
         didSet {
@@ -42,6 +47,9 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     
     
     
+    
+    // MARK: - Notification
+    
     @objc func tableDoubleClick(_ sender: Any) {
         if self.usersTableView.selectedRow != -1 {
             if let selectedUser = self.usersController?.user(at: self.usersTableView.selectedRow) {
@@ -57,6 +65,17 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
         }
     }
     
+    
+    
+    @objc private func linkConnectionDidClose(notification: Notification) -> Void {
+        if let c = notification.object as? Connection, c == self.connection {
+            self.usersController?.removeAllUsers()
+            self.usersTableView.reloadData()
+        }
+    }
+    
+    
+    // MARK: - connection Delegate
     
     
     func connectionDidConnect(connection: Connection) {
@@ -103,6 +122,8 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     }
     
     
+    
+    // MARK: - Table View
     
     func numberOfRows(in tableView: NSTableView) -> Int {
         return self.usersController?.numberOfUsers() ?? 0

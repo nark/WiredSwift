@@ -31,4 +31,17 @@ public class FilesController: ConnectionObject {
             rootFile.load(reload: reload)
         }
     }
+    
+    public func file(atPath path: String) -> File? {
+//        let message = P7Message(withName: "wired.file.get_info", spec: self.connection.spec)
+//        message.addParameter(field: "wired.file.path", value: path)
+//        
+//        if self.connection.send(message: message) == true {
+//            if let response = self.connection.readMessage() {
+//                return File(response, connection: self.connection)
+//            }
+//        }
+        
+        return nil
+    }
 }

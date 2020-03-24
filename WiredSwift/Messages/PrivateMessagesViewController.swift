@@ -225,22 +225,24 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             message.addParameter(field: "wired.user.id", value: self.conversation.userID)
             message.addParameter(field: "wired.message.message", value: textField.stringValue)
             
-            if self.connection.send(message: message) {
-                let context = AppDelegate.shared.persistentContainer.viewContext
-                if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
-                    cdObject.body = textField.stringValue
-                    cdObject.nick = self.connection.userInfo!.nick
-                    cdObject.userID = Int32(self.connection.userID)
-                    cdObject.date = Date()
-                    cdObject.me = true
-                    cdObject.read = true
-                        
-                    self.conversation.addToMessages(cdObject)
-                    self.conversationViewController.addPrivateMessage(
-                        message: textField.stringValue, cdMessage: cdObject)
+            if self.connection.isConnected() {
+                if self.connection.send(message: message) {
+                    let context = AppDelegate.shared.persistentContainer.viewContext
+                    if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
+                        cdObject.body = textField.stringValue
+                        cdObject.nick = self.connection.userInfo!.nick
+                        cdObject.userID = Int32(self.connection.userID)
+                        cdObject.date = Date()
+                        cdObject.me = true
+                        cdObject.read = true
+                            
+                        self.conversation.addToMessages(cdObject)
+                        self.conversationViewController.addPrivateMessage(
+                            message: textField.stringValue, cdMessage: cdObject)
+                    }
+                    
+                    textField.stringValue = ""
                 }
-                
-                textField.stringValue = ""
             }
         }
     }

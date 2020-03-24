@@ -16,11 +16,15 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         // Do view setup here.
         
         NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateTransfers), name: .didUpdateTransfers, object: nil)
+    
     }
     
     
     @objc func didUpdateTransfers(_ notification: Notification) {
         if let transfer = notification.object as? Transfer {
+            transfersTableView.reloadData()
+            // maybe better to reload at index only
+        } else {
             transfersTableView.reloadData()
         }
     }
@@ -32,10 +36,10 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     @IBAction func startTransfer(_ sender: Any) {
         if transfersTableView.selectedRow != -1 {
             let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
-            
+        
             selectedTransfer.state = .Waiting
             
-            TransfersController.shared.start(selectedTransfer)
+            TransfersController.shared.request(selectedTransfer)
         }
         
         transfersTableView.setNeedsDisplay(transfersTableView.frame)
@@ -45,7 +49,7 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         if transfersTableView.selectedRow != -1 {
             let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
             
-            selectedTransfer.state = .Waiting
+            selectedTransfer.state = .Pausing
             
            // TransfersController.shared.stop(selectedTransfer)
         }
@@ -54,13 +58,17 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     }
     
     @IBAction func pauseTransfer(_ sender: Any) {
-        if transfersTableView.selectedRow != -1 {
-            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
+        let selectecRow = transfersTableView.selectedRow
+        
+        if selectecRow != -1 {
+            let selectedTransfer = TransfersController.shared.transfers()[selectecRow]
             
             selectedTransfer.state = .Pausing
         }
         
-        transfersTableView.setNeedsDisplay(transfersTableView.frame)
+        //transfersTableView.setNeedsDisplay(transfersTableView.frame)
+        //transfersTableView.selectRowIndexes([selectecRow], byExtendingSelection: false)
+        transfersTableView.reloadData(forRowIndexes: [selectecRow], columnIndexes: [0])
     }
     
     @IBAction func removeTransfer(_ sender: Any) {
@@ -99,6 +107,9 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         if let name = transfer.name {
             view?.fileName.stringValue = name
         }
+        
+        view?.progressIndicator.isIndeterminate = false
+        view?.progressIndicator.doubleValue = transfer.percent
         
         transfer.progressIndicator?.usesThreadedAnimation = true
         transfer.progressIndicator?.startAnimation(self)

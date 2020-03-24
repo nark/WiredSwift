@@ -20,7 +20,9 @@ public class Transfer: NSManagedObject {
     public var error:String = ""
     
     public func transferStatus() -> String {
-        var s = "\(state) \(percent.rounded())%"
+        let speedString = AppDelegate.byteCountFormatter.string(fromByteCount: Int64(speed.rounded()))
+        
+        var s = "\(state), \(percent.rounded())%, \(speedString)/s"
         
         if error != "" {
             s = "\(s) - \(error)"

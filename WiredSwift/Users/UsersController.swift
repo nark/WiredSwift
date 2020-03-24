@@ -64,6 +64,10 @@ class UsersController: ConnectionObject {
     }
     
     
+    public func removeAllUsers() {
+        self.users = []
+    }
+    
     public func user(forID uid: UInt32) -> UserInfo? {
         for u in self.users {
             if u.userID == uid {

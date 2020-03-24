@@ -11,10 +11,17 @@ import Cocoa
 class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate {
     public var connection: Connection!
     
+    
     override func windowDidLoad() {
         super.windowDidLoad()
     
-        NotificationCenter.default.addObserver(self, selector: #selector(windowWillClose(notification:)), name: NSWindow.willCloseNotification, object: self.window)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(windowWillClose(notification:)),
+            name: NSWindow.willCloseNotification, object: self.window)
+        
+        NotificationCenter.default.addObserver(
+            self, selector:#selector(linkConnectionDidClose(notification:)) ,
+            name: .linkConnectionDidClose, object: nil)
         
         self.window?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
     }
@@ -25,6 +32,16 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
         if let w = notification.object as? NSWindow, w == self.window {
             self.disconnect()
             NotificationCenter.default.removeObserver(self)
+        }
+    }
+    
+    
+    @objc private func linkConnectionDidClose(notification: Notification) -> Void {
+        if let c = notification.object as? Connection, c == self.connection {
+            if let item = self.toolbarItem(withIdentifier: "Disconnect") {
+                item.image = NSImage(named: "Reconnect")
+                item.label = "Reconnect"
+            }
         }
     }
     
@@ -73,10 +90,58 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
     }
     
     
+    
     @IBAction func disconnect(_ sender: Any) {
-        self.window?.close()
+        if let item = self.toolbarItem(withIdentifier: "Disconnect") {
+            if self.connection.isConnected() {
+                if UserDefaults.standard.bool(forKey: "WSCheckActiveConnectionsBeforeQuit") == true {
+                    let alert = NSAlert()
+                    alert.messageText = "Are you sure you want to disconnect?"
+                    alert.informativeText = "Every running transfers may be stopped"
+                    alert.alertStyle = .warning
+                    alert.addButton(withTitle: "OK")
+                    alert.addButton(withTitle: "Cancel")
+                    
+                    alert.beginSheetModal(for: self.window!) { (modalResponse: NSApplication.ModalResponse) -> Void in
+                        if modalResponse == .alertFirstButtonReturn {
+                            self.connection.disconnect()
+                            item.image = NSImage(named: "Reconnect")
+                            item.label = "Reconnect"
+                        }
+                    }
+                } else {
+                    self.connection.disconnect()
+                    item.image = NSImage(named: "Reconnect")
+                    item.label = "Reconnect"
+                }
+    
+            } else {
+                item.isEnabled = false
+                DispatchQueue.global().async {
+                    if self.connection.connect(withUrl: self.connection.url) {
+                        DispatchQueue.main.async {
+                            print("reconnected")
+                            _ = self.connection.joinChat(chatID: 1)
+                            
+                            NotificationCenter.default.post(name: .linkConnectionDidReconnect, object: self.connection)
+                            
+                            item.image = NSImage(named: "Disconnect")
+                            item.label = "Disconnect"
+                            
+                            item.isEnabled = true
+                        }
+                    } else {
+                        DispatchQueue.main.async {
+                            NotificationCenter.default.post(name: .linkConnectionDidFailReconnect, object: self.connection)
+                            item.isEnabled = false
+                        }
+                    }
+                }
+            }
+        }
     }
 
+    
     
     public func disconnect() {
         if self.connection != nil {
@@ -85,4 +150,16 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
             self.connection.disconnect()
         }
     }
+    
+    
+    
+    private func toolbarItem(withIdentifier: String) -> NSToolbarItem? {
+        for item in (self.window?.toolbar!.items)! {
+                if item.itemIdentifier.rawValue == withIdentifier {
+                    return item
+                }
+        }
+        return nil
+    }
+    
 }

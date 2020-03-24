@@ -182,6 +182,7 @@ public class P7Socket: NSObject {
     
     public func disconnect() {
         self.socket.close()
+        
         self.connected = false
     }
     
@@ -249,6 +250,8 @@ public class P7Socket: NSObject {
     
     public func readMessage() -> P7Message? {
         var messageData = Data()
+        var error:WiredError? = nil
+        
         var lengthBuffer = [Byte](repeating: 0, count: 4)
         let bytesRead = self.read(&lengthBuffer, maxLength: 4)
         
@@ -263,14 +266,34 @@ public class P7Socket: NSObject {
             else if self.serialization == .BINARY {
                 if bytesRead >= 4 {
                     let messageLength = Data(lengthBuffer).uint32.bigEndian
-                    messageData = try! self.readData(size: Int(messageLength))
                     
+                    do {
+                        messageData = try self.readData(size: Int(messageLength))
+                    } catch let e {
+                        error = WiredError(withTitle: "Read Error", message: "")
+                        
+                        if let socketError = e as? Socket.Error {
+                            error = WiredError(withTitle: "Read Error", message: socketError.description)
+                        } else {
+                            error = WiredError(withTitle: "Read Error", message: e.localizedDescription)
+                        }
+                        
+                        Logger.error(error!)
+                        self.errors.append(error!)
+                        
+                        return nil
+                    }
+                                        
                     // data to message object
                     if messageData.count > 0 {
                         // decryption
                         if self.encryptionEnabled {
                             guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
-                                Logger.error("Cannot decrypt data")
+                                error = WiredError(withTitle: "Read Error", message: "Cannot decrypt data")
+
+                                Logger.error(error!)
+                                self.errors.append(error!)
+                                
                                 return nil
                             }
                             messageData = decryptedMessageData
@@ -279,7 +302,11 @@ public class P7Socket: NSObject {
                         // inflate
                         if self.compressionEnabled {
                             guard let inflatedMessageData = self.inflate(messageData) else {
-                                Logger.error("Cannot inflate data")
+                                error = WiredError(withTitle: "Read Error", message: "Cannot inflate data")
+
+                                Logger.error(error!)
+                                self.errors.append(error!)
+                                
                                 return nil
                                 
                             }
@@ -305,8 +332,8 @@ public class P7Socket: NSObject {
     
     
     
-    private func write(_ buffer: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 10.0) -> Int {
-        while let available = try? socket.wait(for: .write, timeout: timeout) {
+    private func write(_ buffer: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
+        while let available = try? socket.wait(for: .write, timeout: timeout), self.connected == true {
             guard available else { continue } // timeout happend, try again
             
             let n = try? socket.write(buffer, size: len)
@@ -319,8 +346,8 @@ public class P7Socket: NSObject {
     
     
     
-    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int, timeout:TimeInterval = 10.0) -> Int {
-        while let available = try? socket.wait(for: .read, timeout: timeout) {
+    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
+        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
             guard available else { continue } // timeout happend, try again
 
             let n = try? socket.read(buffer, size: len)
@@ -333,15 +360,15 @@ public class P7Socket: NSObject {
     
     
     // I have pretty much had to rewrite my own read() function here
-    private func readData(size: Int, timeout:TimeInterval = 10.0) throws -> Data {
-        while let available = try? socket.wait(for: .read, timeout: timeout) {
+    private func readData(size: Int, timeout:TimeInterval = 1.0) throws -> Data {
+        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
             guard available else { continue } // timeout happend, try again
                 
             var data = Data()
             var readBytes = 0
             var nLength = size
 
-            while readBytes < size && nLength > 0 {
+            while readBytes < size && nLength > 0 && self.connected == true {
                 var messageBuffer = [Byte](repeating: 0, count: nLength)
                 
                 readBytes += try ing { recv(socket.fileDescriptor, &messageBuffer, nLength, MSG_WAITALL) }

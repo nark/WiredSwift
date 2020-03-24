@@ -53,6 +53,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     static let options: UNAuthorizationOptions = [.alert, .sound, .badge]
     
     static let dateTimeFormatter = DateFormatter()
+    static let byteCountFormatter = ByteCountFormatter()
+    
     
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
@@ -62,6 +64,29 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             AdvancedPreferenceViewController()
         ]
     )
+    
+    public static var currentIcon:NSImage? {
+        get {
+            return UserDefaults.standard.image(forKey: "WSUserIcon")
+        }
+    }
+    
+    private static var defaultUserIconData:Data? {
+        get {
+            return Data(base64Encoded: Wired.defaultUserIcon, options: .ignoreUnknownCharacters)
+        }
+    }
+    
+    private static var defaultIcon:NSImage? {
+        get {
+            if let imageData = defaultUserIconData {
+                return NSImage(data: imageData)
+            }
+            
+            return nil
+        }
+    }
+    
     
     override init() {
         let downloadsDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
@@ -92,33 +117,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             UserDefaults.standard.set(image: AppDelegate.defaultIcon, forKey: "WSUserIcon")
         }
     
-        
+        AppDelegate.byteCountFormatter.allowedUnits = [.useMB]
+        AppDelegate.byteCountFormatter.countStyle = .file
         AppDelegate.dateTimeFormatter.dateStyle = .medium
         AppDelegate.dateTimeFormatter.timeStyle = .medium
     }
     
-    public static var currentIcon:NSImage? {
-        get {
-            return UserDefaults.standard.image(forKey: "WSUserIcon")
-        }
-    }
-    
-    private static var defaultUserIconData:Data? {
-        get {
-            return Data(base64Encoded: Wired.defaultUserIcon, options: .ignoreUnknownCharacters)
-        }
-    }
-    
-    private static var defaultIcon:NSImage? {
-        get {
-            if let imageData = defaultUserIconData {
-                return NSImage(data: imageData)
-            }
-            
-            return nil
-        }
-    }
-    
+    // MARK: - Application Delegate
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // request notifications
         AppDelegate.notificationCenter.requestAuthorization(options: AppDelegate.options) {
@@ -129,9 +134,42 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         }
         AppDelegate.notificationCenter.delegate = self
     }
-
+    
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if UserDefaults.standard.bool(forKey: "WSCheckActiveConnectionsBeforeQuit") == true {
+            if AppDelegate.hasActiveConnections() {
+                let alert = NSAlert()
+                alert.messageText = "Are you sure you want to quit?"
+                alert.informativeText = "Every connections will be disconnected"
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "OK")
+                alert.addButton(withTitle: "Cancel")
+                                
+                if alert.runModal() == .alertFirstButtonReturn {
+                    return self.safeTerminateApp(sender)
+                } else {
+                    return NSApplication.TerminateReply.terminateCancel
+                }
+            }
+        }
+        
+        return self.safeTerminateApp(sender)
+    }
+    
+    
+    private func safeTerminateApp(_ sender: NSApplication) -> NSApplication.TerminateReply  {
+        for w in NSApp.windows {
+            if let cwc = w.windowController as? ConnectionWindowController {
+                cwc.connection.disconnect()
+            }
+        }
+        
+        return self.terminateCoreData(sender)
+    }
+    
+    
     func applicationWillTerminate(_ aNotification: Notification) {
-        // Insert code here to tear down your application
+
     }
     
     
@@ -234,6 +272,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     // MARK: - Static Connection Helpers
+    private static func hasActiveConnections() -> Bool {
+        for w in NSApp.windows {
+            if let cwc = w.windowController as? ConnectionWindowController {
+                if cwc.connection.isConnected() {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     public static func showWiredError(_ error:WiredError) {
         let alert = NSAlert()
         alert.messageText = error.title
@@ -509,7 +558,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         return persistentContainer.viewContext.undoManager
     }
 
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+
+    
+    
+    private func terminateCoreData(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Save changes in the application's managed object context before the application terminates.
         let context = persistentContainer.viewContext
         

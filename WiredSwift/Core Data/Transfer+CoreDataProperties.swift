@@ -69,6 +69,7 @@ extension Transfer {
     @NSManaged public var state: State
     @NSManaged public var name: String?
     @NSManaged public var identifier: UUID?
+    @NSManaged public var uri: String?
     @NSManaged public var isFolder: Bool
     @NSManaged public var localPath: String?
     @NSManaged public var remotePath: String?
@@ -78,5 +79,6 @@ extension Transfer {
     @NSManaged public var startDate: Date?
     @NSManaged public var accumulatedTime: Double
     @NSManaged public var percent: Double
+    @NSManaged public var speed: Double
     @NSManaged public var size: Int64
 }

@@ -35,8 +35,10 @@
         <attribute name="remotePath" optional="YES" attributeType="String"/>
         <attribute name="rsrcTransferred" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="size" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="speed" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="startDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="state" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="uri" optional="YES" attributeType="String"/>
     </entity>
     <entity name="UploadTransfer" representedClassName=".UploadTransfer" parentEntity="Transfer" syncable="YES"/>
     <elements>
@@ -44,7 +46,7 @@
         <element name="Conversation" positionX="-45" positionY="99" width="128" height="103"/>
         <element name="DownloadTransfer" positionX="-36" positionY="99" width="128" height="43"/>
         <element name="Message" positionX="-36" positionY="108" width="128" height="148"/>
-        <element name="Transfer" positionX="-63" positionY="18" width="128" height="238"/>
+        <element name="Transfer" positionX="-63" positionY="18" width="128" height="268"/>
         <element name="UploadTransfer" positionX="-54" positionY="90" width="128" height="43"/>
     </elements>
 </model>

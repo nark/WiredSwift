@@ -21,6 +21,9 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
         
         self.chatInput.delegate = self
         
+        NotificationCenter.default.addObserver(self, selector: #selector(linkConnectionDidClose(_:)), name: .linkConnectionDidClose, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(linkConnectionDidReconnect(_:)), name: .linkConnectionDidReconnect, object: nil)
+        
         NotificationCenter.default.addObserver(self, selector: #selector(controlTextDidChange(_:)), name: NSTextView.didChangeSelectionNotification, object: nil)
         UserDefaults.standard.addObserver(self, forKeyPath: "WSUserNick", options: NSKeyValueObservingOptions.new, context: nil)
         UserDefaults.standard.addObserver(self, forKeyPath: "WSUserStatus", options: NSKeyValueObservingOptions.new, context: nil)
@@ -90,6 +93,21 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
             self.conversationViewController.connection = self.connection
         }
     }
+    
+    
+    // MARK: -
+    @objc func linkConnectionDidClose(_ n: Notification) {
+        if let c = n.object as? Connection, c == self.connection {
+            conversationViewController.addEventMessage(message: "<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
+        }
+    }
+    
+    @objc func linkConnectionDidReconnect(_ n: Notification) {
+        if let c = n.object as? Connection, c == self.connection {
+            conversationViewController.addEventMessage(message: "<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
+        }
+    }
+    
     
     
     
@@ -235,8 +253,10 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
                 message!.addParameter(field: "wired.chat.say", value: textField.stringValue)
             }
             
-            if let m = message, self.connection.send(message: m) {
-                textField.stringValue = ""
+            if self.connection.isConnected() {
+                if let m = message, self.connection.send(message: m) {
+                    textField.stringValue = ""
+                }
             }
         }
     }
