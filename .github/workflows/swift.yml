@@ -14,4 +14,4 @@ jobs:
     - name: Build dependencies
       run: carthage update
     - name: Build App
-      run: xcodebuild -project "WiredSwift.xcodeproj" -scheme "WiredSwift" -destination "generic/platform=macOS" -configuration Release build CODE_SIGNING_ALLOWED=NO
+      run: xcodebuild -project "WiredSwift.xcodeproj" -scheme "Wired" -destination "generic/platform=macOS" -configuration Release build CODE_SIGNING_ALLOWED=NO
