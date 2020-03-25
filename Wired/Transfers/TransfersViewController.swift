@@ -11,12 +11,20 @@ import Cocoa
 class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
     @IBOutlet weak var transfersTableView: NSTableView!
     
+    @IBOutlet weak var startButton: NSButton!
+    @IBOutlet weak var stopButton: NSButton!
+    @IBOutlet weak var pauseButton: NSButton!
+    @IBOutlet weak var removeButton: NSButton!
+    @IBOutlet weak var clearButton: NSButton!
+    @IBOutlet weak var revealButton: NSButton!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do view setup here.
         
         NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateTransfers), name: .didUpdateTransfers, object: nil)
     
+        self.validate()
     }
     
     
@@ -27,6 +35,8 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         } else {
             transfersTableView.reloadData()
         }
+        
+        self.validate()
     }
     
     
@@ -34,34 +44,31 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     // MARK: -
     
     @IBAction func startTransfer(_ sender: Any) {
-        if transfersTableView.selectedRow != -1 {
-            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
-        
+        if let selectedTransfer = self.selectedTransfer() {
             selectedTransfer.state = .Waiting
             
             TransfersController.shared.request(selectedTransfer)
         }
         
         transfersTableView.setNeedsDisplay(transfersTableView.frame)
+        self.validate()
     }
     
     @IBAction func stopTransfer(_ sender: Any) {
-        if transfersTableView.selectedRow != -1 {
-            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
-            
-            selectedTransfer.state = .Pausing
+        if let selectedTransfer = self.selectedTransfer() {
+            selectedTransfer.state = .Stopping
             
            // TransfersController.shared.stop(selectedTransfer)
         }
         
         transfersTableView.setNeedsDisplay(transfersTableView.frame)
+        self.validate()
     }
     
     @IBAction func pauseTransfer(_ sender: Any) {
         let selectecRow = transfersTableView.selectedRow
         
-        if selectecRow != -1 {
-            let selectedTransfer = TransfersController.shared.transfers()[selectecRow]
+        if let selectedTransfer = self.selectedTransfer() {
             
             selectedTransfer.state = .Pausing
         }
@@ -69,13 +76,13 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         //transfersTableView.setNeedsDisplay(transfersTableView.frame)
         //transfersTableView.selectRowIndexes([selectecRow], byExtendingSelection: false)
         transfersTableView.reloadData(forRowIndexes: [selectecRow], columnIndexes: [0])
+        self.validate()
     }
     
     @IBAction func removeTransfer(_ sender: Any) {
-        if transfersTableView.selectedRow != -1 {
-            let selectedTransfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
-            
+        if let selectedTransfer = self.selectedTransfer() {
             TransfersController.shared.remove(selectedTransfer)
+            self.validate()
         }
     }
     
@@ -83,9 +90,20 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         for t in TransfersController.shared.transfers() {
             if t.state == .Finished {
                 TransfersController.shared.remove(t)
+                self.validate()
             }
         }
     }
+    
+    @IBAction func revealInFinder(_ sender: Any) {
+        let selectecRow = transfersTableView.selectedRow
+        
+        if selectecRow != -1 {
+            let selectedTransfer = TransfersController.shared.transfers()[selectecRow]
+            NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: selectedTransfer.localPath!)])
+        }
+    }
+    
     
     
     
@@ -121,5 +139,38 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         return view
     }
     
+    
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        self.validate()
+    }
+    
+    
+    // MARK: -
+    
+    private func selectedTransfer() -> Transfer? {
+        if transfersTableView.selectedRow != -1 {
+            return TransfersController.shared.transfers()[transfersTableView.selectedRow]
+        }
+        return nil
+    }
+    
+    
+    private func validate() {
+        if let transfer = self.selectedTransfer() {
+            self.startButton.isEnabled  = !transfer.isWorking() && !transfer.isTerminating() && transfer.state != .Finished
+            self.stopButton.isEnabled   = transfer.isWorking()
+            self.pauseButton.isEnabled  = transfer.isWorking()
+            self.removeButton.isEnabled = !transfer.isWorking()
+            self.clearButton.isEnabled  = true
+            self.revealButton.isEnabled = true
+        } else {
+            self.startButton.isEnabled  = false
+            self.stopButton.isEnabled   = false
+            self.pauseButton.isEnabled  = false
+            self.removeButton.isEnabled = false
+            self.clearButton.isEnabled  = true
+            self.revealButton.isEnabled = false
+        }
+    }
 }
 

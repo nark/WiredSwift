@@ -54,7 +54,7 @@ public class TransfersController {
             for transfer in self.transfers() {
                 if transfer.connection == connection && transfer.isWorking() {
                     transfer.state = .Disconnecting
-                    
+                                        
                     try? AppDelegate.shared.persistentContainer.viewContext.save()
                     NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
                 }
@@ -119,6 +119,7 @@ public class TransfersController {
         transfer.uri = file.connection.URI
         transfer.file = file
         transfer.remotePath = file.path!
+        transfer.localPath = self.defaultDownloadDestination(forPath: transfer.remotePath!)
         transfer.startDate = Date()
         
         try? AppDelegate.shared.persistentContainer.viewContext.save()
@@ -320,88 +321,86 @@ public class TransfersController {
         let rsrcPath = FileManager.resourceForkPath(forPath: dataPath!)
         
         // check if final file alreayd exists, ask for overwrite
-        if let finalPath = self.defaultDownloadDestination(forPath: transfer.remotePath!) {
-            if FileManager.default.fileExists(atPath: finalPath) {
-                do {
-                    let attr = try FileManager.default.attributesOfItem(atPath: finalPath)
-                    let fileSize = attr[FileAttributeKey.size] as! UInt64
+        if FileManager.default.fileExists(atPath: transfer.localPath!) {
+            do {
+                let attr = try FileManager.default.attributesOfItem(atPath: transfer.localPath!)
+                let fileSize = attr[FileAttributeKey.size] as! UInt64
+                
+                if fileSize == dataLength! {
+                    transfer.state = .Stopped
                     
-                    if fileSize == dataLength! {
+                    self.semaphore.signal()
+                                            
+                    DispatchQueue.main.async {
                         transfer.state = .Stopped
                         
-                        self.semaphore.signal()
-                                                
-                        DispatchQueue.main.async {
-                            transfer.state = .Stopped
-                            
-                            self.finish(transfer)
-                            
-                            let alert = NSAlert()
-                            alert.messageText = "File already exists"
-                            alert.informativeText = "Do you want to overwrite '\(finalPath)'?"
-                            alert.alertStyle = .warning
-                            alert.addButton(withTitle: "Overwrite")
-                            alert.addButton(withTitle: "Cancel")
-                            
-                            if let mainWindow = NSApp.mainWindow {
-                                AppDelegate.shared.showTransfers(self)
-                                alert.beginSheetModal(for: mainWindow) { (modalResponse: NSApplication.ModalResponse) -> Void in
-                                    if modalResponse == .alertFirstButtonReturn {
-                                        // remove existing file
-                                        do {
-                                            try FileManager.default.removeItem(atPath: finalPath)
-                                            
-                                            transfer.state = .Waiting
-                                            
-                                            self.request(transfer)
-                                            
-                                        } catch let e {
-                                            error = WiredError(withTitle: "Transfer Error", message: "\(e)")
-                                            
-                                            transfer.state = .Disconnecting
-                                            
-                                            self.finish(transfer, withError: error)
-                                        }
+                        self.finish(transfer)
+                        
+                        let alert = NSAlert()
+                        alert.messageText = "File already exists"
+                        alert.informativeText = "Do you want to overwrite '\(transfer.localPath!)'?"
+                        alert.alertStyle = .warning
+                        alert.addButton(withTitle: "Overwrite")
+                        alert.addButton(withTitle: "Cancel")
+                        
+                        if let mainWindow = NSApp.mainWindow {
+                            AppDelegate.shared.showTransfers(self)
+                            alert.beginSheetModal(for: mainWindow) { (modalResponse: NSApplication.ModalResponse) -> Void in
+                                if modalResponse == .alertFirstButtonReturn {
+                                    // remove existing file
+                                    do {
+                                        try FileManager.default.removeItem(atPath: transfer.localPath!)
                                         
-                                        return
+                                        transfer.state = .Waiting
                                         
-                                    } else {
-                                        do {
-                                            try FileManager.default.removeItem(atPath: dataPath!)
-                                            transfer.dataTransferred = 0
-                                            transfer.rsrcTransferred = 0
-                                            transfer.actualTransferred = 0
-                                            transfer.speed = 0
-                                            transfer.percent = 0
-                                            transfer.state = .Stopped
-                                            
-                                            self.finish(transfer)
-                                            
-                                        } catch let e {
-                                            error = WiredError(withTitle: "Transfer Error", message: "\(e)")
-                                            
-                                            transfer.state = .Disconnecting
-                                            
-                                            self.finish(transfer, withError: error)
-                                        }
-
+                                        self.request(transfer)
                                         
-                                        return
+                                    } catch let e {
+                                        error = WiredError(withTitle: "Transfer Error", message: "\(e)")
+                                        
+                                        transfer.state = .Disconnecting
+                                        
+                                        self.finish(transfer, withError: error)
                                     }
+                                    
+                                    return
+                                    
+                                } else {
+                                    do {
+                                        try FileManager.default.removeItem(atPath: dataPath!)
+                                        transfer.dataTransferred = 0
+                                        transfer.rsrcTransferred = 0
+                                        transfer.actualTransferred = 0
+                                        transfer.speed = 0
+                                        transfer.percent = 0
+                                        transfer.state = .Stopped
+                                        
+                                        self.finish(transfer)
+                                        
+                                    } catch let e {
+                                        error = WiredError(withTitle: "Transfer Error", message: "\(e)")
+                                        
+                                        transfer.state = .Disconnecting
+                                        
+                                        self.finish(transfer, withError: error)
+                                    }
+
+                                    
+                                    return
                                 }
                             }
                         }
-                    
                     }
-                } catch let e {
-                    self.semaphore.signal()
-                    
-                    error = WiredError(withTitle: "Transfer Error", message: "IO Error: \(e)")
-                    
-                    Logger.error(error!)
-                    
-                    self.finish(transfer, withError: error)
+                
                 }
+            } catch let e {
+                self.semaphore.signal()
+                
+                error = WiredError(withTitle: "Transfer Error", message: "IO Error: \(e)")
+                
+                Logger.error(error!)
+                
+                self.finish(transfer, withError: error)
             }
         }
         

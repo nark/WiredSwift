@@ -124,7 +124,7 @@
 		4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */; };
 		4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */; };
-		4CFB161A23FC7D01000EE688 /* WiredSwift.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */; };
+		4CFB161A23FC7D01000EE688 /* Wired3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161823FC7D01000EE688 /* Wired3.xcdatamodeld */; };
 		4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */; };
 		4CFB161E23FC843C000EE688 /* Bookmark+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161C23FC843C000EE688 /* Bookmark+CoreDataProperties.swift */; };
 		4CFB162023FC89A7000EE688 /* KeychainAccess.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */; };
@@ -482,7 +482,7 @@
 				4C36AEFB2401CE4300AEC18E /* UploadTransfer+CoreDataProperties.swift */,
 				4C36AEFC2401CE4300AEC18E /* DownloadTransfer+CoreDataClass.swift */,
 				4C36AEFD2401CE4300AEC18E /* DownloadTransfer+CoreDataProperties.swift */,
-				4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */,
+				4CFB161823FC7D01000EE688 /* Wired3.xcdatamodeld */,
 			);
 			path = "Core Data";
 			sourceTree = "<group>";
@@ -803,7 +803,7 @@
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */,
 				4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */,
-				4CFB161A23FC7D01000EE688 /* WiredSwift.xcdatamodeld in Sources */,
+				4CFB161A23FC7D01000EE688 /* Wired3.xcdatamodeld in Sources */,
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
@@ -1040,7 +1040,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = WiredSwift/Info.plist;
+				INFOPLIST_FILE = Wired/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1065,7 +1065,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = WiredSwift/Info.plist;
+				INFOPLIST_FILE = Wired/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1095,7 +1095,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = Wired/Info.plist;
+				INFOPLIST_FILE = WiredSwift/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1132,7 +1132,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = Wired/Info.plist;
+				INFOPLIST_FILE = WiredSwift/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1207,13 +1207,13 @@
 /* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
-		4CFB161823FC7D01000EE688 /* WiredSwift.xcdatamodeld */ = {
+		4CFB161823FC7D01000EE688 /* Wired3.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
 				4CFB161923FC7D01000EE688 /* WiredSwift.xcdatamodel */,
 			);
 			currentVersion = 4CFB161923FC7D01000EE688 /* WiredSwift.xcdatamodel */;
-			path = WiredSwift.xcdatamodeld;
+			path = Wired3.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};

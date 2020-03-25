@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="15702" systemVersion="19D76" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="Bookmark" representedClassName=".Bookmark" syncable="YES">
+        <attribute name="connectAtStartup" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="hostname" optional="YES" attributeType="String"/>
         <attribute name="login" optional="YES" attributeType="String"/>
         <attribute name="name" optional="YES" attributeType="String"/>
@@ -42,7 +43,7 @@
     </entity>
     <entity name="UploadTransfer" representedClassName=".UploadTransfer" parentEntity="Transfer" syncable="YES"/>
     <elements>
-        <element name="Bookmark" positionX="-63" positionY="-18" width="128" height="118"/>
+        <element name="Bookmark" positionX="-63" positionY="-18" width="128" height="133"/>
         <element name="Conversation" positionX="-45" positionY="99" width="128" height="103"/>
         <element name="DownloadTransfer" positionX="-36" positionY="99" width="128" height="43"/>
         <element name="Message" positionX="-36" positionY="108" width="128" height="148"/>

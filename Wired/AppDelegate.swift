@@ -263,7 +263,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
         
-        let item = menu.addItem(withTitle: "Add To Bookmark", action: #selector(addToBookmarks(_:)), keyEquivalent: "B")
+        let item = menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "B")
         item.keyEquivalentModifierMask = NSEvent.ModifierFlags.option
         
         menu.addItem(NSMenuItem.separator())
@@ -524,7 +524,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
          application to it. This property is optional since there are legitimate
          error conditions that could cause the creation of the store to fail.
         */
-        let container = NSPersistentContainer(name: "WiredSwift")
+        let container = NSPersistentContainer(name: "Wired3")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error {
                 // Replace this implementation with code to handle the error appropriately.

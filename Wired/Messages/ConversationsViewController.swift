@@ -81,6 +81,10 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
         
         view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "ConversationCell"), owner: self) as? ConversationCellView
         
+        if row == -1 || row > ConversationsController.shared.conversations().count - 1 {
+            return view
+        }
+        
         let conversation = ConversationsController.shared.conversations()[row]
         
         view?.userNick?.stringValue = conversation.nick!

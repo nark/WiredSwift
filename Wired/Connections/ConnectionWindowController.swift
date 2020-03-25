@@ -276,8 +276,7 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     
     public func disconnect() {
         if self.connection != nil {
-            ConnectionsController.shared.removeConnection(self.connection)
-            
+            //ConnectionsController.shared.removeConnection(self.connection)
             self.connection.disconnect()
         }
     }

@@ -21,4 +21,5 @@ extension Bookmark {
     @NSManaged public var login: String?
     @NSManaged public var nick: String?
     @NSManaged public var status: String?
+    @NSManaged public var connectAtStartup: Bool
 }

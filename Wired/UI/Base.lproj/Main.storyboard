@@ -12,11 +12,11 @@
                 <application id="hnw-xV-0zn" sceneMemberID="viewController">
                     <menu key="mainMenu" title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
                         <items>
-                            <menuItem title="WiredSwift" id="1Xt-HY-uBw">
+                            <menuItem title="Wired" id="1Xt-HY-uBw">
                                 <modifierMask key="keyEquivalentModifierMask"/>
-                                <menu key="submenu" title="WiredSwift" systemMenu="apple" id="uQy-DD-JDr">
+                                <menu key="submenu" title="Wired" systemMenu="apple" id="uQy-DD-JDr">
                                     <items>
-                                        <menuItem title="About WiredSwift" id="5kV-Vb-QxS">
+                                        <menuItem title="About Wired" id="5kV-Vb-QxS">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="orderFrontStandardAboutPanel:" target="Ady-hI-5gd" id="Exp-CZ-Vem"/>
@@ -34,7 +34,7 @@
                                             <menu key="submenu" title="Services" systemMenu="services" id="hz9-B4-Xy5"/>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="4je-JR-u6R"/>
-                                        <menuItem title="Hide WiredSwift" keyEquivalent="h" id="Olw-nP-bQN">
+                                        <menuItem title="Hide Wired" keyEquivalent="h" id="Olw-nP-bQN">
                                             <connections>
                                                 <action selector="hide:" target="Ady-hI-5gd" id="PnN-Uc-m68"/>
                                             </connections>
@@ -52,7 +52,7 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="kCx-OE-vgT"/>
-                                        <menuItem title="Quit WiredSwift" keyEquivalent="q" id="4sb-4s-VLi">
+                                        <menuItem title="Quit Wired" keyEquivalent="q" id="4sb-4s-VLi">
                                             <connections>
                                                 <action selector="terminate:" target="Ady-hI-5gd" id="Te7-pn-YzF"/>
                                             </connections>
@@ -575,7 +575,7 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Bookmarks" id="K60-wm-OrL">
                                     <items>
-                                        <menuItem title="Add to bookmarks" id="Tn7-kc-AWg">
+                                        <menuItem title="Add To Bookmarks" id="Tn7-kc-AWg">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="addToBookmarks:" target="Ady-hI-5gd" id="m1M-J1-7T6"/>
@@ -692,7 +692,7 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                                     <items>
-                                        <menuItem title="WiredSwift Help" keyEquivalent="?" id="FKE-Sm-Kum">
+                                        <menuItem title="Wired Help" keyEquivalent="?" id="FKE-Sm-Kum">
                                             <connections>
                                                 <action selector="showHelp:" target="Ady-hI-5gd" id="y7X-2Q-9no"/>
                                             </connections>
@@ -706,7 +706,7 @@
                         <outlet property="delegate" destination="Voe-Tx-rLC" id="PrD-fu-P6m"/>
                     </connections>
                 </application>
-                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="WiredSwift" customModuleProvider="target"/>
+                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Wired" customModuleProvider="target"/>
                 <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
                 <customObject id="Ady-hI-5gd" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -736,8 +736,8 @@
         <scene sceneID="iqA-Bd-jBO">
             <objects>
                 <customObject id="d0o-cM-yCw" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
-                <windowController storyboardIdentifier="ConnectionWindowController" id="OHh-vB-dxB" customClass="ConnectionWindowController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
-                    <window key="window" title="Wired" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" tabbingMode="preferred" id="MgK-xH-cFg" customClass="ConnectionWindow" customModule="WiredSwift" customModuleProvider="target">
+                <windowController storyboardIdentifier="ConnectionWindowController" id="OHh-vB-dxB" customClass="ConnectionWindowController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
+                    <window key="window" title="Wired" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" tabbingMode="preferred" id="MgK-xH-cFg" customClass="ConnectionWindow" customModule="Wired" customModuleProvider="target">
                         <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
                         <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
                         <rect key="contentRect" x="425" y="461" width="993" height="645"/>
@@ -871,7 +871,7 @@
         <!--Bookmark View Controller-->
         <scene sceneID="l3U-dC-z9y">
             <objects>
-                <viewController id="pwl-Qi-u0K" customClass="BookmarkViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="pwl-Qi-u0K" customClass="BookmarkViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="yBZ-L9-yHO">
                         <rect key="frame" x="0.0" y="0.0" width="370" height="225"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1054,6 +1054,13 @@ Gw
                             <constraint firstItem="oSk-NH-yBh" firstAttribute="top" secondItem="yBZ-L9-yHO" secondAttribute="top" constant="20" id="fa2-Tq-UuI"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="addressTextField" destination="FcI-yr-FsO" id="Lma-Xo-Nyf"/>
+                        <outlet property="connectAtStartup" destination="9wj-vv-P0s" id="3q3-f7-MGU"/>
+                        <outlet property="loginTextField" destination="mby-xf-Oif" id="5JE-BW-fk6"/>
+                        <outlet property="nameTextField" destination="DIy-rc-WHu" id="Adf-5q-0Wd"/>
+                        <outlet property="passwordTextField" destination="ai7-5y-uEa" id="5NQ-Eh-Qmu"/>
+                    </connections>
                 </viewController>
                 <customObject id="O23-IL-BJI" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -1087,7 +1094,7 @@ Gw
         <!--Tab View Controller-->
         <scene sceneID="AdB-X0-fve">
             <objects>
-                <tabViewController tabStyle="unspecified" id="JAP-3r-Ip5" customClass="TabViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <tabViewController tabStyle="unspecified" id="JAP-3r-Ip5" customClass="TabViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <tabViewItems>
                         <tabViewItem label="Chat" identifier="Chat" image="Chat" id="xXv-p3-5mL"/>
                         <tabViewItem label="Messages" identifier="Messages" image="Messages" id="fCn-E3-7E9"/>
@@ -1123,19 +1130,19 @@ Gw
         <!--Resources Controller-->
         <scene sceneID="swF-bF-cRk">
             <objects>
-                <viewController id="3vU-Ne-St7" customClass="ResourcesController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="3vU-Ne-St7" customClass="ResourcesController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="BgH-Kc-kWa">
-                        <rect key="frame" x="0.0" y="0.0" width="200" height="414"/>
+                        <rect key="frame" x="0.0" y="0.0" width="200" height="429"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="26" horizontalPageScroll="10" verticalLineScroll="26" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="N93-iE-Kx2">
-                                <rect key="frame" x="0.0" y="32" width="200" height="382"/>
+                                <rect key="frame" x="0.0" y="0.0" width="200" height="429"/>
                                 <clipView key="contentView" drawsBackground="NO" id="Tcf-Ka-79F">
-                                    <rect key="frame" x="0.0" y="0.0" width="200" height="382"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="200" height="429"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <outlineView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" selectionHighlightStyle="sourceList" multipleSelection="NO" autosaveColumns="NO" rowHeight="24" rowSizeStyle="automatic" viewBased="YES" indentationPerLevel="16" outlineTableColumn="ck4-pO-pAI" id="v5H-SP-3xh">
-                                            <rect key="frame" x="0.0" y="0.0" width="200" height="382"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="200" height="429"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" name="_sourceListBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1143,7 +1150,7 @@ Gw
                                             <tableColumns>
                                                 <tableColumn width="197" minWidth="16" maxWidth="1000" id="ck4-pO-pAI">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="message" size="11"/>
+                                                        <font key="font" metaFont="controlContent" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1226,10 +1233,10 @@ Gw
                                     <constraint firstAttribute="width" constant="42" id="Erb-cv-QPE"/>
                                     <constraint firstAttribute="height" constant="25" id="h0M-xr-J58"/>
                                 </constraints>
-                                <popUpButtonCell key="cell" type="bevel" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyDown" inset="2" pullsDown="YES" selectedItem="j5x-An-VU7" id="EwS-Ka-rvi">
+                                <popUpButtonCell key="cell" type="bevel" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyDown" inset="2" pullsDown="YES" autoenablesItems="NO" selectedItem="j5x-An-VU7" id="EwS-Ka-rvi">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
-                                    <menu key="menu" id="rvh-Af-ERv">
+                                    <menu key="menu" autoenablesItems="NO" id="rvh-Af-ERv">
                                         <items>
                                             <menuItem state="on" image="NSActionTemplate" hidden="YES" id="j5x-An-VU7"/>
                                             <menuItem title="Item 2" id="Tnh-Vs-zCP"/>
@@ -1248,7 +1255,7 @@ Gw
                             <constraint firstItem="N93-iE-Kx2" firstAttribute="leading" secondItem="BgH-Kc-kWa" secondAttribute="leading" id="Kp9-1u-EA4"/>
                             <constraint firstItem="N93-iE-Kx2" firstAttribute="top" secondItem="BgH-Kc-kWa" secondAttribute="top" id="XbL-SH-YVQ"/>
                             <constraint firstAttribute="bottom" secondItem="RQu-S6-byZ" secondAttribute="bottom" constant="3" id="YIb-sz-nTA"/>
-                            <constraint firstAttribute="bottom" secondItem="N93-iE-Kx2" secondAttribute="bottom" constant="32" id="tJ3-g7-NN5"/>
+                            <constraint firstAttribute="bottom" secondItem="N93-iE-Kx2" secondAttribute="bottom" id="tJ3-g7-NN5"/>
                         </constraints>
                     </view>
                     <connections>
@@ -1262,12 +1269,12 @@ Gw
                     </connections>
                 </menu>
             </objects>
-            <point key="canvasLocation" x="3126" y="-857"/>
+            <point key="canvasLocation" x="3126" y="-857.5"/>
         </scene>
         <!--showPublicChat-->
         <scene sceneID="hIz-AP-VOD">
             <objects>
-                <viewController title="showPublicChat" storyboardIdentifier="ConnectController" id="XfG-lQ-9wD" customClass="ConnectController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="showPublicChat" storyboardIdentifier="ConnectController" id="XfG-lQ-9wD" customClass="ConnectController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" wantsLayer="YES" id="m2S-Jp-Qdl">
                         <rect key="frame" x="0.0" y="0.0" width="424" height="183"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1404,7 +1411,7 @@ DQ
         <!--Chat View Controller-->
         <scene sceneID="bqY-ta-lVK">
             <objects>
-                <viewController id="xE7-fu-zmd" customClass="ChatViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="xE7-fu-zmd" customClass="ChatViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="sM7-3S-tlr">
                         <rect key="frame" x="0.0" y="0.0" width="699" height="464"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1498,7 +1505,7 @@ DQ
         <!--Messages-->
         <scene sceneID="v7q-yJ-UZS">
             <objects>
-                <splitViewController title="Messages" id="JI8-8i-OF9" customClass="MessagesSplitViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <splitViewController title="Messages" id="JI8-8i-OF9" customClass="MessagesSplitViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <splitViewItems>
                         <splitViewItem id="HSG-fE-AJl"/>
                         <splitViewItem id="yVE-FC-1zC"/>
@@ -1523,7 +1530,7 @@ DQ
         <!--Conversations View Controller-->
         <scene sceneID="s8b-AX-kUo">
             <objects>
-                <viewController id="ouS-Jn-TVV" customClass="ConversationsViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="ouS-Jn-TVV" customClass="ConversationsViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="0ZB-Yk-NdV">
                         <rect key="frame" x="0.0" y="0.0" width="200" height="336"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1543,7 +1550,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="197" minWidth="40" maxWidth="1000" id="xZK-LE-vZz">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="message" size="11"/>
+                                                        <font key="font" metaFont="controlContent" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1554,7 +1561,7 @@ DQ
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView identifier="ConversationCell" id="0az-B5-Wed" customClass="ConversationCellView" customModule="WiredSwift" customModuleProvider="target">
+                                                        <tableCellView identifier="ConversationCell" id="0az-B5-Wed" customClass="ConversationCellView" customModule="Wired" customModuleProvider="target">
                                                             <rect key="frame" x="1" y="1" width="197" height="50"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
@@ -1571,7 +1578,7 @@ DQ
                                                                         <constraint firstAttribute="height" constant="17" id="mKN-7a-YO1"/>
                                                                     </constraints>
                                                                     <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" id="mHW-Fv-d6x">
-                                                                        <font key="font" metaFont="message" size="11"/>
+                                                                        <font key="font" metaFont="controlContent" size="11"/>
                                                                         <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
@@ -1680,7 +1687,7 @@ DQ
         <!--Users View Controller-->
         <scene sceneID="H5i-Wh-Lwp">
             <objects>
-                <viewController id="EE8-42-r4L" customClass="UsersViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="EE8-42-r4L" customClass="UsersViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="8jW-TS-iYq">
                         <rect key="frame" x="0.0" y="0.0" width="200" height="336"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1700,7 +1707,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="197" minWidth="40" maxWidth="1000" id="eA5-Ow-sef">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="message" size="11"/>
+                                                        <font key="font" metaFont="controlContent" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1711,7 +1718,7 @@ DQ
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView identifier="UserCell" id="tuw-Wg-ZYA" customClass="UserCellView" customModule="WiredSwift" customModuleProvider="target">
+                                                        <tableCellView identifier="UserCell" id="tuw-Wg-ZYA" customClass="UserCellView" customModule="Wired" customModuleProvider="target">
                                                             <rect key="frame" x="1" y="1" width="197" height="50"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
@@ -1814,7 +1821,7 @@ DQ
         <!--Files-->
         <scene sceneID="Dt2-7e-tz6">
             <objects>
-                <viewController title="Files" id="DVd-lO-xhs" customClass="FilesViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Files" id="DVd-lO-xhs" customClass="FilesViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="OSO-On-1Mx">
                         <rect key="frame" x="0.0" y="0.0" width="786" height="547"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -1899,7 +1906,7 @@ DQ
         <!--Info-->
         <scene sceneID="87Z-Qy-Zle">
             <objects>
-                <viewController title="Info" id="xaP-SN-ZI5" customClass="InfosViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Info" id="xaP-SN-ZI5" customClass="InfosViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="vOC-4C-Ri6">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="402"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -2036,7 +2043,7 @@ DQ
         <!--Transfers-->
         <scene sceneID="jvv-j0-r98">
             <objects>
-                <viewController title="Transfers" id="r5t-wK-RQX" customClass="TransfersViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController title="Transfers" id="r5t-wK-RQX" customClass="TransfersViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="rVS-6N-2tM">
                         <rect key="frame" x="0.0" y="0.0" width="791" height="459"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -2056,7 +2063,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="788" minWidth="40" maxWidth="10000" id="hcD-Cb-GI0">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="message" size="11"/>
+                                                        <font key="font" metaFont="controlContent" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -2067,7 +2074,7 @@ DQ
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView identifier="TransferCell" id="QOv-Dm-Cq7" customClass="TransferCell" customModule="WiredSwift" customModuleProvider="target">
+                                                        <tableCellView identifier="TransferCell" id="QOv-Dm-Cq7" customClass="TransferCell" customModule="Wired" customModuleProvider="target">
                                                             <rect key="frame" x="1" y="1" width="788" height="60"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
@@ -2102,7 +2109,7 @@ DQ
                                                                         <constraint firstAttribute="height" constant="18" id="b0G-Uw-0yQ"/>
                                                                     </constraints>
                                                                     <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Transfer infos" id="7Jf-7z-cek">
-                                                                        <font key="font" metaFont="message" size="11"/>
+                                                                        <font key="font" metaFont="controlContent" size="11"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
@@ -2214,12 +2221,27 @@ DQ
                                     <action selector="clearTransfers:" target="r5t-wK-RQX" id="WnC-wH-cv1"/>
                                 </connections>
                             </button>
+                            <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ubX-SF-NU0">
+                                <rect key="frame" x="200" y="5" width="28" height="19"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="28" id="Bxg-i5-Xrf"/>
+                                    <constraint firstAttribute="height" constant="18" id="e8U-Vl-JSj"/>
+                                </constraints>
+                                <buttonCell key="cell" type="roundRect" bezelStyle="roundedRect" image="NSQuickLookTemplate" imagePosition="overlaps" alignment="center" borderStyle="border" transparent="YES" imageScaling="proportionallyDown" inset="2" id="oJV-vV-8WI">
+                                    <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                    <font key="font" metaFont="label" size="12"/>
+                                </buttonCell>
+                                <connections>
+                                    <action selector="revealInFinder:" target="r5t-wK-RQX" id="ONZ-4T-Uvf"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <constraints>
                             <constraint firstItem="3T6-Sy-zGl" firstAttribute="leading" secondItem="fcn-Ht-4lW" secondAttribute="trailing" constant="8" id="29K-IG-D6j"/>
                             <constraint firstItem="981-dJ-j6n" firstAttribute="leading" secondItem="rVS-6N-2tM" secondAttribute="leading" id="7uo-Ac-wUX"/>
                             <constraint firstItem="6cV-1k-dRY" firstAttribute="leading" secondItem="9Qd-UJ-7yN" secondAttribute="trailing" constant="8" id="AWq-cF-D6w"/>
                             <constraint firstItem="9Qd-UJ-7yN" firstAttribute="leading" secondItem="rVS-6N-2tM" secondAttribute="leading" constant="20" id="Cns-lb-4Fw"/>
+                            <constraint firstAttribute="bottom" secondItem="ubX-SF-NU0" secondAttribute="bottom" constant="6" id="Cxg-La-2rB"/>
                             <constraint firstAttribute="trailing" secondItem="981-dJ-j6n" secondAttribute="trailing" id="DEC-3a-gFk"/>
                             <constraint firstAttribute="bottom" secondItem="fwh-HM-dlK" secondAttribute="bottom" constant="6" id="FIr-nk-rxf"/>
                             <constraint firstItem="fcn-Ht-4lW" firstAttribute="leading" secondItem="fwh-HM-dlK" secondAttribute="trailing" constant="8" id="FbM-CV-b62"/>
@@ -2227,12 +2249,19 @@ DQ
                             <constraint firstAttribute="bottom" secondItem="3T6-Sy-zGl" secondAttribute="bottom" constant="6" id="S6o-Gf-N7q"/>
                             <constraint firstAttribute="bottom" secondItem="fcn-Ht-4lW" secondAttribute="bottom" constant="6" id="T3L-uV-7jq"/>
                             <constraint firstAttribute="bottom" secondItem="6cV-1k-dRY" secondAttribute="bottom" constant="6" id="YMR-38-x5h"/>
+                            <constraint firstItem="ubX-SF-NU0" firstAttribute="leading" secondItem="3T6-Sy-zGl" secondAttribute="trailing" constant="8" id="rAO-lj-fvH"/>
                             <constraint firstItem="fwh-HM-dlK" firstAttribute="leading" secondItem="6cV-1k-dRY" secondAttribute="trailing" constant="8" id="vaR-o1-asV"/>
                             <constraint firstAttribute="bottom" secondItem="981-dJ-j6n" secondAttribute="bottom" constant="32" id="wi8-nx-CE4"/>
                             <constraint firstAttribute="bottom" secondItem="9Qd-UJ-7yN" secondAttribute="bottom" constant="6" id="zsx-jX-GlG"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="clearButton" destination="3T6-Sy-zGl" id="uCT-dZ-bpH"/>
+                        <outlet property="pauseButton" destination="fwh-HM-dlK" id="AdZ-mX-5eX"/>
+                        <outlet property="removeButton" destination="fcn-Ht-4lW" id="1Fg-Ft-xmC"/>
+                        <outlet property="revealButton" destination="ubX-SF-NU0" id="UHa-vO-Uhg"/>
+                        <outlet property="startButton" destination="9Qd-UJ-7yN" id="okd-jz-HCl"/>
+                        <outlet property="stopButton" destination="6cV-1k-dRY" id="Iws-lM-zca"/>
                         <outlet property="transfersTableView" destination="cX7-gW-ed1" id="6wi-JZ-esA"/>
                     </connections>
                 </viewController>
@@ -2243,7 +2272,7 @@ DQ
         <!--Conversation View Controller-->
         <scene sceneID="eY7-mZ-U6f">
             <objects>
-                <viewController id="6hK-OZ-vQ5" customClass="ConversationViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="6hK-OZ-vQ5" customClass="ConversationViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="rIR-le-Q4S">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -2261,7 +2290,7 @@ DQ
         <!--Private Messages View Controller-->
         <scene sceneID="smu-Bd-YH7">
             <objects>
-                <viewController id="skH-xe-eYW" customClass="PrivateMessagesViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="skH-xe-eYW" customClass="PrivateMessagesViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="5eN-l7-3ek">
                         <rect key="frame" x="0.0" y="0.0" width="699" height="464"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -2288,7 +2317,7 @@ DQ
                                             <action selector="chatAction:" target="skH-xe-eYW" id="42r-jO-d0S"/>
                                         </connections>
                                     </button>
-                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="LkX-2A-rof" customClass="GrowingTextField" customModule="WiredSwift" customModuleProvider="target">
+                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="LkX-2A-rof" customClass="GrowingTextField" customModule="Wired" customModuleProvider="target">
                                         <rect key="frame" x="20" y="14" width="560" height="22"/>
                                         <textFieldCell key="cell" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" focusRingType="none" placeholderString="Type message here" bezelStyle="round" id="Ai5-Uu-gAV">
                                             <font key="font" metaFont="system"/>
@@ -2356,7 +2385,7 @@ DQ
         <!--Conversation View Controller-->
         <scene sceneID="stg-zU-ird">
             <objects>
-                <viewController id="LLX-PM-Aa1" customClass="ConversationViewController" customModule="WiredSwift" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="LLX-PM-Aa1" customClass="ConversationViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="mm1-W0-5Hi">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -2384,6 +2413,7 @@ DQ
         <image name="Messages" width="25" height="25"/>
         <image name="NSActionTemplate" width="14" height="14"/>
         <image name="NSMultipleDocuments" width="32" height="32"/>
+        <image name="NSQuickLookTemplate" width="19" height="12"/>
         <image name="NSRefreshTemplate" width="11" height="15"/>
         <image name="PauseTransfer" width="25" height="25"/>
         <image name="RemoveTransfer" width="25" height="25"/>
@@ -2397,6 +2427,6 @@ DQ
         <image name="Upload" width="25" height="25"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="Grk-AN-qBx"/>
+        <segue reference="Ovw-RS-Cjt"/>
     </inferredMetricsTieBreakers>
 </document>

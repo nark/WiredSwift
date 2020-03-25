@@ -106,6 +106,15 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     
     
     // MARK: -
+    @IBAction func disconnect(_ sender: Any) {
+        if let selectedConnection = self.selectedItem() as? ServerConnection {
+            selectedConnection.disconnect()
+        }
+    }
+    
+    @IBAction func addToBookmarks(_ sender: Any) {
+        
+    }
     
     @IBAction func editBookmark(_ sender: Any) {
         if let selectedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.selectedRow) {
@@ -116,7 +125,9 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
                         bookmarkViewController.bookmark = bookmark
                         
                         NSApp.mainWindow?.beginSheet(bookmarkWindowController.window!, completionHandler: { (modalResponse) in
-                            
+                            if modalResponse == .OK {
+                                self.resourcesOutlineView.reloadData()
+                            }
                         })
                     }
                 }
@@ -243,7 +254,7 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     }
     
     func outlineViewSelectionDidChange(_ notification: Notification) {
-        if let selectedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.selectedRow) {
+        if let selectedItem = self.selectedItem() {
             NotificationCenter.default.post(name: .selectedResourceDidChange, object: resourcesOutlineView)
             
             if let bookmark = selectedItem as? Bookmark {
@@ -274,13 +285,13 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
             menu.addItem(cogItem)
         }
         
-        menu.addItem(withTitle: "New Bookmark", action: #selector(editBookmark(_:)), keyEquivalent: "")
+        menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "")
         menu.addItem(NSMenuItem.separator())
         
-        if let selectedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.clickedRow) {
+        if let selectedItem = self.selectedItem()  {
             if let connection = selectedItem as? Connection {
                 if connection.isConnected() {
-                    menu.addItem(withTitle: "Disconnect", action: #selector(editBookmark(_:)), keyEquivalent: "")
+                    menu.addItem(withTitle: "Disconnect", action: #selector(disconnect(_:)), keyEquivalent: "")
                 }
             }
             else if let _ = selectedItem as? Bookmark {
@@ -295,9 +306,22 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     
     
     // MARK: - Private
+    private func selectedItem() -> Any? {
+        var selectedIndex = resourcesOutlineView.clickedRow
+        
+        if selectedIndex == -1 {
+            selectedIndex = resourcesOutlineView.selectedRow
+        }
+        
+        if selectedIndex == -1 {
+            return nil
+        }
+        
+        return resourcesOutlineView.item(atRow: selectedIndex)
+    }
     
     @objc private func removeSelectedBookmark() {
-        if let selectedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.clickedRow) {
+        if let selectedItem = self.selectedItem()  {
             if let bookmark = selectedItem as? Bookmark {
                 let alert = NSAlert()
                 alert.messageText = "Are you sure you want to delete this bookmark?"
