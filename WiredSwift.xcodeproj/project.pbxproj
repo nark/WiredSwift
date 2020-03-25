@@ -77,8 +77,8 @@
 		4CA41547242664EE005B9048 /* ConversationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA41546242664EE005B9048 /* ConversationsViewController.swift */; };
 		4CA415492426651D005B9048 /* PrivateMessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */; };
 		4CD0205122DF04BD0008B36C /* Wired.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0204F22DF04BD0008B36C /* Wired.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4CD0205422DF04BD0008B36C /* Wired.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* Wired.framework */; };
-		4CD0205522DF04BD0008B36C /* Wired.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* Wired.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4CD0205422DF04BD0008B36C /* WiredSwfit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; };
+		4CD0205522DF04BD0008B36C /* WiredSwfit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0205D22DF11920008B36C /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
 		4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -190,7 +190,7 @@
 				4CFB162123FC89B7000EE688 /* KeychainAccess.framework in Embed Frameworks */,
 				4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */,
 				4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */,
-				4CD0205522DF04BD0008B36C /* Wired.framework in Embed Frameworks */,
+				4CD0205522DF04BD0008B36C /* WiredSwfit.framework in Embed Frameworks */,
 				4CED2FC922E8FA4D000E5B9E /* CryptorRSA.framework in Embed Frameworks */,
 				4CED2FCA22E8FA4F000E5B9E /* CryptoSwift.framework in Embed Frameworks */,
 			);
@@ -243,7 +243,7 @@
 		4C5C1D202426812E00A751AA /* Message+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C5C1D212426812E00A751AA /* Message+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+ResourceFork.swift"; sourceTree = "<group>"; };
-		4C74285E22DCECE800D6E6F9 /* WiredSwift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WiredSwift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C74285E22DCECE800D6E6F9 /* Wired.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wired.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C74286122DCECE800D6E6F9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4C74286322DCECE800D6E6F9 /* ConnectController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectController.swift; sourceTree = "<group>"; };
 		4C74286522DCECE900D6E6F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -262,7 +262,7 @@
 		4CA4154424262D8A005B9048 /* UsersController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersController.swift; sourceTree = "<group>"; };
 		4CA41546242664EE005B9048 /* ConversationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsViewController.swift; sourceTree = "<group>"; };
 		4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateMessagesViewController.swift; sourceTree = "<group>"; };
-		4CD0204D22DF04BD0008B36C /* Wired.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Wired.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WiredSwfit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CD0204F22DF04BD0008B36C /* Wired.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Wired.h; sourceTree = "<group>"; };
 		4CD0205022DF04BD0008B36C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4CD0205A22DF07B60008B36C /* P7Spec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Spec.swift; sourceTree = "<group>"; };
@@ -306,7 +306,7 @@
 				4CF6737A2404214800A8EDC2 /* CZlib in Frameworks */,
 				4CED2FC322E8F4B0000E5B9E /* CryptoSwift.framework in Frameworks */,
 				4CED2FC522E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */,
-				4CD0205422DF04BD0008B36C /* Wired.framework in Frameworks */,
+				4CD0205422DF04BD0008B36C /* WiredSwfit.framework in Frameworks */,
 				4C0A99FA23FBFE6C0008A7A6 /* Preferences.framework in Frameworks */,
 				4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */,
 				4CF673712403FF3C00A8EDC2 /* Gzip.framework in Frameworks */,
@@ -380,8 +380,8 @@
 				4C1319AE231862DF00C9FA0C /* README.md */,
 				4C4C3EDE22E10B2000BC2DD9 /* Cartfile */,
 				4C374D9B23FDE02E006D3E7C /* swift.yml */,
-				4C74286022DCECE800D6E6F9 /* WiredSwift */,
-				4CD0204E22DF04BD0008B36C /* Wired */,
+				4C74286022DCECE800D6E6F9 /* Wired */,
+				4CD0204E22DF04BD0008B36C /* WiredSwift */,
 				4C74285F22DCECE800D6E6F9 /* Products */,
 				4CF6736B2403F48000A8EDC2 /* Frameworks */,
 			);
@@ -390,13 +390,13 @@
 		4C74285F22DCECE800D6E6F9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4C74285E22DCECE800D6E6F9 /* WiredSwift.app */,
-				4CD0204D22DF04BD0008B36C /* Wired.framework */,
+				4C74285E22DCECE800D6E6F9 /* Wired.app */,
+				4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		4C74286022DCECE800D6E6F9 /* WiredSwift */ = {
+		4C74286022DCECE800D6E6F9 /* Wired */ = {
 			isa = PBXGroup;
 			children = (
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
@@ -416,7 +416,7 @@
 				4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */,
 				4C74286A22DCECE900D6E6F9 /* Info.plist */,
 			);
-			path = WiredSwift;
+			path = Wired;
 			sourceTree = "<group>";
 		};
 		4CA4152E24261F0E005B9048 /* Products */ = {
@@ -428,7 +428,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		4CD0204E22DF04BD0008B36C /* Wired */ = {
+		4CD0204E22DF04BD0008B36C /* WiredSwift */ = {
 			isa = PBXGroup;
 			children = (
 				4CD0204F22DF04BD0008B36C /* Wired.h */,
@@ -442,7 +442,7 @@
 				4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */,
 				4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */,
 			);
-			path = Wired;
+			path = WiredSwift;
 			sourceTree = "<group>";
 		};
 		4CEF0AB723FDD5950097E37E /* Files */ = {
@@ -646,9 +646,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		4C74285D22DCECE800D6E6F9 /* WiredSwift */ = {
+		4C74285D22DCECE800D6E6F9 /* Wired */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4C74286E22DCECEA00D6E6F9 /* Build configuration list for PBXNativeTarget "WiredSwift" */;
+			buildConfigurationList = 4C74286E22DCECEA00D6E6F9 /* Build configuration list for PBXNativeTarget "Wired" */;
 			buildPhases = (
 				4C74285A22DCECE800D6E6F9 /* Sources */,
 				4C74285B22DCECE800D6E6F9 /* Frameworks */,
@@ -661,17 +661,17 @@
 				4CC7BE222428DD6E003D874C /* PBXTargetDependency */,
 				4CD0205322DF04BD0008B36C /* PBXTargetDependency */,
 			);
-			name = WiredSwift;
+			name = Wired;
 			packageProductDependencies = (
 				4CF673792404214800A8EDC2 /* CZlib */,
 			);
 			productName = "Wired 3";
-			productReference = 4C74285E22DCECE800D6E6F9 /* WiredSwift.app */;
+			productReference = 4C74285E22DCECE800D6E6F9 /* Wired.app */;
 			productType = "com.apple.product-type.application";
 		};
-		4CD0204C22DF04BD0008B36C /* Wired */ = {
+		4CD0204C22DF04BD0008B36C /* WiredSwfit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "Wired" */;
+			buildConfigurationList = 4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "WiredSwfit" */;
 			buildPhases = (
 				4CD0204822DF04BD0008B36C /* Headers */,
 				4CD0204922DF04BD0008B36C /* Sources */,
@@ -683,12 +683,12 @@
 			);
 			dependencies = (
 			);
-			name = Wired;
+			name = WiredSwfit;
 			packageProductDependencies = (
 				4CF673772404191E00A8EDC2 /* CZlib */,
 			);
 			productName = Wired;
-			productReference = 4CD0204D22DF04BD0008B36C /* Wired.framework */;
+			productReference = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -732,8 +732,8 @@
 			);
 			projectRoot = "";
 			targets = (
-				4C74285D22DCECE800D6E6F9 /* WiredSwift */,
-				4CD0204C22DF04BD0008B36C /* Wired */,
+				4C74285D22DCECE800D6E6F9 /* Wired */,
+				4CD0204C22DF04BD0008B36C /* WiredSwfit */,
 			);
 		};
 /* End PBXProject section */
@@ -891,7 +891,7 @@
 		};
 		4CD0205322DF04BD0008B36C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4CD0204C22DF04BD0008B36C /* Wired */;
+			target = 4CD0204C22DF04BD0008B36C /* WiredSwfit */;
 			targetProxy = 4CD0205222DF04BD0008B36C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -1031,7 +1031,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = WiredSwift/WiredSwift.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Wired/WiredSwift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1056,7 +1056,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = WiredSwift/WiredSwift.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Wired/WiredSwift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1162,7 +1162,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4C74286E22DCECEA00D6E6F9 /* Build configuration list for PBXNativeTarget "WiredSwift" */ = {
+		4C74286E22DCECEA00D6E6F9 /* Build configuration list for PBXNativeTarget "Wired" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4C74286F22DCECEA00D6E6F9 /* Debug */,
@@ -1171,7 +1171,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "Wired" */ = {
+		4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "WiredSwfit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CD0205622DF04BD0008B36C /* Debug */,
