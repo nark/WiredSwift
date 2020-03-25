@@ -34,7 +34,7 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     
     override var representedObject: Any? {
         didSet {
-            if let c = self.representedObject as? Connection {
+            if let c = self.representedObject as? ServerConnection {
                 self.connection = c
                 self.usersController = ConnectionsController.shared.usersController(forConnection: self.connection)
                 

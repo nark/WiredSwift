@@ -15,7 +15,7 @@ class UsersController: ConnectionObject {
     
     
     
-    public override init(_ connection: Connection) {
+    public override init(_ connection: ServerConnection) {
         super.init(connection)
     }
     

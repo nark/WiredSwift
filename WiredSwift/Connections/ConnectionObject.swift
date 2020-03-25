@@ -9,9 +9,9 @@
 import Cocoa
 
 public class ConnectionObject: NSObject {
-    public var connection: Connection!
+    public var connection: ServerConnection!
     
-    public init(_ connection: Connection) {
+    public init(_ connection: ServerConnection) {
         self.connection = connection
     }
 }

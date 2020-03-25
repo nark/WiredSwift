@@ -158,8 +158,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     private func safeTerminateApp(_ sender: NSApplication) -> NSApplication.TerminateReply  {
-        for w in NSApp.windows {
-            if let cwc = w.windowController as? ConnectionWindowController {
+        for c in ConnectionsController.shared.connections {
+            if let cwc = c.connectionWindowController {
                 if cwc.connection != nil {
                     cwc.connection.disconnect()
                 }
@@ -247,7 +247,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     @IBAction func connectBookmark(_ sender: NSMenuItem) {
         if let bookmark = sender.representedObject as? Bookmark {
-            ConnectionWindowController.connectConnectionWindowController(withBookmark: bookmark)
+            _ = ConnectionWindowController.connectConnectionWindowController(withBookmark: bookmark)
         }
     }
     
@@ -280,8 +280,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     // MARK: - Static Connection Helpers
     private static func hasActiveConnections() -> Bool {
-        for w in NSApp.windows {
-            if let cwc = w.windowController as? ConnectionWindowController {
+        for c in ConnectionsController.shared.connections {
+            if let cwc = c.connectionWindowController {
                 if cwc.connection != nil && cwc.connection.isConnected() {
                     return true
                 }
@@ -289,6 +289,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         }
         return false
     }
+    
 
     public static func showWiredError(_ error:WiredError) {
         let alert = NSAlert()
@@ -299,9 +300,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         alert.runModal()
     }
     
+    
     public static func windowController(forConnection connection:Connection) -> ConnectionWindowController? {
-        for w in NSApp.windows {
-            if let cwc = w.windowController as? ConnectionWindowController {
+        for c in ConnectionsController.shared.connections {
+            if let cwc = c.connectionWindowController {
                 if cwc.connection == connection {
                     return cwc
                 }
@@ -312,8 +314,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     public static func windowController(forURI URI:String) -> ConnectionWindowController? {
-        for w in NSApp.windows {
-            if let cwc = w.windowController as? ConnectionWindowController {
+        for c in ConnectionsController.shared.connections {
+            if let cwc = c.connectionWindowController {
                 if cwc.connection.URI == URI {
                     return cwc
                 }
@@ -322,9 +324,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         return nil
     }
     
-    public static func windowController(forBookmark bookmark:Bookmark) -> ConnectionWindowController? {
-        for w in NSApp.windows {
-            if let cwc = w.windowController as? ConnectionWindowController {
+    
+    public static func windowController(forBookmark bookmark:Bookmark) -> ConnectionWindowController? {        
+        for c in ConnectionsController.shared.connections {
+            if let cwc = c.connectionWindowController {
                 if cwc.connection != nil && "\(cwc.connection.url.hostname):\(cwc.connection.url.port)" == bookmark.hostname! && cwc.connection.url.login == bookmark.login! {
                     return cwc
                 }
@@ -373,6 +376,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         var count = 0
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Message")
         fetchRequest.predicate = NSPredicate(format: "read == %d", false)
+        
         if let c = try? AppDelegate.shared.persistentContainer.viewContext.count(for: fetchRequest) {
             count = c
         }

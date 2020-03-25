@@ -18,7 +18,7 @@ extension Notification.Name {
 class ConnectionsController {
     public static let shared = ConnectionsController()
     
-    var connections:[Connection] = []
+    var connections:[ServerConnection] = []
     var usersControllers:[UsersController] = []
     var filesControllers:[FilesController] = []
     
@@ -32,7 +32,7 @@ class ConnectionsController {
     
     // MARK: - Connections
     
-    public func addConnection(_ connection: Connection) {
+    public func addConnection(_ connection: ServerConnection) {
         if connections.index(of: connection) == nil {
             connections.append(connection)
             
@@ -45,7 +45,7 @@ class ConnectionsController {
     }
     
     
-    public func removeConnection(_ connection: Connection) {
+    public func removeConnection(_ connection: ServerConnection) {
         if let i = connections.index(of: connection) {
             connections.remove(at: i)
             
@@ -85,24 +85,26 @@ class ConnectionsController {
     }
     
     
-    public func connectBookmark(_ bookmark:Bookmark) {
-        // handle already connected ?
-        if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
-            if let tabGroup = cwc.window?.tabGroup {
-                tabGroup.selectedWindow = cwc.window
-                return
-            }
-        }
-        
-        let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
-        if let connectController = storyboard.instantiateController(withIdentifier: "ConnectWindowController") as? NSWindowController {
-            connectController.showWindow(self)
-            
-            if let connectController = connectController.contentViewController as? ConnectController {
-                connectController.connect(withBookmark: bookmark)
-            }
-        }
-    }
+//    public func connectBookmark(_ bookmark:Bookmark) {
+//        // handle already connected ?
+//        if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
+//            if let tabGroup = cwc.window?.tabGroup {
+//                tabGroup.selectedWindow = cwc.window
+//                return
+//            }
+//        }
+//        
+//        print("no cwc")
+//        
+//        let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
+//        if let connectController = storyboard.instantiateController(withIdentifier: "ConnectWindowController") as? NSWindowController {
+//            connectController.showWindow(self)
+//            
+//            if let connectController = connectController.contentViewController as? ConnectController {
+//                connectController.connect(withBookmark: bookmark)
+//            }
+//        }
+//    }
     
     
     
@@ -131,7 +133,7 @@ class ConnectionsController {
     }
     
     
-    public func conversation(withNick nick: String, onConnection connection:Connection) -> Conversation? {
+    public func conversation(withNick nick: String, onConnection connection:ServerConnection) -> Conversation? {
         let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: "Conversation")
         fetchRequest.predicate = NSPredicate(format: "nick == %@ AND uri == %@", nick, connection.URI)
         fetchRequest.fetchLimit = 1
@@ -162,7 +164,7 @@ class ConnectionsController {
     
     
     // MARK: -
-    public func usersController(forConnection connection:Connection) -> UsersController {
+    public func usersController(forConnection connection:ServerConnection) -> UsersController {
         var usersController:UsersController? = nil
         
         let exists = usersControllers.contains { (fc) -> Bool in
@@ -181,7 +183,7 @@ class ConnectionsController {
     }
     
     
-    public func filesController(forConnection connection:Connection) -> FilesController {
+    public func filesController(forConnection connection:ServerConnection) -> FilesController {
         var filesController:FilesController? = nil
         
         let exists = filesControllers.contains { (fc) -> Bool in

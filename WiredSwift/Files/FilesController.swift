@@ -12,13 +12,13 @@ import Cocoa
 public class FilesController: ConnectionObject {
     var rootFile:File!
     
-    public override init(_ connection: Connection) {
+    public override init(_ connection: ServerConnection) {
         super.init(connection)
         
         self.rootFile = File("/", connection: connection)
     }
     
-    public convenience init(withRoot root: String, connection: Connection) {
+    public convenience init(withRoot root: String, connection: ServerConnection) {
         self.init(connection)
                 
         self.rootFile = File(root, connection: connection)

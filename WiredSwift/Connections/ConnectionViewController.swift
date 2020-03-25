@@ -9,6 +9,5 @@
 import Cocoa
 
 class ConnectionViewController: NSViewController {
-    public var
-    connection: Connection!
+    public var connection: ServerConnection!
 }

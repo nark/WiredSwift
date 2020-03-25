@@ -24,38 +24,38 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
         super.viewDidLoad()
     }
     
-    
-    public func connect(withBookmark bookmark: Bookmark) {
-        let url = bookmark.url()
-        
-        addressField.stringValue = "\(url.hostname):\(url.port)"
-        loginField.stringValue = url.login
-        passwordField.stringValue = url.password
-        
-        self.connection = Connection(withSpec: spec, delegate: self)
-        self.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? self.connection.nick
-        self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
-        
-        self.progressIndicator.startAnimation(self)
-                
-        DispatchQueue.global().async {
-            if self.connection.connect(withUrl: url) == true {
-                DispatchQueue.main.async {
-                    ConnectionsController.shared.addConnection(self.connection)
-                    
-                    self.progressIndicator.stopAnimation(self)
-                    self.performSegue(withIdentifier: "showPublicChat", sender: self)
-                }
-            } else {
-                DispatchQueue.main.async {
-                    if let wiredError = self.connection.socket.errors.first {
-                        AppDelegate.showWiredError(wiredError)
-                    }
-                }
-            }
-        }
-    }
-    
+//
+//    public func connect(withBookmark bookmark: Bookmark) {
+//        let url = bookmark.url()
+//
+//        addressField.stringValue = "\(url.hostname):\(url.port)"
+//        loginField.stringValue = url.login
+//        passwordField.stringValue = url.password
+//
+//        self.connection = ServerConnection(withSpec: spec, delegate: self)
+//        self.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? self.connection.nick
+//        self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
+//
+//        self.progressIndicator.startAnimation(self)
+//
+//        DispatchQueue.global().async {
+//            if self.connection.connect(withUrl: url) == true {
+//                DispatchQueue.main.async {
+//                    ConnectionsController.shared.addConnection(self.connection)
+//
+//                    self.progressIndicator.stopAnimation(self)
+//                    self.performSegue(withIdentifier: "showPublicChat", sender: self)
+//                }
+//            } else {
+//                DispatchQueue.main.async {
+//                    if let wiredError = self.connection.socket.errors.first {
+//                        AppDelegate.showWiredError(wiredError)
+//                    }
+//                }
+//            }
+//        }
+//    }
+//
     
     @IBAction func connect(_ sender: Any) {
         if addressField.stringValue.count == 0 {
@@ -73,7 +73,7 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
         
         url.password = passwordField.stringValue
         
-        self.connection = Connection(withSpec: spec, delegate: self)
+        self.connection = ServerConnection(withSpec: spec, delegate: self)
         self.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? self.connection.nick
         self.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? self.connection.status
         
@@ -87,6 +87,7 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
         DispatchQueue.global().async {
             if self.connection.connect(withUrl: url) {
                 DispatchQueue.main.async {
+                    self.connection.connectionWindowController = self.connectionWindowController
                     ConnectionsController.shared.addConnection(self.connection)
                     
                     self.progressIndicator.stopAnimation(sender)
@@ -129,7 +130,7 @@ class ConnectController: ConnectionViewController, ConnectionDelegate {
     
     func connectionDisconnected(connection: Connection, error: Error?) {
         // print("connectionDisconnected")
-        ConnectionsController.shared.removeConnection(connection)
+        //ConnectionsController.shared.removeConnection(connection as! ServerConnection)
     }
     
     

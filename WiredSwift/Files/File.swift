@@ -34,7 +34,7 @@ public class File: ConnectionObject, ConnectionDelegate {
     public var dataTransferred:UInt64 = 0
     public var rsrcTransferred:UInt64 = 0
     
-    init(_ path: String, connection: Connection) {
+    init(_ path: String, connection: ServerConnection) {
         super.init(connection)
                 
         self.path = path
@@ -43,7 +43,7 @@ public class File: ConnectionObject, ConnectionDelegate {
     }
 
     
-    init(_ message: P7Message, connection: Connection) {
+    init(_ message: P7Message, connection: ServerConnection) {
         super.init(connection)
         
         if let p = message.string(forField: "wired.file.path") {

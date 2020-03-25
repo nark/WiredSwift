@@ -101,7 +101,7 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
     
     @objc func userJoinedPublicChat(_ n:Notification) {
         if let array = n.object as? [Any] {
-            if  let connection = array.first as? Connection,
+            if  let connection = array.first as? ServerConnection,
                 let userInfo = array.last as? UserInfo,
                 self.conversation != nil,
                 self.conversation.nick == userInfo.nick {

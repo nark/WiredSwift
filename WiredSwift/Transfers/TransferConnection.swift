@@ -8,7 +8,7 @@
 
 import Cocoa
 
-public class TransferConnection: Connection {
+public class TransferConnection: ServerConnection {
     public var transfer: Transfer!
     
     public init(withSpec spec: P7Spec, transfer: Transfer) {

@@ -8,8 +8,8 @@
 
 import Cocoa
 
-class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate {
-    public var connection: Connection!
+public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindowDelegate {
+    public var connection: ServerConnection!
     public var bookmark: Bookmark!
 
     
@@ -20,24 +20,29 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
             }
             return cwc
         }
-        
+                
         let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
         if let connectionWindowController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ConnectionWindowController")) as? ConnectionWindowController {
             let url = bookmark.url()
             
-            connectionWindowController.connection = Connection(withSpec: spec, delegate: connectionWindowController as? ConnectionDelegate)
+            connectionWindowController.connection = ServerConnection(withSpec: spec, delegate: connectionWindowController as? ConnectionDelegate)
             connectionWindowController.connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? connectionWindowController.connection.nick
             connectionWindowController.connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? connectionWindowController.connection.status
-                                
+            
+            connectionWindowController.connection.connectionWindowController = connectionWindowController
+            
+            if let b64string = AppDelegate.currentIcon?.tiffRepresentation(using: NSBitmapImageRep.TIFFCompression.none, factor: 0)?.base64EncodedString() {
+                connectionWindowController.connection.icon = b64string
+            }
+            
             DispatchQueue.global().async {
                 if connectionWindowController.connection.connect(withUrl: url) == true {
                     DispatchQueue.main.async {
                         ConnectionsController.shared.addConnection(connectionWindowController.connection)
                         
                         connectionWindowController.attach(connection: connectionWindowController.connection)
-                        //connectionWindowController.window?.mergeAllWindows(self)
+                        connectionWindowController.windowDidLoad()
                         connectionWindowController.showWindow(connectionWindowController)
-                        //connectionWindowController.window?.toolbar?.validateVisibleItems()
                     }
                 } else {
                     DispatchQueue.main.async {
@@ -55,7 +60,13 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
     }
     
     
-    override func windowDidLoad() {
+    
+//    override init(window: NSWindow?) {
+//        super.init(window: window)
+//    }
+    
+    
+    override public func windowDidLoad() {
         super.windowDidLoad()
     
         NotificationCenter.default.addObserver(
@@ -74,8 +85,6 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
     
     
     @objc private func showConnectSheet() {
-        print("windowDidLoad showConnectSheet: \(self.connection)")
-        
         if self.connection == nil {
             let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
             if let connectWindowController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("ConnectWindowController")) as? NSWindowController {
@@ -95,9 +104,20 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
 
     
     @objc private func windowWillClose(notification: Notification) -> Void {
-        if let w = notification.object as? NSWindow, w == self.window {
-            self.disconnect()
-            NotificationCenter.default.removeObserver(self)
+        if let w = notification.object as? NSWindow {
+            if w == self.window {
+                self.disconnect()
+                
+                if self.connection != nil {
+                    ConnectionsController.shared.removeConnection(self.connection)
+                }
+                
+                NSApp.removeWindowsItem(w)
+
+                self.window = nil
+
+                NotificationCenter.default.removeObserver(self)
+            }
         }
     }
     
@@ -214,7 +234,7 @@ class ConnectionWindowController: NSWindowController, NSToolbarDelegate, NSWindo
 
     
     
-    public func attach(connection:Connection) {
+    public func attach(connection:ServerConnection) {
         self.connection = connection
         
         if let splitViewController = self.contentViewController as? NSSplitViewController {

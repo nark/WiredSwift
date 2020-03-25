@@ -27,7 +27,7 @@ import MessageKit_macOS
 import MapKit
 
 class ConversationViewController: MessagesViewController {
-    public var connection: Connection!
+    public var connection: ServerConnection!
     
     var messageList: [Any] = []
     var isTyping = false

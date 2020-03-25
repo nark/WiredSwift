@@ -51,6 +51,8 @@
 		4C4C3EEC22E1131B00BC2DD9 /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EEA22E1131B00BC2DD9 /* Const.swift */; };
 		4C4C3EF122E1154900BC2DD9 /* P7Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EF022E1154900BC2DD9 /* P7Message.swift */; };
 		4C4C3EF222E1154900BC2DD9 /* P7Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EF022E1154900BC2DD9 /* P7Message.swift */; };
+		4C4EF4BB242B602100E38B44 /* ServerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4EF4BA242B602100E38B44 /* ServerConnection.swift */; };
+		4C4EF4BF242B782000E38B44 /* BookmarkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4EF4BE242B782000E38B44 /* BookmarkViewController.swift */; };
 		4C52DADB242682920085C7D7 /* ConversationsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52DADA242682920085C7D7 /* ConversationsController.swift */; };
 		4C5C1D222426812E00A751AA /* Conversation+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5C1D1E2426812E00A751AA /* Conversation+CoreDataClass.swift */; };
 		4C5C1D232426812E00A751AA /* Conversation+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5C1D1F2426812E00A751AA /* Conversation+CoreDataProperties.swift */; };
@@ -233,6 +235,8 @@
 		4C4C3EE722E10F6A00BC2DD9 /* Url.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Url.swift; sourceTree = "<group>"; };
 		4C4C3EEA22E1131B00BC2DD9 /* Const.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
 		4C4C3EF022E1154900BC2DD9 /* P7Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Message.swift; sourceTree = "<group>"; };
+		4C4EF4BA242B602100E38B44 /* ServerConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConnection.swift; sourceTree = "<group>"; };
+		4C4EF4BE242B782000E38B44 /* BookmarkViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkViewController.swift; sourceTree = "<group>"; };
 		4C52DADA242682920085C7D7 /* ConversationsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsController.swift; sourceTree = "<group>"; };
 		4C5C1D1E2426812E00A751AA /* Conversation+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Conversation+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C5C1D1F2426812E00A751AA /* Conversation+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Conversation+CoreDataProperties.swift"; sourceTree = "<group>"; };
@@ -346,6 +350,15 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
+		4C4EF4BD242B780200E38B44 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */,
+				4C4EF4BE242B782000E38B44 /* BookmarkViewController.swift */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		4C6A89E62405612400780FEF /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -388,6 +401,7 @@
 			children = (
 				4C74286122DCECE800D6E6F9 /* AppDelegate.swift */,
 				4CEF0ABA23FDD5EA0097E37E /* Connections */,
+				4C4EF4BD242B780200E38B44 /* Resources */,
 				4CEF0ABC23FDD6190097E37E /* Chats */,
 				4CEF0ABB23FDD6000097E37E /* Users */,
 				4CEF0AC023FDD66F0097E37E /* Messages */,
@@ -476,13 +490,13 @@
 		4CEF0ABA23FDD5EA0097E37E /* Connections */ = {
 			isa = PBXGroup;
 			children = (
+				4C4EF4BA242B602100E38B44 /* ServerConnection.swift */,
 				4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */,
 				4CFA18C9230B389B00E2A2EC /* ConnectionViewController.swift */,
 				4CFB15DD23FC5279000EE688 /* ConnectionsController.swift */,
 				4CFB162223FC9883000EE688 /* ConnectionWindowController.swift */,
 				4C8829E92425672700B4EF36 /* ConnectionWindow.swift */,
 				4C74286322DCECE800D6E6F9 /* ConnectController.swift */,
-				4CFB15DB23FC19E9000EE688 /* ResourcesController.swift */,
 			);
 			path = Connections;
 			sourceTree = "<group>";
@@ -533,8 +547,8 @@
 		4CEF0ABF23FDD6650097E37E /* Transfers */ = {
 			isa = PBXGroup;
 			children = (
-				4C374DA623FE8655006D3E7C /* TransfersViewController.swift */,
 				4C374DAA23FED0D8006D3E7C /* TransferConnection.swift */,
+				4C374DA623FE8655006D3E7C /* TransfersViewController.swift */,
 				4C374D9C23FE7AE5006D3E7C /* TransfersController.swift */,
 				4C374DA823FE9E7E006D3E7C /* TransferCell.swift */,
 			);
@@ -794,6 +808,7 @@
 				4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UsersViewController.swift in Sources */,
+				4C4EF4BB242B602100E38B44 /* ServerConnection.swift in Sources */,
 				4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */,
 				4C7A45AB242937CA008F0FFE /* TimeAgo.swift in Sources */,
 				4C374D9D23FE7AE5006D3E7C /* TransfersController.swift in Sources */,
@@ -819,6 +834,7 @@
 				4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */,
 				4C009B682427D07B00DAAB74 /* MSCBadgedTemplateImage.swift in Sources */,
 				4C36AEF92401CB6300AEC18E /* Transfer+CoreDataProperties.swift in Sources */,
+				4C4EF4BF242B782000E38B44 /* BookmarkViewController.swift in Sources */,
 				4C5C1D252426812E00A751AA /* Message+CoreDataProperties.swift in Sources */,
 				4CFB161D23FC843C000EE688 /* Bookmark+CoreDataClass.swift in Sources */,
 				4C374DA723FE8655006D3E7C /* TransfersViewController.swift in Sources */,

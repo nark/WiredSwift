@@ -51,7 +51,7 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
     
     override var representedObject: Any? {
         didSet {
-            if let conn = self.representedObject as? Connection {
+            if let conn = self.representedObject as? ServerConnection {
                 self.connection = conn
                 self.filesController = ConnectionsController.shared.filesController(forConnection: self.connection)
                 

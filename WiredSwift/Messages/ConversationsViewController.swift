@@ -33,7 +33,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
     
     override var representedObject: Any? {
         didSet {
-            if let c = self.representedObject as? Connection {
+            if let c = self.representedObject as? ServerConnection {
                 self.connection = c
                 
                 self.connection.addDelegate(self)
@@ -179,9 +179,9 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                     return
                 }
                 
-                if let userInfo = ConnectionsController.shared.usersController(forConnection: connection).user(forID: userID) {
+                if let userInfo = ConnectionsController.shared.usersController(forConnection: connection as! ServerConnection).user(forID: userID) {
                     let context = AppDelegate.shared.persistentContainer.viewContext
-                    var conversation = ConnectionsController.shared.conversation(withNick: userInfo.nick, onConnection: connection)
+                    var conversation = ConnectionsController.shared.conversation(withNick: userInfo.nick, onConnection: connection as! ServerConnection)
                     
                     if conversation == nil {
                         conversation = NSEntityDescription.insertNewObject(
@@ -192,7 +192,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         conversation!.uri = connection.URI
                         conversation?.userID = connection.userID
                         
-                        conversation?.connection = connection
+                        conversation?.connection = connection as! ServerConnection
                         
                         AppDelegate.shared.saveAction(self as AnyObject)
                         
@@ -200,7 +200,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         conversationsTableView.reloadData()
                     }
                     
-                    conversation!.connection = connection
+                    conversation!.connection = connection as! ServerConnection
                     
                     if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
                         cdObject.body = messageString

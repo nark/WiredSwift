@@ -44,7 +44,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     
     override var representedObject: Any? {
         didSet {
-            if let c = self.representedObject as? Connection {
+            if let c = self.representedObject as? ServerConnection {
                 self.connection = c
                 
                 self.conversationViewController.connection = self.connection

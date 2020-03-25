@@ -63,7 +63,7 @@ class ConversationsController {
     
     
     
-    public func openConversation(onConnection connection:Connection, withUser user: UserInfo) -> Conversation? {
+    public func openConversation(onConnection connection:ServerConnection, withUser user: UserInfo) -> Conversation? {
         var conversation = ConnectionsController.shared.conversation(withNick: user.nick!, onConnection: connection)
         let context = AppDelegate.shared.persistentContainer.viewContext
         

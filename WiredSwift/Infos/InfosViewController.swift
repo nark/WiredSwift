@@ -25,7 +25,7 @@ class InfosViewController: ConnectionViewController, ConnectionDelegate {
     
     override var representedObject: Any? {
         didSet {
-            if let c = self.representedObject as? Connection {
+            if let c = self.representedObject as? ServerConnection {
                 self.connection = c
                                 
                 c.delegates.append(self)

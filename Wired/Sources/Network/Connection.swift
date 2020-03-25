@@ -125,6 +125,10 @@ public class Connection: NSObject {
             
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .linkConnectionDidClose, object: self)
+            
+            for d in self.delegates {
+                d.connectionDisconnected(connection: self, error: nil)
+            }
         }
     }
     
