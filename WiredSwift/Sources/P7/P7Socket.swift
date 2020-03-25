@@ -437,6 +437,52 @@ public class P7Socket: NSObject {
     
     
     
+    public func writeOOB(data:Data, timeout:TimeInterval = 1.0) -> Bool {
+        do {
+            if self.serialization == .BINARY {
+                var messageData = data
+                var lengthData = Data()
+                
+                lengthData.append(uint32: UInt32(messageData.count))
+                                                
+                // deflate
+                if self.compressionEnabled {
+                    guard let deflatedMessageData = self.deflate(messageData) else {
+                        Logger.error("Cannot deflate data")
+                        return false
+                        
+                    }
+                    messageData = deflatedMessageData
+                }
+                
+                // encryption
+                if self.encryptionEnabled {
+                    guard let encryptedMessageData = self.sslCipher.encrypt(data: messageData) else {
+                        Logger.error("Cannot encrypt data")
+                        return false
+                    }
+                    
+                    messageData = encryptedMessageData
+                    
+                    lengthData = Data()
+                    lengthData.append(uint32: UInt32(messageData.count))
+                }
+                
+                _ = try self.socket.write(lengthData.bytes, size: lengthData.count)
+                _ = try self.socket.write(messageData.bytes, size: messageData.count)
+            }
+        } catch let error {
+            if let socketError = error as? Socket.Error {
+                Logger.error(socketError.description)
+            } else {
+                Logger.error(error.localizedDescription)
+            }
+            return false
+        }
+        
+        return true
+    }
+    
     
     private func connectHandshake() -> Bool {
         var message = P7Message(withName: "p7.handshake.client_handshake", spec: self.spec)

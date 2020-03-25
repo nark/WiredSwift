@@ -138,16 +138,16 @@ public class TransfersController {
         
         let file = File(remotePath, connection: destination.connection)
         file.uploadDataSize = FileManager.sizeOfFile(atPath: path)
-        file.uploadDataSize = 0
         
         transfer.name = (path as NSString).lastPathComponent
         transfer.connection = destination.connection
+        transfer.uri = file.connection.URI
         transfer.remotePath = remotePath
         transfer.localPath = path
         transfer.file = file
         transfer.size = Int64(file.uploadDataSize + file.uploadRsrcSize)
         transfer.startDate = Date()
-            
+                    
         try? AppDelegate.shared.persistentContainer.viewContext.save()
         
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
@@ -258,7 +258,7 @@ public class TransfersController {
             self.semaphore.signal()
             
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot connect")
+                error = WiredError(withTitle: "Download Error", message: "Transfer cannot connect")
                 
                 Logger.error(error!)
                 
@@ -289,7 +289,7 @@ public class TransfersController {
             self.semaphore.signal()
             
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot download_file")
+                error = WiredError(withTitle: "Download Error", message: "Transfer cannot download_file")
                 
                 Logger.error(error!)
                 
@@ -356,7 +356,7 @@ public class TransfersController {
                                         self.request(transfer)
                                         
                                     } catch let e {
-                                        error = WiredError(withTitle: "Transfer Error", message: "\(e)")
+                                        error = WiredError(withTitle: "Download Error", message: "\(e)")
                                         
                                         transfer.state = .Disconnecting
                                         
@@ -378,7 +378,7 @@ public class TransfersController {
                                         self.finish(transfer)
                                         
                                     } catch let e {
-                                        error = WiredError(withTitle: "Transfer Error", message: "\(e)")
+                                        error = WiredError(withTitle: "Download Error", message: "\(e)")
                                         
                                         transfer.state = .Disconnecting
                                         
@@ -396,7 +396,7 @@ public class TransfersController {
             } catch let e {
                 self.semaphore.signal()
                 
-                error = WiredError(withTitle: "Transfer Error", message: "IO Error: \(e)")
+                error = WiredError(withTitle: "Download Error", message: "IO Error: \(e)")
                 
                 Logger.error(error!)
                 
@@ -448,7 +448,7 @@ public class TransfersController {
                     fileHandle.closeFile()
                 } else {
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Transfer Error", message: "Transfer failed")
+                        error = WiredError(withTitle: "Download Error", message: "Transfer failed")
                         
                         Logger.error(error!)
                     }
@@ -459,7 +459,7 @@ public class TransfersController {
                     try oobdata.write(to: URL(fileURLWithPath: data ? dataPath! : rsrcPath), options: .atomicWrite)
                 } catch let e {
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Transfer Error", message: "Transfer failed \(e)")
+                        error = WiredError(withTitle: "Download Error", message: "Transfer failed \(e)")
                         
                         Logger.error(error!)
                     }
@@ -502,7 +502,7 @@ public class TransfersController {
                     try FileManager.default.moveItem(atPath: dataPath!, toPath: self.defaultDownloadDestination(forPath: transfer.remotePath!)!)
                 } catch let e {
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Transfer Error", message: "Transfer rename failed \(e)")
+                        error = WiredError(withTitle: "Download Error", message: "Transfer rename failed \(e)")
                         
                         Logger.error(error!)
                     }
@@ -526,9 +526,10 @@ public class TransfersController {
     private func runUpload(_ transfer: Transfer) {
         var error:WiredError? = nil
         var dataOffset:UInt64? = 0
-        var rsrcOffset:UInt64? = 0
         var dataLength:UInt64? = 0
-        var rsrcLength:UInt64? = 0
+        var sendBytes:UInt64 = 0
+        var data = true
+        let start:TimeInterval = Date.timeIntervalSinceReferenceDate
         
         print("runUpload")
         
@@ -540,11 +541,13 @@ public class TransfersController {
         
         transfer.transferConnection?.interactive = false
         
-        if (connection?.connect(withUrl: transfer.connection.url) == false) {
+        if connection?.connect(withUrl: transfer.connection.url) == false {
             transfer.state = .Stopped
-
+            
+            self.semaphore.signal()
+            
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot connect")
+                error = WiredError(withTitle: "Upload Error", message: "Transfer cannot connect")
                 
                 Logger.error(error!)
 
@@ -555,12 +558,14 @@ public class TransfersController {
         }
         
         if self.sendUploadFileMessage(onConnection: connection!, forTransfer: transfer) == false {
-            if (transfer.isTerminating() == false) {
+            if transfer.isTerminating() == false {
                 transfer.state = .Disconnecting
             }
             
+            self.semaphore.signal()
+            
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Transfer Error", message: "Transfer upload_file")
+                error = WiredError(withTitle: "Upload Error", message: "Transfer upload_file")
                 
                 Logger.error(error!)
                 
@@ -574,6 +579,8 @@ public class TransfersController {
             if transfer.isTerminating() == false {
                 transfer.state = .Disconnecting
             }
+            
+            self.semaphore.signal()
                      
             DispatchQueue.main.async {
                 self.finish(transfer)
@@ -583,10 +590,7 @@ public class TransfersController {
         }
         
         dataOffset = message.uint64(forField: "wired.transfer.data_offset")
-        rsrcOffset = message.uint64(forField: "wired.transfer.rsrc_offset")
-        
         dataLength = transfer.file!.uploadDataSize - dataOffset!
-        rsrcLength = transfer.file!.uploadRsrcSize - rsrcOffset!
         
         if transfer.file!.dataTransferred == 0 {
             transfer.file!.dataTransferred = dataOffset!
@@ -596,13 +600,15 @@ public class TransfersController {
             transfer.dataTransferred = Int64(dataOffset!)
         }
         
-        if self.sendUploadMessage(onConnection: connection!, forTransfer: transfer, dataLength: dataLength!, rsrcLength: rsrcLength!) == false {
-            if (transfer.isTerminating() == false) {
+        if self.sendUploadMessage(onConnection: connection!, forTransfer: transfer, dataLength: dataLength!, rsrcLength: 0) == false {
+            if transfer.isTerminating() == false {
                 transfer.state = .Disconnecting
             }
             
+            self.semaphore.signal()
+            
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Transfer Error", message: "Transfer cannot upload")
+                error = WiredError(withTitle: "Upload Error", message: "Transfer cannot upload")
                 
                 Logger.error(error!)
                 
@@ -613,10 +619,87 @@ public class TransfersController {
         }
         
         
+        if transfer.isTerminating() == false {
+            transfer.state = .Running
+            
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
+            }
+        }
+                
+        if let fileHandle = FileHandle(forReadingAtPath: transfer.localPath!) {
+            while transfer.isTerminating() == false {
+                if data && dataLength == 0 {
+                    data = false
+                }
+                
+                if data == false {
+                    break
+                }
+                
+                print("dataOffset: \(dataOffset!)")
+                
+                fileHandle.seek(toFileOffset: dataOffset!)
+                let readData = fileHandle.readData(ofLength: 8192)
+                let readBytes = readData.count
+                
+                print("readBytes: \(readBytes)")
+                
+                if readBytes <= 0 {
+                    if transfer.isTerminating() == false {
+                        transfer.state = .Disconnecting
+                    }
+                    
+                    DispatchQueue.main.async {
+                        error = WiredError(withTitle: "Upload Error", message: "Read local data")
+
+                        Logger.error(error!)
+                        
+                        self.finish(transfer, withError: error)
+                    }
+                    
+                    break
+                }
+                
+                sendBytes = (dataLength! < UInt64(readBytes)) ? dataLength! : UInt64(readBytes)
+                dataOffset! += sendBytes
+                
+                if transfer.transferConnection!.socket.writeOOB(data: readData, timeout: 30.0) == false {
+                    if transfer.isTerminating() == false {
+                        transfer.state = .Disconnecting
+                    }
+                    
+                    break
+                }
+                
+                dataLength!                 -= sendBytes
+                transfer.dataTransferred    += Int64(sendBytes)
+                transfer.actualTransferred  += Int64(readBytes)
+                transfer.percent            = Double(transfer.dataTransferred) / Double(transfer.size) * 100
+                
+                let speed                   = (Double(transfer.dataTransferred) / (Date.timeIntervalSinceReferenceDate - start)) * 8.0
+                transfer.speed              = 0.5 * speed + (1 - 0.5) * transfer.speed
+                
+                // update progress in view
+                if let progressIndicator = transfer.progressIndicator {
+                    DispatchQueue.main.async {
+                        progressIndicator.isIndeterminate = false
+                        progressIndicator.doubleValue = transfer.percent
+                        transfer.transferStatusField?.stringValue = transfer.transferStatus()
+                    }
+                }
+            }
         
-//        DispatchQueue.main.async {
-//            self.finish(transfer)
-//        }
+            fileHandle.closeFile()
+        }
+        
+        self.semaphore.signal()
+        
+        try? AppDelegate.shared.persistentContainer.viewContext.save()
+        
+        DispatchQueue.main.async {
+            self.finish(transfer)
+        }
     }
     
     
@@ -651,9 +734,21 @@ public class TransfersController {
     private func sendUploadMessage(onConnection connection:TransferConnection, forTransfer transfer:Transfer, dataLength:UInt64, rsrcLength:UInt64) -> Bool {
         let message = P7Message(withName: "wired.transfer.upload", spec: transfer.connection.spec)
         message.addParameter(field: "wired.file.path", value: transfer.file?.path)
-        message.addParameter(field: "wired.transfer.data", value: dataLength.bigEndian)
-        message.addParameter(field: "wired.transfer.rsrc", value: rsrcLength.bigEndian)
-        message.addParameter(field: "wired.transfer.finderinfo", value: FileManager.default.finderInfo(atPath: transfer.file!.path))
+        
+        print("dataLength : \(dataLength)")
+        
+        var data = Data()
+        data.append(uint64: dataLength.bigEndian)
+        message.addParameter(field: "wired.transfer.data", value: data)
+        
+        data = Data()
+        data.append(uint64: rsrcLength.bigEndian)
+        message.addParameter(field: "wired.transfer.rsrc", value: data)
+        
+        data = FileManager.default.finderInfo(atPath: transfer.file!.path)!
+        message.addParameter(field: "wired.transfer.finderinfo", value: data)
+        
+        print("message : \(message.xml(pretty: true))")
 
         if transfer.transferConnection?.send(message: message) == false {
             return false

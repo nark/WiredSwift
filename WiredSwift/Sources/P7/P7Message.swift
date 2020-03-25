@@ -133,6 +133,11 @@ public class P7Message: NSObject {
                     p.setStringValue(String(val), resolvingEntities: false)
                 }
             }
+            else if spec.fieldsByName[field]?.type == .data {
+                if let val = value as? Data {
+                    p.setStringValue(val.toHex(), resolvingEntities: false)
+                }
+            }
             else if spec.fieldsByName[field]?.type == .oobdata {
                 if let val = value as? Data {
                     p.setStringValue(val.toHex(), resolvingEntities: false)

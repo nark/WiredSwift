@@ -18,7 +18,10 @@ extension FileManager {
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: path)
             
-            return attributes[.size] as? UInt64 ?? UInt64(0)
+            print(attributes)
+            print(attributes[.size])
+            
+            return attributes[.size] as! UInt64
             
         } catch let error as NSError {
             print("FileAttribute error: \(error)")
@@ -74,7 +77,7 @@ extension FileManager {
         
         print("finderinfo: \(data.toHex())")
         
-        return nil
+        return data
     }
     
     

@@ -20,9 +20,18 @@ public class Transfer: NSManagedObject {
     public var error:String = ""
     
     public func transferStatus() -> String {
+        let typeString = self is DownloadTransfer ? "Download" : "Upload"
         let speedString = AppDelegate.byteCountFormatter.string(fromByteCount: Int64(speed.rounded()))
+        let sizeString = AppDelegate.byteCountFormatter.string(fromByteCount: dataTransferred)
+        let totalString = AppDelegate.byteCountFormatter.string(fromByteCount: size)
         
-        var s = "\(state), \(percent.rounded())%, \(speedString)/s"
+        var s = "\(typeString) \(state), \(percent.rounded())%, speed \(speedString)/s"
+        
+        if isWorking() {
+            s = "\(typeString) \(state), \(sizeString) of \(totalString), \(percent.rounded())%, speed \(speedString)/s"
+        } else {
+            s = "\(typeString) \(state), \(sizeString), speed \(speedString)/s"
+        }
         
         if error != "" {
             s = "\(s) - \(error)"

@@ -8,7 +8,9 @@
 
 import Cocoa
 
-class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
+class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate, NSUserInterfaceValidations
+{
+    
     @IBOutlet weak var transfersTableView: NSTableView!
     
     @IBOutlet weak var startButton: NSButton!
@@ -23,7 +25,7 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         // Do view setup here.
         
         NotificationCenter.default.addObserver(self, selector:  #selector(didUpdateTransfers), name: .didUpdateTransfers, object: nil)
-    
+            
         self.validate()
     }
     
@@ -143,6 +145,42 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     func tableViewSelectionDidChange(_ notification: Notification) {
         self.validate()
     }
+    
+    
+    // MARK: -
+    func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+        if item.action == #selector(startTransfer(_:)) {
+            if let transfer = self.selectedTransfer() {
+                return !transfer.isWorking() && !transfer.isTerminating() && transfer.state != .Finished
+            }
+        }
+        else if item.action == #selector(stopTransfer(_:)) {
+            if let transfer = self.selectedTransfer() {
+                return transfer.isWorking()
+            }
+        }
+        else if item.action == #selector(pauseTransfer(_:)) {
+            if let transfer = self.selectedTransfer() {
+                return transfer.isWorking()
+            }
+        }
+        else if item.action == #selector(removeTransfer(_:)) {
+            if let transfer = self.selectedTransfer() {
+                return !transfer.isWorking()
+            }
+        }
+        else if item.action == #selector(clearTransfers(_:)) {
+            return true
+        }
+        else if item.action == #selector(revealInFinder(_:)) {
+            if nil != self.selectedTransfer() {
+                return true
+            }
+        }
+
+        return false
+    }
+
     
     
     // MARK: -
