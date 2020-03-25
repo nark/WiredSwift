@@ -530,9 +530,7 @@ public class TransfersController {
         var sendBytes:UInt64 = 0
         var data = true
         let start:TimeInterval = Date.timeIntervalSinceReferenceDate
-        
-        print("runUpload")
-        
+                
         if transfer.transferConnection == nil {
             transfer.transferConnection = self.transfertConnectionForTransfer(transfer)
         }
@@ -636,15 +634,11 @@ public class TransfersController {
                 if data == false {
                     break
                 }
-                
-                print("dataOffset: \(dataOffset!)")
-                
+                                
                 fileHandle.seek(toFileOffset: dataOffset!)
                 let readData = fileHandle.readData(ofLength: 8192)
                 let readBytes = readData.count
-                
-                print("readBytes: \(readBytes)")
-                
+                                
                 if readBytes <= 0 {
                     if transfer.isTerminating() == false {
                         transfer.state = .Disconnecting
