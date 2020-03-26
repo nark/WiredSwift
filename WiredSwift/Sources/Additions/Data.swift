@@ -9,27 +9,8 @@
 
 import Foundation
 
-extension Numeric {
-    init<D: DataProtocol>(_ data: D) {
-        var value: Self = .zero
-        let size = withUnsafeMutableBytes(of: &value, { data.copyBytes(to: $0)} )
-        assert(size == MemoryLayout.size(ofValue: value))
-        self = value
-    }
-}
 
 extension Data {
-    init<T>(from value: T) {
-        self = Swift.withUnsafeBytes(of: value) { Data($0) }
-    }
-
-    func to<T>(type: T.Type) -> T? where T: ExpressibleByIntegerLiteral {
-        var value: T = 0
-        guard count >= MemoryLayout.size(ofValue: value) else { return nil }
-        _ = Swift.withUnsafeMutableBytes(of: &value, { copyBytes(to: $0)} )
-        return value
-    }
-    
     public func toHex() -> String {
         return self.reduce("") { $0 + String(format: "%02x", $1) }
     }
@@ -89,6 +70,10 @@ extension Data {
     
     var uint32: UInt32 {
         get {
+//            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
+//                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt32.self).pointee
+//                return CFSwapInt32HostToBig(pointer)
+//            })
             let i32array = self.withUnsafeBytes {
                 UnsafeBufferPointer<UInt32>(start: $0, count: self.count/2).map(UInt32.init(littleEndian:))
             }
@@ -105,14 +90,14 @@ extension Data {
         }
     }
     
-//    var double:Double {
-//        get {
-//            let i64array = self.withUnsafeBytes {
-//                UnsafeBufferPointer<Double>(start: UInt64(), count: self.count/2).map(Double.init(bitPattern:))
-//            }
-//            return i64array[0]
-//        }
-//    }
+    var double:Double? {
+        get {
+            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
+                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt64.self).pointee
+                return CFConvertDoubleSwappedToHost(CFSwappedFloat64(v: pointer))
+            })
+        }
+    }
         
     var uuid: NSUUID? {
         get {

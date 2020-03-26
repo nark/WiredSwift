@@ -746,84 +746,87 @@ public class P7Socket: NSObject {
     
 // MARK: -
 private func inflate(_ data: Data) -> Data? {
-    var inData = data
     var outData = Data()
-    
-    print("inflate")
-
-    for var multiple in stride(from: 0, to: 16, by: 2) {
-        print("multiple: \(multiple)")
-        
-        let compression_buffer_length = inData.count * (1 << multiple)
-        
-        print("compression_buffer_length: \(compression_buffer_length)")
-        
-        var subData = Data(capacity: compression_buffer_length)
-                
-        inData.withUnsafeBytes { (inputPointer: UnsafeRawBufferPointer) in
-            self.inflateStream.next_in = UnsafeMutablePointer<Bytef>(mutating: inputPointer.bindMemory(to: Bytef.self).baseAddress!).advanced(by: Int(self.inflateStream.total_in))
-            self.inflateStream.avail_in = uint(inData.count)
-        }
-
-        subData.withUnsafeMutableBytes { (outputPointer: UnsafeMutableRawBufferPointer) in
-            self.inflateStream.next_out = outputPointer.bindMemory(to: Bytef.self).baseAddress!.advanced(by: Int(self.inflateStream.total_out))
-            self.inflateStream.avail_out = uInt(outData.count)
-        }
-        
-        let err = zlib.inflate(&self.inflateStream, Z_FINISH)
-        let enderr = zlib.inflateReset(&self.inflateStream)
-        
-        outData.append(Data(bytes: self.inflateStream.next_out, count: Int(self.inflateStream.avail_out)))
-        
-        print("outData: \(outData.toHex())")
-        
-        if err == Z_STREAM_END && enderr != Z_BUF_ERROR {
-            break
-        }
-    }
+//    var inData = data
+//
+//
+//    print("inflate")
+//
+//    for var multiple in stride(from: 0, to: 16, by: 2) {
+//        print("multiple: \(multiple)")
+//
+//        let compression_buffer_length = inData.count * (1 << multiple)
+//
+//        print("compression_buffer_length: \(compression_buffer_length)")
+//
+//        var subData = Data(capacity: compression_buffer_length)
+//
+//        inData.withUnsafeBytes { (inputPointer: UnsafeRawBufferPointer) in
+//            self.inflateStream.next_in = UnsafeMutablePointer<Bytef>(mutating: inputPointer.bindMemory(to: Bytef.self).baseAddress!).advanced(by: Int(self.inflateStream.total_in))
+//            self.inflateStream.avail_in = uint(inData.count)
+//        }
+//
+//        subData.withUnsafeMutableBytes { (outputPointer: UnsafeMutableRawBufferPointer) in
+//            self.inflateStream.next_out = outputPointer.bindMemory(to: Bytef.self).baseAddress!.advanced(by: Int(self.inflateStream.total_out))
+//            self.inflateStream.avail_out = uInt(outData.count)
+//        }
+//
+//        let err = zlib.inflate(&self.inflateStream, Z_FINISH)
+//        let enderr = zlib.inflateReset(&self.inflateStream)
+//
+//        outData.append(Data(bytes: self.inflateStream.next_out, count: Int(self.inflateStream.avail_out)))
+//
+//        print("outData: \(outData.toHex())")
+//
+//        if err == Z_STREAM_END && enderr != Z_BUF_ERROR {
+//            break
+//        }
+//    }
         
     return outData
 }
     
     private func deflate(_ data: Data) -> Data? {
+        
         var inData = data
         let length = (inData.count * 2) + 16
         var outData = Data(capacity: length)
         
-        var stream = zlib.z_stream()
-                    
-        stream.data_type = Z_UNKNOWN
-        
-        inData.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<Bytef>) in
-            stream.next_in = bytes
-        }
-        stream.avail_in = UInt32(inData.count)
-        
-        outData.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<Bytef>) in
-            stream.next_out = bytes
-        }
-        stream.avail_out = UInt32(outData.count)
-        
-        let err = zlib.deflate(&stream, Z_FINISH)
-        let enderr = zlib.deflateReset(&stream)
-        
-        print("deflate err : \(err)")
-        print("deflate err : \(err)")
-        
-        if (err != Z_STREAM_END) {
-            if (err == Z_OK) {
-                print("Deflate Z_BUF_ERROR")
-            }
-            
-            return nil;
-        }
-        
-        if (enderr != Z_OK) {
-            print("Deflate not Z_OK")
-            return nil;
-        }
-        
-        print("outData : \(outData.toHex())")
+//        
+//        var stream = zlib.z_stream()
+//                    
+//        stream.data_type = Z_UNKNOWN
+//        
+//        inData.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<Bytef>) in
+//            stream.next_in = bytes
+//        }
+//        stream.avail_in = UInt32(inData.count)
+//        
+//        outData.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<Bytef>) in
+//            stream.next_out = bytes
+//        }
+//        stream.avail_out = UInt32(outData.count)
+//        
+//        let err = zlib.deflate(&stream, Z_FINISH)
+//        let enderr = zlib.deflateReset(&stream)
+//        
+//        print("deflate err : \(err)")
+//        print("deflate err : \(err)")
+//        
+//        if (err != Z_STREAM_END) {
+//            if (err == Z_OK) {
+//                print("Deflate Z_BUF_ERROR")
+//            }
+//            
+//            return nil;
+//        }
+//        
+//        if (enderr != Z_OK) {
+//            print("Deflate not Z_OK")
+//            return nil;
+//        }
+//        
+//        print("outData : \(outData.toHex())")
         
         return outData
     }

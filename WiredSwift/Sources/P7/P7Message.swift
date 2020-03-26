@@ -76,9 +76,7 @@ public class P7Message: NSObject {
     }
     
     
-    public func date(forField field: String) -> Date? {
-        print(self.parameters[field])
-        
+    public func date(forField field: String) -> Date? {        
         if let value = self.parameters[field] as? Double {
             print(value)
             return Date(timeIntervalSince1970: value)
@@ -238,10 +236,6 @@ public class P7Message: NSObject {
                                 if let d = value as? Data {
                                     data.append(d)
                                 }
-//                                let str = (value as! String)
-//                                if let d = str.nullTerminated {
-//                                    data.append(d)
-//                                }
                             } else if specField.type == .list { // list (x)
 
                             }
@@ -350,18 +344,16 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .double {
-                            self.addParameter(field: specField.name, value: CFConvertDoubleSwappedToHost(fieldData.withUnsafeBytes { $0.pointee }))
+                            self.addParameter(field: specField.name, value: fieldData.double)
                         }
                         else if specField.type == .string {
-                            if let string = String(bytes: fieldData, encoding: .utf8) {
-                                self.addParameter(field: specField.name, value: string)
-                            }
+                            self.addParameter(field: specField.name, value: String(bytes: fieldData, encoding: .utf8))
                         }
                         else if specField.type == .uuid {
                             
                         }
                         else if specField.type == .date {
-                            self.addParameter(field: specField.name, value: CFConvertDoubleSwappedToHost(fieldData.withUnsafeBytes { $0.pointee }))
+                            self.addParameter(field: specField.name, value: fieldData.double)
                         }
                         else if specField.type == .data {
                             self.addParameter(field: specField.name, value: fieldData)
