@@ -107,7 +107,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
                 ":D":  "😀",
                 "<3":  "❤️",
                 "+1":  "👍"
-            ]
+            ],
+            "WSSelectedFilesViewType": 0,
         ])
         
         UserDefaults.standard.synchronize()

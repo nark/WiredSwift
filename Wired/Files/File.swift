@@ -25,6 +25,7 @@ public class File: ConnectionObject, ConnectionDelegate {
     public var type: FileType!
     public var path: String!
     public var name: String!
+    public var directoryCount:Int = 0
     
     public var dataSize:UInt64 = 0
     public var rsrcSize:UInt64 = 0
@@ -58,6 +59,9 @@ public class File: ConnectionObject, ConnectionDelegate {
         }
         if let s = message.uint64(forField: "wired.file.rsrc_size") {
             self.rsrcSize = s
+        }
+        if let s = message.uint32(forField: "wired.file.directory_count") {
+            self.directoryCount = Int(s)
         }
     }
 

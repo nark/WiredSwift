@@ -27,12 +27,16 @@ class FileCell: NSBrowserCell {
 }
 
 
-class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrowserDelegate {
+class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrowserDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource {
     @IBOutlet weak var browser: NSBrowser!
+    @IBOutlet weak var outlineView: NSOutlineView!
+    
     @IBOutlet weak var progressIndicator: NSProgressIndicator!
     
     var filesController:FilesController!
     var filePreviewController:FilePreviewController!
+    
+    var currentRoot:File!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,6 +44,9 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         browser.setCellClass(FileCell.self)
         browser.target = self
         browser.doubleAction = #selector(doubleClickFile)
+        
+        outlineView.target = self
+        outlineView.doubleAction = #selector(doubleClickFile)
         
         NotificationCenter.default.addObserver(self, selector:  #selector(didLoadDirectory(_:)), name: .didLoadDirectory, object: nil)
     }
@@ -58,25 +65,20 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
                 self.connection.delegates.append(self)
                 
                 self.filesController.load(ofFile: nil)
+                self.currentRoot = self.filesController.rootFile
+                
                 self.progressIndicator.startAnimation(self)
-                self.updateView()
             }
         }
     }
     
-    
-    private func updateView() {        
-        if self.connection != nil {
-            //self.filesController.load(ofFile: nil)
-        }
-    }
-    
+
     
     
     // MARK: -
     @IBAction func reload(_ sender: Any) {
         print("reload")
-        self.filesController.load(ofFile: nil, reload: true)
+        self.filesController.load(ofFile: self.currentRoot, reload: true)
         self.progressIndicator.startAnimation(self)
     }
     
@@ -90,7 +92,9 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         var file = selectedFile()
         
         if file == nil {
-            file = self.filesController.rootFile
+            if UserDefaults.standard.integer(forKey: "WSSelectedFilesViewType") == 0 {
+                file = self.currentRoot
+            }
         }
         
         if file!.isFolder() {
@@ -122,9 +126,20 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         if let file = notification.object as? File {
             let columnIndex = file.path.split(separator: "/").count
             
-            //print("columnIndex : \(columnIndex)")
+            if self.filesController == nil {
+                return
+            }
             
-            browser.reloadColumn(columnIndex)
+            // reload outline
+            if file == self.currentRoot {
+                self.outlineView.reloadData()
+            } else {
+                self.outlineView.reloadItem(file, reloadChildren: true)
+            }
+            
+            // reload browser
+            self.browser.reloadColumn(columnIndex)
+            
             self.progressIndicator.stopAnimation(self)
         }
     }
@@ -132,44 +147,20 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
     
     @objc private func doubleClickFile() {
         if let file = selectedFile() {
-            self.downloadFile(file)
-        }
-    }
-    
-    
-    private func downloadFile(_ file:File) {
-        if !file.isFolder() { // for now
-            if TransfersController.shared.download(file) {
-                AppDelegate.shared.showTransfers(self)
+            if file.isFolder() {
+                self.currentRoot = file
+                
+                self.outlineView.reloadData()
+                self.filesController.load(ofFile: self.currentRoot)
+                
+                self.progressIndicator.startAnimation(self)
+                
+            } else {
+                self.downloadFile(file)
             }
         }
     }
     
-    
-    private func selectedFile() -> File? {
-        var column  = browser.clickedColumn
-        var row     = browser.clickedRow
-        
-        if browser.clickedColumn == -1 {
-            column = browser.selectedColumn
-        }
-        
-        if browser.clickedRow == -1 {
-            row = browser.selectedRow(inColumn: column)
-        }
-
-        print("row : \(row)")
-        print("column : \(column)")
-        
-        if row != -1 && column != -1 {
-            if let clickedItem = browser.item(atRow: row, inColumn: column) {
-                if let file = clickedItem as? File {
-                    return file
-                }
-            }
-        }
-        return nil
-    }
     
     
     
@@ -195,6 +186,82 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         
     }
     
+    
+    // MARK: -
+    
+    func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
+        if self.filesController == nil {
+            return 0
+        }
+        
+        if let file = item as? File {
+            return file.children.count
+        }
+        return self.currentRoot.children.count
+    }
+    
+    func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
+        if let file = item as? File {
+            return file.children[index]
+        }
+        return self.currentRoot.children[index]
+    }
+    
+    
+    func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
+        if let f = item as? File {
+            return f.type != .file
+        }
+        
+        return true
+    }
+    
+    
+    func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
+        var view: NSTableCellView?
+        
+        view = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "FileCell"), owner: self) as? NSTableCellView
+        
+        if let f = item as? File {
+            if tableColumn?.identifier.rawValue == "Name" {
+                view?.textField?.stringValue = f.name
+                
+                if let icon = f.icon() {
+                    icon.size = NSMakeSize(16.0, 16.0)
+                    view?.imageView?.image = icon
+                }
+            }
+            else if tableColumn?.identifier.rawValue == "Size" {
+                view?.textField?.stringValue = f.isFolder() ? "\(f.directoryCount) items" : AppDelegate.byteCountFormatter.string(fromByteCount: Int64(f.dataSize))
+            }
+            else if tableColumn?.identifier.rawValue == "Modified" {
+                view?.textField?.stringValue = ""
+            }
+            else if tableColumn?.identifier.rawValue == "Created" {
+                view?.textField?.stringValue = ""
+            }
+            else if tableColumn?.identifier.rawValue == "Type" {
+                view?.textField?.stringValue = f.fileType()
+            }
+        }
+        
+        return view
+    }
+    
+    
+    func outlineViewItemDidExpand(_ notification: Notification) {
+        if (notification.object as? NSOutlineView) == outlineView {
+            if let file = notification.userInfo?["NSObject"] as? File {
+                if file.isFolder() && file.children.count == 0 {
+                    self.filesController.load(ofFile: file)
+                    self.progressIndicator.startAnimation(self)
+                }
+            }
+        }
+    }
+    
+    
+    
     // MARK: -
 
     func browser(_ browser: NSBrowser, selectionIndexesForProposedSelection proposedSelectionIndexes: IndexSet, inColumn column: Int) -> IndexSet {
@@ -214,14 +281,14 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         if let file = item as? File {
             return file.children.count
         }
-        return self.filesController.rootFile.children.count
+        return self.currentRoot.children.count
     }
     
     func browser(_ browser: NSBrowser, child index: Int, ofItem item: Any?) -> Any {
         if let file = item as? File {
             return file.children[index]
         }
-        return self.filesController.rootFile.children[index]
+        return self.currentRoot.children[index]
     }
     
     
@@ -265,6 +332,10 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
     }
     
     
+    
+    // MARK: - Private
+    
+    
     private func updatePreview(forFile file:File?) {
         if let f = file {
             if let icon = f.icon() {
@@ -302,5 +373,55 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         let numberString = numberFormatter.string(from: NSNumber(value: bytes / pow(k, i))) ?? "Unknown"
         let suffix = suffixes[Int(i)]
         return "\(numberString) \(suffix)"
+    }
+    
+    
+    private func downloadFile(_ file:File) {
+        if !file.isFolder() { // for now
+            if TransfersController.shared.download(file) {
+                AppDelegate.shared.showTransfers(self)
+            }
+        }
+    }
+    
+    
+    private func selectedFile() -> File? {
+        var column  = browser.clickedColumn
+        var row     = browser.clickedRow
+        
+        if UserDefaults.standard.integer(forKey: "WSSelectedFilesViewType") == 0 {
+            if outlineView.clickedRow != -1 {
+                row = outlineView.clickedRow
+            }
+            
+            if outlineView.selectedRow != -1 {
+                row = outlineView.selectedRow
+            }
+            
+            if row != -1 {
+                return outlineView.item(atRow: row) as? File
+            }
+            
+        } else if UserDefaults.standard.integer(forKey: "WSSelectedFilesViewType") == 1 {
+            if browser.clickedColumn == -1 {
+                column = browser.selectedColumn
+            }
+            
+            if browser.clickedRow == -1 {
+                row = browser.selectedRow(inColumn: column)
+            }
+
+            print("row : \(row)")
+            print("column : \(column)")
+            
+            if row != -1 && column != -1 {
+                if let clickedItem = browser.item(atRow: row, inColumn: column) {
+                    if let file = clickedItem as? File {
+                        return file
+                    }
+                }
+            }
+        }
+        return nil
     }
 }
