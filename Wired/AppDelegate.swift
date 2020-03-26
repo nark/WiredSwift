@@ -53,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     static let options: UNAuthorizationOptions = [.alert, .sound, .badge]
     
     static let dateTimeFormatter = DateFormatter()
+    static let timeIntervalFormatter = DateComponentsFormatter()
     static let byteCountFormatter = ByteCountFormatter()
     
     
@@ -124,6 +125,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         
         AppDelegate.dateTimeFormatter.dateStyle = .medium
         AppDelegate.dateTimeFormatter.timeStyle = .medium
+        
+        AppDelegate.timeIntervalFormatter.unitsStyle = .abbreviated
+        AppDelegate.timeIntervalFormatter.allowedUnits = [ .day, .hour, .minute, .second ]
+        AppDelegate.timeIntervalFormatter.zeroFormattingBehavior = [ .pad ]
+        
     }
     
     // MARK: - Application Delegate

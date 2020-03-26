@@ -45,14 +45,20 @@ class InfosViewController: ConnectionViewController, ConnectionDelegate {
         if self.connection != nil {
             self.serverNameLabel.stringValue = self.connection.serverInfo.serverName
             self.serverDescriptionLabel.stringValue = self.connection.serverInfo.serverDescription
+            self.versionLabel.stringValue = "\(self.connection.serverInfo.applicationName!) \(self.connection.serverInfo.applicationVersion!) on \(self.connection.serverInfo.osName!) \(self.connection.serverInfo.osVersion!) (\(self.connection.serverInfo.arch!))"
             
-            self.protocolLabel.stringValue = "\(self.connection.serverInfo.applicationName!) \(self.connection.serverInfo.applicationVersion!)"
+            self.protocolLabel.stringValue = "\(self.connection.socket.remoteName!) \(self.connection.socket.remoteVersion!)"
             self.cipherLabel.stringValue = "\(P7Socket.CipherType.pretty(self.connection.socket.cipherType))"
+            self.urlLabel.stringValue = "wiredp7://\(self.connection.url.hostname):\(self.connection.url.port)"
+            self.compressionLabel.stringValue = "Unsupported (yet)"
             
             let image = NSImage(data: self.connection.serverInfo.serverBanner)
             self.bannerImage.image = image
             
-            self.uptimeLabel.stringValue = self.connection.serverInfo.startTime.debugDescription
+            if let string = AppDelegate.timeIntervalFormatter.string(from: Date().timeIntervalSince(self.connection.serverInfo.startTime)) {
+                self.uptimeLabel.stringValue = string
+            }
+            
             self.filesLabel.stringValue = "\(self.connection.serverInfo!.filesCount!)"
             self.sizeLabel.stringValue = AppDelegate.byteCountFormatter.string(fromByteCount: Int64(self.connection.serverInfo.filesSize))
         }

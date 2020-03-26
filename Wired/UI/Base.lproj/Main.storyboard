@@ -1150,7 +1150,7 @@ Gw
                                             <tableColumns>
                                                 <tableColumn width="197" minWidth="16" maxWidth="1000" id="ck4-pO-pAI">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="label" size="11"/>
+                                                        <font key="font" metaFont="message" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1550,7 +1550,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="197" minWidth="40" maxWidth="1000" id="xZK-LE-vZz">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="label" size="11"/>
+                                                        <font key="font" metaFont="message" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1578,7 +1578,7 @@ DQ
                                                                         <constraint firstAttribute="height" constant="17" id="mKN-7a-YO1"/>
                                                                     </constraints>
                                                                     <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" id="mHW-Fv-d6x">
-                                                                        <font key="font" metaFont="label" size="11"/>
+                                                                        <font key="font" metaFont="message" size="11"/>
                                                                         <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
@@ -1707,7 +1707,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="197" minWidth="40" maxWidth="1000" id="eA5-Ow-sef">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="label" size="11"/>
+                                                        <font key="font" metaFont="message" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -1850,7 +1850,7 @@ DQ
                                                                 <tableColumns>
                                                                     <tableColumn identifier="Name" width="278" minWidth="40" maxWidth="1000" id="Mg2-fR-d7U">
                                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Name">
-                                                                            <font key="font" metaFont="label" size="11"/>
+                                                                            <font key="font" metaFont="message" size="11"/>
                                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                                         </tableHeaderCell>
@@ -1901,7 +1901,7 @@ DQ
                                                                     </tableColumn>
                                                                     <tableColumn identifier="Size" width="89" minWidth="40" maxWidth="1000" id="GE5-Es-iY2">
                                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Size">
-                                                                            <font key="font" metaFont="label" size="11"/>
+                                                                            <font key="font" metaFont="message" size="11"/>
                                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                                         </tableHeaderCell>
@@ -1940,7 +1940,7 @@ DQ
                                                                     </tableColumn>
                                                                     <tableColumn identifier="Modified" width="125" minWidth="10" maxWidth="3.4028234663852886e+38" id="XQh-Z7-cIl">
                                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Modification Date">
-                                                                            <font key="font" metaFont="label" size="11"/>
+                                                                            <font key="font" metaFont="message" size="11"/>
                                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                         </tableHeaderCell>
@@ -1980,7 +1980,7 @@ DQ
                                                                     </tableColumn>
                                                                     <tableColumn identifier="Created" width="126" minWidth="10" maxWidth="3.4028234663852886e+38" id="E40-mr-Le1">
                                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Creation Date">
-                                                                            <font key="font" metaFont="label" size="11"/>
+                                                                            <font key="font" metaFont="message" size="11"/>
                                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                         </tableHeaderCell>
@@ -2020,7 +2020,7 @@ DQ
                                                                     </tableColumn>
                                                                     <tableColumn identifier="Type" width="140" minWidth="10" maxWidth="3.4028234663852886e+38" id="l8z-mf-XMz">
                                                                         <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Type">
-                                                                            <font key="font" metaFont="label" size="11"/>
+                                                                            <font key="font" metaFont="message" size="11"/>
                                                                             <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                         </tableHeaderCell>
@@ -2258,26 +2258,26 @@ DQ
                                 <rect key="frame" x="20" y="20" width="410" height="289"/>
                                 <subviews>
                                     <gridView xPlacement="leading" yPlacement="bottom" rowAlignment="none" translatesAutoresizingMaskIntoConstraints="NO" id="TqV-YI-oTP">
-                                        <rect key="frame" x="67" y="77" width="276" height="192"/>
+                                        <rect key="frame" x="4" y="77" width="402" height="192"/>
                                         <rows>
                                             <gridRow yPlacement="top" id="0pV-Qu-SvC"/>
                                             <gridRow id="aMW-f7-2ng"/>
                                             <gridRow id="WBo-VU-Ad5"/>
                                             <gridRow id="uGH-hF-RIV"/>
                                             <gridRow id="4oa-UQ-yBR"/>
-                                            <gridRow id="OTt-If-CFx"/>
+                                            <gridRow yPlacement="top" id="OTt-If-CFx"/>
                                             <gridRow id="xWF-ch-dhc"/>
                                             <gridRow id="tXe-fE-hAl"/>
                                             <gridRow id="ael-x4-sfG"/>
                                         </rows>
                                         <columns>
-                                            <gridColumn xPlacement="trailing" width="86" id="9o1-Tx-B3D"/>
-                                            <gridColumn width="184" id="yAS-Jb-yyK"/>
+                                            <gridColumn xPlacement="trailing" width="149" id="9o1-Tx-B3D"/>
+                                            <gridColumn width="247" id="yAS-Jb-yyK"/>
                                         </columns>
                                         <gridCells>
                                             <gridCell row="0pV-Qu-SvC" column="9o1-Tx-B3D" id="OsC-4Y-r8f">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="bsM-jI-N63">
-                                                    <rect key="frame" x="9" y="176" width="79" height="16"/>
+                                                    <rect key="frame" x="72" y="176" width="79" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Description" id="Dxk-bu-rgK">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2287,7 +2287,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="0pV-Qu-SvC" column="yAS-Jb-yyK" id="jdF-M1-hd5">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="r16-6V-XKP">
-                                                    <rect key="frame" x="90" y="176" width="17" height="16"/>
+                                                    <rect key="frame" x="153" y="176" width="17" height="16"/>
                                                     <textFieldCell key="cell" title="--" id="rbj-0M-JTA">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2297,7 +2297,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="aMW-f7-2ng" column="9o1-Tx-B3D" id="R70-Q6-8TK">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="kBW-Zw-a3y">
-                                                    <rect key="frame" x="37" y="154" width="51" height="16"/>
+                                                    <rect key="frame" x="100" y="154" width="51" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Uptime" id="ekj-hu-P1o">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2307,7 +2307,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="aMW-f7-2ng" column="yAS-Jb-yyK" id="lqf-uE-G6o">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="rdO-Ey-MV2">
-                                                    <rect key="frame" x="90" y="154" width="17" height="16"/>
+                                                    <rect key="frame" x="153" y="154" width="17" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="CCv-dJ-1yl">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2317,7 +2317,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="WBo-VU-Ad5" column="9o1-Tx-B3D" id="R06-ye-6AG">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="A0c-4X-cde">
-                                                    <rect key="frame" x="57" y="132" width="31" height="16"/>
+                                                    <rect key="frame" x="120" y="132" width="31" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="URL" id="xEL-2j-1Xy">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2327,8 +2327,8 @@ DQ
                                             </gridCell>
                                             <gridCell row="WBo-VU-Ad5" column="yAS-Jb-yyK" id="6Ji-bc-vzu">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PGT-zM-vvh">
-                                                    <rect key="frame" x="90" y="132" width="17" height="16"/>
-                                                    <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="9E2-9f-FTy">
+                                                    <rect key="frame" x="153" y="132" width="17" height="16"/>
+                                                    <textFieldCell key="cell" title="--" id="9E2-9f-FTy">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -2337,7 +2337,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="uGH-hF-RIV" column="9o1-Tx-B3D" id="cT4-ta-20D">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="hAn-sx-gGO">
-                                                    <rect key="frame" x="53" y="110" width="35" height="16"/>
+                                                    <rect key="frame" x="116" y="110" width="35" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Files" id="4tX-tk-I9K">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2347,7 +2347,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="uGH-hF-RIV" column="yAS-Jb-yyK" id="93L-Rb-oAR">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jhp-9k-nQG">
-                                                    <rect key="frame" x="90" y="110" width="17" height="16"/>
+                                                    <rect key="frame" x="153" y="110" width="17" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="yyY-sa-dn0">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2357,7 +2357,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="4oa-UQ-yBR" column="9o1-Tx-B3D" id="pZX-UO-Gel">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DhK-Og-zMG">
-                                                    <rect key="frame" x="56" y="88" width="32" height="16"/>
+                                                    <rect key="frame" x="119" y="88" width="32" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Size" id="OdX-60-MXh">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2367,7 +2367,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="4oa-UQ-yBR" column="yAS-Jb-yyK" id="UB6-e8-gbY">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="CxC-Ab-hGN">
-                                                    <rect key="frame" x="90" y="88" width="17" height="16"/>
+                                                    <rect key="frame" x="153" y="88" width="17" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="G0b-a5-0EK">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2377,7 +2377,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="OTt-If-CFx" column="9o1-Tx-B3D" id="Frt-3l-XLg">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="DCO-49-RwZ">
-                                                    <rect key="frame" x="35" y="66" width="53" height="16"/>
+                                                    <rect key="frame" x="98" y="66" width="53" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Version" id="GD0-hb-LaT">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2387,8 +2387,8 @@ DQ
                                             </gridCell>
                                             <gridCell row="OTt-If-CFx" column="yAS-Jb-yyK" id="UFm-DT-dAb">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="TN8-k6-Yze">
-                                                    <rect key="frame" x="90" y="66" width="17" height="16"/>
-                                                    <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="x0p-cW-09V">
+                                                    <rect key="frame" x="153" y="66" width="17" height="16"/>
+                                                    <textFieldCell key="cell" title="--" id="x0p-cW-09V">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -2397,7 +2397,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="xWF-ch-dhc" column="9o1-Tx-B3D" id="Qcp-Dl-9uI">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zjc-VV-Wos">
-                                                    <rect key="frame" x="29" y="44" width="59" height="16"/>
+                                                    <rect key="frame" x="92" y="44" width="59" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Protocol" id="dWY-sb-eqJ">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2407,7 +2407,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="xWF-ch-dhc" column="yAS-Jb-yyK" id="8Dy-Xj-RdQ">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PjS-mK-oHR">
-                                                    <rect key="frame" x="90" y="44" width="17" height="16"/>
+                                                    <rect key="frame" x="153" y="44" width="17" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="UyS-cC-vSK">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2417,7 +2417,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="tXe-fE-hAl" column="9o1-Tx-B3D" id="lUa-jb-KfE">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nzi-TI-xId">
-                                                    <rect key="frame" x="40" y="22" width="48" height="16"/>
+                                                    <rect key="frame" x="103" y="22" width="48" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Cipher" id="QDg-jO-Kjb">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2427,7 +2427,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="tXe-fE-hAl" column="yAS-Jb-yyK" id="hJx-GJ-47h">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="9cp-7f-VfZ">
-                                                    <rect key="frame" x="90" y="22" width="17" height="16"/>
+                                                    <rect key="frame" x="153" y="22" width="17" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="Zt3-Uq-Ha4">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2437,7 +2437,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="ael-x4-sfG" column="9o1-Tx-B3D" id="RKi-Sr-zBx">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="2Qx-ys-iLZ">
-                                                    <rect key="frame" x="-2" y="0.0" width="90" height="16"/>
+                                                    <rect key="frame" x="61" y="0.0" width="90" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="Compression" id="tdG-Zc-1Fw">
                                                         <font key="font" metaFont="systemBold"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2447,7 +2447,7 @@ DQ
                                             </gridCell>
                                             <gridCell row="ael-x4-sfG" column="yAS-Jb-yyK" id="MDT-NO-A2u">
                                                 <textField key="contentView" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XKh-j2-ZY7">
-                                                    <rect key="frame" x="90" y="0.0" width="17" height="16"/>
+                                                    <rect key="frame" x="153" y="0.0" width="17" height="16"/>
                                                     <textFieldCell key="cell" lineBreakMode="clipping" title="--" id="zm7-KT-0bz">
                                                         <font key="font" usesAppearanceFont="YES"/>
                                                         <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -2535,7 +2535,7 @@ DQ
                                             <tableColumns>
                                                 <tableColumn width="789" minWidth="40" maxWidth="10000" id="hcD-Cb-GI0">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
-                                                        <font key="font" metaFont="label" size="11"/>
+                                                        <font key="font" metaFont="message" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog"/>
                                                     </tableHeaderCell>
@@ -2581,7 +2581,7 @@ DQ
                                                                         <constraint firstAttribute="height" constant="18" id="b0G-Uw-0yQ"/>
                                                                     </constraints>
                                                                     <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Transfer infos" id="7Jf-7z-cek">
-                                                                        <font key="font" metaFont="label" size="11"/>
+                                                                        <font key="font" metaFont="message" size="11"/>
                                                                         <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
