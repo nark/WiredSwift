@@ -59,34 +59,30 @@ extension Data {
         }
     }
     
-    var uint16: UInt16 {
+    var uint16: UInt16? {
         get {
-            let i16array = self.withUnsafeBytes {
-                UnsafeBufferPointer<UInt16>(start: $0, count: self.count/2).map(UInt16.init(littleEndian:))
-            }
-            return i16array[0]
+            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
+                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt16.self).pointee
+                return CFSwapInt16HostToBig(pointer)
+            })
         }
     }
     
-    var uint32: UInt32 {
+    var uint32: UInt32? {
         get {
-//            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
-//                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt32.self).pointee
-//                return CFSwapInt32HostToBig(pointer)
-//            })
-            let i32array = self.withUnsafeBytes {
-                UnsafeBufferPointer<UInt32>(start: $0, count: self.count/2).map(UInt32.init(littleEndian:))
-            }
-            return i32array[0]
+            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
+                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt32.self).pointee
+                return CFSwapInt32HostToBig(pointer)
+            })
         }
     }
     
-    var uint64: UInt64 {
+    var uint64: UInt64? {
         get {
-            let i64array = self.withUnsafeBytes {
-                UnsafeBufferPointer<UInt64>(start: $0, count: self.count/2).map(UInt64.init(bigEndian:))
-            }
-            return i64array[0]
+            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
+                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt64.self).pointee
+                return CFSwapInt64HostToBig(pointer)
+            })
         }
     }
     

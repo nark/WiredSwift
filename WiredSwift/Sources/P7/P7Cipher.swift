@@ -50,7 +50,7 @@ public class P7Cipher {
     public func decrypt(data: Data) -> Data? {
         do {
             let aes = try AES(key: Array(self.cipherKey.data(using: .utf8)!), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
-            var dataArray = Array(data)
+            let dataArray = Array(data)
             let decryptedData = try aes.decrypt(dataArray)
             
             return Data(decryptedData)

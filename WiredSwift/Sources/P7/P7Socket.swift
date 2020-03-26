@@ -265,7 +265,14 @@ public class P7Socket: NSObject {
             }
             else if self.serialization == .BINARY {
                 if bytesRead >= 4 {
-                    let messageLength = Data(lengthBuffer).uint32.bigEndian
+                    guard let messageLength = Data(lengthBuffer).uint32 else {
+                        error = WiredError(withTitle: "Read Error", message: "Cannot read message length")
+                        
+                        Logger.error(error!)
+                        self.errors.append(error!)
+                        
+                        return nil
+                    }
                     
                     do {
                         messageData = try self.readData(size: Int(messageLength))
@@ -401,7 +408,11 @@ public class P7Socket: NSObject {
         let bytesRead = self.read(&lengthBuffer, maxLength: 4, timeout: timeout)
         
         if bytesRead >= 4 {
-            let messageLength = Data(lengthBuffer).uint32.bigEndian
+            guard let messageLength = Data(lengthBuffer).uint32 else {
+                Logger.error("Cannot read message length")
+                return nil
+            }
+            
             messageData = try! self.readData(size: Int(messageLength))
             
             // data to message object
@@ -746,7 +757,7 @@ public class P7Socket: NSObject {
     
 // MARK: -
 private func inflate(_ data: Data) -> Data? {
-    var outData = Data()
+//    var outData = Data()
 //    var inData = data
 //
 //
@@ -782,17 +793,18 @@ private func inflate(_ data: Data) -> Data? {
 //            break
 //        }
 //    }
-        
-    return outData
+//
+//    return outData
+    return data
 }
     
     private func deflate(_ data: Data) -> Data? {
         
-        var inData = data
-        let length = (inData.count * 2) + 16
-        var outData = Data(capacity: length)
-        
-//        
+//        var inData = data
+//        let length = (inData.count * 2) + 16
+//        var outData = Data(capacity: length)
+//
+//
 //        var stream = zlib.z_stream()
 //                    
 //        stream.data_type = Z_UNKNOWN
@@ -827,8 +839,9 @@ private func inflate(_ data: Data) -> Data? {
 //        }
 //        
 //        print("outData : \(outData.toHex())")
-        
-        return outData
+//
+//        return outData
+        return data
     }
     
 }

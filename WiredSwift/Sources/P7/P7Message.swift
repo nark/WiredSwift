@@ -292,9 +292,14 @@ public class P7Message: NSObject {
         
         offset += 4
                 
-        self.id = String(messageIDData.uint32.bigEndian)
+        if let v = messageIDData.uint32 {
+            self.id = String(v)
+        } else {
+            Logger.error("ERROR : Cannot read message ID")
+            return
+        }
         
-        if let specMessage = spec.messagesByID[Int(messageIDData.uint32.bigEndian)] {
+        if let specMessage = spec.messagesByID[Int(messageIDData.uint32!)] {
             self.name = specMessage.name!
             self.specMessage = specMessage
             
@@ -303,7 +308,13 @@ public class P7Message: NSObject {
             
             while offset < data.count {
                 fieldIDData = data.subdata(in: offset..<offset+4)
-                fieldID = Int(fieldIDData.uint32.bigEndian)
+                
+                if let v = fieldIDData.uint32 {
+                    fieldID = Int(v)
+                } else {
+                    Logger.error("ERROR : Cannot read field ID")
+                    return
+                }
                 
                 offset += 4
                 
@@ -315,7 +326,7 @@ public class P7Message: NSObject {
                     // read length if needed
                     if specField.type == .string || specField.type == .data || specField.type == .list {
                         let fieldLengthData = data.subdata(in: offset..<offset+4)
-                        fieldLength = Int(fieldLengthData.uint32.bigEndian)
+                        fieldLength = Int(fieldLengthData.uint32!)
                         offset += 4
                     } else {
                         fieldLength = SpecType.size(forType: specField.type)
@@ -332,13 +343,13 @@ public class P7Message: NSObject {
                             // self.addParameter(field: specField.name, value: fieldData.uint32.bigEndian)
                         }
                         else if specField.type == .int32 {
-                            self.addParameter(field: specField.name, value: fieldData.uint32.bigEndian)
+                            self.addParameter(field: specField.name, value: fieldData.uint32)
                         }
                         else if specField.type == .uint32 {
-                            self.addParameter(field: specField.name, value: fieldData.uint32.bigEndian)
+                            self.addParameter(field: specField.name, value: fieldData.uint32)
                         }
                         else if specField.type == .int64 {
-                            self.addParameter(field: specField.name, value: fieldData.uint64.bigEndian)
+                            self.addParameter(field: specField.name, value: fieldData.uint64)
                         }
                         else if specField.type == .uint64 {
                             self.addParameter(field: specField.name, value: fieldData)
