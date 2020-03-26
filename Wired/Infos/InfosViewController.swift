@@ -11,11 +11,16 @@ import Cocoa
 class InfosViewController: ConnectionViewController, ConnectionDelegate {
     
     @IBOutlet weak var bannerImage: NSImageView!
-    @IBOutlet weak var serverName: NSTextField!
-
+    @IBOutlet weak var serverNameLabel: NSTextField!
+    @IBOutlet weak var serverDescriptionLabel: NSTextField!
+    @IBOutlet weak var uptimeLabel: NSTextField!
+    @IBOutlet weak var urlLabel: NSTextField!
+    @IBOutlet weak var filesLabel: NSTextField!
+    @IBOutlet weak var sizeLabel: NSTextField!
+    @IBOutlet weak var versionLabel: NSTextField!
     @IBOutlet weak var protocolLabel: NSTextField!
     @IBOutlet weak var cipherLabel: NSTextField!
-    
+    @IBOutlet weak var compressionLabel: NSTextField!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,13 +43,18 @@ class InfosViewController: ConnectionViewController, ConnectionDelegate {
     
     private func updateView() {
         if self.connection != nil {
-            self.serverName.stringValue = self.connection.serverInfo.serverName
+            self.serverNameLabel.stringValue = self.connection.serverInfo.serverName
+            self.serverDescriptionLabel.stringValue = self.connection.serverInfo.serverDescription
             
             self.protocolLabel.stringValue = "\(self.connection.serverInfo.applicationName!) \(self.connection.serverInfo.applicationVersion!)"
             self.cipherLabel.stringValue = "\(P7Socket.CipherType.pretty(self.connection.socket.cipherType))"
             
             let image = NSImage(data: self.connection.serverInfo.serverBanner)
             self.bannerImage.image = image
+            
+            self.uptimeLabel.stringValue = self.connection.serverInfo.startTime.debugDescription
+            self.filesLabel.stringValue = "\(self.connection.serverInfo!.filesCount!)"
+            self.sizeLabel.stringValue = AppDelegate.byteCountFormatter.string(fromByteCount: Int64(self.connection.serverInfo.filesSize))
         }
     }
     

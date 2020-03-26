@@ -23,6 +23,10 @@ public class ServerInfo {
     public var serverDescription: String!
     public var serverBanner: Data!
     
+    public var startTime:Date!
+    public var filesCount:UInt64!
+    public var filesSize:UInt64!
+    
     private var message: P7Message!
     
     public init(message: P7Message) {
@@ -66,6 +70,18 @@ public class ServerInfo {
         
         if let v = message.data(forField: "wired.info.banner") {
             self.serverBanner = v
+        }
+        
+        if let v = message.date(forField: "wired.info.start_time") {
+            self.startTime = v
+        }
+        
+        if let v = message.uint64(forField: "wired.info.files.count") {
+            self.filesCount = v
+        }
+        
+        if let v = message.uint64(forField: "wired.info.files.size") {
+            self.filesSize = v
         }
     }
 }

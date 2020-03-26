@@ -76,6 +76,17 @@ public class P7Message: NSObject {
     }
     
     
+    public func date(forField field: String) -> Date? {
+        print(self.parameters[field])
+        
+        if let value = self.parameters[field] as? Double {
+            print(value)
+            return Date(timeIntervalSince1970: value)
+        }
+        return nil
+    }
+    
+    
     public func bool(forField field: String) -> Bool? {
         if let value = self.parameters[field] as? UInt8 {
             return value == 1 ? true : false
@@ -339,7 +350,7 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .double {
-                            
+                            self.addParameter(field: specField.name, value: CFConvertDoubleSwappedToHost(fieldData.withUnsafeBytes { $0.pointee }))
                         }
                         else if specField.type == .string {
                             if let string = String(bytes: fieldData, encoding: .utf8) {
@@ -350,7 +361,7 @@ public class P7Message: NSObject {
                             
                         }
                         else if specField.type == .date {
-                            
+                            self.addParameter(field: specField.name, value: CFConvertDoubleSwappedToHost(fieldData.withUnsafeBytes { $0.pointee }))
                         }
                         else if specField.type == .data {
                             self.addParameter(field: specField.name, value: fieldData)
