@@ -119,6 +119,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
         AppDelegate.byteCountFormatter.allowedUnits = [.useMB]
         AppDelegate.byteCountFormatter.countStyle = .file
+        AppDelegate.byteCountFormatter.zeroPadsFractionDigits = true
+        
         AppDelegate.dateTimeFormatter.dateStyle = .medium
         AppDelegate.dateTimeFormatter.timeStyle = .medium
     }

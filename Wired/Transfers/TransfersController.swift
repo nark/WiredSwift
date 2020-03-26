@@ -51,13 +51,17 @@ public class TransfersController {
     
     @objc func linkConnectionWillDisconnect(_ n:Notification) {
         if let connection = n.object as? Connection {
+            print("linkConnectionWillDisconnect")
             for transfer in self.transfers() {
                 if transfer.connection == connection && transfer.isWorking() {
                     transfer.state = .Disconnecting
-                                        
-                    try? AppDelegate.shared.persistentContainer.viewContext.save()
-                    NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
+                                                            
+                    DispatchQueue.main.async {
+                        try? AppDelegate.shared.persistentContainer.viewContext.save()
+                        NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
+                    }
                 }
+            
             }
         }
     }
@@ -120,6 +124,7 @@ public class TransfersController {
         transfer.file = file
         transfer.remotePath = file.path!
         transfer.localPath = self.defaultDownloadDestination(forPath: transfer.remotePath!)
+        transfer.size = Int64(file.dataSize)
         transfer.startDate = Date()
         
         try? AppDelegate.shared.persistentContainer.viewContext.save()
@@ -200,7 +205,7 @@ public class TransfersController {
             transfer.transferConnection?.disconnect()
             transfer.state = .Stopped
             
-        } else {
+        } else if transfer.state != .Disconnecting {
             transfer.transferConnection?.disconnect()
             transfer.state = .Finished
         }

@@ -20,6 +20,7 @@ public class Transfer: NSManagedObject {
     public var error:String = ""
     
     public func transferStatus() -> String {
+        
         let typeString = self is DownloadTransfer ? "Download" : "Upload"
         let speedString = AppDelegate.byteCountFormatter.string(fromByteCount: Int64(speed.rounded()))
         let sizeString = AppDelegate.byteCountFormatter.string(fromByteCount: dataTransferred)
