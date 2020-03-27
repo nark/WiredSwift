@@ -1715,25 +1715,24 @@ DQ
         <scene sceneID="p2u-Fl-FTG">
             <objects>
                 <viewController id="V04-tT-TcO" customClass="ThreadsViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" id="V7b-jy-jpN">
-                        <rect key="frame" x="0.0" y="0.0" width="200" height="323"/>
+                    <view key="view" misplaced="YES" id="V7b-jy-jpN">
+                        <rect key="frame" x="0.0" y="0.0" width="250" height="323"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView borderType="none" autohidesScrollers="YES" horizontalLineScroll="32" horizontalPageScroll="10" verticalLineScroll="32" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fwt-D6-SHJ">
-                                <rect key="frame" x="0.0" y="0.0" width="200" height="323"/>
+                                <rect key="frame" x="0.0" y="0.0" width="250" height="323"/>
                                 <clipView key="contentView" id="5rY-XF-UwS">
-                                    <rect key="frame" x="0.0" y="0.0" width="200" height="323"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="250" height="323"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" columnSelection="YES" multipleSelection="NO" autosaveColumns="NO" rowHeight="30" rowSizeStyle="automatic" usesAutomaticRowHeights="YES" viewBased="YES" id="MKg-Hi-SEx">
-                                            <rect key="frame" x="0.0" y="0.0" width="200" height="323"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="250" height="323"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                            <tableViewGridLines key="gridStyleMask" dashed="YES"/>
                                             <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                             <tableColumns>
-                                                <tableColumn width="197" minWidth="40" maxWidth="1000" id="eTT-Kx-0kR">
+                                                <tableColumn width="247" minWidth="40" maxWidth="1000" id="eTT-Kx-0kR">
                                                     <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
                                                         <font key="font" metaFont="message" size="11"/>
                                                         <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
@@ -1746,12 +1745,15 @@ DQ
                                                     </textFieldCell>
                                                     <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" userResizable="YES"/>
                                                     <prototypeCellViews>
-                                                        <tableCellView identifier="ThreadCell" id="QLS-hD-MSq" customClass="ThreadCellView" customModule="Wired" customModuleProvider="target">
-                                                            <rect key="frame" x="1" y="1" width="197" height="59"/>
+                                                        <tableCellView identifier="ThreadCell" misplaced="YES" id="QLS-hD-MSq" customClass="ThreadCellView" customModule="Wired" customModuleProvider="target">
+                                                            <rect key="frame" x="1" y="1" width="247" height="59"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="HFE-Tz-8td">
-                                                                    <rect key="frame" x="1" y="23" width="195" height="16"/>
+                                                                    <rect key="frame" x="1" y="23" width="244" height="16"/>
+                                                                    <constraints>
+                                                                        <constraint firstAttribute="width" relation="lessThanOrEqual" constant="240" id="ObQ-RY-QLJ"/>
+                                                                    </constraints>
                                                                     <textFieldCell key="cell" title="Subject" id="KeS-sC-R9g">
                                                                         <font key="font" metaFont="systemSemibold" size="13"/>
                                                                         <color key="textColor" name="systemBlueColor" catalog="System" colorSpace="catalog"/>
@@ -1759,7 +1761,7 @@ DQ
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="AFw-6a-fik">
-                                                                    <rect key="frame" x="1" y="42" width="195" height="14"/>
+                                                                    <rect key="frame" x="1" y="42" width="244" height="14"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" constant="14" id="DMu-W2-928"/>
                                                                     </constraints>
@@ -1781,7 +1783,7 @@ DQ
                                                                     </textFieldCell>
                                                                 </textField>
                                                                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="3v5-0F-T18">
-                                                                    <rect key="frame" x="146" y="3" width="50" height="14"/>
+                                                                    <rect key="frame" x="195" y="3" width="50" height="14"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="height" constant="14" id="ZeJ-qZ-jTE"/>
                                                                     </constraints>
@@ -1824,8 +1826,7 @@ DQ
                                     </subviews>
                                 </clipView>
                                 <constraints>
-                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="200" id="7sd-e1-8kE"/>
-                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="300" id="US9-yA-iul"/>
+                                    <constraint firstAttribute="width" constant="250" id="7sd-e1-8kE"/>
                                 </constraints>
                                 <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="dpv-cT-rPE">
                                     <rect key="frame" x="1" y="256" width="178" height="16"/>
