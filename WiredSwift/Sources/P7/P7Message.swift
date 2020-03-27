@@ -23,8 +23,19 @@ public class P7Message: NSObject {
     public var name: String!
     public var spec: P7Spec!
     public var specMessage: SpecMessage!
+    public var size:Int = 0
     
     private var parameters: [String:Any] = [:]
+    public var numberOfParameters:Int {
+        get {
+            return self.parameters.count
+        }
+    }
+    public var parameterKeys:[String] {
+        get {
+            return Array(self.parameters.keys)
+        }
+    }
     
     
     public init(withName name: String, spec: P7Spec) {
@@ -50,6 +61,7 @@ public class P7Message: NSObject {
         super.init()
         
         self.spec = spec
+        self.size = data.count
         
         self.loadBinaryMessage(data)
     }
@@ -57,6 +69,41 @@ public class P7Message: NSObject {
     
     public func addParameter(field: String, value: Any?) {
         self.parameters[field] = value
+    }
+    
+    
+    public func lazy(field: String) -> String? {
+        let value = self.parameters[field]
+        
+        if spec.fieldsByName[field]?.type == .string {
+            if let string = value as? String {
+                return string
+            }
+        }
+        else if spec.fieldsByName[field]?.type == .int32 ||
+                spec.fieldsByName[field]?.type == .uint32 {
+            if let val = value as? UInt32 {
+                return String(val)
+            }
+        }
+        else if spec.fieldsByName[field]?.type == .int64 ||
+                spec.fieldsByName[field]?.type == .uint64 {
+            if let val = value as? UInt64 {
+                return String(val)
+            }
+        }
+        else if spec.fieldsByName[field]?.type == .data {
+            if let val = value as? Data {
+                return val.toHex()
+            }
+        }
+        else if spec.fieldsByName[field]?.type == .oobdata {
+            if let val = value as? Data {
+                return val.toHex()
+            }
+        }
+        // TODO: complete all types
+        return nil
     }
     
     
@@ -171,7 +218,7 @@ public class P7Message: NSObject {
     
     public func bin() -> Data {
         var data = Data()
-        
+                
         // append message ID
         if let messageID = UInt32(self.id) {
             data.append(uint32: messageID, bigEndian: true)
@@ -222,10 +269,7 @@ public class P7Message: NSObject {
                                     data.append(d)
                                 }
                             } else if specField.type == .date { // date (8)
-                                let str = (value as! String)
-                                if let d = str.data(using: .utf8) {
-                                    data.append(d)
-                                }
+
                             } else if specField.type == .data { // data (x)
                                 if let d = value as? Data {
                                     let l = UInt32(d.count)
@@ -244,6 +288,9 @@ public class P7Message: NSObject {
                 }
             }
         }
+        
+        self.size = data.count
+        
         return data
     }
     

@@ -21,6 +21,8 @@ class ConnectionsController {
     var connections:[ServerConnection] = []
     var usersControllers:[UsersController] = []
     var filesControllers:[FilesController] = []
+    var boardsControllers:[BoardsController] = []
+    
     
     private init() {
 
@@ -202,4 +204,21 @@ class ConnectionsController {
     }
     
     
+    public func boardsController(forConnection connection:ServerConnection) -> BoardsController {
+           var boardsController:BoardsController? = nil
+           
+           let exists = boardsControllers.contains { (fc) -> Bool in
+               if fc.connection == connection {
+                   boardsController = fc
+               }
+               return fc.connection == connection
+           }
+           
+           if !exists {
+               boardsController = BoardsController(connection)
+               boardsControllers.append(boardsController!)
+           }
+           
+           return boardsController!
+       }
 }

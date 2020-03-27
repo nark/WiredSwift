@@ -79,6 +79,16 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
         
         self.window?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
         
+//        #if DEBUG
+//            //
+//        #else
+//            if let ti = self.toolbarItem(withIdentifier: "Console") {
+//                if let index = self.window?.toolbar?.items.index(of: ti) {
+//                    self.window?.toolbar?.removeItem(at: index)
+//                }
+//            }
+//        #endif
+        
         self.perform(#selector(showConnectSheet), with: nil, afterDelay: 0.2)
     }
 
@@ -273,7 +283,15 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                             conversationsViewController.representedObject = self.connection
                         }
                     }
+                    else if let boardsSplitViewController = item.viewController as? BoardsSplitViewController {
+                        if let boardsViewController = boardsSplitViewController.splitViewItems[0].viewController as? BoardsViewController {
+                            boardsViewController.representedObject = self.connection
+                        }
+                    }
                     else if let connectionController = item.viewController as? FilesViewController {
+                        connectionController.representedObject = self.connection
+                    }
+                    else if let connectionController = item.viewController as? ConsoleViewController {
                         connectionController.representedObject = self.connection
                     }
                 }

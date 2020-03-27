@@ -76,6 +76,11 @@
 		4CA4154524262D8A005B9048 /* UsersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4154424262D8A005B9048 /* UsersController.swift */; };
 		4CA41547242664EE005B9048 /* ConversationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA41546242664EE005B9048 /* ConversationsViewController.swift */; };
 		4CA415492426651D005B9048 /* PrivateMessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */; };
+		4CB6A105242E4C4D00AB4C89 /* BoardsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A104242E4C4D00AB4C89 /* BoardsViewController.swift */; };
+		4CB6A107242E4CA300AB4C89 /* Board.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A106242E4CA300AB4C89 /* Board.swift */; };
+		4CB6A109242E4CF300AB4C89 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A108242E4CF300AB4C89 /* Thread.swift */; };
+		4CB6A10B242E4FBE00AB4C89 /* BoardsSplitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */; };
+		4CB6A10D242E503A00AB4C89 /* BoardsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A10C242E503A00AB4C89 /* BoardsController.swift */; };
 		4CD0205122DF04BD0008B36C /* Wired.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0204F22DF04BD0008B36C /* Wired.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0205422DF04BD0008B36C /* WiredSwfit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; };
 		4CD0205522DF04BD0008B36C /* WiredSwfit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -263,6 +268,11 @@
 		4CA4154424262D8A005B9048 /* UsersController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersController.swift; sourceTree = "<group>"; };
 		4CA41546242664EE005B9048 /* ConversationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsViewController.swift; sourceTree = "<group>"; };
 		4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateMessagesViewController.swift; sourceTree = "<group>"; };
+		4CB6A104242E4C4D00AB4C89 /* BoardsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsViewController.swift; sourceTree = "<group>"; };
+		4CB6A106242E4CA300AB4C89 /* Board.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Board.swift; sourceTree = "<group>"; };
+		4CB6A108242E4CF300AB4C89 /* Thread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thread.swift; sourceTree = "<group>"; };
+		4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsSplitViewController.swift; sourceTree = "<group>"; };
+		4CB6A10C242E503A00AB4C89 /* BoardsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsController.swift; sourceTree = "<group>"; };
 		4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WiredSwfit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4CD0204F22DF04BD0008B36C /* Wired.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Wired.h; sourceTree = "<group>"; };
 		4CD0205022DF04BD0008B36C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -334,6 +344,11 @@
 		4C374D9923FDD6A9006D3E7C /* Boards */ = {
 			isa = PBXGroup;
 			children = (
+				4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */,
+				4CB6A104242E4C4D00AB4C89 /* BoardsViewController.swift */,
+				4CB6A10C242E503A00AB4C89 /* BoardsController.swift */,
+				4CB6A106242E4CA300AB4C89 /* Board.swift */,
+				4CB6A108242E4CF300AB4C89 /* Thread.swift */,
 			);
 			path = Boards;
 			sourceTree = "<group>";
@@ -801,6 +816,7 @@
 			files = (
 				4C374DAB23FED0D8006D3E7C /* TransferConnection.swift in Sources */,
 				4C0A99F623FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift in Sources */,
+				4CB6A10B242E4FBE00AB4C89 /* BoardsSplitViewController.swift in Sources */,
 				4CFA18D5230C741800E2A2EC /* UserInfo.swift in Sources */,
 				4CFA18C5230B085D00E2A2EC /* String.swift in Sources */,
 				4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */,
@@ -818,6 +834,7 @@
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */,
 				4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */,
+				4CB6A109242E4CF300AB4C89 /* Thread.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UsersViewController.swift in Sources */,
 				4C4EF4BB242B602100E38B44 /* ServerConnection.swift in Sources */,
@@ -830,6 +847,7 @@
 				4CD30DD92426979D008AA7FF /* ConversationCellView.swift in Sources */,
 				4CA415492426651D005B9048 /* PrivateMessagesViewController.swift in Sources */,
 				4C36AEF82401CB6300AEC18E /* Transfer+CoreDataClass.swift in Sources */,
+				4CB6A10D242E503A00AB4C89 /* BoardsController.swift in Sources */,
 				4C5C1D242426812E00A751AA /* Message+CoreDataClass.swift in Sources */,
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
 				4C52DADB242682920085C7D7 /* ConversationsController.swift in Sources */,
@@ -861,7 +879,9 @@
 				4CA4153D24262277005B9048 /* ConversationViewController.swift in Sources */,
 				4CA4154324262483005B9048 /* ChatMessage.swift in Sources */,
 				4C2000962421588C00A4D77A /* WiredError.swift in Sources */,
+				4CB6A107242E4CA300AB4C89 /* Board.swift in Sources */,
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
+				4CB6A105242E4C4D00AB4C89 /* BoardsViewController.swift in Sources */,
 				4C74286222DCECE800D6E6F9 /* AppDelegate.swift in Sources */,
 				4C36AF012401CE4300AEC18E /* DownloadTransfer+CoreDataProperties.swift in Sources */,
 				4C12FE8924045ABA000CDDCA /* FilePreviewController.swift in Sources */,
@@ -1022,6 +1042,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -1032,9 +1053,9 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
-				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_INCLUDE_PATHS = "";
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -1059,7 +1080,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-3";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-Debug";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.2;
@@ -1086,7 +1107,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-3";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.2;
@@ -1119,7 +1140,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.WiredSwift";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
@@ -1156,7 +1177,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.WiredSwift";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;

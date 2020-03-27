@@ -24,8 +24,14 @@ public protocol ConnectionDelegate: class {
     func connectionDidFailToConnect(connection: Connection, error: Error)
     func connectionDisconnected(connection: Connection, error: Error?)
     
+    func connectionDidSendMessage(connection: Connection, message: P7Message)
     func connectionDidReceiveMessage(connection: Connection, message: P7Message)
     func connectionDidReceiveError(connection: Connection, message: P7Message)
+}
+
+public extension ConnectionDelegate {
+    // optional delegate methods
+    func connectionDidSendMessage(connection: Connection, message: P7Message) { }
 }
 
 
@@ -139,7 +145,15 @@ public class Connection: NSObject {
     
     public func send(message:P7Message) -> Bool {
         if self.socket.connected {
-            return self.socket.write(message)
+            let r = self.socket.write(message)
+            
+            DispatchQueue.main.async {
+                for d in self.delegates {
+                    d.connectionDidSendMessage(connection: self, message: message)
+                }
+            }
+            
+            return r
         }
         return false
     }

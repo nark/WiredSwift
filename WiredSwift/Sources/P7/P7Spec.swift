@@ -353,7 +353,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
         if let p = path {
             self.loadFile(path: p)
         } else {
-            if let p = Bundle(identifier: "fr.read-write.Wired")!.path(forResource: "wired", ofType: "xml") {
+            if let p = Bundle(identifier: "fr.read-write.WiredSwift")!.path(forResource: "wired", ofType: "xml") {
                 self.loadFile(path: p)
             }
         }

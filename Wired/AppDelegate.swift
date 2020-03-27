@@ -95,7 +95,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     override init() {
-        Logger.removeDestination(.Stdout)
+        #if DEBUG
+            Logger.setMaxLevel(.VERBOSE)
+        #else
+            Logger.setMaxLevel(.ERROR)
+            Logger.removeDestination(.Stdout)
+        #endif
         
         let downloadsDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
         
