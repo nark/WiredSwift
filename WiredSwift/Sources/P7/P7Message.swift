@@ -264,9 +264,12 @@ public class P7Message: NSObject {
                                     }
                                 }
                             } else if specField.type == .uuid { // uuid (16)
-                                let str = (value as! String)
-                                if let d = str.nullTerminated {
-                                    data.append(d)
+                                if let str = value as? String {
+                                    var buffer:Array<UInt8> = Array<UInt8>()
+                                    if let uuid = NSUUID(uuidString: str) {
+                                        uuid.getBytes(&buffer)
+                                        data.append(Data(bytes: &buffer, count: 16))
+                                    }
                                 }
                             } else if specField.type == .date { // date (8)
 
@@ -408,7 +411,7 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: String(bytes: fieldData, encoding: .utf8))
                         }
                         else if specField.type == .uuid {
-                            
+                            self.addParameter(field: specField.name, value: NSUUID(uuidBytes: fieldData.bytes).uuidString)
                         }
                         else if specField.type == .date {
                             self.addParameter(field: specField.name, value: fieldData.double)

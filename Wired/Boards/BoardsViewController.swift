@@ -98,6 +98,7 @@ class BoardsViewController: ConnectionViewController, NSOutlineViewDataSource, N
         
         if selectedRow == -1 {
             self.threadsViewsController.board = nil
+            
         } else {
             if let board = self.boardsOutlineView.item(atRow: selectedRow) as? Board {
                 self.threadsViewsController.board = board

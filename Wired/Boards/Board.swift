@@ -16,7 +16,9 @@ public class Board: ConnectionObject {
     public var writable:Bool!
     
     public var boards:[Board]   = []
+    
     public var threads:[Thread] = []
+    public var threadsByUUID:[String:Thread] = [:]
     
     init(_ message: P7Message, connection: ServerConnection) {
         super.init(connection)
@@ -37,5 +39,10 @@ public class Board: ConnectionObject {
     
     public var hasParent:Bool {
         return self.path.split(separator: "/").count > 1
+    }
+    
+    public func addThread(_ thread:Thread) {
+        self.threads.append(thread)
+        self.threadsByUUID[thread.uuid] = thread
     }
 }

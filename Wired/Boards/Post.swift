@@ -8,29 +8,29 @@
 
 import Cocoa
 
-public class Thread: ConnectionObject {
+public class Post: ConnectionObject {
     public var uuid:String!
-    public var subject:String!
+    public var text:String!
     public var nick:String!
-    public var replies:Int!
     public var postDate:Date!
     public var editDate:Date!
-    public var lastReplyDate:Date!
+    public var icon:NSImage!
     
     public var board:Board!
-    public var posts:[Post] = []
+    public var thread:Thread!
     
-    init(_ message: P7Message, board: Board, connection: ServerConnection) {
+    init(_ message: P7Message, board: Board, thread:Thread, connection: ServerConnection) {
         super.init(connection)
         
-        self.board = board
+        self.board  = board
+        self.thread = thread
         
         if let p = message.string(forField: "wired.board.thread") {
             self.uuid = p
         }
         
-        if let p = message.string(forField: "wired.board.subject") {
-            self.subject = p
+        if let p = message.string(forField: "wired.board.text") {
+            self.text = p
         }
         
         if let p = message.string(forField: "wired.user.nick") {
@@ -44,14 +44,5 @@ public class Thread: ConnectionObject {
         if let p = message.date(forField: "wired.board.edit_date") {
             self.editDate = p
         }
-        
-        if let p = message.date(forField: "wired.board.latest_reply_date") {
-            self.lastReplyDate = p
-        }
-        
-        if let p = message.uint32(forField: "wired.board.replies") {
-            self.replies = Int(p)
-        }
-
     }
 }

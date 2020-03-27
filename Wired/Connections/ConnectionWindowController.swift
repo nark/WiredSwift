@@ -291,7 +291,13 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                                 if let threadsViewController = threadsSplitViewController.splitViewItems[0].viewController as? ThreadsViewController {
                                     boardsViewController.threadsViewsController = threadsViewController
                                     threadsViewController.representedObject = self.connection
+                                    
+                                    if let postsViewController = threadsSplitViewController.splitViewItems[1].viewController as? PostsViewController {
+                                        threadsViewController.postsViewController = postsViewController
+                                        postsViewController.representedObject = self.connection
+                                    }
                                 }
+                                
                             }
                         }
                     }

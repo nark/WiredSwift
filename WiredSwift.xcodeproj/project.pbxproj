@@ -32,6 +32,9 @@
 		4C20009B2421661C00A4D77A /* FilesPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */; };
 		4C20DD82242E95F4009F64E6 /* ThreadsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD81242E95F4009F64E6 /* ThreadsViewController.swift */; };
 		4C20DD85242EA026009F64E6 /* ThreadCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD84242EA026009F64E6 /* ThreadCellView.swift */; };
+		4C20DD89242EA8C4009F64E6 /* PostCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD88242EA8C4009F64E6 /* PostCellView.swift */; };
+		4C20DD8B242EA98D009F64E6 /* Post.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD8A242EA98D009F64E6 /* Post.swift */; };
+		4C20DD8E242EABDA009F64E6 /* PostsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD8C242EABDA009F64E6 /* PostsViewController.swift */; };
 		4C36AEF82401CB6300AEC18E /* Transfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */; };
 		4C36AEF92401CB6300AEC18E /* Transfer+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */; };
 		4C36AEFE2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */; };
@@ -226,6 +229,9 @@
 		4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferenceViewController.swift; sourceTree = "<group>"; };
 		4C20DD81242E95F4009F64E6 /* ThreadsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadsViewController.swift; sourceTree = "<group>"; };
 		4C20DD84242EA026009F64E6 /* ThreadCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadCellView.swift; sourceTree = "<group>"; };
+		4C20DD88242EA8C4009F64E6 /* PostCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCellView.swift; sourceTree = "<group>"; };
+		4C20DD8A242EA98D009F64E6 /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
+		4C20DD8C242EABDA009F64E6 /* PostsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostsViewController.swift; sourceTree = "<group>"; };
 		4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UploadTransfer+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -351,10 +357,13 @@
 				4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */,
 				4CB6A104242E4C4D00AB4C89 /* BoardsViewController.swift */,
 				4C20DD81242E95F4009F64E6 /* ThreadsViewController.swift */,
+				4C20DD8C242EABDA009F64E6 /* PostsViewController.swift */,
 				4CB6A10C242E503A00AB4C89 /* BoardsController.swift */,
 				4CB6A106242E4CA300AB4C89 /* Board.swift */,
 				4CB6A108242E4CF300AB4C89 /* Thread.swift */,
+				4C20DD8A242EA98D009F64E6 /* Post.swift */,
 				4C20DD84242EA026009F64E6 /* ThreadCellView.swift */,
+				4C20DD88242EA8C4009F64E6 /* PostCellView.swift */,
 			);
 			path = Boards;
 			sourceTree = "<group>";
@@ -826,12 +835,14 @@
 				4CFA18D5230C741800E2A2EC /* UserInfo.swift in Sources */,
 				4CFA18C5230B085D00E2A2EC /* String.swift in Sources */,
 				4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */,
+				4C20DD8B242EA98D009F64E6 /* Post.swift in Sources */,
 				4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
 				4CA4153B24262238005B9048 /* GrowingTextField.swift in Sources */,
 				4CEF0AB623FDD4DD0097E37E /* File.swift in Sources */,
 				4C5C1D232426812E00A751AA /* Conversation+CoreDataProperties.swift in Sources */,
 				4CA4154524262D8A005B9048 /* UsersController.swift in Sources */,
 				4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
+				4C20DD89242EA8C4009F64E6 /* PostCellView.swift in Sources */,
 				4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */,
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */,
@@ -862,6 +873,7 @@
 				4CFA18C8230B359300E2A2EC /* ChatViewController.swift in Sources */,
 				4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */,
 				4C8829E824254A0B00B4EF36 /* TabViewController.swift in Sources */,
+				4C20DD8E242EABDA009F64E6 /* PostsViewController.swift in Sources */,
 				4CFB162323FC9883000EE688 /* ConnectionWindowController.swift in Sources */,
 				4C6A89E82405613A00780FEF /* FileManager+ResourceFork.swift in Sources */,
 				4CFA18CB230B389B00E2A2EC /* ConnectionViewController.swift in Sources */,

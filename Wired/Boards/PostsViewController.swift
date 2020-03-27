@@ -1,5 +1,5 @@
 //
-//  ThreadsViewController.swift
+//  PostsViewController.swift
 //  Wired
 //
 //  Created by Rafael Warnault on 27/03/2020.
@@ -8,10 +8,8 @@
 
 import Cocoa
 
-class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTableViewDataSource {
-    @IBOutlet weak var threadsTableView: NSTableView!
-    
-    public var postsViewController:PostsViewController!
+class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTableViewDataSource {
+    @IBOutlet weak var postsTableView: NSTableView!
     
     var boardsController:BoardsController!
     
@@ -19,8 +17,8 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
         super.viewDidLoad()
         
         NotificationCenter.default.addObserver(
-            self, selector: #selector(didLoadThreads(_:)),
-            name: .didLoadThreads, object: nil)
+            self, selector: #selector(didLoadPosts(_:)),
+            name: .didLoadPosts, object: nil)
     }
     
     
@@ -35,23 +33,32 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
         }
     }
     
-    
     public var board: Board? {
         didSet {
             if self.connection != nil && self.connection.isConnected() {
-                if let b = self.board {
-                    self.boardsController.loadThreads(forBoard: b)
+
+            }
+        }
+    }
+    
+    public var thread: Thread? {
+        didSet {
+            if self.connection != nil && self.connection.isConnected() {
+                if let t = self.thread {
+                    self.boardsController.loadPosts(forThread: t)
                 }
             }
         }
     }
     
     
+    
+    
     // MARK: -
     
-    @objc func didLoadThreads(_ n:Notification) {
+    @objc func didLoadPosts(_ n:Notification) {
         if n.object as? ServerConnection == self.connection {
-            self.threadsTableView.reloadData()
+            self.postsTableView.reloadData()
         }
     }
     
@@ -75,18 +82,4 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
         return view
     }
     
-    func tableViewSelectionDidChange(_ notification: Notification) {
-        let selectedRow = self.threadsTableView.selectedRow
-        
-        if selectedRow == -1 {
-            self.postsViewController.board = nil
-            self.postsViewController.thread = nil
-            
-        } else {
-            if let thread = self.board?.threads[selectedRow] {
-                self.postsViewController.board = self.board
-                self.postsViewController.thread = thread
-            }
-        }
-    }
 }

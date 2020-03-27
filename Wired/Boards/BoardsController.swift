@@ -11,6 +11,7 @@ import Cocoa
 extension Notification.Name {
     static let didLoadBoards = Notification.Name("didLoadBoards")
     static let didLoadThreads = Notification.Name("didLoadThreads")
+    static let didLoadPosts = Notification.Name("didLoadPosts")
 }
 
 public class BoardsController: ConnectionObject, ConnectionDelegate {
@@ -37,6 +38,16 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
         message.addParameter(field: "wired.board.board", value: board.path)
         
         board.threads = []
+        
+        _ = self.connection.send(message: message)
+        
+    }
+    
+    public func loadPosts(forThread thread: Thread) {
+        let message = P7Message(withName: "wired.board.get_thread", spec: self.connection.spec)
+        message.addParameter(field: "wired.board.thread", value: thread.uuid)
+        
+        thread.posts = []
         
         _ = self.connection.send(message: message)
         
@@ -84,16 +95,35 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
             else if message.name == "wired.board.board_list.done" {
                 NotificationCenter.default.post(name: .didLoadBoards, object: connection)
             }
+                
+                
             else if message.name == "wired.board.thread_list" {
                 if let path = message.string(forField: "wired.board.board") {
                     if let board = self.boardsByPath[path] {
                         let thread = Thread(message, board: board, connection: connection as! ServerConnection)
-                        print(thread)
-                        board.threads.append(thread)
+                        board.addThread(thread)
                     }
                 }
             }
             else if message.name == "wired.board.thread_list.done" {
+                NotificationCenter.default.post(name: .didLoadThreads, object: connection)
+            }
+            
+            
+            else if message.name == "wired.board.post_list" {
+                if let path = message.string(forField: "wired.board.board") {
+                    if let board = self.boardsByPath[path] {
+                        if let uuid = message.string(forField: "wired.board.thread") {
+                            if let thread = board.threadsByUUID[uuid] {
+                                let post = Post(message, board: board, thread: thread, connection: connection as! ServerConnection)
+                                print(post)
+                                thread.posts.append(post)
+                            }
+                        }
+                    }
+                }
+            }
+            else if message.name == "wired.board.post_list.done" {
                 NotificationCenter.default.post(name: .didLoadThreads, object: connection)
             }
         }
