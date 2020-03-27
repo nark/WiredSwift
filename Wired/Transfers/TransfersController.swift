@@ -205,7 +205,7 @@ public class TransfersController {
             transfer.transferConnection?.disconnect()
             transfer.state = .Stopped
             
-        } else if transfer.state != .Disconnecting {
+        } else {
             transfer.transferConnection?.disconnect()
             transfer.state = .Finished
         }

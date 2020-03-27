@@ -55,7 +55,7 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
     }
     
     private func chatInputDidEndEditing() {
-        if self.chatInput.stringValue.count > 3 {
+        if self.chatInput.stringValue.count >= 2 {
             if textDidEndEditingTimer != nil {
                 textDidEndEditingTimer.invalidate()
                 textDidEndEditingTimer = nil
@@ -180,14 +180,14 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
     
     private func updateView() {
         self.chatInput.isEnabled = false
-        self.sendButton.isEnabled = false
+        //self.sendButton.isEnabled = false
         self.emojiButton.isEnabled = false
                 
         if let conversation = self.conversation {
             print("conversation.connection : \(conversation.connection)")
             if conversation.connection != nil && conversation.connection.isConnected() {
                 self.chatInput.isEnabled = true
-                self.sendButton.isEnabled = true
+                //self.sendButton.isEnabled = true
                 self.emojiButton.isEnabled = true
                 
                 self.chatInput.becomeFirstResponder()

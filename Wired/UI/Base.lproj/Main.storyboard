@@ -743,24 +743,10 @@
                         <rect key="contentRect" x="425" y="461" width="993" height="645"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
                         <value key="minSize" type="size" width="993" height="645"/>
-                        <toolbar key="toolbar" implicitIdentifier="CB50EB68-BDC9-4A64-90DA-36864638877E" centeredItem="AjG-gm-8Ar" autosavesConfiguration="NO" displayMode="iconAndLabel" sizeMode="regular" id="Q5a-NN-a2T">
+                        <toolbar key="toolbar" implicitIdentifier="CB50EB68-BDC9-4A64-90DA-36864638877E" centeredItem="AjG-gm-8Ar" autosavesConfiguration="NO" allowsUserCustomization="NO" displayMode="iconAndLabel" sizeMode="regular" id="Q5a-NN-a2T">
                             <allowedToolbarItems>
                                 <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="dU2-ic-Uox"/>
                                 <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="uMC-yy-L4e"/>
-                                <toolbarItem implicitItemIdentifier="E22F1E8A-C2B2-49E8-9BC7-9C4F1317C132" label="Views" paletteLabel="Views" sizingBehavior="auto" autovalidates="NO" id="tYU-Uy-e01">
-                                    <nil key="toolTip"/>
-                                    <segmentedControl key="view" verticalHuggingPriority="750" id="NnC-Fa-gaO">
-                                        <rect key="frame" x="0.0" y="14" width="76" height="24"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                        <segmentedCell key="cell" borderStyle="border" alignment="left" style="texturedRounded" trackingMode="selectAny" id="jNX-Dh-3hd">
-                                            <font key="font" metaFont="system"/>
-                                            <segments>
-                                                <segment image="LeftViewNavigator" width="34"/>
-                                                <segment image="RightViewNavigator" width="34" tag="1"/>
-                                            </segments>
-                                        </segmentedCell>
-                                    </segmentedControl>
-                                </toolbarItem>
                                 <toolbarItem implicitItemIdentifier="67781D84-9FE1-4AE5-9273-62E5BD15558F" explicitItemIdentifier="Chat" label="Chat" paletteLabel="Chat" tag="1" image="Chat" autovalidates="NO" selectable="YES" id="K6F-ha-z0b">
                                     <size key="minSize" width="25" height="25"/>
                                     <size key="maxSize" width="25" height="25"/>
@@ -817,9 +803,32 @@
                                         <action selector="disconnect:" target="OHh-vB-dxB" id="a17-t4-1JJ"/>
                                     </connections>
                                 </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="9B1A0F4C-A8FD-45A6-ABE4-C9C5E9299D44" label="Sidebar" paletteLabel="Sidebar" image="Sidebar" id="9fw-vf-86y">
+                                    <nil key="toolTip"/>
+                                    <size key="minSize" width="50" height="32"/>
+                                    <size key="maxSize" width="50" height="32"/>
+                                    <button key="view" verticalHuggingPriority="750" id="p1e-Ao-w7F">
+                                        <rect key="frame" x="0.0" y="14" width="50" height="32"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        <buttonCell key="cell" type="push" bezelStyle="rounded" image="Sidebar" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Vt2-pl-yM3">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                    </button>
+                                    <connections>
+                                        <action selector="viewsAction:" target="d0o-cM-yCw" id="IAp-wg-i0E"/>
+                                    </connections>
+                                </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="55C78142-21EC-43F1-A223-18DEB9B6D9DE" explicitItemIdentifier="Console" label="Console" paletteLabel="Console" tag="-1" image="Console" selectable="YES" id="55p-N9-86O">
+                                    <size key="minSize" width="25" height="25"/>
+                                    <size key="maxSize" width="25" height="25"/>
+                                    <connections>
+                                        <action selector="tabAction:" target="OHh-vB-dxB" id="2B3-g3-0hb"/>
+                                    </connections>
+                                </toolbarItem>
                             </allowedToolbarItems>
                             <defaultToolbarItems>
-                                <toolbarItem reference="tYU-Uy-e01"/>
+                                <toolbarItem reference="9fw-vf-86y"/>
                                 <toolbarItem reference="uMC-yy-L4e"/>
                                 <toolbarItem reference="K6F-ha-z0b"/>
                                 <toolbarItem reference="M1G-Pj-0lu"/>
@@ -828,6 +837,7 @@
                                 <toolbarItem reference="lRd-va-gQ2"/>
                                 <toolbarItem reference="3NR-k4-78A"/>
                                 <toolbarItem reference="CQS-cC-sWB"/>
+                                <toolbarItem reference="55p-N9-86O"/>
                                 <toolbarItem reference="uMC-yy-L4e"/>
                                 <toolbarItem reference="sW9-GA-9AV"/>
                             </defaultToolbarItems>
@@ -1102,6 +1112,7 @@ Gw
                         <tabViewItem label="Transfers" identifier="Transfers" image="Transfers" id="nAk-3H-O3d"/>
                         <tabViewItem label="Infos" identifier="Infos" image="ServerInfo" id="kwh-Mn-xwa"/>
                         <tabViewItem label="Settings" identifier="Settings" image="Settings" id="1eI-F4-NAf"/>
+                        <tabViewItem label="Console" identifier="Console" image="Console" id="xLx-FS-YhX" userLabel="Console"/>
                     </tabViewItems>
                     <tabView key="tabView" type="noTabsNoBorder" id="XZ1-2T-hae">
                         <rect key="frame" x="0.0" y="0.0" width="450" height="300"/>
@@ -1120,6 +1131,7 @@ Gw
                         <segue destination="r5t-wK-RQX" kind="relationship" relationship="tabItems" id="2Uy-7l-We9"/>
                         <segue destination="xaP-SN-ZI5" kind="relationship" relationship="tabItems" id="Itu-0c-y00"/>
                         <segue destination="tIF-Fn-L6g" kind="relationship" relationship="tabItems" id="XjP-Em-EIH"/>
+                        <segue destination="hK2-qu-Hir" kind="relationship" relationship="tabItems" id="I6R-xn-KHl"/>
                     </connections>
                 </tabViewController>
                 <customObject id="kVp-V6-wQ8" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -1424,21 +1436,8 @@ DQ
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="fKm-KP-7Xn">
                                 <rect key="frame" x="0.0" y="0.0" width="699" height="49"/>
                                 <subviews>
-                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="rrA-Wv-0tc">
-                                        <rect key="frame" x="614" y="7" width="71" height="33"/>
-                                        <buttonCell key="cell" type="push" title="Send" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="s24-fV-788">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                            <string key="keyEquivalent" base64-UTF8="YES">
-DQ
-</string>
-                                        </buttonCell>
-                                        <connections>
-                                            <action selector="chatAction:" target="xE7-fu-zmd" id="dSL-RC-P3c"/>
-                                        </connections>
-                                    </button>
                                     <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="OAh-Hn-WpC">
-                                        <rect key="frame" x="20" y="14" width="560" height="22"/>
+                                        <rect key="frame" x="20" y="14" width="626" height="22"/>
                                         <textFieldCell key="cell" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" focusRingType="none" placeholderString="Type message here" bezelStyle="round" id="EXA-4v-fXz">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -1450,10 +1449,10 @@ DQ
                                         </connections>
                                     </textField>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="npg-ZJ-hvi">
-                                        <rect key="frame" x="588" y="14" width="25" height="23"/>
+                                        <rect key="frame" x="654" y="14" width="25" height="23"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="25" id="8d9-Jp-SkU"/>
-                                            <constraint firstAttribute="height" constant="23" id="tjA-WT-olO"/>
+                                            <constraint firstAttribute="width" constant="25" id="A6g-K4-4LP"/>
+                                            <constraint firstAttribute="height" constant="23" id="Wr7-zZ-Z9q"/>
                                         </constraints>
                                         <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="Smileys" imagePosition="only" alignment="center" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyDown" inset="2" id="XBh-8B-dds">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
@@ -1465,15 +1464,12 @@ DQ
                                     </button>
                                 </subviews>
                                 <constraints>
-                                    <constraint firstItem="npg-ZJ-hvi" firstAttribute="bottom" secondItem="rrA-Wv-0tc" secondAttribute="bottom" id="5mQ-uS-nGR"/>
-                                    <constraint firstItem="rrA-Wv-0tc" firstAttribute="centerY" secondItem="OAh-Hn-WpC" secondAttribute="centerY" id="890-DZ-zwm"/>
-                                    <constraint firstItem="rrA-Wv-0tc" firstAttribute="top" secondItem="fKm-KP-7Xn" secondAttribute="top" constant="13" id="AAg-eQ-2lF"/>
-                                    <constraint firstItem="npg-ZJ-hvi" firstAttribute="leading" secondItem="OAh-Hn-WpC" secondAttribute="trailing" constant="8" id="Egt-5Z-NtY"/>
+                                    <constraint firstAttribute="trailing" secondItem="npg-ZJ-hvi" secondAttribute="trailing" constant="20" id="48w-p5-rTj"/>
+                                    <constraint firstItem="npg-ZJ-hvi" firstAttribute="leading" secondItem="OAh-Hn-WpC" secondAttribute="trailing" constant="8" id="A3l-35-ol1"/>
                                     <constraint firstAttribute="bottom" secondItem="OAh-Hn-WpC" secondAttribute="bottom" constant="14" id="Obl-NB-Soz"/>
                                     <constraint firstItem="OAh-Hn-WpC" firstAttribute="top" secondItem="fKm-KP-7Xn" secondAttribute="top" constant="13" id="U8r-Hb-KHL"/>
                                     <constraint firstItem="OAh-Hn-WpC" firstAttribute="leading" secondItem="fKm-KP-7Xn" secondAttribute="leading" constant="20" id="VH8-lX-TNA"/>
-                                    <constraint firstItem="rrA-Wv-0tc" firstAttribute="leading" secondItem="npg-ZJ-hvi" secondAttribute="trailing" constant="7" id="YOT-6q-SXy"/>
-                                    <constraint firstAttribute="trailing" secondItem="rrA-Wv-0tc" secondAttribute="trailing" constant="20" id="lVx-Ag-xhd"/>
+                                    <constraint firstItem="npg-ZJ-hvi" firstAttribute="top" secondItem="fKm-KP-7Xn" secondAttribute="top" constant="12" id="fII-Fk-OQ2"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
@@ -1821,7 +1817,7 @@ DQ
         <scene sceneID="Dt2-7e-tz6">
             <objects>
                 <viewController title="Files" id="DVd-lO-xhs" customClass="FilesViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" misplaced="YES" id="OSO-On-1Mx">
+                    <view key="view" id="OSO-On-1Mx">
                         <rect key="frame" x="0.0" y="0.0" width="734" height="407"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
@@ -2142,6 +2138,9 @@ DQ
                                         <segment image="NSGoForwardTemplate" width="26" tag="1"/>
                                     </segments>
                                 </segmentedCell>
+                                <connections>
+                                    <action selector="historyAction:" target="DVd-lO-xhs" id="lbE-3v-1Rx"/>
+                                </connections>
                             </segmentedControl>
                             <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="XqN-UA-GMH">
                                 <rect key="frame" x="710" y="383" width="16" height="16"/>
@@ -2214,14 +2213,67 @@ DQ
                     </view>
                     <connections>
                         <outlet property="browser" destination="5HJ-0Z-562" id="afP-1b-x9C"/>
+                        <outlet property="downloadButton" destination="wHf-Em-XQT" id="bLh-17-rcJ"/>
+                        <outlet property="historySegmentedControl" destination="XWy-0H-ftr" id="WID-32-gIx"/>
                         <outlet property="outlineView" destination="pW3-nD-4lX" id="88c-VW-qlG"/>
                         <outlet property="progressIndicator" destination="XqN-UA-GMH" id="Kzn-1d-u0K"/>
+                        <outlet property="uploadButton" destination="Ppj-gb-nqm" id="ZBd-Y0-yDp"/>
                     </connections>
                 </viewController>
                 <customObject id="o03-yp-VX5" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
                 <userDefaultsController representsSharedInstance="YES" id="48z-bu-opE"/>
             </objects>
-            <point key="canvasLocation" x="3395" y="398"/>
+            <point key="canvasLocation" x="3853" y="495"/>
+        </scene>
+        <!--Console View Controller-->
+        <scene sceneID="Jc2-kA-EOW">
+            <objects>
+                <viewController id="hK2-qu-Hir" customClass="ConsoleViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" id="EEY-n1-gsr">
+                        <rect key="frame" x="0.0" y="0.0" width="744" height="458"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                        <subviews>
+                            <scrollView borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hq3-0b-36g">
+                                <rect key="frame" x="0.0" y="0.0" width="744" height="425"/>
+                                <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="Mrn-Sr-lJ4">
+                                    <rect key="frame" x="0.0" y="0.0" width="744" height="425"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <textView editable="NO" importsGraphics="NO" richText="NO" verticallyResizable="YES" findStyle="bar" allowsCharacterPickerTouchBarItem="NO" textCompletion="NO" id="g63-mj-AmI">
+                                            <rect key="frame" x="0.0" y="0.0" width="744" height="425"/>
+                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                            <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                            <size key="minSize" width="744" height="425"/>
+                                            <size key="maxSize" width="744" height="10000000"/>
+                                            <color key="insertionPointColor" name="textColor" catalog="System" colorSpace="catalog"/>
+                                        </textView>
+                                    </subviews>
+                                </clipView>
+                                <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="1Ii-Cr-4Ut">
+                                    <rect key="frame" x="-100" y="-100" width="240" height="16"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </scroller>
+                                <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="8bx-QH-ONO">
+                                    <rect key="frame" x="728" y="0.0" width="16" height="425"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </scroller>
+                            </scrollView>
+                        </subviews>
+                        <constraints>
+                            <constraint firstItem="hq3-0b-36g" firstAttribute="leading" secondItem="EEY-n1-gsr" secondAttribute="leading" id="Dgc-eR-ggk"/>
+                            <constraint firstAttribute="bottom" secondItem="hq3-0b-36g" secondAttribute="bottom" id="FKy-OK-oIl"/>
+                            <constraint firstItem="hq3-0b-36g" firstAttribute="top" secondItem="EEY-n1-gsr" secondAttribute="top" constant="33" id="JxE-3H-yRs"/>
+                            <constraint firstAttribute="trailing" secondItem="hq3-0b-36g" secondAttribute="trailing" id="dyM-ML-HNn"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="logsTextView" destination="g63-mj-AmI" id="a9r-dP-Wwk"/>
+                    </connections>
+                </viewController>
+                <customObject id="LLq-Pp-xD1" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="4788" y="527"/>
         </scene>
         <!--Info-->
         <scene sceneID="87Z-Qy-Zle">
@@ -2496,7 +2548,7 @@ DQ
                 </viewController>
                 <customObject id="lSc-pE-S4G" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="4167" y="589"/>
+            <point key="canvasLocation" x="5691" y="384"/>
         </scene>
         <!--Settings-->
         <scene sceneID="hZ4-As-Wi7">
@@ -2825,21 +2877,8 @@ DQ
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="F88-U6-4bi">
                                 <rect key="frame" x="0.0" y="0.0" width="699" height="49"/>
                                 <subviews>
-                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="amW-aG-fpu">
-                                        <rect key="frame" x="614" y="7" width="71" height="33"/>
-                                        <buttonCell key="cell" type="push" title="Send" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="5wv-1b-T2H">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                            <string key="keyEquivalent" base64-UTF8="YES">
-DQ
-</string>
-                                        </buttonCell>
-                                        <connections>
-                                            <action selector="chatAction:" target="skH-xe-eYW" id="42r-jO-d0S"/>
-                                        </connections>
-                                    </button>
                                     <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="LkX-2A-rof" customClass="GrowingTextField" customModule="Wired" customModuleProvider="target">
-                                        <rect key="frame" x="20" y="14" width="560" height="22"/>
+                                        <rect key="frame" x="20" y="14" width="626" height="22"/>
                                         <textFieldCell key="cell" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" focusRingType="none" placeholderString="Type message here" bezelStyle="round" id="Ai5-Uu-gAV">
                                             <font key="font" metaFont="system"/>
                                             <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -2850,7 +2889,7 @@ DQ
                                         </connections>
                                     </textField>
                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BDe-iW-bJl">
-                                        <rect key="frame" x="588" y="14" width="25" height="23"/>
+                                        <rect key="frame" x="654" y="14" width="25" height="23"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="25" id="9dJ-fB-EE9"/>
                                             <constraint firstAttribute="height" constant="23" id="xdD-hi-8Tw"/>
@@ -2865,14 +2904,11 @@ DQ
                                     </button>
                                 </subviews>
                                 <constraints>
-                                    <constraint firstItem="amW-aG-fpu" firstAttribute="top" secondItem="F88-U6-4bi" secondAttribute="top" constant="13" id="2Iw-CW-u4h"/>
                                     <constraint firstItem="BDe-iW-bJl" firstAttribute="leading" secondItem="LkX-2A-rof" secondAttribute="trailing" constant="8" id="7Bn-rn-ZMe"/>
-                                    <constraint firstItem="amW-aG-fpu" firstAttribute="centerY" secondItem="LkX-2A-rof" secondAttribute="centerY" id="MmN-Sr-ZPd"/>
-                                    <constraint firstAttribute="trailing" secondItem="amW-aG-fpu" secondAttribute="trailing" constant="20" id="gVW-hE-ajp"/>
-                                    <constraint firstItem="amW-aG-fpu" firstAttribute="leading" secondItem="BDe-iW-bJl" secondAttribute="trailing" constant="7" id="lOK-dV-XwK"/>
+                                    <constraint firstItem="BDe-iW-bJl" firstAttribute="top" secondItem="F88-U6-4bi" secondAttribute="top" constant="12" id="7Ru-1g-Mm7"/>
                                     <constraint firstAttribute="bottom" secondItem="LkX-2A-rof" secondAttribute="bottom" constant="14" id="nkd-4a-Lq0"/>
                                     <constraint firstItem="LkX-2A-rof" firstAttribute="top" secondItem="F88-U6-4bi" secondAttribute="top" constant="13" id="snz-wh-ZLE"/>
-                                    <constraint firstItem="BDe-iW-bJl" firstAttribute="bottom" secondItem="amW-aG-fpu" secondAttribute="bottom" id="w3N-MG-KvS"/>
+                                    <constraint firstAttribute="trailing" secondItem="BDe-iW-bJl" secondAttribute="trailing" constant="20" id="wrm-4R-2wR"/>
                                     <constraint firstItem="LkX-2A-rof" firstAttribute="leading" secondItem="F88-U6-4bi" secondAttribute="leading" constant="20" id="yTI-IS-Gw2"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
@@ -2896,12 +2932,11 @@ DQ
                     <connections>
                         <outlet property="chatInput" destination="LkX-2A-rof" id="gVJ-m5-Lb8"/>
                         <outlet property="emojiButton" destination="BDe-iW-bJl" id="ysI-Pw-W1Q"/>
-                        <outlet property="sendButton" destination="amW-aG-fpu" id="UsW-HE-yNj"/>
                     </connections>
                 </viewController>
                 <customObject id="CKt-O9-fsh" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="5407" y="-261"/>
+            <point key="canvasLocation" x="5406.5" y="-261"/>
         </scene>
         <!--Conversation View Controller-->
         <scene sceneID="stg-zU-ird">
@@ -2927,10 +2962,10 @@ DQ
         <image name="Chat" width="25" height="25"/>
         <image name="ClearTransfers" width="25" height="25"/>
         <image name="ConnectionStatusDisconnected" width="16" height="16"/>
+        <image name="Console" width="25" height="25"/>
         <image name="Disconnect" width="25" height="25"/>
         <image name="Download" width="25" height="25"/>
         <image name="Folder" width="25" height="25"/>
-        <image name="LeftViewNavigator" width="16" height="16"/>
         <image name="Messages" width="25" height="25"/>
         <image name="NSActionTemplate" width="14" height="14"/>
         <image name="NSColumnViewTemplate" width="16" height="10"/>
@@ -2942,9 +2977,9 @@ DQ
         <image name="NSRefreshTemplate" width="11" height="15"/>
         <image name="PauseTransfer" width="25" height="25"/>
         <image name="RemoveTransfer" width="25" height="25"/>
-        <image name="RightViewNavigator" width="16" height="16"/>
         <image name="ServerInfo" width="25" height="25"/>
         <image name="Settings" width="25" height="25"/>
+        <image name="Sidebar" width="25" height="25"/>
         <image name="Smileys" width="100" height="100"/>
         <image name="StartTransfer" width="25" height="25"/>
         <image name="StopTransfer" width="25" height="25"/>

@@ -1,6 +1,6 @@
-# Wired Swift
+# WiredSwift
 
-Wired Swift is an implementation of the Wired 2.0 protocol written in Swift.
+WiredSwift is an implementation of the Wired 2.0 protocol written in Swift. 
 
 ## Requirements
 
@@ -13,20 +13,6 @@ Init dependencies:
 
     cd WiredSwift
     carthage update
-
-## TODO
-
-* List type in P7 messages: not implemented yet 
-* Files browsing: poor native support on macOS
-* File transfers: download/upload files and directories with local and remote queue
-* Socket compression: not implemented yet (gzip)
-* Socket checksum: not implemented yet 
-* Auto-reconnection: we jumps for networks to networks these days...
-* Better use of user privileges on client side
-* Write unit tests and enforce Github actions plan
-* Write minimal server code (embed mac server in client? — but still as a separated process)
-* Always try to be as close as pure Swift foundation when it relies to Wired framework
-* Make Wired a separated repository from the framework with Carthage, Package and Pods support
 
 ## License
 

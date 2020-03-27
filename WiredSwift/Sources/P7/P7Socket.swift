@@ -204,8 +204,9 @@ public class P7Socket: NSObject {
                 var lengthData = Data()
                 lengthData.append(uint32: UInt32(messageData.count))
                 
-                Logger.debug("WRITE [\(self.hash)]: \(message.name!)")
-                                
+                Logger.info("WRITE [\(self.hash)]: \(message.name!)")
+                Logger.debug("\(message.xml(pretty: true))\n")
+                
                 // deflate
                 if self.compressionEnabled {
                     guard let deflatedMessageData = self.deflate(messageData) else {
@@ -323,7 +324,8 @@ public class P7Socket: NSObject {
                         // init response message
                         let message = P7Message(withData: messageData, spec: self.spec)
                         
-                        Logger.debug("READ [\(self.hash)]: \(message.name!)")
+                        Logger.info("READ [\(self.hash)]: \(message.name!)")
+                        Logger.debug("\(message.xml(pretty: true))\n")
                         
                         return message
                     }

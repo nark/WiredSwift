@@ -8,6 +8,16 @@
 
 import Foundation
 
+public protocol LoggerDelegate: class {
+    func loggerDidOutput(logger: Logger, output: String)
+}
+
+public extension LoggerDelegate {
+    func loggerDidOutput(logger: Logger, output: String) {
+        
+    }
+}
+
 /**
  This class is for printing log, either in the console or in a file.
  Log can have different type of severity, and different type of output as
@@ -79,7 +89,9 @@ public class Logger {
         }
     }
     
-    private static var shared       = Logger()
+    private static var shared = Logger()
+    public static var delegate:LoggerDelegate? = nil
+    
     private var maxLevel: Int       = 6
     public lazy var fileName:String = targetName + ".log"
     lazy var filePath:URL? = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(fileName)
@@ -87,7 +99,8 @@ public class Logger {
     public var sizeLimit:UInt64     = 1_000_000
     public var timeLimit:TimeLimit  = .Minute
     public var startDate:Date       = Date()
-
+    
+    
     /**/
 
 
@@ -162,6 +175,10 @@ public class Logger {
 
         /* DATE SEVERITY -> [TAG]        MESSAGE */
         let outputString:String = "\(df.string(from: date)) \(severity.description) -> [\(tagName)]\t \(string)"
+        
+        if let d = Logger.delegate {
+            d.loggerDidOutput(logger: self, output: outputString)
+        }
 
         // managing different type of output (console or file)
         for output in outputs {

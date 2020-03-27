@@ -88,6 +88,7 @@
 		4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD30DDC2426AAE8008AA7FF /* PrivateMessage.swift */; };
 		4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47623FD25BD002895C1 /* InfosViewController.swift */; };
 		4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47823FD2C31002895C1 /* FilesViewController.swift */; };
+		4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE59DB0242D4710000D79BC /* ConsoleViewController.swift */; };
 		4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
 		4CED2FC022E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
 		4CED2FC222E8F4AC000E5B9E /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
@@ -272,6 +273,7 @@
 		4CD30DDC2426AAE8008AA7FF /* PrivateMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateMessage.swift; sourceTree = "<group>"; };
 		4CD8C47623FD25BD002895C1 /* InfosViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfosViewController.swift; sourceTree = "<group>"; };
 		4CD8C47823FD2C31002895C1 /* FilesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesViewController.swift; sourceTree = "<group>"; };
+		4CE59DB0242D4710000D79BC /* ConsoleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsoleViewController.swift; sourceTree = "<group>"; };
 		4CED2FBE22E8EF90000E5B9E /* Logger.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoSwift.framework; path = Carthage/Build/Mac/CryptoSwift.framework; sourceTree = SOURCE_ROOT; };
 		4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptorRSA.framework; path = Carthage/Build/Mac/CryptorRSA.framework; sourceTree = SOURCE_ROOT; };
@@ -409,6 +411,7 @@
 				4CEF0AB723FDD5950097E37E /* Files */,
 				4CEF0ABF23FDD6650097E37E /* Transfers */,
 				4CEF0ABD23FDD6430097E37E /* Infos */,
+				4CE59DAE242D46F1000D79BC /* Console */,
 				4CEF0AB823FDD5A50097E37E /* Preferences */,
 				4CEF0AB923FDD5B80097E37E /* Core Data */,
 				4C6A89E62405612400780FEF /* Extensions */,
@@ -443,6 +446,14 @@
 				4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */,
 			);
 			path = WiredSwift;
+			sourceTree = "<group>";
+		};
+		4CE59DAE242D46F1000D79BC /* Console */ = {
+			isa = PBXGroup;
+			children = (
+				4CE59DB0242D4710000D79BC /* ConsoleViewController.swift */,
+			);
+			path = Console;
 			sourceTree = "<group>";
 		};
 		4CEF0AB723FDD5950097E37E /* Files */ = {
@@ -806,6 +817,7 @@
 				4CFB161A23FC7D01000EE688 /* Wired3.xcdatamodeld in Sources */,
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */,
+				4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UsersViewController.swift in Sources */,
 				4C4EF4BB242B602100E38B44 /* ServerConnection.swift in Sources */,

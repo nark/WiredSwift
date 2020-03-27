@@ -19,9 +19,14 @@ extension PreferencePane.Identifier {
     static let advanced     = Identifier("advanced")
 }
 
+
 extension Notification.Name {
+    static let didToggleLeftSidebarView  = Notification.Name("didToggleLeftSidebarView")
+    static let didToggleRightSidebarView = Notification.Name("didToggleRightSidebarView")
+    
     static let didAddNewBookmark = Notification.Name("didAddNewBookmark")
 }
+
 
 extension UserDefaults {
     func image(forKey key: String) -> NSImage? {
@@ -90,6 +95,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     override init() {
+        Logger.removeDestination(.Stdout)
+        
         let downloadsDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
         
         // Default preferences
@@ -192,6 +199,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     }
     
     
+    @IBAction func viewsAction(_ sender: Any) {
+        NotificationCenter.default.post(name: .didToggleLeftSidebarView, object: sender)
+    }
+    
+    
     @IBAction func showChat(_ sender: Any) {
         self.setTabView(atIndex: 0)
         
@@ -230,10 +242,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     @IBAction func addToBookmarks(_ sender: NSMenuItem) {
+        print("addToBookmarks")
         let context = persistentContainer.viewContext
         
         if let splitVC = NSApp.mainWindow?.contentViewController as? NSSplitViewController {
+            print("splitVC: \(splitVC)")
+            
             if let connVC = splitVC.splitViewItems[0].viewController as? ConnectionViewController {
+                print("connVC: \(connVC)")
+                
                 if let connection = connVC.connection {
                     let bookmark:Bookmark = NSEntityDescription.insertNewObject(
                         forEntityName: "Bookmark", into: context) as! Bookmark
@@ -274,6 +291,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         
         let item = menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "B")
         item.keyEquivalentModifierMask = NSEvent.ModifierFlags.option
+        item.target = self
         
         menu.addItem(NSMenuItem.separator())
         

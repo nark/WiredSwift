@@ -30,13 +30,19 @@ class FileCell: NSBrowserCell {
 class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrowserDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource {
     @IBOutlet weak var browser: NSBrowser!
     @IBOutlet weak var outlineView: NSOutlineView!
-    
     @IBOutlet weak var progressIndicator: NSProgressIndicator!
+
+    @IBOutlet weak var historySegmentedControl: NSSegmentedControl!
+    @IBOutlet weak var downloadButton: NSButton!
+    @IBOutlet weak var uploadButton: NSButton!
     
     var filesController:FilesController!
     var filePreviewController:FilePreviewController!
     
     var currentRoot:File!
+    
+    var backHistory:[File] = []
+    var forwardHistory:[File] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,6 +55,7 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         outlineView.doubleAction = #selector(doubleClickFile)
         
         NotificationCenter.default.addObserver(self, selector:  #selector(didLoadDirectory(_:)), name: .didLoadDirectory, object: nil)
+        UserDefaults.standard.addObserver(self, forKeyPath: "WSSelectedFilesViewType", options: NSKeyValueObservingOptions.new, context: nil)
     }
     
     
@@ -68,6 +75,7 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
                 self.currentRoot = self.filesController.rootFile
                 
                 self.progressIndicator.startAnimation(self)
+                
             }
         }
     }
@@ -77,7 +85,6 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
     
     // MARK: -
     @IBAction func reload(_ sender: Any) {
-        print("reload")
         self.filesController.load(ofFile: self.currentRoot, reload: true)
         self.progressIndicator.startAnimation(self)
     }
@@ -118,18 +125,45 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
         }
     }
     
+    @IBAction func historyAction(_ sender: Any) {
+        if let sc = sender as? NSSegmentedControl {
+            if sc.selectedSegment == 0 {
+                // go back
+                self.forwardHistory.append(self.currentRoot)
+                
+                if let f = self.backHistory.popLast() {
+                     self.changeRoot(withFile: f)
+                }
+                
+            } else if sc.selectedSegment == 1 {
+                // go forward
+                self.backHistory.append(self.currentRoot)
+                
+                if let f = self.forwardHistory.popLast() {
+                     self.changeRoot(withFile: f)
+                }
+            }
+        }
+    }
     
     
     // MARK: -
     
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "WSSelectedFilesViewType" {
+            self.browser.reloadColumn(self.browser.lastColumn)
+            self.validate()
+        }
+    }
+    
     @objc func didLoadDirectory(_ notification: Notification) {
         if let file = notification.object as? File {
-            let columnIndex = file.path.split(separator: "/").count
+            //let columnIndex = file.path.split(separator: "/").count
             
             if self.filesController == nil {
                 return
             }
-            
+                        
             // reload outline
             if file == self.currentRoot {
                 self.outlineView.reloadData()
@@ -138,9 +172,13 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
             }
             
             // reload browser
-            self.browser.reloadColumn(columnIndex)
+//            if self.browser.lastColumn != -1 {
+//                self.browser.reloadColumn(self.browser.lastColumn)
+//            }
             
             self.progressIndicator.stopAnimation(self)
+            
+            self.validate()
         }
     }
     
@@ -148,12 +186,14 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
     @objc private func doubleClickFile() {
         if let file = selectedFile() {
             if file.isFolder() {
-                self.currentRoot = file
-                
-                self.outlineView.reloadData()
-                self.filesController.load(ofFile: self.currentRoot)
-                
-                self.progressIndicator.startAnimation(self)
+                if UserDefaults.standard.integer(forKey: "WSSelectedFilesViewType") == 0 {
+                    self.backHistory.append(self.currentRoot)
+                    self.forwardHistory.removeAll()
+                    
+                    self.changeRoot(withFile: file)
+                    
+                    self.progressIndicator.startAnimation(self)
+                }
                 
             } else {
                 self.downloadFile(file)
@@ -252,14 +292,19 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
     func outlineViewItemDidExpand(_ notification: Notification) {
         if (notification.object as? NSOutlineView) == outlineView {
             if let file = notification.userInfo?["NSObject"] as? File {
-                if file.isFolder() && file.children.count == 0 {
-                    self.filesController.load(ofFile: file)
-                    self.progressIndicator.startAnimation(self)
-                }
+                self.filesController.load(ofFile: file)
+                self.progressIndicator.startAnimation(self)
             }
         }
+        
+        self.validate()
     }
     
+    
+    func outlineViewSelectionDidChange(_ notification: Notification) {
+        self.validate()
+        
+    }
     
     
     // MARK: -
@@ -273,6 +318,8 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
                 }
             }
         }
+        
+        self.validate()
         
         return proposedSelectionIndexes;
     }
@@ -386,7 +433,7 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
     
     
     private func selectedFile() -> File? {
-        var column  = browser.clickedColumn
+        var column  = browser.selectedColumn
         var row     = browser.clickedRow
         
         if UserDefaults.standard.integer(forKey: "WSSelectedFilesViewType") == 0 {
@@ -410,9 +457,6 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
             if browser.clickedRow == -1 {
                 row = browser.selectedRow(inColumn: column)
             }
-
-            print("row : \(row)")
-            print("column : \(column)")
             
             if row != -1 && column != -1 {
                 if let clickedItem = browser.item(atRow: row, inColumn: column) {
@@ -423,5 +467,37 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
             }
         }
         return nil
+    }
+    
+    
+    private func changeRoot(withFile file: File) {
+        if file.isFolder() {
+            self.currentRoot = file
+            
+            self.outlineView.reloadData()
+            self.browser.reloadColumn(0)
+            
+            self.filesController.load(ofFile: file)
+            self.progressIndicator.startAnimation(self)
+        }
+
+        self.validate()
+    }
+    
+    
+    
+    private func validate() {
+        if self.connection != nil && self.connection.isConnected() {
+            if UserDefaults.standard.integer(forKey: "WSSelectedFilesViewType") == 1 {
+                historySegmentedControl.setEnabled(!self.backHistory.isEmpty, forSegment: 0)
+                historySegmentedControl.setEnabled(!self.forwardHistory.isEmpty, forSegment: 1)
+            }
+        } else {
+            historySegmentedControl.setEnabled(false, forSegment: 0)
+            historySegmentedControl.setEnabled(false, forSegment: 1)
+        }
+        
+        downloadButton.isEnabled = self.selectedFile() != nil && !self.selectedFile()!.isFolder()
+        uploadButton.isEnabled = self.selectedFile() != nil && self.selectedFile()!.isFolder() // is upload folder
     }
 }

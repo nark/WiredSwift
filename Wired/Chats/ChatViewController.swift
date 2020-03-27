@@ -98,12 +98,14 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     // MARK: -
     @objc func linkConnectionDidClose(_ n: Notification) {
         if let c = n.object as? Connection, c == self.connection {
+            self.chatInput.isEditable = false
             conversationViewController.addEventMessage(message: "<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
         }
     }
     
     @objc func linkConnectionDidReconnect(_ n: Notification) {
         if let c = n.object as? Connection, c == self.connection {
+            self.chatInput.isEditable = true
             conversationViewController.addEventMessage(message: "<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
         }
     }
@@ -120,7 +122,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     }
     
     private func chatInputDidEndEditing() {
-        if self.chatInput.stringValue.count > 3 {
+        if self.chatInput.stringValue.count >= 2 {
             if textDidEndEditingTimer != nil {
                 textDidEndEditingTimer.invalidate()
                 textDidEndEditingTimer = nil
@@ -179,10 +181,6 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
         let message = P7Message(withName: "wired.user.set_icon", spec: self.connection.spec)
         
         message.addParameter(field: "wired.user.icon", value: icon)
-        
-//        if UserDefaults.standard.string(forKey: "WSUserStatus") == status {
-//            UserDefaults.standard.set(status, forKey: "WSUserStatus")
-//        }
         
         return message
     }
@@ -262,7 +260,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     }
     
     func connectionDidConnect(connection: Connection) {
-        
+        self.chatInput.isEditable = true
     }
     
     func connectionDidFailToConnect(connection: Connection, error: Error) {

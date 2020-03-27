@@ -61,10 +61,6 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     
     
     
-//    override init(window: NSWindow?) {
-//        super.init(window: window)
-//    }
-    
     
     override public func windowDidLoad() {
         super.windowDidLoad()
@@ -77,11 +73,24 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
             self, selector:#selector(linkConnectionDidClose(notification:)) ,
             name: .linkConnectionDidClose, object: nil)
         
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(didToggleLeftSidebarView(_:)),
+            name: .didToggleLeftSidebarView, object: nil)
+        
         self.window?.toolbar?.selectedItemIdentifier = NSToolbarItem.Identifier(rawValue: "Chat")
         
         self.perform(#selector(showConnectSheet), with: nil, afterDelay: 0.2)
     }
 
+    
+    
+    // MARK: -
+    
+    @objc func didToggleLeftSidebarView(_ n:Notification) {
+        if let splitViewController = self.contentViewController as? NSSplitViewController {
+            splitViewController.splitViewItems.first?.isCollapsed = !splitViewController.splitViewItems.first!.isCollapsed
+        }
+    }
     
     
     @objc private func showConnectSheet() {

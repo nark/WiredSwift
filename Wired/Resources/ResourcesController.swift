@@ -15,6 +15,8 @@ extension Notification.Name {
 
 class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate {
     @IBOutlet weak var resourcesOutlineView: NSOutlineView!
+        
+    var selectedBookmark:Bookmark!
     
     struct ResourceIdentifiers {
         static let connections  = "CONNECTIONS"
@@ -117,19 +119,19 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     }
     
     @IBAction func editBookmark(_ sender: Any) {
-        if let selectedItem = resourcesOutlineView.item(atRow: resourcesOutlineView.selectedRow) {
-            if let bookmark = selectedItem as? Bookmark {
-                let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
-                if let bookmarkWindowController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("BookmarkViewController")) as? NSWindowController {
-                    if let bookmarkViewController = bookmarkWindowController.contentViewController as? BookmarkViewController {
-                        bookmarkViewController.bookmark = bookmark
+        if let bookmark = self.selectedBookmark {
+            let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
+            if let bookmarkWindowController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("BookmarkViewController")) as? NSWindowController {
+                if let bookmarkViewController = bookmarkWindowController.contentViewController as? BookmarkViewController {
+                    bookmarkViewController.bookmark = bookmark
+                    
+                    NSApp.mainWindow?.beginSheet(bookmarkWindowController.window!, completionHandler: { (modalResponse) in
+                        if modalResponse == .OK {
+                            self.resourcesOutlineView.reloadData()
+                        }
                         
-                        NSApp.mainWindow?.beginSheet(bookmarkWindowController.window!, completionHandler: { (modalResponse) in
-                            if modalResponse == .OK {
-                                self.resourcesOutlineView.reloadData()
-                            }
-                        })
-                    }
+                        self.selectedBookmark = nil
+                    })
                 }
             }
         }
@@ -284,17 +286,18 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
             cogItem.image = NSImage(named: "NSActionTemplate")
             menu.addItem(cogItem)
         }
-        
-        menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "")
-        menu.addItem(NSMenuItem.separator())
+
         
         if let selectedItem = self.selectedItem()  {
             if let connection = selectedItem as? Connection {
                 if connection.isConnected() {
+                    menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "")
+                    menu.addItem(NSMenuItem.separator())
                     menu.addItem(withTitle: "Disconnect", action: #selector(disconnect(_:)), keyEquivalent: "")
                 }
             }
-            else if let _ = selectedItem as? Bookmark {
+            else if let b = selectedItem as? Bookmark {
+                self.selectedBookmark = b
                 menu.addItem(withTitle: "Edit Bookmark", action: #selector(editBookmark(_:)), keyEquivalent: "")
                 menu.addItem(withTitle: "Remove Bookmark", action: #selector(removeSelectedBookmark), keyEquivalent: "")
             }
@@ -309,6 +312,8 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     private func selectedItem() -> Any? {
         var selectedIndex = resourcesOutlineView.clickedRow
         
+        print("clickedRow: \(selectedIndex)")
+        
         if selectedIndex == -1 {
             selectedIndex = resourcesOutlineView.selectedRow
         }
@@ -316,7 +321,7 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
         if selectedIndex == -1 {
             return nil
         }
-        
+                
         return resourcesOutlineView.item(atRow: selectedIndex)
     }
     
