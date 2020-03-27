@@ -34,10 +34,9 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
         if let transfer = notification.object as? Transfer {
             transfersTableView.reloadData()
             // maybe better to reload at index only
-        } else {
-            transfersTableView.reloadData()
         }
         
+        transfersTableView.reloadData()
         self.validate()
     }
     
@@ -84,6 +83,7 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     @IBAction func removeTransfer(_ sender: Any) {
         if let selectedTransfer = self.selectedTransfer() {
             TransfersController.shared.remove(selectedTransfer)
+            self.transfersTableView.deselectAll(sender)
             self.validate()
         }
     }
@@ -186,6 +186,10 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     // MARK: -
     
     private func selectedTransfer() -> Transfer? {
+        if transfersTableView.clickedRow != -1 {
+            return TransfersController.shared.transfers()[transfersTableView.clickedRow]
+        }
+        
         if transfersTableView.selectedRow != -1 {
             return TransfersController.shared.transfers()[transfersTableView.selectedRow]
         }
@@ -194,7 +198,9 @@ class TransfersViewController: NSViewController, NSTableViewDataSource, NSTableV
     
     
     private func validate() {
-        if let transfer = self.selectedTransfer() {
+        if transfersTableView.selectedRow != -1 {
+            let transfer = TransfersController.shared.transfers()[transfersTableView.selectedRow]
+            
             self.startButton.isEnabled  = !transfer.isWorking() && !transfer.isTerminating() && transfer.state != .Finished
             self.stopButton.isEnabled   = transfer.isWorking()
             self.pauseButton.isEnabled  = transfer.isWorking()

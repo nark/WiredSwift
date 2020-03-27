@@ -281,6 +281,7 @@ class FilesViewController: ConnectionViewController, ConnectionDelegate, NSBrows
                 view?.textField?.stringValue = ""
             }
             else if tableColumn?.identifier.rawValue == "Type" {
+                view?.imageView?.image = nil
                 view?.textField?.stringValue = f.fileType()
             }
         }

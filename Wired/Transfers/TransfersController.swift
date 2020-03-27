@@ -98,8 +98,9 @@ public class TransfersController {
         }
         else {
             let context = AppDelegate.shared.persistentContainer.viewContext
-            
+
             context.delete(transfer)
+            try? context.save()
         }
         
         NotificationCenter.default.post(name: .didUpdateTransfers, object: transfer)
