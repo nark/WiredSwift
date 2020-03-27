@@ -10,10 +10,12 @@ import Cocoa
 
 extension Notification.Name {
     static let didLoadBoards = Notification.Name("didLoadBoards")
+    static let didLoadThreads = Notification.Name("didLoadThreads")
 }
 
 public class BoardsController: ConnectionObject, ConnectionDelegate {
     public private(set) var boards:[Board] = []
+    public private(set) var boardsByPath:[String:Board] = [:]
     
     public override init(_ connection: ServerConnection) {
         super.init(connection)
@@ -30,6 +32,16 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
         }
     }
     
+    public func loadThreads(forBoard board: Board) {
+        let message = P7Message(withName: "wired.board.get_threads", spec: self.connection.spec)
+        message.addParameter(field: "wired.board.board", value: board.path)
+        
+        board.threads = []
+        
+        _ = self.connection.send(message: message)
+        
+    }
+    
     
     // MARK: -
     private func loadBoards() {
@@ -37,6 +49,8 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
         
         _ = self.connection.send(message: message)
     }
+    
+
     
     // MARK: -
     
@@ -64,9 +78,23 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
                         parent.boards.append(board)
                     }
                 }
+                
+                boardsByPath[board.path] = board
             }
             else if message.name == "wired.board.board_list.done" {
                 NotificationCenter.default.post(name: .didLoadBoards, object: connection)
+            }
+            else if message.name == "wired.board.thread_list" {
+                if let path = message.string(forField: "wired.board.board") {
+                    if let board = self.boardsByPath[path] {
+                        let thread = Thread(message, board: board, connection: connection as! ServerConnection)
+                        print(thread)
+                        board.threads.append(thread)
+                    }
+                }
+            }
+            else if message.name == "wired.board.thread_list.done" {
+                NotificationCenter.default.post(name: .didLoadThreads, object: connection)
             }
         }
     }

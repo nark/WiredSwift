@@ -25,8 +25,6 @@ public class Board: ConnectionObject {
             self.path = p
         }
         
-        print(self.path)
-        
         self.name = (self.path as NSString).lastPathComponent
         
         if let r = message.bool(forField: "wired.board.readable") {

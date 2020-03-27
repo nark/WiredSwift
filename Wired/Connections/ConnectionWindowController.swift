@@ -286,6 +286,13 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                     else if let boardsSplitViewController = item.viewController as? BoardsSplitViewController {
                         if let boardsViewController = boardsSplitViewController.splitViewItems[0].viewController as? BoardsViewController {
                             boardsViewController.representedObject = self.connection
+                            
+                            if let threadsSplitViewController = boardsSplitViewController.splitViewItems[1].viewController as? NSSplitViewController {
+                                if let threadsViewController = threadsSplitViewController.splitViewItems[0].viewController as? ThreadsViewController {
+                                    boardsViewController.threadsViewsController = threadsViewController
+                                    threadsViewController.representedObject = self.connection
+                                }
+                            }
                         }
                     }
                     else if let connectionController = item.viewController as? FilesViewController {

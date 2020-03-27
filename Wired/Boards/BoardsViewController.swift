@@ -11,12 +11,14 @@ import Cocoa
 class BoardsViewController: ConnectionViewController, NSOutlineViewDataSource, NSOutlineViewDelegate {
     @IBOutlet weak var boardsOutlineView: NSOutlineView!
     
+    public var threadsViewsController:ThreadsViewController!
+    
     var boardsController:BoardsController!
     var boardIcon:NSImage!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do view setup here.
+
         NotificationCenter.default.addObserver(
             self, selector: #selector(didLoadBoards(_:)),
             name: .didLoadBoards, object: nil)
@@ -44,6 +46,7 @@ class BoardsViewController: ConnectionViewController, NSOutlineViewDataSource, N
     @objc func didLoadBoards(_ n:Notification) {
         if n.object as? ServerConnection == self.connection {
             self.boardsOutlineView.reloadData()
+            self.boardsOutlineView.expandItem(nil, expandChildren: true)
         }
     }
     
@@ -89,4 +92,16 @@ class BoardsViewController: ConnectionViewController, NSOutlineViewDataSource, N
         return view
     }
     
+    
+    func outlineViewSelectionDidChange(_ notification: Notification) {
+        let selectedRow = self.boardsOutlineView.selectedRow
+        
+        if selectedRow == -1 {
+            self.threadsViewsController.board = nil
+        } else {
+            if let board = self.boardsOutlineView.item(atRow: selectedRow) as? Board {
+                self.threadsViewsController.board = board
+            }
+        }
+    }
 }

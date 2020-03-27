@@ -30,6 +30,8 @@
 		4C200099242162BB00A4D77A /* ChatPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */; };
 		4C20009A2421661C00A4D77A /* ChatPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C200097242162A500A4D77A /* ChatPreferenceViewController.xib */; };
 		4C20009B2421661C00A4D77A /* FilesPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */; };
+		4C20DD82242E95F4009F64E6 /* ThreadsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD81242E95F4009F64E6 /* ThreadsViewController.swift */; };
+		4C20DD85242EA026009F64E6 /* ThreadCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD84242EA026009F64E6 /* ThreadCellView.swift */; };
 		4C36AEF82401CB6300AEC18E /* Transfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */; };
 		4C36AEF92401CB6300AEC18E /* Transfer+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */; };
 		4C36AEFE2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */; };
@@ -222,6 +224,8 @@
 		4C2000942421530B00A4D77A /* WiredError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiredError.swift; sourceTree = "<group>"; };
 		4C200097242162A500A4D77A /* ChatPreferenceViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ChatPreferenceViewController.xib; sourceTree = "<group>"; };
 		4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferenceViewController.swift; sourceTree = "<group>"; };
+		4C20DD81242E95F4009F64E6 /* ThreadsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadsViewController.swift; sourceTree = "<group>"; };
+		4C20DD84242EA026009F64E6 /* ThreadCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadCellView.swift; sourceTree = "<group>"; };
 		4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UploadTransfer+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -346,9 +350,11 @@
 			children = (
 				4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */,
 				4CB6A104242E4C4D00AB4C89 /* BoardsViewController.swift */,
+				4C20DD81242E95F4009F64E6 /* ThreadsViewController.swift */,
 				4CB6A10C242E503A00AB4C89 /* BoardsController.swift */,
 				4CB6A106242E4CA300AB4C89 /* Board.swift */,
 				4CB6A108242E4CF300AB4C89 /* Thread.swift */,
+				4C20DD84242EA026009F64E6 /* ThreadCellView.swift */,
 			);
 			path = Boards;
 			sourceTree = "<group>";
@@ -873,11 +879,13 @@
 				4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */,
 				4C5C1D222426812E00A751AA /* Conversation+CoreDataClass.swift in Sources */,
 				4C4C3EE522E10C3700BC2DD9 /* Connection.swift in Sources */,
+				4C20DD85242EA026009F64E6 /* ThreadCellView.swift in Sources */,
 				4C36AEFF2401CE4300AEC18E /* UploadTransfer+CoreDataProperties.swift in Sources */,
 				4C36AEFE2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift in Sources */,
 				4C36AF002401CE4300AEC18E /* DownloadTransfer+CoreDataClass.swift in Sources */,
 				4CA4153D24262277005B9048 /* ConversationViewController.swift in Sources */,
 				4CA4154324262483005B9048 /* ChatMessage.swift in Sources */,
+				4C20DD82242E95F4009F64E6 /* ThreadsViewController.swift in Sources */,
 				4C2000962421588C00A4D77A /* WiredError.swift in Sources */,
 				4CB6A107242E4CA300AB4C89 /* Board.swift in Sources */,
 				4CFA18D2230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
