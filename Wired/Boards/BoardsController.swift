@@ -42,10 +42,7 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
     public func loadThreads(forBoard board: Board) {
         let message = P7Message(withName: "wired.board.get_threads", spec: self.connection.spec)
         message.addParameter(field: "wired.board.board", value: board.path)
-                
-        print("Thread.isMainThread: \(Thread.isMainThread)")
-        
-        
+
         queue.async(flags: .barrier, execute: {
             board.threads = []
             board.threadsByUUID = [String:BoardThread]()

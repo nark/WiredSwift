@@ -55,7 +55,6 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
             if self.connection != nil && self.connection.isConnected() {
                 if self.board == nil {
                     self.thread = nil
-                    
                     self.postsTableView.reloadData()
                 }
             }

@@ -153,7 +153,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
                 print("User has declined notifications")
             }
         }
+        
         AppDelegate.notificationCenter.delegate = self
+        
+        for bookmark in ConnectionsController.shared.bookmarks() {
+            if bookmark.connectAtStartup {
+                _ = ConnectionWindowController.connectConnectionWindowController(withBookmark: bookmark)
+            }
+        }
     }
     
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
