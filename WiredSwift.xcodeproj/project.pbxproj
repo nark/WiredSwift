@@ -72,6 +72,12 @@
 		4C7A45AB242937CA008F0FFE /* TimeAgo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7A45AA242937CA008F0FFE /* TimeAgo.swift */; };
 		4C8829E824254A0B00B4EF36 /* TabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E724254A0B00B4EF36 /* TabViewController.swift */; };
 		4C8829EA2425672700B4EF36 /* ConnectionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E92425672700B4EF36 /* ConnectionWindow.swift */; };
+		4C93B2E7242F9BD500A956C3 /* BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2E3242F9BD500A956C3 /* BBCodeString.m */; };
+		4C93B2E8242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2E6242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m */; };
+		4C93B2F2242F9CAE00A956C3 /* BBAttribute.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2EA242F9CAD00A956C3 /* BBAttribute.m */; };
+		4C93B2F3242F9CAE00A956C3 /* BBParsingElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2EC242F9CAD00A956C3 /* BBParsingElement.m */; };
+		4C93B2F4242F9CAE00A956C3 /* BBElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2EE242F9CAE00A956C3 /* BBElement.m */; };
+		4C93B2F5242F9CAE00A956C3 /* BBCodeParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2EF242F9CAE00A956C3 /* BBCodeParser.m */; };
 		4CA4153624261F25005B9048 /* MessageKit_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; };
 		4CA4153724261F30005B9048 /* MessageKit_macOS.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153824262223005B9048 /* GrowingTextView.swift */; };
@@ -83,7 +89,7 @@
 		4CA415492426651D005B9048 /* PrivateMessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */; };
 		4CB6A105242E4C4D00AB4C89 /* BoardsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A104242E4C4D00AB4C89 /* BoardsViewController.swift */; };
 		4CB6A107242E4CA300AB4C89 /* Board.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A106242E4CA300AB4C89 /* Board.swift */; };
-		4CB6A109242E4CF300AB4C89 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A108242E4CF300AB4C89 /* Thread.swift */; };
+		4CB6A109242E4CF300AB4C89 /* BoardThread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A108242E4CF300AB4C89 /* BoardThread.swift */; };
 		4CB6A10B242E4FBE00AB4C89 /* BoardsSplitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */; };
 		4CB6A10D242E503A00AB4C89 /* BoardsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A10C242E503A00AB4C89 /* BoardsController.swift */; };
 		4CD0205122DF04BD0008B36C /* Wired.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0204F22DF04BD0008B36C /* Wired.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -269,6 +275,21 @@
 		4C7A45AA242937CA008F0FFE /* TimeAgo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeAgo.swift; sourceTree = "<group>"; };
 		4C8829E724254A0B00B4EF36 /* TabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewController.swift; sourceTree = "<group>"; };
 		4C8829E92425672700B4EF36 /* ConnectionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionWindow.swift; sourceTree = "<group>"; };
+		4C93B2E1242F9BD400A956C3 /* Wired-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Wired-Bridging-Header.h"; sourceTree = "<group>"; };
+		4C93B2E2242F9BD400A956C3 /* BBCodeStringDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeStringDelegate.h; sourceTree = "<group>"; };
+		4C93B2E3242F9BD500A956C3 /* BBCodeString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBCodeString.m; sourceTree = "<group>"; };
+		4C93B2E4242F9BD500A956C3 /* BBCodeString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeString.h; sourceTree = "<group>"; };
+		4C93B2E5242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSMutableAttributedString+BBCodeString.h"; sourceTree = "<group>"; };
+		4C93B2E6242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSMutableAttributedString+BBCodeString.m"; sourceTree = "<group>"; };
+		4C93B2E9242F9CAD00A956C3 /* BBAttribute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBAttribute.h; sourceTree = "<group>"; };
+		4C93B2EA242F9CAD00A956C3 /* BBAttribute.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBAttribute.m; sourceTree = "<group>"; };
+		4C93B2EB242F9CAD00A956C3 /* BBParsingElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBParsingElement.h; sourceTree = "<group>"; };
+		4C93B2EC242F9CAD00A956C3 /* BBParsingElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBParsingElement.m; sourceTree = "<group>"; };
+		4C93B2ED242F9CAD00A956C3 /* BBCodeParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeParser.h; sourceTree = "<group>"; };
+		4C93B2EE242F9CAE00A956C3 /* BBElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBElement.m; sourceTree = "<group>"; };
+		4C93B2EF242F9CAE00A956C3 /* BBCodeParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBCodeParser.m; sourceTree = "<group>"; };
+		4C93B2F0242F9CAE00A956C3 /* BBElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBElement.h; sourceTree = "<group>"; };
+		4C93B2F1242F9CAE00A956C3 /* BBCodeParserDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeParserDelegate.h; sourceTree = "<group>"; };
 		4C990ED12405D7380059BC8B /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "MessageKit-macOS.xcodeproj"; path = "Vendors/MessageKit-macOS-master/MessageKit-macOS.xcodeproj"; sourceTree = SOURCE_ROOT; };
 		4CA4153824262223005B9048 /* GrowingTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GrowingTextView.swift; path = "Vendors/MessageKit-macOS-master/Example/Sources/GrowingTextView.swift"; sourceTree = SOURCE_ROOT; };
@@ -280,7 +301,7 @@
 		4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateMessagesViewController.swift; sourceTree = "<group>"; };
 		4CB6A104242E4C4D00AB4C89 /* BoardsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsViewController.swift; sourceTree = "<group>"; };
 		4CB6A106242E4CA300AB4C89 /* Board.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Board.swift; sourceTree = "<group>"; };
-		4CB6A108242E4CF300AB4C89 /* Thread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thread.swift; sourceTree = "<group>"; };
+		4CB6A108242E4CF300AB4C89 /* BoardThread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardThread.swift; sourceTree = "<group>"; };
 		4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsSplitViewController.swift; sourceTree = "<group>"; };
 		4CB6A10C242E503A00AB4C89 /* BoardsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsController.swift; sourceTree = "<group>"; };
 		4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WiredSwfit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -360,7 +381,7 @@
 				4C20DD8C242EABDA009F64E6 /* PostsViewController.swift */,
 				4CB6A10C242E503A00AB4C89 /* BoardsController.swift */,
 				4CB6A106242E4CA300AB4C89 /* Board.swift */,
-				4CB6A108242E4CF300AB4C89 /* Thread.swift */,
+				4CB6A108242E4CF300AB4C89 /* BoardThread.swift */,
 				4C20DD8A242EA98D009F64E6 /* Post.swift */,
 				4C20DD84242EA026009F64E6 /* ThreadCellView.swift */,
 				4C20DD88242EA8C4009F64E6 /* PostCellView.swift */,
@@ -394,6 +415,8 @@
 		4C6A89E62405612400780FEF /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				4C93B2E1242F9BD400A956C3 /* Wired-Bridging-Header.h */,
+				4C93B2F6242FA40000A956C3 /* BBCodeString */,
 				4C7A45AA242937CA008F0FFE /* TimeAgo.swift */,
 				4C8829E724254A0B00B4EF36 /* TabViewController.swift */,
 				4CA4153A24262238005B9048 /* GrowingTextField.swift */,
@@ -450,6 +473,27 @@
 				4C74286A22DCECE900D6E6F9 /* Info.plist */,
 			);
 			path = Wired;
+			sourceTree = "<group>";
+		};
+		4C93B2F6242FA40000A956C3 /* BBCodeString */ = {
+			isa = PBXGroup;
+			children = (
+				4C93B2E4242F9BD500A956C3 /* BBCodeString.h */,
+				4C93B2E3242F9BD500A956C3 /* BBCodeString.m */,
+				4C93B2E2242F9BD400A956C3 /* BBCodeStringDelegate.h */,
+				4C93B2E5242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.h */,
+				4C93B2E6242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m */,
+				4C93B2E9242F9CAD00A956C3 /* BBAttribute.h */,
+				4C93B2EA242F9CAD00A956C3 /* BBAttribute.m */,
+				4C93B2ED242F9CAD00A956C3 /* BBCodeParser.h */,
+				4C93B2EF242F9CAE00A956C3 /* BBCodeParser.m */,
+				4C93B2F1242F9CAE00A956C3 /* BBCodeParserDelegate.h */,
+				4C93B2F0242F9CAE00A956C3 /* BBElement.h */,
+				4C93B2EE242F9CAE00A956C3 /* BBElement.m */,
+				4C93B2EB242F9CAD00A956C3 /* BBParsingElement.h */,
+				4C93B2EC242F9CAD00A956C3 /* BBParsingElement.m */,
+			);
+			path = BBCodeString;
 			sourceTree = "<group>";
 		};
 		4CA4152E24261F0E005B9048 /* Products */ = {
@@ -744,6 +788,7 @@
 				TargetAttributes = {
 					4C74285D22DCECE800D6E6F9 = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1130;
 					};
 					4CD0204C22DF04BD0008B36C = {
 						CreatedOnToolsVersion = 10.2.1;
@@ -848,12 +893,15 @@
 				4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */,
 				4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */,
 				4CFB161A23FC7D01000EE688 /* Wired3.xcdatamodeld in Sources */,
+				4C93B2F4242F9CAE00A956C3 /* BBElement.m in Sources */,
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */,
 				4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */,
-				4CB6A109242E4CF300AB4C89 /* Thread.swift in Sources */,
+				4C93B2E8242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m in Sources */,
+				4CB6A109242E4CF300AB4C89 /* BoardThread.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4CFA18CE230B3B2900E2A2EC /* UsersViewController.swift in Sources */,
+				4C93B2F5242F9CAE00A956C3 /* BBCodeParser.m in Sources */,
 				4C4EF4BB242B602100E38B44 /* ServerConnection.swift in Sources */,
 				4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */,
 				4C7A45AB242937CA008F0FFE /* TimeAgo.swift in Sources */,
@@ -863,9 +911,11 @@
 				4CFB161E23FC843C000EE688 /* Bookmark+CoreDataProperties.swift in Sources */,
 				4CD30DD92426979D008AA7FF /* ConversationCellView.swift in Sources */,
 				4CA415492426651D005B9048 /* PrivateMessagesViewController.swift in Sources */,
+				4C93B2F3242F9CAE00A956C3 /* BBParsingElement.m in Sources */,
 				4C36AEF82401CB6300AEC18E /* Transfer+CoreDataClass.swift in Sources */,
 				4CB6A10D242E503A00AB4C89 /* BoardsController.swift in Sources */,
 				4C5C1D242426812E00A751AA /* Message+CoreDataClass.swift in Sources */,
+				4C93B2E7242F9BD500A956C3 /* BBCodeString.m in Sources */,
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
 				4C52DADB242682920085C7D7 /* ConversationsController.swift in Sources */,
 				4CD30DDB2426AADE008AA7FF /* EventMessage.swift in Sources */,
@@ -908,6 +958,7 @@
 				4CD0206022E0FCE20008B36C /* P7Spec.swift in Sources */,
 				4C374DA923FE9E7E006D3E7C /* TransferCell.swift in Sources */,
 				4C4C3EEB22E1131B00BC2DD9 /* Const.swift in Sources */,
+				4C93B2F2242F9CAE00A956C3 /* BBAttribute.m in Sources */,
 				4C8829EA2425672700B4EF36 /* ConnectionWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1075,7 +1126,7 @@
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_INCLUDE_PATHS = "";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -1084,6 +1135,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Wired/WiredSwift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1103,6 +1155,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-Debug";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Wired/Extensions/Wired-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 			};
 			name = Debug;
@@ -1111,6 +1165,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Wired/WiredSwift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1130,6 +1185,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Wired/Extensions/Wired-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 			};
 			name = Release;

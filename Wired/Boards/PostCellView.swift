@@ -19,5 +19,4 @@ class PostCellView: NSTableCellView {
 
         // Drawing code here.
     }
-    
 }

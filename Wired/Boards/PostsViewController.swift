@@ -8,8 +8,11 @@
 
 import Cocoa
 
-class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTableViewDataSource {
+
+class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTableViewDataSource, BBCodeStringDelegate {
+    
     @IBOutlet weak var postsTableView: NSTableView!
+    @IBOutlet weak var progressIndicator: NSProgressIndicator!
     
     var boardsController:BoardsController!
     
@@ -17,8 +20,22 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
         super.viewDidLoad()
         
         NotificationCenter.default.addObserver(
+        self, selector: #selector(didStartLoadingBoards(_:)),
+        name: .didStartLoadingBoards, object: nil)
+        
+        NotificationCenter.default.addObserver(
+        self, selector: #selector(didLoadBoards(_:)),
+        name: .didLoadBoards, object: nil)
+        
+        NotificationCenter.default.addObserver(
+        self, selector: #selector(didLoadThreads(_:)),
+        name: .didLoadThreads, object: nil)
+        
+        NotificationCenter.default.addObserver(
             self, selector: #selector(didLoadPosts(_:)),
             name: .didLoadPosts, object: nil)
+        
+        self.progressIndicator.startAnimation(self)
     }
     
     
@@ -36,16 +53,22 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     public var board: Board? {
         didSet {
             if self.connection != nil && self.connection.isConnected() {
-
+                if self.board == nil {
+                    self.thread = nil
+                    
+                    self.postsTableView.reloadData()
+                }
             }
         }
     }
     
-    public var thread: Thread? {
+    public var thread: BoardThread? {
         didSet {
             if self.connection != nil && self.connection.isConnected() {
                 if let t = self.thread {
                     self.boardsController.loadPosts(forThread: t)
+                } else {
+                    self.postsTableView.reloadData()
                 }
             }
         }
@@ -56,10 +79,28 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     
     // MARK: -
     
+    @objc func didStartLoadingBoards(_ n:Notification) {
+        if n.object as? ServerConnection == self.connection {
+            self.progressIndicator.startAnimation(self)
+        }
+    }
+    
+    @objc func didLoadBoards(_ n:Notification) {
+        if n.object as? ServerConnection == self.connection {
+            self.progressIndicator.stopAnimation(self)
+        }
+    }
+    
+    @objc func didLoadThreads(_ n:Notification) {
+        if n.object as? ServerConnection == self.connection {
+            self.progressIndicator.stopAnimation(self)
+        }
+    }
+    
     @objc func didLoadPosts(_ n:Notification) {
         if n.object as? ServerConnection == self.connection {
             self.postsTableView.reloadData()
-            print("postsTableView reloadData")
+            self.progressIndicator.stopAnimation(self)
         }
     }
     
@@ -67,6 +108,9 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     // MARK: -
     
     func numberOfRows(in tableView: NSTableView) -> Int {
+        if self.thread == nil {
+            return 0
+        }
         return self.thread?.posts.count ?? 0
     }
     
@@ -77,11 +121,87 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
         
         if let post = self.thread?.posts[row] {
             view?.nickLabel?.stringValue = post.nick
-            view?.textLabel?.stringValue = post.text
+            if let attributedString = self.BBCodeToAttributedString(withString: post.text) {
+                view?.textLabel?.attributedStringValue = attributedString
+            }
             view?.iconView.image = post.icon
         }
 
         return view
     }
     
+    
+    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        class UnselectedTableRowView: NSTableRowView {
+            override func drawSelection(in dirtyRect: NSRect) { }
+            override var isEmphasized: Bool {
+                set {}
+                get {
+                    return false
+                }
+            }
+        }
+        
+        return UnselectedTableRowView()
+    }
+    
+    
+    
+    // MARK: -
+    
+    private func BBCodeToAttributedString(withString string:String) -> NSAttributedString? {
+        if let bbcs = BBCodeString.init(bbCode: string, andLayoutProvider: self) {
+            print("bbcs")
+            return bbcs.attributedString
+        }
+        
+        return NSAttributedString(string: string)
+    }
+    
+    
+    
+    // MARK: -
+    
+    func getSupportedTags() -> [Any]! {
+        return ["b", "i", "url", "img"]
+    }
+
+    
+    func getAttributesFor(_ element: BBElement!) -> [AnyHashable : Any]! {
+        if element.tag == "b" {
+            return [NSAttributedString.Key.font: NSFont.boldSystemFont(ofSize: 13)]
+        }
+        else if element.tag == "i" {
+            return [NSAttributedString.Key.obliqueness: 0.1]
+        }
+        else if element.tag == "url" {
+            return [NSAttributedString.Key.foregroundColor: NSColor.systemBlue,
+                    NSAttributedString.Key.link: element.text,
+                    NSAttributedString.Key.cursor: NSCursor.pointingHand]
+        }
+
+        return nil
+    }
+    
+    
+    func getAttributedText(for element: BBElement!) -> NSAttributedString! {
+        if element.tag == "img" {
+            let base64str = String((element.text as String).dropFirst(22))
+
+            if let data = Data(base64Encoded: base64str, options: Data.Base64DecodingOptions.ignoreUnknownCharacters) {
+                let ta = NSTextAttachment()
+                ta.image = NSImage(data: data)
+
+                return NSAttributedString(attachment: ta)
+            }
+        }
+        else if element.tag == "url" {
+            let attrs = [NSAttributedString.Key.foregroundColor: NSColor.systemBlue,
+                         NSAttributedString.Key.link: element.text,
+                         NSAttributedString.Key.cursor: NSCursor.pointingHand]
+            
+            return NSAttributedString(string: element.text as String, attributes: attrs)
+        }
+        return nil
+    }
 }

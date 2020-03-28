@@ -8,7 +8,7 @@
 
 import Cocoa
 
-public class Thread: ConnectionObject {
+public class BoardThread: ConnectionObject {
     public var uuid:String!
     public var subject:String!
     public var nick:String!

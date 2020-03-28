@@ -17,9 +17,9 @@ public class Post: ConnectionObject {
     public var icon:NSImage!
     
     public var board:Board!
-    public var thread:Thread!
+    public var thread:BoardThread!
     
-    init(_ message: P7Message, board: Board, thread:Thread, connection: ServerConnection) {
+    init(_ message: P7Message, board: Board, thread:BoardThread, connection: ServerConnection) {
         super.init(connection)
         
         self.board  = board

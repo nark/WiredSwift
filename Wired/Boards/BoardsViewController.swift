@@ -96,6 +96,8 @@ class BoardsViewController: ConnectionViewController, NSOutlineViewDataSource, N
     func outlineViewSelectionDidChange(_ notification: Notification) {
         let selectedRow = self.boardsOutlineView.selectedRow
         
+        self.threadsViewsController.board = nil
+        
         if selectedRow == -1 {
             self.threadsViewsController.board = nil
             

@@ -39,8 +39,20 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
     public var board: Board? {
         didSet {
             if self.connection != nil && self.connection.isConnected() {
-                if let b = self.board {
+                var b: Board!
+                
+                self.boardsController.queue.sync {
+                    b = self.board
+                }
+                
+                if b != nil {
                     self.boardsController.loadThreads(forBoard: b)
+                    
+                } else {
+                    self.postsViewController.board = nil
+                    self.postsViewController.thread = nil
+                    
+                    self.threadsTableView.reloadData()
                 }
             }
         }
@@ -59,6 +71,9 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
     // MARK: -
     
     func numberOfRows(in tableView: NSTableView) -> Int {
+        if self.board == nil {
+            return 0
+        }
         return self.board?.threads.count ?? 0
     }
     
@@ -70,6 +85,12 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
         if let thread = self.board?.threads[row] {
             view?.nickLabel?.stringValue = thread.nick
             view?.subjectLabel?.stringValue = thread.subject
+            if let date = thread.lastReplyDate {
+                view?.dateLabel.stringValue = AppDelegate.dateTimeFormatter.string(from: date)
+            } else {
+                view?.dateLabel.stringValue = AppDelegate.dateTimeFormatter.string(from: thread.postDate)
+            }
+            view?.repliesLabel.stringValue = "\(thread.replies ?? 0) replies"
         }
 
         return view
@@ -78,11 +99,10 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
     func tableViewSelectionDidChange(_ notification: Notification) {
         let selectedRow = self.threadsTableView.selectedRow
         
-        if selectedRow == -1 {
-            self.postsViewController.board = nil
-            self.postsViewController.thread = nil
-            
-        } else {
+        self.postsViewController.board = nil
+        self.postsViewController.thread = nil
+        
+        if selectedRow != -1 {
             if let thread = self.board?.threads[selectedRow] {
                 self.postsViewController.board = self.board
                 self.postsViewController.thread = thread

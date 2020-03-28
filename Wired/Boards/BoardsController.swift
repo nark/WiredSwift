@@ -9,6 +9,8 @@
 import Cocoa
 
 extension Notification.Name {
+    static let didStartLoadingBoards = Notification.Name("didStartLoadingBoards")
+    
     static let didLoadBoards = Notification.Name("didLoadBoards")
     static let didLoadThreads = Notification.Name("didLoadThreads")
     static let didLoadPosts = Notification.Name("didLoadPosts")
@@ -18,7 +20,9 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
     public private(set) var boards:[Board] = []
     public private(set) var boardsByPath:[String:Board] = [:]
     
-    var loadingThread:Thread? = nil
+    public let queue = DispatchQueue(label: "fr.read-write.Wired.BoardsQueue")
+    
+    var loadingThread:BoardThread? = nil
     
     public override init(_ connection: ServerConnection) {
         super.init(connection)
@@ -38,19 +42,32 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
     public func loadThreads(forBoard board: Board) {
         let message = P7Message(withName: "wired.board.get_threads", spec: self.connection.spec)
         message.addParameter(field: "wired.board.board", value: board.path)
+                
+        print("Thread.isMainThread: \(Thread.isMainThread)")
         
-        board.threads = []
+        
+        queue.async(flags: .barrier, execute: {
+            board.threads = []
+            board.threadsByUUID = [String:BoardThread]()
+            
+        })
+        
+        NotificationCenter.default.post(name: .didStartLoadingBoards, object: connection)
         
         _ = self.connection.send(message: message)
         
     }
     
-    public func loadPosts(forThread thread: Thread) {
+    public func loadPosts(forThread thread: BoardThread) {
         let message = P7Message(withName: "wired.board.get_thread", spec: self.connection.spec)
         message.addParameter(field: "wired.board.thread", value: thread.uuid)
+                
+        queue.async(flags: .barrier, execute: {
+            thread.posts        = []
+            self.loadingThread  = thread
+        })
         
-        thread.posts        = []
-        self.loadingThread  = thread
+        NotificationCenter.default.post(name: .didStartLoadingBoards, object: connection)
         
         _ = self.connection.send(message: message)
         
@@ -60,6 +77,13 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
     // MARK: -
     private func loadBoards() {
         let message = P7Message(withName: "wired.board.get_boards", spec: self.connection.spec)
+        
+        queue.async(flags: .barrier, execute: {
+            self.boards = []
+            self.boardsByPath = [String:Board]()
+        })
+        
+        NotificationCenter.default.post(name: .didStartLoadingBoards, object: connection)
         
         _ = self.connection.send(message: message)
     }
@@ -77,7 +101,7 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
     }
     
     public func connectionDisconnected(connection: Connection, error: Error?) {
-        
+
     }
     
     public func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
@@ -85,13 +109,15 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
             if message.name == "wired.board.board_list" {
                 let board = Board(message, connection: connection as! ServerConnection)
                 
-                if !board.hasParent {
-                    boards.append(board)
-                } else {
-                    if let parent = self.parentBoard(forPath: board.path) {
-                        parent.boards.append(board)
+                queue.async(flags: .barrier, execute: {
+                    if !board.hasParent {
+                        self.boards.append(board)
+                    } else {
+                        if let parent = self.parentBoard(forPath: board.path) {
+                            parent.boards.append(board)
+                        }
                     }
-                }
+                })
                 
                 boardsByPath[board.path] = board
             }
@@ -103,8 +129,10 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
             else if message.name == "wired.board.thread_list" {
                 if let path = message.string(forField: "wired.board.board") {
                     if let board = self.boardsByPath[path] {
-                        let thread = Thread(message, board: board, connection: connection as! ServerConnection)
-                        board.addThread(thread)
+                        queue.async(flags: .barrier, execute: {
+                            let thread = BoardThread(message, board: board, connection: connection as! ServerConnection)
+                            board.addThread(thread)
+                        })
                     }
                 }
             }
@@ -117,22 +145,27 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
                 if let thread = self.loadingThread {
                     let post = Post(message, board: thread.board, thread: thread, connection: connection as! ServerConnection)
                     
-                    if thread.posts.isEmpty {
-                        post.nick = thread.nick
-                    }
-                    
-                    thread.posts.append(post)
+                    queue.async(flags: .barrier, execute: {
+                        if thread.posts.isEmpty {
+                            post.nick = thread.nick
+                        }
+                        
+                        thread.posts.append(post)
+                    })
                 }
             }
             else if message.name == "wired.board.post_list.done" {
-                self.loadingThread = nil
+                queue.async(flags: .barrier, execute: {
+                    self.loadingThread = nil
+                })
+                                
                 NotificationCenter.default.post(name: .didLoadPosts, object: connection)
             }
         }
     }
     
     public func connectionDidReceiveError(connection: Connection, message: P7Message) {
-        
+        //semaphore.signal()
     }
     
     
