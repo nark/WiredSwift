@@ -45,7 +45,6 @@ public class BoardsController: ConnectionObject, ConnectionDelegate {
 
         queue.async(flags: .barrier, execute: {
             board.threads = []
-            board.threadsByUUID = [String:BoardThread]()
             
         })
         

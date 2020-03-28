@@ -44,6 +44,6 @@ public class Board: ConnectionObject {
     public func addThread(_ thread:BoardThread) {
         self.threads.append(thread)
         
-        self.threadsByUUID[thread.uuid] = thread
+        //self.threadsByUUID[thread.uuid] = thread
     }
 }

@@ -46,14 +46,17 @@ class ThreadsViewController: ConnectionViewController, NSTableViewDelegate, NSTa
                 }
                 
                 if b != nil {
-                    self.boardsController.loadThreads(forBoard: b)
+                    if b.threads.count == 0 {
+                        self.boardsController.loadThreads(forBoard: b)
+                    }
                     
                 } else {
                     self.postsViewController.board = nil
                     self.postsViewController.thread = nil
                     
-                    self.threadsTableView.reloadData()
                 }
+                
+                self.threadsTableView.reloadData()
             }
         }
     }
