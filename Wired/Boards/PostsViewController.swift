@@ -59,6 +59,7 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     @objc func didLoadPosts(_ n:Notification) {
         if n.object as? ServerConnection == self.connection {
             self.postsTableView.reloadData()
+            print("postsTableView reloadData")
         }
     }
     
@@ -66,17 +67,18 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     // MARK: -
     
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return self.board?.threads.count ?? 0
+        return self.thread?.posts.count ?? 0
     }
     
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        var view: ThreadCellView?
+        var view: PostCellView?
         
-        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "ThreadCell"), owner: self) as? ThreadCellView
+        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "PostCell"), owner: self) as? PostCellView
         
-        if let thread = self.board?.threads[row] {
-            view?.nickLabel?.stringValue = thread.nick
-            view?.subjectLabel?.stringValue = thread.subject
+        if let post = self.thread?.posts[row] {
+            view?.nickLabel?.stringValue = post.nick
+            view?.textLabel?.stringValue = post.text
+            view?.iconView.image = post.icon
         }
 
         return view

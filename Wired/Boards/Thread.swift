@@ -25,7 +25,7 @@ public class Thread: ConnectionObject {
         
         self.board = board
         
-        if let p = message.string(forField: "wired.board.thread") {
+        if let p = message.uuid(forField: "wired.board.thread") {
             self.uuid = p
         }
         

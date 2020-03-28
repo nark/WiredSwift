@@ -195,6 +195,7 @@ public class Connection: NSObject {
                } else {
                     //NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
                     if self.isConnected() {
+                        print("self.socket error : \(self.socket.errors)")
                         self.disconnect()
                     }
                     //NotificationCenter.default.post(name: .linkConnectionDidClose, object: self)

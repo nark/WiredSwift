@@ -44,5 +44,13 @@ public class Post: ConnectionObject {
         if let p = message.date(forField: "wired.board.edit_date") {
             self.editDate = p
         }
+        
+        if let data = message.data(forField: "wired.user.icon") {
+//            if let base64ImageString = data.base64EncodedData() {
+//                if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
+                    self.icon = NSImage(data: data)
+//                }
+//            }
+        }
     }
 }

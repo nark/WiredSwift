@@ -25,7 +25,8 @@ public class P7Message: NSObject {
     public var specMessage: SpecMessage!
     public var size:Int = 0
     
-    private var parameters: [String:Any] = [:]
+    private var parameters: [String:Any] = [String:Any](minimumCapacity: 50)
+    
     public var numberOfParameters:Int {
         get {
             return self.parameters.count
@@ -75,7 +76,8 @@ public class P7Message: NSObject {
     public func lazy(field: String) -> String? {
         let value = self.parameters[field]
         
-        if spec.fieldsByName[field]?.type == .string {
+        if  spec.fieldsByName[field]?.type == .string ||
+            spec.fieldsByName[field]?.type == .uuid {
             if let string = value as? String {
                 return string
             }
@@ -114,6 +116,13 @@ public class P7Message: NSObject {
         return nil
     }
     
+    public func uuid(forField field: String) -> String? {
+        if let str = self.parameters[field] as? String {
+            return str
+        }
+        return nil
+    }
+    
     
     public func data(forField field: String) -> Data? {
         if let data = self.parameters[field] as? Data {
@@ -125,7 +134,6 @@ public class P7Message: NSObject {
     
     public func date(forField field: String) -> Date? {        
         if let value = self.parameters[field] as? Double {
-            print(value)
             return Date(timeIntervalSince1970: value)
         }
         return nil
