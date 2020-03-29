@@ -150,7 +150,6 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     
     private func BBCodeToAttributedString(withString string:String) -> NSAttributedString? {
         if let bbcs = BBCodeString.init(bbCode: string, andLayoutProvider: self) {
-            print("bbcs")
             return bbcs.attributedString
         }
         
@@ -199,7 +198,7 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
                          NSAttributedString.Key.link: element.text,
                          NSAttributedString.Key.cursor: NSCursor.pointingHand]
             
-            return NSAttributedString(string: element.text as String, attributes: attrs)
+            return NSAttributedString(string: element.text as String, attributes: attrs as [NSAttributedString.Key : Any])
         }
         return nil
     }

@@ -135,6 +135,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
             UserDefaults.standard.set(image: AppDelegate.defaultIcon, forKey: "WSUserIcon")
         }
     
+        // various data formatters
         AppDelegate.byteCountFormatter.allowedUnits = [.useMB]
         AppDelegate.byteCountFormatter.countStyle = .file
         AppDelegate.byteCountFormatter.zeroPadsFractionDigits = true
@@ -150,38 +151,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     // MARK: - Application Delegate
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        reachability.whenReachable = { _ in
-            Logger.info("Network is reachable")
-        }
-        
-        reachability.whenUnreachable = { _ in
-            Logger.warning("Network is unreachable")
-            
-            for connection in ConnectionsController.shared.connections {
-                if connection.isConnected() {
-                    if connection.url.hostname != "localhost" && !connection.url.hostname.starts(with: "127.0.0."){
-                        connection.disconnect()
-                    }
-                }
-            }
-        }
-        
-        do {
-            try reachability.startNotifier()
-        } catch {
-            Logger.error("Unable to startreachability notifier")
-        }
-        
-        // request local user notifications
-        AppDelegate.notificationCenter.requestAuthorization(options: AppDelegate.options) {
-            (didAllow, error) in
-            if !didAllow {
-                Logger.warning("User has declined notifications")
-            }
-        }
-        
-        AppDelegate.notificationCenter.delegate = self
-        
+        self.setupReachability()
+        self.setupUserNotifications()
+                
         // connect bookmarkat startup
         for bookmark in ConnectionsController.shared.bookmarks() {
             if bookmark.connectAtStartup {
@@ -340,7 +312,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     }
     
     
+    
     // MARK: - Static Connection Helpers
+    
     private static func hasActiveConnections() -> Bool {
         for c in ConnectionsController.shared.connections {
             if let cwc = c.connectionWindowController {
@@ -552,28 +526,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         }
     }
     
-    
-    // MARK: - Privates
-    private func setTabView(withIdentifier identifier:String) {
-        
-    }
-    
-    private func setTabView(atIndex index:Int) {
-        if let currentWindowController = currentWindowController() {
-            if let splitViewController = currentWindowController.contentViewController as? NSSplitViewController {
-                if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
-                    tabViewController.selectedTabViewItemIndex = index
-                }
-            }
-        }
-    }
-    
-    private func currentWindowController() -> ConnectionWindowController? {
-        if let window = NSApp.mainWindow, let connectionWindowController = window.windowController as? ConnectionWindowController {
-            return connectionWindowController
-        }
-        return nil
-    }
+
 
     
     
@@ -676,6 +629,61 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         }
         // If we got here, it is time to quit.
         return .terminateNow
+    }
+    
+    
+    // MARK: - Privates
+
+    private func setTabView(atIndex index:Int) {
+        if let currentWindowController = currentWindowController() {
+            if let splitViewController = currentWindowController.contentViewController as? NSSplitViewController {
+                if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
+                    tabViewController.selectedTabViewItemIndex = index
+                }
+            }
+        }
+    }
+    
+    private func currentWindowController() -> ConnectionWindowController? {
+        if let window = NSApp.mainWindow, let connectionWindowController = window.windowController as? ConnectionWindowController {
+            return connectionWindowController
+        }
+        return nil
+    }
+    
+    private func setupReachability() {
+        self.reachability.whenReachable = { _ in
+            Logger.info("Network is reachable")
+        }
+        
+        self.reachability.whenUnreachable = { _ in
+            Logger.warning("Network is unreachable")
+            
+            for connection in ConnectionsController.shared.connections {
+                if connection.isConnected() {
+                    if connection.url.hostname != "localhost" && !connection.url.hostname.starts(with: "127.0.0."){
+                        connection.disconnect()
+                    }
+                }
+            }
+        }
+        
+        do {
+            try self.reachability.startNotifier()
+        } catch {
+            Logger.error("Unable to startreachability notifier")
+        }
+    }
+    
+    
+    private func setupUserNotifications() {
+        AppDelegate.notificationCenter.delegate = self
+        AppDelegate.notificationCenter.requestAuthorization(options: AppDelegate.options) {
+            (didAllow, error) in
+            if !didAllow {
+                Logger.warning("User has declined notifications")
+            }
+        }
     }
 }
 

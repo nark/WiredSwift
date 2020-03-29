@@ -254,7 +254,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
             
             if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
                 if !self.connection.connectionWindowController!.manualyDisconnected {
-                    conversationViewController.addEventMessage(message: "<< Try to auto-reconnect in 10sec... ⏱ >>")
+                    conversationViewController.addEventMessage(message: "<< Auto-reconnecting... ⏱ >>")
                 }
             }
         }
