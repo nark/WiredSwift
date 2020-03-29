@@ -95,21 +95,6 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     }
     
     
-    // MARK: -
-    @objc func linkConnectionDidClose(_ n: Notification) {
-        if let c = n.object as? Connection, c == self.connection {
-            self.chatInput.isEditable = false
-            conversationViewController.addEventMessage(message: "<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
-        }
-    }
-    
-    @objc func linkConnectionDidReconnect(_ n: Notification) {
-        if let c = n.object as? Connection, c == self.connection {
-            self.chatInput.isEditable = true
-            conversationViewController.addEventMessage(message: "<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
-        }
-    }
-    
     
     
     
@@ -258,6 +243,32 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
             }
         }
     }
+    
+    
+    
+    // MARK: -
+    @objc func linkConnectionDidClose(_ n: Notification) {
+        if let c = n.object as? Connection, c == self.connection {
+            self.chatInput.isEditable = false
+            conversationViewController.addEventMessage(message: "<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
+            
+            if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
+                if !self.connection.connectionWindowController!.manualyDisconnected {
+                    conversationViewController.addEventMessage(message: "<< Try to auto-reconnect in 10sec... ⏱ >>")
+                }
+            }
+        }
+    }
+    
+    @objc func linkConnectionDidReconnect(_ n: Notification) {
+        if let c = n.object as? Connection, c == self.connection {
+            self.chatInput.isEditable = true
+            conversationViewController.addEventMessage(message: "<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
+        }
+    }
+    
+    
+    // MARK: -
     
     func connectionDidConnect(connection: Connection) {
         self.chatInput.isEditable = true

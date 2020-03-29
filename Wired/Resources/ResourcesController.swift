@@ -110,6 +110,8 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     // MARK: -
     @IBAction func disconnect(_ sender: Any) {
         if let selectedConnection = self.selectedItem() as? ServerConnection {
+            self.connection.connectionWindowController!.manualyDisconnected = true
+            
             selectedConnection.disconnect()
         }
     }

@@ -13,6 +13,9 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     public var bookmark: Bookmark!
 
     var autoreconnectTimer:Timer!
+    var reconnectCounter = 0
+    
+    public var manualyDisconnected = false
     
     public static func connectConnectionWindowController(withBookmark bookmark:Bookmark) -> ConnectionWindowController? {
         if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
@@ -149,23 +152,21 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                 item.label = "Reconnect"
             }
             
-            if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
-                if self.autoreconnectTimer != nil {
-                    self.autoreconnectTimer.invalidate()
-                    self.autoreconnectTimer = nil
+            if !self.manualyDisconnected {
+                if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
+                    self.startAutoReconnect()
+                    
+                } else {
+                    AppDelegate.notify(identifier: "connection", title: "Server Disconnected", text: "You have been disconnected form \(self.connection.serverInfo.serverName!)", connection: self.connection)
                 }
-                
-                self.autoreconnectTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { (timer) in
-                    self.reconnect()
-                }
-            } else {
-                AppDelegate.notify(identifier: "connection", title: "Server Disconnected", text: "You have been disconnected form \(self.connection.serverInfo.serverName!)", connection: self.connection)
             }
+            
+            self.manualyDisconnected = false
         }
     }
     
     
-    func windowDidBecomeKey(_ notification: Notification) {
+    private func windowDidBecomeKey(_ notification: Notification) {
         if self.window == notification.object as? NSWindow {
             if let splitViewController = self.contentViewController as? NSSplitViewController {
                 if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
@@ -225,12 +226,14 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                     
                     alert.beginSheetModal(for: self.window!) { (modalResponse: NSApplication.ModalResponse) -> Void in
                         if modalResponse == .alertFirstButtonReturn {
+                            self.manualyDisconnected = true
                             self.connection.disconnect()
                             item.image = NSImage(named: "Reconnect")
                             item.label = "Reconnect"
                         }
                     }
                 } else {
+                    self.manualyDisconnected = true
                     self.connection.disconnect()
                     item.image = NSImage(named: "Reconnect")
                     item.label = "Reconnect"
@@ -244,10 +247,7 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     
     
     private func reconnect() {
-        if self.autoreconnectTimer != nil {
-            self.autoreconnectTimer.invalidate()
-            self.autoreconnectTimer = nil
-        }
+        self.reconnectCounter += 1
         
         if let item = self.toolbarItem(withIdentifier: "Disconnect") {
             if !self.connection.isConnected() {
@@ -258,6 +258,9 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                     if self.connection.connect(withUrl: self.connection.url) {
                         DispatchQueue.main.async {
                             print("reconnected")
+                            
+                            self.stopAutoReconnect()
+                            
                             _ = self.connection.joinChat(chatID: 1)
                             
                             NotificationCenter.default.post(name: .linkConnectionDidReconnect, object: self.connection)
@@ -364,4 +367,25 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
         return true
     }
     
+    
+    private func startAutoReconnect() {
+        self.stopAutoReconnect()
+        
+        let interval = 10.0
+        
+        self.autoreconnectTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { (timer) in
+            print("Try to auto-reconnect every \(interval) sec. (\(self.reconnectCounter))...")
+            
+            self.reconnect()
+        }
+    }
+    
+    private func stopAutoReconnect() {
+        self.reconnectCounter = 0
+        
+        if self.autoreconnectTimer != nil {
+            self.autoreconnectTimer.invalidate()
+            self.autoreconnectTimer = nil
+        }
+    }
 }
