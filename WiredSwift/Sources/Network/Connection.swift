@@ -51,6 +51,9 @@ public class Connection: NSObject {
     
     public var serverInfo: ServerInfo!
     
+    private var lastPingDate:Date!
+    private var pingCheckTimer:Timer!
+    
     private var listener:DispatchWorkItem!
     
     public var URI:String {
@@ -115,6 +118,19 @@ public class Connection: NSObject {
         if self.interactive == true {
             self.listen()
         }
+        
+        self.pingCheckTimer=Timer.scheduledTimer(withTimeInterval: 10, repeats: true, block: { (timer) in
+            if let lpd = self.lastPingDate {
+                let interval = Date().timeIntervalSince(lpd)
+                if interval > 65 {
+                    Logger.error("Lost ping, server is probably down, disconnecting...")
+                    
+                    if self.isConnected() {
+                        self.disconnect()
+                    }
+                }
+            }
+        })
         
         return true
 
@@ -238,7 +254,13 @@ public class Connection: NSObject {
     
     
     private func pingReply() {
+        if let lpd = self.lastPingDate {
+            print(Date().timeIntervalSince(lpd))
+        }
+        
         _ = self.send(message: P7Message(withName: "wired.ping", spec: self.spec))
+        
+        self.lastPingDate = Date()
     }
 
     

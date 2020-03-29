@@ -355,10 +355,14 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     
     
     private func toolbarItem(withIdentifier: String) -> NSToolbarItem? {
-        for item in (self.window?.toolbar!.items)! {
-                if item.itemIdentifier.rawValue == withIdentifier {
-                    return item
+        if let w = self.window {
+            if let toolbar = w.toolbar {
+                for item in toolbar.items {
+                        if item.itemIdentifier.rawValue == withIdentifier {
+                            return item
+                        }
                 }
+            }
         }
         return nil
     }

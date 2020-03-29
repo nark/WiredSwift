@@ -10,6 +10,8 @@ import Cocoa
 import Preferences
 import KeychainAccess
 import UserNotifications
+import Reachability
+
 
 extension PreferencePane.Identifier {
     static let general      = Identifier("general")
@@ -60,6 +62,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     static let timeIntervalFormatter = DateComponentsFormatter()
     static let byteCountFormatter = ByteCountFormatter()
     
+    // setup reachability
+    let reachability = try! Reachability()
     
     lazy var preferencesWindowController = PreferencesWindowController(
         preferencePanes: [
@@ -95,7 +99,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     override init() {
         #if DEBUG
-            Logger.setMaxLevel(.VERBOSE)
+            Logger.setMaxLevel(.WARNING)
+            Logger.removeDestination(.Stdout)
         #else
             Logger.setMaxLevel(.ERROR)
             Logger.removeDestination(.Stdout)
@@ -145,16 +150,39 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     // MARK: - Application Delegate
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // request notifications
+        reachability.whenReachable = { _ in
+            Logger.info("Network is reachable")
+        }
+        
+        reachability.whenUnreachable = { _ in
+            Logger.warning("Network is unreachable")
+            
+            for connection in ConnectionsController.shared.connections {
+                if connection.isConnected() {
+                    if connection.url.hostname != "localhost" && !connection.url.hostname.starts(with: "127.0.0."){
+                        connection.disconnect()
+                    }
+                }
+            }
+        }
+        
+        do {
+            try reachability.startNotifier()
+        } catch {
+            Logger.error("Unable to startreachability notifier")
+        }
+        
+        // request local user notifications
         AppDelegate.notificationCenter.requestAuthorization(options: AppDelegate.options) {
             (didAllow, error) in
             if !didAllow {
-                print("User has declined notifications")
+                Logger.warning("User has declined notifications")
             }
         }
         
         AppDelegate.notificationCenter.delegate = self
         
+        // connect bookmarkat startup
         for bookmark in ConnectionsController.shared.bookmarks() {
             if bookmark.connectAtStartup {
                 _ = ConnectionWindowController.connectConnectionWindowController(withBookmark: bookmark)
@@ -253,14 +281,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     
     @IBAction func addToBookmarks(_ sender: NSMenuItem) {
-        print("addToBookmarks")
         let context = persistentContainer.viewContext
         
         if let splitVC = NSApp.mainWindow?.contentViewController as? NSSplitViewController {
-            print("splitVC: \(splitVC)")
-            
             if let connVC = splitVC.splitViewItems[0].viewController as? ConnectionViewController {
-                print("connVC: \(connVC)")
                 
                 if let connection = connVC.connection {
                     let bookmark:Bookmark = NSEntityDescription.insertNewObject(
@@ -481,7 +505,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         notificationCenter.removeAllPendingNotificationRequests()
         notificationCenter.add(request) { (error) in
             if let error = error {
-                print("Error \(error.localizedDescription)")
+                Logger.error("Error \(error.localizedDescription)")
             }
         }
     }
@@ -576,6 +600,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
                  * The store could not be migrated to the current model version.
                  Check the error message to determine what the actual problem was.
                  */
+                Logger.error("Unresolved error \(error)")
                 fatalError("Unresolved error \(error)")
             }
         })
@@ -589,7 +614,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         let context = persistentContainer.viewContext
 
         if !context.commitEditing() {
-            NSLog("\(NSStringFromClass(type(of: self))) unable to commit editing before saving")
+            Logger.error("\(NSStringFromClass(type(of: self))) unable to commit editing before saving")
         }
         if context.hasChanges {
             do {
@@ -615,7 +640,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         let context = persistentContainer.viewContext
         
         if !context.commitEditing() {
-            NSLog("\(NSStringFromClass(type(of: self))) unable to commit editing to terminate")
+            Logger.error("\(NSStringFromClass(type(of: self))) unable to commit editing to terminate")
             return .terminateCancel
         }
         

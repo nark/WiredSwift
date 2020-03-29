@@ -103,6 +103,8 @@
 		4C93B322242FEB2200A956C3 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4C93B323242FEB8D00A956C3 /* Gzip.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; };
 		4C9C5CDC2430DF2F007B6CF0 /* WiredSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C9C5CE02430F478007B6CF0 /* Reachability.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9C5CDF2430F478007B6CF0 /* Reachability.framework */; };
+		4C9C5CE12430F590007B6CF0 /* Reachability.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9C5CDF2430F478007B6CF0 /* Reachability.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153824262223005B9048 /* GrowingTextView.swift */; };
 		4CA4153B24262238005B9048 /* GrowingTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153A24262238005B9048 /* GrowingTextField.swift */; };
 		4CA4153D24262277005B9048 /* ConversationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153C24262277005B9048 /* ConversationViewController.swift */; };
@@ -230,6 +232,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				4C9C5CE12430F590007B6CF0 /* Reachability.framework in Embed Frameworks */,
 				4C9C5CDC2430DF2F007B6CF0 /* WiredSwift.framework in Embed Frameworks */,
 				4C7A45A9242925DA008F0FFE /* MessageKit_macOS.framework in Embed Frameworks */,
 				4CF673722403FF4200A8EDC2 /* Gzip.framework in Embed Frameworks */,
@@ -322,6 +325,7 @@
 		4C93B2FE242FE96200A956C3 /* WiredSwfitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiredSwfitTests.swift; sourceTree = "<group>"; };
 		4C93B300242FE96200A956C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4C990ED12405D7380059BC8B /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		4C9C5CDF2430F478007B6CF0 /* Reachability.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Reachability.framework; path = Carthage/Build/Mac/Reachability.framework; sourceTree = SOURCE_ROOT; };
 		4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "MessageKit-macOS.xcodeproj"; path = "Vendors/MessageKit-macOS-master/MessageKit-macOS.xcodeproj"; sourceTree = SOURCE_ROOT; };
 		4CA4153824262223005B9048 /* GrowingTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GrowingTextView.swift; path = "Vendors/MessageKit-macOS-master/Example/Sources/GrowingTextView.swift"; sourceTree = SOURCE_ROOT; };
 		4CA4153A24262238005B9048 /* GrowingTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GrowingTextField.swift; path = "Vendors/MessageKit-macOS-master/Example/Sources/GrowingTextField.swift"; sourceTree = SOURCE_ROOT; };
@@ -376,6 +380,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C9C5CE02430F478007B6CF0 /* Reachability.framework in Frameworks */,
 				4CFB162023FC89A7000EE688 /* KeychainAccess.framework in Frameworks */,
 				4CF6737A2404214800A8EDC2 /* CZlib in Frameworks */,
 				4CED2FC322E8F4B0000E5B9E /* CryptoSwift.framework in Frameworks */,
@@ -563,6 +568,7 @@
 				4CD0204F22DF04BD0008B36C /* WiredSwift.h */,
 				4C4C3EF622E1164700BC2DD9 /* Sources */,
 				4CD0205022DF04BD0008B36C /* Info.plist */,
+				4C9C5CDF2430F478007B6CF0 /* Reachability.framework */,
 				4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */,
 				4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */,
 				4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */,
