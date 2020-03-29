@@ -743,7 +743,7 @@
                         <rect key="contentRect" x="425" y="461" width="993" height="645"/>
                         <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1417"/>
                         <value key="minSize" type="size" width="993" height="645"/>
-                        <toolbar key="toolbar" implicitIdentifier="CB50EB68-BDC9-4A64-90DA-36864638877E" centeredItem="AjG-gm-8Ar" autosavesConfiguration="NO" allowsUserCustomization="NO" displayMode="iconAndLabel" sizeMode="regular" id="Q5a-NN-a2T">
+                        <toolbar key="toolbar" implicitIdentifier="CB50EB68-BDC9-4A64-90DA-36864638877E" autosavesConfiguration="NO" allowsUserCustomization="NO" displayMode="iconAndLabel" sizeMode="regular" id="Q5a-NN-a2T">
                             <allowedToolbarItems>
                                 <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="dU2-ic-Uox"/>
                                 <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="uMC-yy-L4e"/>
@@ -803,22 +803,6 @@
                                         <action selector="disconnect:" target="OHh-vB-dxB" id="a17-t4-1JJ"/>
                                     </connections>
                                 </toolbarItem>
-                                <toolbarItem implicitItemIdentifier="9B1A0F4C-A8FD-45A6-ABE4-C9C5E9299D44" label="Sidebar" paletteLabel="Sidebar" image="Sidebar" id="9fw-vf-86y">
-                                    <nil key="toolTip"/>
-                                    <size key="minSize" width="50" height="32"/>
-                                    <size key="maxSize" width="50" height="32"/>
-                                    <button key="view" verticalHuggingPriority="750" id="p1e-Ao-w7F">
-                                        <rect key="frame" x="0.0" y="14" width="50" height="32"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                        <buttonCell key="cell" type="push" bezelStyle="rounded" image="Sidebar" imagePosition="overlaps" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Vt2-pl-yM3">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                        </buttonCell>
-                                    </button>
-                                    <connections>
-                                        <action selector="viewsAction:" target="d0o-cM-yCw" id="IAp-wg-i0E"/>
-                                    </connections>
-                                </toolbarItem>
                                 <toolbarItem implicitItemIdentifier="55C78142-21EC-43F1-A223-18DEB9B6D9DE" explicitItemIdentifier="Console" label="Console" paletteLabel="Console" tag="-1" image="Console" selectable="YES" id="55p-N9-86O">
                                     <size key="minSize" width="25" height="25"/>
                                     <size key="maxSize" width="25" height="25"/>
@@ -826,10 +810,16 @@
                                         <action selector="tabAction:" target="OHh-vB-dxB" id="2B3-g3-0hb"/>
                                     </connections>
                                 </toolbarItem>
+                                <toolbarItem implicitItemIdentifier="C182F2C5-7EBB-4B8B-BAAB-3877ED246845" explicitItemIdentifier="Banner" label="" paletteLabel="Banner" sizingBehavior="auto" id="upx-JY-tu8">
+                                    <nil key="toolTip"/>
+                                    <imageView key="view" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="Bar-kd-vhU">
+                                        <rect key="frame" x="0.0" y="14" width="200" height="32"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="4Ih-gQ-UMq"/>
+                                    </imageView>
+                                </toolbarItem>
                             </allowedToolbarItems>
                             <defaultToolbarItems>
-                                <toolbarItem reference="9fw-vf-86y"/>
-                                <toolbarItem reference="uMC-yy-L4e"/>
                                 <toolbarItem reference="K6F-ha-z0b"/>
                                 <toolbarItem reference="M1G-Pj-0lu"/>
                                 <toolbarItem reference="N05-te-o5I"/>
@@ -838,6 +828,8 @@
                                 <toolbarItem reference="3NR-k4-78A"/>
                                 <toolbarItem reference="CQS-cC-sWB"/>
                                 <toolbarItem reference="55p-N9-86O"/>
+                                <toolbarItem reference="uMC-yy-L4e"/>
+                                <toolbarItem reference="upx-JY-tu8"/>
                                 <toolbarItem reference="uMC-yy-L4e"/>
                                 <toolbarItem reference="sW9-GA-9AV"/>
                             </defaultToolbarItems>
@@ -3973,7 +3965,6 @@ DQ
         <image name="ReplyThread" width="100" height="100"/>
         <image name="ServerInfo" width="25" height="25"/>
         <image name="Settings" width="25" height="25"/>
-        <image name="Sidebar" width="25" height="25"/>
         <image name="Smileys" width="100" height="100"/>
         <image name="StartTransfer" width="25" height="25"/>
         <image name="StopTransfer" width="25" height="25"/>

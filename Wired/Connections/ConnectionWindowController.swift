@@ -42,6 +42,12 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
             DispatchQueue.global().async {
                 if connectionWindowController.connection.connect(withUrl: url) == true {
                     DispatchQueue.main.async {
+                        if let bannerItem = connectionWindowController.toolbarItem(withIdentifier: "Banner") {
+                            if let imageView = bannerItem.view as? NSImageView {
+                                imageView.image = NSImage(data: connectionWindowController.connection.serverInfo.serverBanner)
+                            }
+                        }
+                        
                         ConnectionsController.shared.addConnection(connectionWindowController.connection)
                         
                         connectionWindowController.attach(connection: connectionWindowController.connection)
