@@ -16,7 +16,8 @@ public class UserInfo {
     public var nick: String!
     public var status: String!
     public var icon: Data!
-
+    public var color: UInt32!
+    
     private var message: P7Message!
     
     public init(message: P7Message) {
@@ -44,6 +45,10 @@ public class UserInfo {
         
         if let v = message.data(forField: "wired.user.icon") {
             self.icon = v
+        }
+        
+        if let v = message.enumeration(forField: "wired.account.color") {
+            self.color = v
         }
     }
 }

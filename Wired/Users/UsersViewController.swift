@@ -8,11 +8,11 @@
 
 import Cocoa
 
-class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTableViewDelegate, NSTableViewDataSource {
+class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTableViewDelegate, NSTableViewDataSource, NSUserInterfaceValidations {
     @IBOutlet weak var usersTableView: NSTableView!
     
     private var usersController:UsersController?
-
+    var selectedUser:UserInfo!
     
     // MARK: - View Controller
     
@@ -28,7 +28,7 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
             name: .linkConnectionDidClose, object: nil)
         
         self.usersTableView.target = self
-        self.usersTableView.doubleAction = #selector(tableDoubleClick(_:))
+        self.usersTableView.doubleAction = #selector(showPrivateMessages(_:))
     }
     
     
@@ -49,15 +49,7 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     
     
     // MARK: - Notification
-    
-    @objc func tableDoubleClick(_ sender: Any) {
-        if self.usersTableView.selectedRow != -1 {
-            if let selectedUser = self.usersController?.user(at: self.usersTableView.selectedRow) {
-                _ = ConversationsController.shared.openConversation(onConnection: self.connection, withUser: selectedUser)
-            }
-        }
-    }
-    
+
     
     @objc func userLeftPublicChat(_ n:Notification) {
         if let c = n.object as? Connection, self.connection == c {
@@ -72,6 +64,43 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
             self.usersController?.removeAllUsers()
             self.usersTableView.reloadData()
         }
+    }
+    
+    
+    
+    // MARK: - IBAction
+    
+    @IBAction func showPrivateMessages(_ sender: Any) {
+        if let selectedUser = self.selectedUser {
+            _ = ConversationsController.shared.openConversation(onConnection: self.connection, withUser: selectedUser)
+            
+            self.selectedUser = nil
+        }
+    }
+    
+    @IBAction func getUserInfo(_ sender: Any) {
+        let storyboard = NSStoryboard(name: NSStoryboard.Name("Main"), bundle: Bundle.main)
+        if let userInfoViewController = storyboard.instantiateController(withIdentifier: NSStoryboard.SceneIdentifier("UserInfoViewController")) as? UserInfoViewController {
+            let popover = NSPopover()
+            popover.contentSize = userInfoViewController.view.frame.size
+            popover.behavior = .transient
+            popover.animates = true
+            popover.contentViewController = userInfoViewController
+            
+            userInfoViewController.connection = self.connection
+            userInfoViewController.user = self.selectedUser
+            self.selectedUser = nil
+            
+            popover.show(relativeTo: self.usersTableView.frame, of: self.usersTableView, preferredEdge: .minX)
+        }
+    }
+    
+    @IBAction func kickUser(_ sender: Any) {
+        print("kickUser")
+    }
+    
+    @IBAction func banUser(_ sender: Any) {
+        print("banUser")
     }
     
     
@@ -123,6 +152,32 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     
     
     
+    
+    
+    // MARK: NSValidatedUserInterfaceItem
+    func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+        if let user = self.selectedItem() {
+            self.selectedUser = user
+            
+            if item.action == #selector(showPrivateMessages(_:)) {
+                return connection.isConnected()
+            }
+            else if item.action == #selector(getUserInfo(_:)) {
+                return connection.isConnected()
+            }
+            else if item.action == #selector(kickUser(_:)) {
+                return connection.isConnected()
+            }
+            else if item.action == #selector(banUser(_:)) {
+                return connection.isConnected()
+            }
+        }
+        return false
+    }
+    
+    
+    
+    
     // MARK: - Table View
     
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -136,6 +191,7 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
         
         if let uc = self.usersController, let user = uc.user(at: row) {
             view?.userNick?.stringValue = user.nick
+            view?.userNick?.textColor = NSColor.color(forEnum: user.color)
             view?.userStatus?.stringValue = user.status
             
             if let base64ImageString = user.icon?.base64EncodedData() {
@@ -153,4 +209,23 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
 
         return view
     }
+    
+    
+    
+    // MARK: - Privates
+    
+    private func selectedItem() -> UserInfo? {
+        var selectedIndex = usersTableView.clickedRow
+                
+        if selectedIndex == -1 {
+            selectedIndex = usersTableView.selectedRow
+        }
+        
+        if selectedIndex == -1 {
+            return nil
+        }
+                
+        return self.usersController?.user(at: selectedIndex)
+    }
+    
 }

@@ -31,6 +31,9 @@ public protocol ConnectionDelegate: class {
 
 public extension ConnectionDelegate {
     // optional delegate methods
+    func connectionDidConnect(connection: Connection) { }
+    func connectionDidFailToConnect(connection: Connection, error: Error) { }
+    func connectionDisconnected(connection: Connection, error: Error?) { }
     func connectionDidSendMessage(connection: Connection, message: P7Message) { }
 }
 
@@ -254,10 +257,6 @@ public class Connection: NSObject {
     
     
     private func pingReply() {
-        if let lpd = self.lastPingDate {
-            print(Date().timeIntervalSince(lpd))
-        }
-        
         _ = self.send(message: P7Message(withName: "wired.ping", spec: self.spec))
         
         self.lastPingDate = Date()

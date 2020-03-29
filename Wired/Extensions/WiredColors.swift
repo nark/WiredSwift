@@ -7,3 +7,25 @@
 //
 
 import Foundation
+
+
+extension NSColor {
+    public static func color(forEnum e: UInt32) -> NSColor? {
+        switch e {
+        case 0:
+            return NSColor.black
+        case 1:
+            return NSColor.red
+        case 2:
+            return NSColor.orange
+        case 3:
+            return NSColor.green
+        case 4:
+            return NSColor.blue
+        case 5:
+            return NSColor.purple
+        default:
+            return NSColor.textColor
+        }
+    }
+}

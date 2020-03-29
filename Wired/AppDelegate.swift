@@ -252,7 +252,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     }
     
     
-    @IBAction func addToBookmarks(_ sender: NSMenuItem) {
+    @IBAction func addToBookmarks(_ sender: Any) {
         let context = persistentContainer.viewContext
         
         if let splitVC = NSApp.mainWindow?.contentViewController as? NSSplitViewController {
@@ -562,7 +562,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
 
     // MARK: - Core Data Saving and Undo support
 
-    @IBAction func saveAction(_ sender: AnyObject?) {
+    @IBAction func saveAction(_ sender: Any) {
         // Performs the save action for the application, which is to send the save: message to the application's managed object context. Any encountered errors are presented to the user.
         let context = persistentContainer.viewContext
 

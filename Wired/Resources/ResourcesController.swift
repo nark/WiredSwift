@@ -117,7 +117,7 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     }
     
     @IBAction func addToBookmarks(_ sender: Any) {
-        
+        AppDelegate.shared.addToBookmarks(sender)
     }
     
     @IBAction func editBookmark(_ sender: Any) {

@@ -105,6 +105,8 @@
 		4C9C5CDC2430DF2F007B6CF0 /* WiredSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C9C5CE02430F478007B6CF0 /* Reachability.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9C5CDF2430F478007B6CF0 /* Reachability.framework */; };
 		4C9C5CE12430F590007B6CF0 /* Reachability.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9C5CDF2430F478007B6CF0 /* Reachability.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C9C5CE724312762007B6CF0 /* UserInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C9C5CE624312762007B6CF0 /* UserInfoViewController.swift */; };
+		4C9C5CE92431322F007B6CF0 /* WiredColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C9C5CE82431322F007B6CF0 /* WiredColors.swift */; };
 		4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153824262223005B9048 /* GrowingTextView.swift */; };
 		4CA4153B24262238005B9048 /* GrowingTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153A24262238005B9048 /* GrowingTextField.swift */; };
 		4CA4153D24262277005B9048 /* ConversationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153C24262277005B9048 /* ConversationViewController.swift */; };
@@ -326,6 +328,8 @@
 		4C93B300242FE96200A956C3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4C990ED12405D7380059BC8B /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		4C9C5CDF2430F478007B6CF0 /* Reachability.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Reachability.framework; path = Carthage/Build/Mac/Reachability.framework; sourceTree = SOURCE_ROOT; };
+		4C9C5CE624312762007B6CF0 /* UserInfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInfoViewController.swift; sourceTree = "<group>"; };
+		4C9C5CE82431322F007B6CF0 /* WiredColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiredColors.swift; sourceTree = "<group>"; };
 		4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "MessageKit-macOS.xcodeproj"; path = "Vendors/MessageKit-macOS-master/MessageKit-macOS.xcodeproj"; sourceTree = SOURCE_ROOT; };
 		4CA4153824262223005B9048 /* GrowingTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GrowingTextView.swift; path = "Vendors/MessageKit-macOS-master/Example/Sources/GrowingTextView.swift"; sourceTree = SOURCE_ROOT; };
 		4CA4153A24262238005B9048 /* GrowingTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GrowingTextField.swift; path = "Vendors/MessageKit-macOS-master/Example/Sources/GrowingTextField.swift"; sourceTree = SOURCE_ROOT; };
@@ -469,6 +473,7 @@
 				4CA4153824262223005B9048 /* GrowingTextView.swift */,
 				4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */,
 				4C009B672427D07B00DAAB74 /* MSCBadgedTemplateImage.swift */,
+				4C9C5CE82431322F007B6CF0 /* WiredColors.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -650,6 +655,7 @@
 				4CA4154424262D8A005B9048 /* UsersController.swift */,
 				4CFA18CD230B3B2900E2A2EC /* UsersViewController.swift */,
 				4C0A99F323FBF9410008A7A6 /* UserCellView.swift */,
+				4C9C5CE624312762007B6CF0 /* UserInfoViewController.swift */,
 			);
 			path = Users;
 			sourceTree = "<group>";
@@ -1009,11 +1015,13 @@
 				4C5C1D242426812E00A751AA /* Message+CoreDataClass.swift in Sources */,
 				4C93B2E7242F9BD500A956C3 /* BBCodeString.m in Sources */,
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
+				4C9C5CE724312762007B6CF0 /* UserInfoViewController.swift in Sources */,
 				4C52DADB242682920085C7D7 /* ConversationsController.swift in Sources */,
 				4CD30DDB2426AADE008AA7FF /* EventMessage.swift in Sources */,
 				4CFA18C6230B085D00E2A2EC /* Data.swift in Sources */,
 				4CFA18C8230B359300E2A2EC /* ChatViewController.swift in Sources */,
 				4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */,
+				4C9C5CE92431322F007B6CF0 /* WiredColors.swift in Sources */,
 				4C8829E824254A0B00B4EF36 /* TabViewController.swift in Sources */,
 				4C20DD8E242EABDA009F64E6 /* PostsViewController.swift in Sources */,
 				4CFB162323FC9883000EE688 /* ConnectionWindowController.swift in Sources */,
