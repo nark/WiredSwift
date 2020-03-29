@@ -49,11 +49,7 @@
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
-                        <binding destination="xMH-OU-1oJ" name="value" keyPath="values.WSUserNick" id="fIg-yj-4wP">
-                            <dictionary key="options">
-                                <bool key="NSContinuouslyUpdatesValue" value="YES"/>
-                            </dictionary>
-                        </binding>
+                        <binding destination="xMH-OU-1oJ" name="value" keyPath="values.WSUserNick" id="O0Y-bg-Z5i"/>
                     </connections>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="87l-mk-NhL">
@@ -74,11 +70,7 @@
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                     <connections>
-                        <binding destination="xMH-OU-1oJ" name="value" keyPath="values.WSUserStatus" id="ZML-p0-Crc">
-                            <dictionary key="options">
-                                <bool key="NSContinuouslyUpdatesValue" value="YES"/>
-                            </dictionary>
-                        </binding>
+                        <binding destination="xMH-OU-1oJ" name="value" keyPath="values.WSUserStatus" id="LIJ-mI-OIw"/>
                     </connections>
                 </textField>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5gf-Iy-VJa">

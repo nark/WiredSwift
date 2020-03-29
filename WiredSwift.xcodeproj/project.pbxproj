@@ -51,7 +51,7 @@
 		4C3EE08C242FEBFF000B89D9 /* SocketSwift.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C3EE08D242FEBFF000B89D9 /* CryptorRSA.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */; };
 		4C3EE08E242FEBFF000B89D9 /* CryptoSwift.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
-		4C3EE08F242FEBFF000B89D9 /* WiredSwfit.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; };
+		4C3EE08F242FEBFF000B89D9 /* WiredSwift.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; };
 		4C3EE090242FECBA000B89D9 /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
 		4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
@@ -86,7 +86,7 @@
 		4C93B2F4242F9CAE00A956C3 /* BBElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2EE242F9CAE00A956C3 /* BBElement.m */; };
 		4C93B2F5242F9CAE00A956C3 /* BBCodeParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2EF242F9CAE00A956C3 /* BBCodeParser.m */; };
 		4C93B2FF242FE96200A956C3 /* WiredSwfitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2FE242FE96200A956C3 /* WiredSwfitTests.swift */; };
-		4C93B301242FE96200A956C3 /* WiredSwfit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; };
+		4C93B301242FE96200A956C3 /* WiredSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; };
 		4C93B315242FEB2200A956C3 /* ServerInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D1230C6ECE00E2A2EC /* ServerInfo.swift */; };
 		4C93B316242FEB2200A956C3 /* UserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D4230C741800E2A2EC /* UserInfo.swift */; };
 		4C93B317242FEB2200A956C3 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
@@ -102,8 +102,7 @@
 		4C93B321242FEB2200A956C3 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4C93B322242FEB2200A956C3 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4C93B323242FEB8D00A956C3 /* Gzip.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; };
-		4CA4153624261F25005B9048 /* MessageKit_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; };
-		4CA4153724261F30005B9048 /* MessageKit_macOS.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C9C5CDC2430DF2F007B6CF0 /* WiredSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153824262223005B9048 /* GrowingTextView.swift */; };
 		4CA4153B24262238005B9048 /* GrowingTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153A24262238005B9048 /* GrowingTextField.swift */; };
 		4CA4153D24262277005B9048 /* ConversationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153C24262277005B9048 /* ConversationViewController.swift */; };
@@ -116,9 +115,8 @@
 		4CB6A109242E4CF300AB4C89 /* BoardThread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A108242E4CF300AB4C89 /* BoardThread.swift */; };
 		4CB6A10B242E4FBE00AB4C89 /* BoardsSplitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */; };
 		4CB6A10D242E503A00AB4C89 /* BoardsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB6A10C242E503A00AB4C89 /* BoardsController.swift */; };
-		4CD0205122DF04BD0008B36C /* Wired.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0204F22DF04BD0008B36C /* Wired.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4CD0205422DF04BD0008B36C /* WiredSwfit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; };
-		4CD0205522DF04BD0008B36C /* WiredSwfit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4CD0205122DF04BD0008B36C /* WiredSwift.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0204F22DF04BD0008B36C /* WiredSwift.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		4CD0205422DF04BD0008B36C /* WiredSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; };
 		4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0205D22DF11920008B36C /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
 		4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -218,7 +216,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				4CA4153724261F30005B9048 /* MessageKit_macOS.framework in Copy Frameworks */,
 				4CF673702403FD8100A8EDC2 /* Gzip.framework in Copy Frameworks */,
 				4C1319AD2316E79F00C9FA0C /* SocketSwift.framework in Copy Frameworks */,
 				4CED2FC722E8FA3D000E5B9E /* CryptoSwift.framework in Copy Frameworks */,
@@ -233,12 +230,12 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				4C9C5CDC2430DF2F007B6CF0 /* WiredSwift.framework in Embed Frameworks */,
 				4C7A45A9242925DA008F0FFE /* MessageKit_macOS.framework in Embed Frameworks */,
 				4CF673722403FF4200A8EDC2 /* Gzip.framework in Embed Frameworks */,
 				4CFB162123FC89B7000EE688 /* KeychainAccess.framework in Embed Frameworks */,
 				4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */,
 				4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */,
-				4CD0205522DF04BD0008B36C /* WiredSwfit.framework in Embed Frameworks */,
 				4CED2FC922E8FA4D000E5B9E /* CryptorRSA.framework in Embed Frameworks */,
 				4CED2FCA22E8FA4F000E5B9E /* CryptoSwift.framework in Embed Frameworks */,
 			);
@@ -338,8 +335,8 @@
 		4CB6A108242E4CF300AB4C89 /* BoardThread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardThread.swift; sourceTree = "<group>"; };
 		4CB6A10A242E4FBE00AB4C89 /* BoardsSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsSplitViewController.swift; sourceTree = "<group>"; };
 		4CB6A10C242E503A00AB4C89 /* BoardsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardsController.swift; sourceTree = "<group>"; };
-		4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WiredSwfit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		4CD0204F22DF04BD0008B36C /* Wired.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Wired.h; sourceTree = "<group>"; };
+		4CD0204D22DF04BD0008B36C /* WiredSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WiredSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CD0204F22DF04BD0008B36C /* WiredSwift.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WiredSwift.h; sourceTree = "<group>"; };
 		4CD0205022DF04BD0008B36C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4CD0205A22DF07B60008B36C /* P7Spec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Spec.swift; sourceTree = "<group>"; };
 		4CD0205C22DF11920008B36C /* wired.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = wired.xml; sourceTree = "<group>"; };
@@ -383,7 +380,7 @@
 				4CF6737A2404214800A8EDC2 /* CZlib in Frameworks */,
 				4CED2FC322E8F4B0000E5B9E /* CryptoSwift.framework in Frameworks */,
 				4CED2FC522E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */,
-				4CD0205422DF04BD0008B36C /* WiredSwfit.framework in Frameworks */,
+				4CD0205422DF04BD0008B36C /* WiredSwift.framework in Frameworks */,
 				4C0A99FA23FBFE6C0008A7A6 /* Preferences.framework in Frameworks */,
 				4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */,
 				4CF673712403FF3C00A8EDC2 /* Gzip.framework in Frameworks */,
@@ -396,7 +393,7 @@
 			files = (
 				4C3EE088242FEBA1000B89D9 /* CryptorRSA.framework in Frameworks */,
 				4C3EE090242FECBA000B89D9 /* CryptoSwift.framework in Frameworks */,
-				4C93B301242FE96200A956C3 /* WiredSwfit.framework in Frameworks */,
+				4C93B301242FE96200A956C3 /* WiredSwift.framework in Frameworks */,
 				4C93B323242FEB8D00A956C3 /* Gzip.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -405,7 +402,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CA4153624261F25005B9048 /* MessageKit_macOS.framework in Frameworks */,
 				4CF6736F2403FD7A00A8EDC2 /* Gzip.framework in Frameworks */,
 				4CF673782404191E00A8EDC2 /* CZlib in Frameworks */,
 				4CED2FC622E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */,
@@ -492,7 +488,7 @@
 			isa = PBXGroup;
 			children = (
 				4C74285E22DCECE800D6E6F9 /* Wired.app */,
-				4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */,
+				4CD0204D22DF04BD0008B36C /* WiredSwift.framework */,
 				4C93B2FC242FE96200A956C3 /* WiredSwfitTests.xctest */,
 			);
 			name = Products;
@@ -564,7 +560,7 @@
 		4CD0204E22DF04BD0008B36C /* WiredSwift */ = {
 			isa = PBXGroup;
 			children = (
-				4CD0204F22DF04BD0008B36C /* Wired.h */,
+				4CD0204F22DF04BD0008B36C /* WiredSwift.h */,
 				4C4C3EF622E1164700BC2DD9 /* Sources */,
 				4CD0205022DF04BD0008B36C /* Info.plist */,
 				4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */,
@@ -779,7 +775,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CD0205122DF04BD0008B36C /* Wired.h in Headers */,
+				4CD0205122DF04BD0008B36C /* WiredSwift.h in Headers */,
 				4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -828,9 +824,9 @@
 			productReference = 4C93B2FC242FE96200A956C3 /* WiredSwfitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		4CD0204C22DF04BD0008B36C /* WiredSwfit */ = {
+		4CD0204C22DF04BD0008B36C /* WiredSwift */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "WiredSwfit" */;
+			buildConfigurationList = 4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "WiredSwift" */;
 			buildPhases = (
 				4CD0204822DF04BD0008B36C /* Headers */,
 				4CD0204922DF04BD0008B36C /* Sources */,
@@ -842,12 +838,12 @@
 			);
 			dependencies = (
 			);
-			name = WiredSwfit;
+			name = WiredSwift;
 			packageProductDependencies = (
 				4CF673772404191E00A8EDC2 /* CZlib */,
 			);
 			productName = Wired;
-			productReference = 4CD0204D22DF04BD0008B36C /* WiredSwfit.framework */;
+			productReference = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -896,7 +892,7 @@
 			projectRoot = "";
 			targets = (
 				4C74285D22DCECE800D6E6F9 /* Wired */,
-				4CD0204C22DF04BD0008B36C /* WiredSwfit */,
+				4CD0204C22DF04BD0008B36C /* WiredSwift */,
 				4C93B2FB242FE96200A956C3 /* WiredSwfitTests */,
 			);
 		};
@@ -944,7 +940,7 @@
 				4C3EE08C242FEBFF000B89D9 /* SocketSwift.framework in Resources */,
 				4C3EE08D242FEBFF000B89D9 /* CryptorRSA.framework in Resources */,
 				4C3EE08E242FEBFF000B89D9 /* CryptoSwift.framework in Resources */,
-				4C3EE08F242FEBFF000B89D9 /* WiredSwfit.framework in Resources */,
+				4C3EE08F242FEBFF000B89D9 /* WiredSwift.framework in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1101,7 +1097,7 @@
 /* Begin PBXTargetDependency section */
 		4C93B303242FE96200A956C3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4CD0204C22DF04BD0008B36C /* WiredSwfit */;
+			target = 4CD0204C22DF04BD0008B36C /* WiredSwift */;
 			targetProxy = 4C93B302242FE96200A956C3 /* PBXContainerItemProxy */;
 		};
 		4CC7BE222428DD6E003D874C /* PBXTargetDependency */ = {
@@ -1111,7 +1107,7 @@
 		};
 		4CD0205322DF04BD0008B36C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4CD0204C22DF04BD0008B36C /* WiredSwfit */;
+			target = 4CD0204C22DF04BD0008B36C /* WiredSwift */;
 			targetProxy = 4CD0205222DF04BD0008B36C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -1458,7 +1454,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "WiredSwfit" */ = {
+		4CD0205822DF04BD0008B36C /* Build configuration list for PBXNativeTarget "WiredSwift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4CD0205622DF04BD0008B36C /* Debug */,

@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import WiredSwfit
 import Preferences
 import KeychainAccess
 import UserNotifications

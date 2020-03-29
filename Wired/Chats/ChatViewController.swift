@@ -140,11 +140,11 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     private func setNickMessage(_ nick:String) -> P7Message? {
         let message = P7Message(withName: "wired.user.set_nick", spec: self.connection.spec)
         message.addParameter(field: "wired.user.nick", value: nick)
-        
+
         if UserDefaults.standard.string(forKey: "WSUserNick") == nick {
             UserDefaults.standard.set(nick, forKey: "WSUserNick")
         }
-        
+
         return message
     }
     
@@ -152,12 +152,12 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     private func setStatusMessage(_ status:String) -> P7Message? {
         let message = P7Message(withName: "wired.user.set_status", spec: self.connection.spec)
         message.addParameter(field: "wired.user.status", value: status)
-        
+
         if UserDefaults.standard.string(forKey: "WSUserStatus") == status {
             UserDefaults.standard.set(status, forKey: "WSUserStatus")
         }
-        
-        
+
+
         return message
     }
     
@@ -186,18 +186,18 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
         
         else if comps[0] == "/nick" {
             let value = command.deletingPrefix(comps[0]+" ")
+            
+            UserDefaults.standard.set(value, forKey: "WSUserNick")
+            
             return self.setNickMessage(value)
         }
             
         else if comps[0] == "/status" {
-            let message = P7Message(withName: "wired.user.set_status", spec: self.connection.spec)
             let value = command.deletingPrefix(comps[0]+" ")
-            
-            message.addParameter(field: "wired.user.status", value: value)
             
             UserDefaults.standard.set(value, forKey: "WSUserStatus")
             
-            return message
+            return self.setStatusMessage(value)
         }
         
         else if comps[0] == "/topic" {

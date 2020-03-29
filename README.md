@@ -85,6 +85,8 @@ The following example illustrate how to send a message:
     
     self.connection.send(message: message!)
     
+To learn more about the Wired 2.0 specification you can visit this documentation: http://wired.read-write.fr/spec.html and read the orginal code of the `libwired` C library: https://github.com/nark/libwired
+
 ## Contribute
 
 You are welcome to contribute using issues and pull-requests if you want to.
