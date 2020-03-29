@@ -13,7 +13,7 @@ extension Notification.Name {
 }
 
 
-class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource, NSMenuDelegate {
+class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource, NSUserInterfaceValidations {
     @IBOutlet weak var resourcesOutlineView: NSOutlineView!
         
     var selectedBookmark:Bookmark!
@@ -138,6 +138,54 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
             }
         }
     }
+    
+    @IBAction func removeBookmark(_ sender: Any) {
+        if let selectedItem = self.selectedItem()  {
+            if let bookmark = selectedItem as? Bookmark {
+                let alert = NSAlert()
+                alert.messageText = "Are you sure you want to delete this bookmark?"
+                alert.informativeText = "This operation is not recoverable"
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "OK")
+                alert.addButton(withTitle: "Cancel")
+                
+                alert.beginSheetModal(for: self.view.window!) { (modalResponse: NSApplication.ModalResponse) -> Void in
+                    if modalResponse == .alertFirstButtonReturn {
+                        ConnectionsController.shared.removeBookmark(bookmark)
+                        self.resourcesOutlineView.reloadData()
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    // MARK: NSValidatedUserInterfaceItem
+    func validateUserInterfaceItem(_ item: NSValidatedUserInterfaceItem) -> Bool {
+        
+        if let connection = self.selectedItem() as? ServerConnection {
+            if item.action == #selector(addToBookmarks(_:)) {
+                return true
+            }
+            else if item.action == #selector(disconnect(_:)) {
+                return connection.isConnected()
+            }
+        } else {
+            if let bookmark = self.selectedItem() as? Bookmark {
+                self.selectedBookmark = bookmark
+                
+                if item.action == #selector(editBookmark(_:)) {
+                    return true
+                }
+                if item.action == #selector(removeBookmark(_:)) {
+                    return true
+                }
+            }
+        }
+           
+        return false
+    }
+    
     
 
     
@@ -280,31 +328,31 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     
     
     // MARK: - Menu Delegate
-    func menuNeedsUpdate(_ menu: NSMenu) {
-        menu.removeAllItems()
-        
-        if menu != resourcesOutlineView.menu {
-            let cogItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-            cogItem.image = NSImage(named: "NSActionTemplate")
-            menu.addItem(cogItem)
-        }
-
-        
-        if let selectedItem = self.selectedItem()  {
-            if let connection = selectedItem as? Connection {
-                if connection.isConnected() {
-                    menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "")
-                    menu.addItem(NSMenuItem.separator())
-                    menu.addItem(withTitle: "Disconnect", action: #selector(disconnect(_:)), keyEquivalent: "")
-                }
-            }
-            else if let b = selectedItem as? Bookmark {
-                self.selectedBookmark = b
-                menu.addItem(withTitle: "Edit Bookmark", action: #selector(editBookmark(_:)), keyEquivalent: "")
-                menu.addItem(withTitle: "Remove Bookmark", action: #selector(removeSelectedBookmark), keyEquivalent: "")
-            }
-        }
-    }
+//    func menuNeedsUpdate(_ menu: NSMenu) {
+//        menu.removeAllItems()
+//        
+//        if menu != resourcesOutlineView.menu {
+//            let cogItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+//            cogItem.image = NSImage(named: "NSActionTemplate")
+//            menu.addItem(cogItem)
+//        }
+//
+//        
+//        if let selectedItem = self.selectedItem()  {
+//            if let connection = selectedItem as? Connection {
+//                if connection.isConnected() {
+//                    menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "")
+//                    menu.addItem(NSMenuItem.separator())
+//                    menu.addItem(withTitle: "Disconnect", action: #selector(disconnect(_:)), keyEquivalent: "")
+//                }
+//            }
+//            else if let b = selectedItem as? Bookmark {
+//                self.selectedBookmark = b
+//                menu.addItem(withTitle: "Edit Bookmark", action: #selector(editBookmark(_:)), keyEquivalent: "")
+//                menu.addItem(withTitle: "Remove Bookmark", action: #selector(removeSelectedBookmark), keyEquivalent: "")
+//            }
+//        }
+//    }
     
 
     
@@ -325,25 +373,5 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
         }
                 
         return resourcesOutlineView.item(atRow: selectedIndex)
-    }
-    
-    @objc private func removeSelectedBookmark() {
-        if let selectedItem = self.selectedItem()  {
-            if let bookmark = selectedItem as? Bookmark {
-                let alert = NSAlert()
-                alert.messageText = "Are you sure you want to delete this bookmark?"
-                alert.informativeText = "This operation is not recoverable"
-                alert.alertStyle = .warning
-                alert.addButton(withTitle: "OK")
-                alert.addButton(withTitle: "Cancel")
-                
-                alert.beginSheetModal(for: self.view.window!) { (modalResponse: NSApplication.ModalResponse) -> Void in
-                    if modalResponse == .alertFirstButtonReturn {
-                        ConnectionsController.shared.removeBookmark(bookmark)
-                        self.resourcesOutlineView.reloadData()
-                    }
-                }
-            }
-        }
     }
 }
