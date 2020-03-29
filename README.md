@@ -71,7 +71,7 @@ While using interactive mode, you have to comply with the `ConnectionDelegate` p
 The following example illustrate how to send a message:
 
     let message = P7Message(withName: "wired.chat.say", spec: spec)
-    message!.addParameter(field: "wired.chat.id", value: 1) // userID
+    message!.addParameter(field: "wired.chat.id", value: 1) // public chat ID
     message!.addParameter(field: "wired.chat.say", value: "Hello, world!")
     
     self.connection.send(message: message!)
