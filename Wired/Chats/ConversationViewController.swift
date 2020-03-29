@@ -29,6 +29,8 @@ import MapKit
 class ConversationViewController: MessagesViewController {
     public var connection: ServerConnection!
     
+    let queue = DispatchQueue(label: "fr.read-write.Wired.Messages")
+    
     var messageList: [Any] = []
     var isTyping = false
     let formatter: DateFormatter = {
@@ -112,7 +114,10 @@ class ConversationViewController: MessagesViewController {
                         let msg = PrivateMessage(text: message.body!, sender: sender, messageId: UUID().uuidString, date: Date())
 
                         DispatchQueue.main.async {
-                            self.messageList.append(msg)
+                            self.queue.async(flags: .barrier, execute: {
+                                self.messageList.append(msg)
+                            })
+                            
                             self.messagesCollectionView.reloadData()
 
                             self.perform(#selector(self.scrollToBottom), with: nil, afterDelay: 0.1)
@@ -152,11 +157,23 @@ extension ConversationViewController: MessagesDataSource {
     }
 
   func numberOfMessages(in messagesCollectionView: MessagesCollectionView) -> Int {
-    return messageList.count
+    var count = 0
+    queue.sync {
+        count = messageList.count
+    }
+    return count
   }
   
   func messageForItem(at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> MessageType {
-    return messageList[indexPath.section] as! MessageType
+    var message:MessageType! = nil
+    
+    queue.sync {
+        if let m = messageList[indexPath.section] as? MessageType {
+            message = m
+        }
+    }
+    
+    return message
   }
   
   func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {

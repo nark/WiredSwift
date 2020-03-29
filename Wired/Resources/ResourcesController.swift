@@ -361,9 +361,7 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     // MARK: - Private
     private func selectedItem() -> Any? {
         var selectedIndex = resourcesOutlineView.clickedRow
-        
-        print("clickedRow: \(selectedIndex)")
-        
+                
         if selectedIndex == -1 {
             selectedIndex = resourcesOutlineView.selectedRow
         }
