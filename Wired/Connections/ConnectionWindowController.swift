@@ -147,6 +147,10 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                 item.image = NSImage(named: "Reconnect")
                 item.label = "Reconnect"
             }
+            
+            let autoreconnectTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { (timer) in
+                self.reconnect()
+            }
         }
     }
     
@@ -223,6 +227,15 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                 }
     
             } else {
+                self.reconnect()
+            }
+        }
+    }
+    
+    
+    private func reconnect() {
+        if let item = self.toolbarItem(withIdentifier: "Disconnect") {
+            if !self.connection.isConnected() {
                 item.isEnabled = false
                 item.label = "Reconnecting"
                 

@@ -71,6 +71,10 @@ While using interactive mode, you have to comply with the `ConnectionDelegate` p
 The following example illustrate how to send a message:
 
     let message = P7Message(withName: "wired.chat.say", spec: spec)
+    message!.addParameter(field: "wired.chat.id", value: 1) // userID
+    message!.addParameter(field: "wired.chat.say", value: "Hello, world!")
+    
+    self.connection.send(message: message!)
     
 ## Contribute
 
@@ -81,7 +85,7 @@ Focus is on:
 * socket IO stability: the quality of in/out data interpretation and management through the Wired socket
 * mutli-threading stability: the ability to interact smoothly between connections and UIs
 * low-level unit tests: provides a strong implementation to enforce the integrity of the specification
-* specification compliance: any not yet implemented feature that require kilometers of code…
+* specification compliance: any not yet implemented features that require kilometers of code…
 * limit regression from the original implementation
 
 Check the GitHub « Projects » page to get a sneap peek on the project insights and progress:  https://github.com/nark/WiredSwift/projects

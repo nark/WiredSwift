@@ -16,6 +16,11 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>WiredSwfitTests.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 		<key>WiredSwift.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>isShown</key>
