@@ -16,6 +16,12 @@ Init dependencies:
 
 ## Using WiredSwift
 
+### Adding to your project
+
+Currently the easiest way to add `WiredSwift` to your project is by dropping the `WiredSwift.xcodeproj` file as a subproject of your own Xcode project workspace. 
+
+https://developer.apple.com/library/archive/documentation/ToolsLanguages/Conceptual/Xcode_Overview/WorkingonRelatedProjects.html
+
 ### Connection
 
 Minimal connection to a Wired 2.0 server:

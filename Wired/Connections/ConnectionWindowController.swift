@@ -12,6 +12,7 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     public var connection: ServerConnection!
     public var bookmark: Bookmark!
 
+    var autoreconnectTimer:Timer!
     
     public static func connectConnectionWindowController(withBookmark bookmark:Bookmark) -> ConnectionWindowController? {
         if let cwc = AppDelegate.windowController(forBookmark: bookmark) {
@@ -148,8 +149,17 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                 item.label = "Reconnect"
             }
             
-            let autoreconnectTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { (timer) in
-                self.reconnect()
+            if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
+                if self.autoreconnectTimer != nil {
+                    self.autoreconnectTimer.invalidate()
+                    self.autoreconnectTimer = nil
+                }
+                
+                self.autoreconnectTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: false) { (timer) in
+                    self.reconnect()
+                }
+            } else {
+                AppDelegate.notify(identifier: "connection", title: "Server Disconnected", text: "You have been disconnected form \(self.connection.serverInfo.serverName!)", connection: self.connection)
             }
         }
     }
@@ -234,6 +244,11 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     
     
     private func reconnect() {
+        if self.autoreconnectTimer != nil {
+            self.autoreconnectTimer.invalidate()
+            self.autoreconnectTimer = nil
+        }
+        
         if let item = self.toolbarItem(withIdentifier: "Disconnect") {
             if !self.connection.isConnected() {
                 item.isEnabled = false
