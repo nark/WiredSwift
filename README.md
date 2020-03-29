@@ -26,6 +26,9 @@ https://developer.apple.com/library/archive/documentation/ToolsLanguages/Concept
 
 Minimal connection to a Wired 2.0 server:
 
+    // import module
+    import WiredSwfit
+
     // this automatically load P7 and Wired 2.0 specification
     let spec = P7Spec()
     
