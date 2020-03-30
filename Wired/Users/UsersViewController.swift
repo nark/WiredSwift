@@ -28,7 +28,7 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
             name: .linkConnectionDidClose, object: nil)
         
         self.usersTableView.target = self
-        self.usersTableView.doubleAction = #selector(showPrivateMessages(_:))
+        self.usersTableView.doubleAction = #selector(doubleClickAction(_:))
     }
     
     
@@ -49,7 +49,6 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     
     
     // MARK: - Notification
-
     
     @objc func userLeftPublicChat(_ n:Notification) {
         if let c = n.object as? Connection, self.connection == c {
@@ -69,12 +68,17 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
     
     
     // MARK: - IBAction
+    @IBAction func doubleClickAction(_ sender: Any) {
+        self.selectedUser = self.selectedItem()
+        
+        self.showPrivateMessages(sender)
+    }
     
     @IBAction func showPrivateMessages(_ sender: Any) {
         if let selectedUser = self.selectedUser {
             _ = ConversationsController.shared.openConversation(onConnection: self.connection, withUser: selectedUser)
             
-            //self.selectedUser = nil
+            self.selectedUser = nil
         }
     }
     
@@ -227,5 +231,4 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
                 
         return self.usersController?.user(at: selectedIndex)
     }
-    
 }

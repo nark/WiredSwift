@@ -51,7 +51,7 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                         ConnectionsController.shared.addConnection(connectionWindowController.connection)
                         
                         connectionWindowController.attach(connection: connectionWindowController.connection)
-                        connectionWindowController.windowDidLoad()
+                        //connectionWindowController.windowDidLoad() // not good!
                         connectionWindowController.showWindow(connectionWindowController)
                     }
                 } else {
@@ -74,7 +74,7 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
     
     override public func windowDidLoad() {
         super.windowDidLoad()
-    
+            
         NotificationCenter.default.addObserver(
             self, selector: #selector(windowWillClose(notification:)),
             name: NSWindow.willCloseNotification, object: self.window)
@@ -156,23 +156,23 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
             if let item = self.toolbarItem(withIdentifier: "Disconnect") {
                 item.image = NSImage(named: "Reconnect")
                 item.label = "Reconnect"
-            }
-            
-            if !self.manualyDisconnected {
-                if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
-                    self.startAutoReconnect()
-                    
-                } else {
-                    AppDelegate.notify(identifier: "connection", title: "Server Disconnected", text: "You have been disconnected form \(self.connection.serverInfo.serverName!)", connection: self.connection)
+                
+                if self.manualyDisconnected == false {
+                    if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
+                        self.startAutoReconnect()
+                        
+                    } else {
+                        AppDelegate.notify(identifier: "connection", title: "Server Disconnected", text: "You have been disconnected form \(self.connection.serverInfo.serverName!)", connection: self.connection)
+                    }
                 }
+                
+                self.manualyDisconnected = false
             }
-            
-            self.manualyDisconnected = false
         }
     }
     
     
-    private func windowDidBecomeKey(_ notification: Notification) {
+    public func windowDidBecomeMain(_ notification: Notification) {
         if self.window == notification.object as? NSWindow {
             if let splitViewController = self.contentViewController as? NSSplitViewController {
                 if let tabViewController = splitViewController.splitViewItems[1].viewController as? NSTabViewController {
@@ -209,6 +209,10 @@ public class ConnectionWindowController: NSWindowController, NSToolbarDelegate, 
                 }
             }
         }
+    }
+    
+    private func windowDidBecomeKey(_ notification: Notification) {
+        print("windowDidBecomeKey: \(notification.object)")
     }
     
     
