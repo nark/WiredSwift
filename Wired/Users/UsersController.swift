@@ -7,7 +7,6 @@
 //
 
 import Cocoa
-import MessageKit_macOS
 
 
 class UsersController: ConnectionObject {
@@ -86,15 +85,16 @@ class UsersController: ConnectionObject {
         return nil
     }
     
-    public func getAvatar(forUserID uid: UInt32) -> Avatar {
+    public func getImage(forUserID uid: UInt32) -> NSImage? {
         if let u = self.user(forID: uid) {
             if let base64ImageString = u.icon?.base64EncodedData() {
                 if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
-                    return Avatar(image: NSImage(data: data), initials: self.userInitials(u))
+                    return NSImage(data: data)
                 }
             }
         }
-        return Avatar()
+        
+        return NSImage(named: "AppIcon")
     }
     
     

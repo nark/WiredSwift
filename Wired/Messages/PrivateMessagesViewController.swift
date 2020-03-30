@@ -8,12 +8,13 @@
 
 import Cocoa
 
-class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegate, NSTextFieldDelegate {
-    @IBOutlet var chatInput: GrowingTextField!
+class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegate, NSTextFieldDelegate, NSTableViewDelegate, NSTableViewDataSource {
+    @IBOutlet weak var messagesTableView: NSTableView!
+    @IBOutlet weak var chatInput: NSTextField!
     @IBOutlet weak var sendButton: NSButton!
     @IBOutlet weak var emojiButton: NSButton!
     
-    weak var conversationViewController: ConversationViewController!
+    //weak var conversationViewController: ConversationViewController!
     var conversation:Conversation!
     var textDidEndEditingTimer:Timer!
     
@@ -92,8 +93,14 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                 connection == self.conversation.connection {
                 
                 DispatchQueue.main.async {
-                    self.conversationViewController.addPrivateMessage(
-                        message: cdMessage.body!, cdMessage: cdMessage, me: false)
+                   self.conversation.addToMessages(cdMessage)
+                   
+                   self.messagesTableView.beginUpdates()
+                   self.messagesTableView.insertRows(at: [self.messagesTableView.numberOfRows], withAnimation: NSTableView.AnimationOptions.effectFade)
+                   self.messagesTableView.endUpdates()
+                   self.messagesTableView.noteNumberOfRowsChanged()
+                   
+                   self.messagesTableView.scrollToVisible(self.messagesTableView.rect(ofRow: self.messagesTableView.numberOfRows - 1))
                 }
             }
         }
@@ -108,7 +115,6 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
 
                 self.connection = connection
                 self.conversation.connection = connection
-                self.conversationViewController.connection = connection
 
                 self.connection.removeDelegate(self)
                 self.connection.delegates.append(self)
@@ -129,14 +135,14 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             }
 
             self.connection = nil
-            self.conversationViewController.connection = nil
 
             self.updateView()
         }
     }
     
     @objc func selectedConversationDidChange(_ n:Notification) {
-        self.conversationViewController.cleanAllMessages()
+        // CLEAR CONVERSATION MESSAGES
+        // self.conversationViewController.cleanAllMessages()
         
         if n.object == nil {
             if self.connection != nil {
@@ -148,7 +154,6 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             }
 
             self.connection = nil
-            self.conversationViewController.connection = nil
 
             self.conversation = nil
         }
@@ -161,13 +166,13 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             
             if conversation.connection != nil {
                 self.connection = conversation.connection
-                self.conversationViewController.connection = self.connection
                 
                 self.connection.removeDelegate(self)
                 self.connection.delegates.append(self)
             }
             
-            self.conversationViewController.loadMessages(from: conversation)
+            // LOAD ALL CONVERSATION MESSAGES
+            // self.conversationViewController.loadMessages(from: conversation)
         }
 
         self.updateView()
@@ -193,17 +198,23 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                 self.chatInput.becomeFirstResponder()
             }
         }
+        
+        self.messagesTableView.reloadData()
+        
+        self.perform(#selector(self.scrollToBottom), with:nil, afterDelay: 0.3)
+        self.perform(#selector(self.scrollToBottom), with:nil, afterDelay: 0.4)
     }
     
+    
+    @objc private func scrollToBottom() {
+        self.messagesTableView.scrollToVisible(self.messagesTableView.rect(ofRow: self.messagesTableView.numberOfRows - 1))
+    }
     
     
     // MARK: -
     
     override func prepare(for segue: NSStoryboardSegue, sender: Any?) {
-        if let conversationViewController = segue.destinationController as? ConversationViewController {
-            self.conversationViewController = conversationViewController
-            self.conversationViewController.connection = self.connection
-        }
+
     }
     
     
@@ -238,8 +249,14 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                             cdObject.read = true
                                 
                             self.conversation.addToMessages(cdObject)
-                            self.conversationViewController.addPrivateMessage(
-                                message: textField.stringValue, cdMessage: cdObject)
+                            
+                            self.messagesTableView.beginUpdates()
+                            self.messagesTableView.insertRows(at: [self.messagesTableView.numberOfRows], withAnimation: NSTableView.AnimationOptions.effectFade)
+                            self.messagesTableView.endUpdates()
+                            self.messagesTableView.noteNumberOfRowsChanged()
+                            
+                            self.perform(#selector(self.scrollToBottom), with:nil, afterDelay: 0.3)
+                            self.perform(#selector(self.scrollToBottom), with:nil, afterDelay: 0.4)
                         }
                         
                         textField.stringValue = ""
@@ -274,4 +291,39 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
         
     }
     
+    
+    // MARK: -
+    
+    
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        return 80
+    }
+    
+    
+    func numberOfRows(in tableView: NSTableView) -> Int {
+        if self.conversation == nil {
+            return 0
+        }
+        
+        return self.conversation.messages?.count ?? 0
+    }
+    
+    
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        var view: MessageCellView?
+        
+        if let message = self.conversation.messages?.array[row] as? Message {
+            let sentOrReceived = !message.me ? "ReceivedMessageCell" : "SentMessageCell"
+            
+            view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: sentOrReceived), owner: self) as? MessageCellView
+            
+            view?.nickLabel.stringValue = message.nick ?? ""
+            view?.textField?.stringValue = message.body ?? ""
+        }
+        
+        return view
+    }
+    
+
+
 }

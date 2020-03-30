@@ -75,9 +75,9 @@
 		4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286322DCECE800D6E6F9 /* ConnectController.swift */; };
 		4C74286622DCECE900D6E6F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C74286522DCECE900D6E6F9 /* Assets.xcassets */; };
 		4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C74286722DCECE900D6E6F9 /* Main.storyboard */; };
-		4C7A45A9242925DA008F0FFE /* MessageKit_macOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C7A45AB242937CA008F0FFE /* TimeAgo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7A45AA242937CA008F0FFE /* TimeAgo.swift */; };
 		4C7D19222431DD91002897CB /* NSColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7D19212431DD91002897CB /* NSColor.swift */; };
+		4C7D199824322B31002897CB /* MessageCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7D199724322B31002897CB /* MessageCellView.swift */; };
 		4C8829E824254A0B00B4EF36 /* TabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E724254A0B00B4EF36 /* TabViewController.swift */; };
 		4C8829EA2425672700B4EF36 /* ConnectionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E92425672700B4EF36 /* ConnectionWindow.swift */; };
 		4C93B2E7242F9BD500A956C3 /* BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2E3242F9BD500A956C3 /* BBCodeString.m */; };
@@ -108,10 +108,6 @@
 		4C9C5CE12430F590007B6CF0 /* Reachability.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C9C5CDF2430F478007B6CF0 /* Reachability.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C9C5CE724312762007B6CF0 /* UserInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C9C5CE624312762007B6CF0 /* UserInfoViewController.swift */; };
 		4C9C5CE92431322F007B6CF0 /* WiredColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C9C5CE82431322F007B6CF0 /* WiredColors.swift */; };
-		4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153824262223005B9048 /* GrowingTextView.swift */; };
-		4CA4153B24262238005B9048 /* GrowingTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153A24262238005B9048 /* GrowingTextField.swift */; };
-		4CA4153D24262277005B9048 /* ConversationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4153C24262277005B9048 /* ConversationViewController.swift */; };
-		4CA4154324262483005B9048 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4154224262483005B9048 /* ChatMessage.swift */; };
 		4CA4154524262D8A005B9048 /* UsersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA4154424262D8A005B9048 /* UsersController.swift */; };
 		4CA41547242664EE005B9048 /* ConversationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA41546242664EE005B9048 /* ConversationsViewController.swift */; };
 		4CA415492426651D005B9048 /* PrivateMessagesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */; };
@@ -127,8 +123,6 @@
 		4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0206022E0FCE20008B36C /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; };
 		4CD30DD92426979D008AA7FF /* ConversationCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD30DD62426979D008AA7FF /* ConversationCellView.swift */; };
-		4CD30DDB2426AADE008AA7FF /* EventMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD30DDA2426AADE008AA7FF /* EventMessage.swift */; };
-		4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD30DDC2426AAE8008AA7FF /* PrivateMessage.swift */; };
 		4CD8C47723FD25BD002895C1 /* InfosViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47623FD25BD002895C1 /* InfosViewController.swift */; };
 		4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD8C47823FD2C31002895C1 /* FilesViewController.swift */; };
 		4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE59DB0242D4710000D79BC /* ConsoleViewController.swift */; };
@@ -184,27 +178,6 @@
 			remoteGlobalIDString = 4CD0204C22DF04BD0008B36C;
 			remoteInfo = WiredSwfit;
 		};
-		4CA4153224261F0E005B9048 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 7C4C96D72024BB03009CEB2C;
-			remoteInfo = "MessageKit-macOS";
-		};
-		4CA4153424261F0E005B9048 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 7C4C96DF2024BB04009CEB2C;
-			remoteInfo = "MessageKit-macOSTests";
-		};
-		4CC7BE212428DD6E003D874C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 7C4C96D62024BB03009CEB2C;
-			remoteInfo = "MessageKit-macOS";
-		};
 		4CD0205222DF04BD0008B36C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4C74285622DCECE800D6E6F9 /* Project object */;
@@ -237,7 +210,6 @@
 			files = (
 				4C9C5CE12430F590007B6CF0 /* Reachability.framework in Embed Frameworks */,
 				4C9C5CDC2430DF2F007B6CF0 /* WiredSwift.framework in Embed Frameworks */,
-				4C7A45A9242925DA008F0FFE /* MessageKit_macOS.framework in Embed Frameworks */,
 				4CF673722403FF4200A8EDC2 /* Gzip.framework in Embed Frameworks */,
 				4CFB162123FC89B7000EE688 /* KeychainAccess.framework in Embed Frameworks */,
 				4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */,
@@ -308,6 +280,7 @@
 		4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WiredSwift.entitlements; sourceTree = "<group>"; };
 		4C7A45AA242937CA008F0FFE /* TimeAgo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeAgo.swift; sourceTree = "<group>"; };
 		4C7D19212431DD91002897CB /* NSColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColor.swift; sourceTree = "<group>"; };
+		4C7D199724322B31002897CB /* MessageCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageCellView.swift; sourceTree = "<group>"; };
 		4C8829E724254A0B00B4EF36 /* TabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewController.swift; sourceTree = "<group>"; };
 		4C8829E92425672700B4EF36 /* ConnectionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionWindow.swift; sourceTree = "<group>"; };
 		4C93B2E1242F9BD400A956C3 /* Wired-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Wired-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -332,11 +305,6 @@
 		4C9C5CDF2430F478007B6CF0 /* Reachability.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Reachability.framework; path = Carthage/Build/Mac/Reachability.framework; sourceTree = SOURCE_ROOT; };
 		4C9C5CE624312762007B6CF0 /* UserInfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInfoViewController.swift; sourceTree = "<group>"; };
 		4C9C5CE82431322F007B6CF0 /* WiredColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiredColors.swift; sourceTree = "<group>"; };
-		4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "MessageKit-macOS.xcodeproj"; path = "Vendors/MessageKit-macOS-master/MessageKit-macOS.xcodeproj"; sourceTree = SOURCE_ROOT; };
-		4CA4153824262223005B9048 /* GrowingTextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GrowingTextView.swift; path = "Vendors/MessageKit-macOS-master/Example/Sources/GrowingTextView.swift"; sourceTree = SOURCE_ROOT; };
-		4CA4153A24262238005B9048 /* GrowingTextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = GrowingTextField.swift; path = "Vendors/MessageKit-macOS-master/Example/Sources/GrowingTextField.swift"; sourceTree = SOURCE_ROOT; };
-		4CA4153C24262277005B9048 /* ConversationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationViewController.swift; sourceTree = "<group>"; };
-		4CA4154224262483005B9048 /* ChatMessage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		4CA4154424262D8A005B9048 /* UsersController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersController.swift; sourceTree = "<group>"; };
 		4CA41546242664EE005B9048 /* ConversationsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsViewController.swift; sourceTree = "<group>"; };
 		4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateMessagesViewController.swift; sourceTree = "<group>"; };
@@ -351,8 +319,6 @@
 		4CD0205A22DF07B60008B36C /* P7Spec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Spec.swift; sourceTree = "<group>"; };
 		4CD0205C22DF11920008B36C /* wired.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = wired.xml; sourceTree = "<group>"; };
 		4CD30DD62426979D008AA7FF /* ConversationCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationCellView.swift; sourceTree = "<group>"; };
-		4CD30DDA2426AADE008AA7FF /* EventMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventMessage.swift; sourceTree = "<group>"; };
-		4CD30DDC2426AAE8008AA7FF /* PrivateMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateMessage.swift; sourceTree = "<group>"; };
 		4CD8C47623FD25BD002895C1 /* InfosViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfosViewController.swift; sourceTree = "<group>"; };
 		4CD8C47823FD2C31002895C1 /* FilesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesViewController.swift; sourceTree = "<group>"; };
 		4CE59DB0242D4710000D79BC /* ConsoleViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsoleViewController.swift; sourceTree = "<group>"; };
@@ -471,8 +437,6 @@
 				4C93B2F6242FA40000A956C3 /* BBCodeString */,
 				4C7A45AA242937CA008F0FFE /* TimeAgo.swift */,
 				4C8829E724254A0B00B4EF36 /* TabViewController.swift */,
-				4CA4153A24262238005B9048 /* GrowingTextField.swift */,
-				4CA4153824262223005B9048 /* GrowingTextView.swift */,
 				4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */,
 				4C009B672427D07B00DAAB74 /* MSCBadgedTemplateImage.swift */,
 				4C9C5CE82431322F007B6CF0 /* WiredColors.swift */,
@@ -561,15 +525,6 @@
 			path = WiredSwfitTests;
 			sourceTree = "<group>";
 		};
-		4CA4152E24261F0E005B9048 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */,
-				4CA4153524261F0E005B9048 /* MessageKit-macOSTests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		4CD0204E22DF04BD0008B36C /* WiredSwift */ = {
 			isa = PBXGroup;
 			children = (
@@ -583,7 +538,6 @@
 				4C1319A82316E4E700C9FA0C /* SocketSwift.framework */,
 				4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */,
 				4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */,
-				4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */,
 			);
 			path = WiredSwift;
 			sourceTree = "<group>";
@@ -667,9 +621,7 @@
 			isa = PBXGroup;
 			children = (
 				4CFA18C7230B359300E2A2EC /* ChatViewController.swift */,
-				4CA4153C24262277005B9048 /* ConversationViewController.swift */,
-				4CA4154224262483005B9048 /* ChatMessage.swift */,
-				4CD30DDA2426AADE008AA7FF /* EventMessage.swift */,
+				4C7D199724322B31002897CB /* MessageCellView.swift */,
 			);
 			path = Chats;
 			sourceTree = "<group>";
@@ -714,7 +666,6 @@
 				4CA41546242664EE005B9048 /* ConversationsViewController.swift */,
 				4CA415482426651D005B9048 /* PrivateMessagesViewController.swift */,
 				4CD30DD62426979D008AA7FF /* ConversationCellView.swift */,
-				4CD30DDC2426AAE8008AA7FF /* PrivateMessage.swift */,
 				4C009B5F24278B4200DAAB74 /* MessagesSplitViewController.swift */,
 			);
 			path = Messages;
@@ -810,7 +761,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				4CC7BE222428DD6E003D874C /* PBXTargetDependency */,
 				4CD0205322DF04BD0008B36C /* PBXTargetDependency */,
 			);
 			name = Wired;
@@ -898,12 +848,6 @@
 			);
 			productRefGroup = 4C74285F22DCECE800D6E6F9 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 4CA4152E24261F0E005B9048 /* Products */;
-					ProjectRef = 4CA4152D24261F0E005B9048 /* MessageKit-macOS.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				4C74285D22DCECE800D6E6F9 /* Wired */,
@@ -912,23 +856,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		4CA4153324261F0E005B9048 /* MessageKit_macOS.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = MessageKit_macOS.framework;
-			remoteRef = 4CA4153224261F0E005B9048 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		4CA4153524261F0E005B9048 /* MessageKit-macOSTests.xctest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = "MessageKit-macOSTests.xctest";
-			remoteRef = 4CA4153424261F0E005B9048 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		4C74285C22DCECE800D6E6F9 /* Resources */ = {
@@ -983,7 +910,7 @@
 				4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */,
 				4C20DD8B242EA98D009F64E6 /* Post.swift in Sources */,
 				4CFA18D8230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
-				4CA4153B24262238005B9048 /* GrowingTextField.swift in Sources */,
+				4C7D199824322B31002897CB /* MessageCellView.swift in Sources */,
 				4CEF0AB623FDD4DD0097E37E /* File.swift in Sources */,
 				4C5C1D232426812E00A751AA /* Conversation+CoreDataProperties.swift in Sources */,
 				4CA4154524262D8A005B9048 /* UsersController.swift in Sources */,
@@ -992,12 +919,10 @@
 				4CFB15DC23FC19E9000EE688 /* ResourcesController.swift in Sources */,
 				4C4C3EE222E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4C374DA523FE80B2006D3E7C /* FilesPreferenceViewController.swift in Sources */,
-				4CA4153924262223005B9048 /* GrowingTextView.swift in Sources */,
 				4CFB161A23FC7D01000EE688 /* Wired3.xcdatamodeld in Sources */,
 				4C7D19222431DD91002897CB /* NSColor.swift in Sources */,
 				4C93B2F4242F9CAE00A956C3 /* BBElement.m in Sources */,
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
-				4CD30DDD2426AAE8008AA7FF /* PrivateMessage.swift in Sources */,
 				4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */,
 				4C93B2E8242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m in Sources */,
 				4CB6A109242E4CF300AB4C89 /* BoardThread.swift in Sources */,
@@ -1021,7 +946,6 @@
 				4C0A99F423FBF9410008A7A6 /* UserCellView.swift in Sources */,
 				4C9C5CE724312762007B6CF0 /* UserInfoViewController.swift in Sources */,
 				4C52DADB242682920085C7D7 /* ConversationsController.swift in Sources */,
-				4CD30DDB2426AADE008AA7FF /* EventMessage.swift in Sources */,
 				4CFA18C6230B085D00E2A2EC /* Data.swift in Sources */,
 				4CFA18C8230B359300E2A2EC /* ChatViewController.swift in Sources */,
 				4CFB15DE23FC5279000EE688 /* ConnectionsController.swift in Sources */,
@@ -1049,8 +973,6 @@
 				4C36AEFF2401CE4300AEC18E /* UploadTransfer+CoreDataProperties.swift in Sources */,
 				4C36AEFE2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift in Sources */,
 				4C36AF002401CE4300AEC18E /* DownloadTransfer+CoreDataClass.swift in Sources */,
-				4CA4153D24262277005B9048 /* ConversationViewController.swift in Sources */,
-				4CA4154324262483005B9048 /* ChatMessage.swift in Sources */,
 				4C20DD82242E95F4009F64E6 /* ThreadsViewController.swift in Sources */,
 				4C2000962421588C00A4D77A /* WiredError.swift in Sources */,
 				4CB6A107242E4CA300AB4C89 /* Board.swift in Sources */,
@@ -1117,11 +1039,6 @@
 			isa = PBXTargetDependency;
 			target = 4CD0204C22DF04BD0008B36C /* WiredSwift */;
 			targetProxy = 4C93B302242FE96200A956C3 /* PBXContainerItemProxy */;
-		};
-		4CC7BE222428DD6E003D874C /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = "MessageKit-macOS";
-			targetProxy = 4CC7BE212428DD6E003D874C /* PBXContainerItemProxy */;
 		};
 		4CD0205322DF04BD0008B36C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
