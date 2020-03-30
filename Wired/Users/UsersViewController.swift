@@ -74,7 +74,7 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
         if let selectedUser = self.selectedUser {
             _ = ConversationsController.shared.openConversation(onConnection: self.connection, withUser: selectedUser)
             
-            self.selectedUser = nil
+            //self.selectedUser = nil
         }
     }
     

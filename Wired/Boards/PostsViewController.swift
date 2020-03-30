@@ -161,7 +161,7 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     // MARK: -
     
     func getSupportedTags() -> [Any]! {
-        return ["b", "i", "url", "img"]
+        return ["b", "i", "url", "img", "color"]
     }
 
     
@@ -172,10 +172,17 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
         else if element.tag == "i" {
             return [NSAttributedString.Key.obliqueness: 0.1]
         }
-        else if element.tag == "url" {
+        else if element.tag.starts(with: "url=") {
             return [NSAttributedString.Key.foregroundColor: NSColor.systemBlue,
                     NSAttributedString.Key.link: element.text,
                     NSAttributedString.Key.cursor: NSCursor.pointingHand]
+        }
+        else if element.tag.starts(with: "color=") {
+            var color = NSColor.textColor
+            if let htmlColor = element.tag.split(separator: "=").last {
+                color = NSColor.init(hexString: String(htmlColor))
+            }
+            return [NSAttributedString.Key.foregroundColor: color]
         }
 
         return nil
@@ -200,6 +207,7 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
             
             return NSAttributedString(string: element.text as String, attributes: attrs as [NSAttributedString.Key : Any])
         }
+        
         return nil
     }
 }

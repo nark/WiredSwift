@@ -345,9 +345,9 @@ extension ConversationViewController: MessagesLayoutDelegate {
 extension ConversationViewController: MessageItemDelegate {
   
   func didClickAvatar(in item: MessageCollectionViewItem) {
-    guard let indexPath = messagesCollectionView.indexPath(for: item) else { return }
-    let msg = messageForItem(at: indexPath, in: messagesCollectionView)
-    print("Avatar clicked: \(msg.sender.id)")
+//    guard let indexPath = messagesCollectionView.indexPath(for: item) else { return }
+//    let msg = messageForItem(at: indexPath, in: messagesCollectionView)
+//    print("Avatar clicked: \(msg.sender.id)")
   }
   
   func didClickMessage(in item: MessageCollectionViewItem) {

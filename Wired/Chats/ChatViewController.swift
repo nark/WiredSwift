@@ -221,24 +221,26 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     
     
     @IBAction func chatAction(_ sender: Any) {
-        if let textField = sender as? NSTextField, textField.stringValue.count > 0 {
-            var message:P7Message? = nil
-            
-            if textField.stringValue.starts(with: "/") {
-                message = self.chatCommand(textField.stringValue)
-            }
-            else {
-                self.substituteEmojis()
+        if self.connection != nil && self.connection.isConnected() {
+            if let textField = sender as? NSTextField, textField.stringValue.count > 0 {
+                var message:P7Message? = nil
                 
-                message = P7Message(withName: "wired.chat.send_say", spec: self.connection.spec)
+                if textField.stringValue.starts(with: "/") {
+                    message = self.chatCommand(textField.stringValue)
+                }
+                else {
+                    self.substituteEmojis()
+                    
+                    message = P7Message(withName: "wired.chat.send_say", spec: self.connection.spec)
+                    
+                    message!.addParameter(field: "wired.chat.id", value: UInt32(1))
+                    message!.addParameter(field: "wired.chat.say", value: textField.stringValue)
+                }
                 
-                message!.addParameter(field: "wired.chat.id", value: UInt32(1))
-                message!.addParameter(field: "wired.chat.say", value: textField.stringValue)
-            }
-            
-            if self.connection.isConnected() {
-                if let m = message, self.connection.send(message: m) {
-                    textField.stringValue = ""
+                if self.connection.isConnected() {
+                    if let m = message, self.connection.send(message: m) {
+                        textField.stringValue = ""
+                    }
                 }
             }
         }

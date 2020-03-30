@@ -218,30 +218,32 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
     
     
     @IBAction func chatAction(_ sender: Any) {
-        if let textField = sender as? NSTextField, textField.stringValue.count > 0 {
-            self.substituteEmojis()
-            
-            let message = P7Message(withName: "wired.message.send_message", spec: self.connection.spec)
-            message.addParameter(field: "wired.user.id", value: self.conversation.userID)
-            message.addParameter(field: "wired.message.message", value: textField.stringValue)
-            
-            if self.connection.isConnected() {
-                if self.connection.send(message: message) {
-                    let context = AppDelegate.shared.persistentContainer.viewContext
-                    if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
-                        cdObject.body = textField.stringValue
-                        cdObject.nick = self.connection.userInfo!.nick
-                        cdObject.userID = Int32(self.connection.userID)
-                        cdObject.date = Date()
-                        cdObject.me = true
-                        cdObject.read = true
-                            
-                        self.conversation.addToMessages(cdObject)
-                        self.conversationViewController.addPrivateMessage(
-                            message: textField.stringValue, cdMessage: cdObject)
+        if self.connection != nil && self.connection.isConnected() {
+            if let textField = sender as? NSTextField, textField.stringValue.count > 0 {
+                self.substituteEmojis()
+                
+                let message = P7Message(withName: "wired.message.send_message", spec: self.connection.spec)
+                message.addParameter(field: "wired.user.id", value: self.conversation.userID)
+                message.addParameter(field: "wired.message.message", value: textField.stringValue)
+                
+                if self.connection.isConnected() {
+                    if self.connection.send(message: message) {
+                        let context = AppDelegate.shared.persistentContainer.viewContext
+                        if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
+                            cdObject.body = textField.stringValue
+                            cdObject.nick = self.connection.userInfo!.nick
+                            cdObject.userID = Int32(self.connection.userID)
+                            cdObject.date = Date()
+                            cdObject.me = true
+                            cdObject.read = true
+                                
+                            self.conversation.addToMessages(cdObject)
+                            self.conversationViewController.addPrivateMessage(
+                                message: textField.stringValue, cdMessage: cdObject)
+                        }
+                        
+                        textField.stringValue = ""
                     }
-                    
-                    textField.stringValue = ""
                 }
             }
         }
