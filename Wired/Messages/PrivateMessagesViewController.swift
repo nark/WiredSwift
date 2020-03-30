@@ -169,6 +169,7 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                 
                 self.connection.removeDelegate(self)
                 self.connection.delegates.append(self)
+                
             }
             
             // LOAD ALL CONVERSATION MESSAGES
@@ -196,6 +197,7 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                 self.emojiButton.isEnabled = true
                 
                 self.chatInput.becomeFirstResponder()
+                AppDelegate.updateUnreadMessages(forConnection: conversation.connection)
             }
         }
         
@@ -319,6 +321,20 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             
             view?.nickLabel.stringValue = message.nick ?? ""
             view?.textField?.stringValue = message.body ?? ""
+            
+            let uc = ConnectionsController.shared.usersController(forConnection: conversation.connection)
+            if message.me {
+                if let data = UserDefaults.standard.data(forKey: "WSUserIcon") {
+                    if let image = try! NSKeyedUnarchiver.unarchivedObject(ofClass: NSImage.self, from: data) {
+                        view?.imageView?.image = image
+                    }
+                }
+            } else {
+                if let icon = uc.getIcon(forUserID: UInt32(message.userID)) {
+                    view?.imageView?.image = icon
+                }
+            }
+            
         }
         
         return view

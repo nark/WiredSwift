@@ -85,7 +85,7 @@ class UsersController: ConnectionObject {
         return nil
     }
     
-    public func getImage(forUserID uid: UInt32) -> NSImage? {
+    public func getIcon(forUserID uid: UInt32) -> NSImage? {
         if let u = self.user(forID: uid) {
             if let base64ImageString = u.icon?.base64EncodedData() {
                 if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
@@ -94,7 +94,7 @@ class UsersController: ConnectionObject {
             }
         }
         
-        return NSImage(named: "AppIcon")
+        return nil
     }
     
     

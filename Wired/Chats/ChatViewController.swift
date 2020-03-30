@@ -13,7 +13,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     @IBOutlet weak var sendButton: NSButton!
     @IBOutlet weak var messagesTableView: NSTableView!
     
-    var messages:[P7Message] = []
+    var messages:[Any] = []
     var sentMessages:[P7Message] = []
     var receivedMessages:[P7Message] = []
     
@@ -253,11 +253,11 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     @objc func linkConnectionDidClose(_ n: Notification) {
         if let c = n.object as? Connection, c == self.connection {
             self.chatInput.isEditable = false
-            //conversationViewController.addEventMessage(message: "<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
+            self.addMessage("<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
             
             if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
                 if !self.connection.connectionWindowController!.manualyDisconnected {
-                    //conversationViewController.addEventMessage(message: "<< Auto-reconnecting... ⏱ >>")
+                    self.addMessage("<< Auto-reconnecting... ⏱ >>")
                 }
             }
         }
@@ -266,7 +266,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     @objc func linkConnectionDidReconnect(_ n: Notification) {
         if let c = n.object as? Connection, c == self.connection {
             self.chatInput.isEditable = true
-            //conversationViewController.addEventMessage(message: "<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
+            self.addMessage("<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
         }
     }
     
@@ -348,7 +348,6 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
         else if message.name == "wired.chat.user_join" {
             let userInfo = UserInfo(message: message)
             
-            //conversationViewController.addEventMessage(message: "<< \(userInfo.nick!) joined the chat >>")
             self.addMessage(message)
             
             NotificationCenter.default.post(name: NSNotification.Name("UserJoinedPublicChat"), object: [self.connection, userInfo])
@@ -359,9 +358,12 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
             }
             
             let uc = ConnectionsController.shared.usersController(forConnection: self.connection)
+            
             if let u = uc.user(forID: userID) {
+                message.addParameter(field: "wired.user.nick", value: u.nick!)
+                
                 self.addMessage(message)
-                //conversationViewController.addEventMessage(message: "<< \(u.nick!) left the chat >>")
+
                 uc.userLeave(message: message)
                 
                 NotificationCenter.default.post(name: NSNotification.Name("UserLeftPublicChat"), object: self.connection)
@@ -381,42 +383,56 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         var view: MessageCellView?
         
-        let message = messages[row]
-        let uc      = ConnectionsController.shared.usersController(forConnection: self.connection)
+        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "EventCell"), owner: self) as? MessageCellView
         
-        let sentOrReceived = self.receivedMessages.contains(message) ? "ReceivedMessageCell" : "SentMessageCell"
-                
-        view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: sentOrReceived), owner: self) as? MessageCellView
-        
-        if message.name == "wired.chat.say" || message.name == "wired.chat.me" {
-                
-            if let string = message.string(forField: "wired.chat.say") {
-                view?.textField?.stringValue = string
-            }
+        if let message = messages[row] as? P7Message {
+            let uc = ConnectionsController.shared.usersController(forConnection: self.connection)
             
-            if let string = message.string(forField: "wired.chat.me") {
-                view?.textField?.stringValue = string
-            }
-            
-            if let userID = message.uint32(forField: "wired.user.id") {
-                if let userInfo = uc.user(forID: userID) {
-                    if let base64ImageString = userInfo.icon?.base64EncodedData() {
-                        if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
-                            view?.imageView?.image = NSImage(data: data)
+            if message.name == "wired.chat.say" || message.name == "wired.chat.me" {
+                let sentOrReceived = self.receivedMessages.contains(message
+                    ) ? "ReceivedMessageCell" : "SentMessageCell"
+                        
+                view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: sentOrReceived), owner: self) as? MessageCellView
+                
+                if let userID = message.uint32(forField: "wired.user.id") {
+                    if let userInfo = uc.user(forID: userID) {
+                        if let string = message.string(forField: "wired.chat.say") {
+                            view?.textField?.stringValue = string
                         }
+                        
+                        if let string = message.string(forField: "wired.chat.me") {
+                            view?.textField?.stringValue = " Nark \(string)"
+                        }
+                        
+                        if let base64ImageString = userInfo.icon?.base64EncodedData() {
+                            if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
+                                view?.imageView?.image = NSImage(data: data)
+                            }
+                        }
+                        
+                        view?.nickLabel.stringValue = userInfo.nick
                     }
-                    
-                    view?.nickLabel.stringValue = userInfo.nick
+                }
+                
+            }
+            else if message.name == "wired.chat.topic" {
+                if  let userNick = message.string(forField: "wired.user.nick"),
+                    let chatTopic = message.string(forField: "wired.chat.topic.topic") {
+                    view?.textField?.stringValue = "<< Topic: \(chatTopic) by \(userNick) >>"
+                }
+                
+            }
+            else if message.name == "wired.chat.user_join" {
+                let userInfo = UserInfo(message: message)
+                view?.textField?.stringValue = "<< \(userInfo.nick!) joined the chat >>"
+            }
+            else if message.name == "wired.chat.user_leave" {
+                if let nick = message.string(forField: "wired.user.nick") {
+                    view?.textField?.stringValue = "<< \(nick) left the chat >>"
                 }
             }
-            
-        }
-        else if message.name == "wired.chat.topic" {
-            if  let userNick = message.string(forField: "wired.user.nick"),
-                let chatTopic = message.string(forField: "wired.chat.topic.topic") {
-                view?.textField?.stringValue = "<< Topic: \(chatTopic) by \(userNick) >>"
-            }
-            
+        } else if let string = messages[row] as? String {
+            view?.textField?.stringValue = string
         }
         
         return view
@@ -431,13 +447,15 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     
     // MARK: -
     
-    private func addMessage(_ message:P7Message, sent: Bool = false) {
+    private func addMessage(_ message:Any, sent: Bool = false) {
         self.messages.append(message)
         
-        if sent {
-            self.sentMessages.append(message)
-        } else {
-            self.receivedMessages.append(message)
+        if let m = message as? P7Message {
+            if sent {
+                self.sentMessages.append(m)
+            } else {
+                self.receivedMessages.append(m)
+            }
         }
         
         self.messagesTableView.beginUpdates()

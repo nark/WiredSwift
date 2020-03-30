@@ -53,7 +53,7 @@ Minimal connection to a Wired 2.0 server:
 The `Connection` class provides two ways of handling messages:
 
 * connection instance is set as `interactive` so it will automatically manage a listening loop in a separated thread and dispatch receive message through `ConnectionDelegate` protocol to registered delegates in the main thread. This is the default behavior.
-* connection instance is NOT `interactive`, and in that case you have to handle every message read/write transactions by yourself using `Connection.readMessage()` and `Connection.sendMessage()` methods. This for example used for transfers separated connections that have different iteractions.
+* connection instance is NOT `interactive`, and in that case you have to handle every message read/write transactions by yourself using `Connection.readMessage()` and `Connection.sendMessage()` methods. This for example is used for transfers separated connections that have different behaviors.
 
 Set the `interactive` attribute to `false` before calling `Connection.connect()` if you want to use uninteractive mode.
 
