@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2AA6CC8724329D0000C96A89 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2AA6CC8524329D0000C96A89 /* Localizable.strings */; };
+		2AA6CC8A24329D0000C96A89 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2AA6CC8824329D0000C96A89 /* InfoPlist.strings */; };
+		2AA6CC8D24329D0000C96A89 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2AA6CC8B24329D0000C96A89 /* InfoPlist.strings */; };
 		4C009B6024278B4200DAAB74 /* MessagesSplitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C009B5F24278B4200DAAB74 /* MessagesSplitViewController.swift */; };
 		4C009B682427D07B00DAAB74 /* MSCBadgedTemplateImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C009B672427D07B00DAAB74 /* MSCBadgedTemplateImage.swift */; };
 		4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99F023FBD4F30008A7A6 /* LICENSE */; };
@@ -223,6 +226,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2AA6CC8424329CEF00C96A89 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Main.strings; sourceTree = "<group>"; };
+		2AA6CC8624329D0000C96A89 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		2AA6CC8924329D0000C96A89 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		2AA6CC8C24329D0000C96A89 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		4C009B5F24278B4200DAAB74 /* MessagesSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesSplitViewController.swift; sourceTree = "<group>"; };
 		4C009B672427D07B00DAAB74 /* MSCBadgedTemplateImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSCBadgedTemplateImage.swift; sourceTree = "<group>"; };
 		4C0A99F023FBD4F30008A7A6 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -491,6 +498,8 @@
 				4CEF0ABE23FDD64E0097E37E /* UI */,
 				4C74286B22DCECEA00D6E6F9 /* WiredSwift.entitlements */,
 				4C74286A22DCECE900D6E6F9 /* Info.plist */,
+				2AA6CC8824329D0000C96A89 /* InfoPlist.strings */,
+				2AA6CC8524329D0000C96A89 /* Localizable.strings */,
 			);
 			path = Wired;
 			sourceTree = "<group>";
@@ -531,6 +540,7 @@
 				4CD0204F22DF04BD0008B36C /* WiredSwift.h */,
 				4C4C3EF622E1164700BC2DD9 /* Sources */,
 				4CD0205022DF04BD0008B36C /* Info.plist */,
+				2AA6CC8B24329D0000C96A89 /* InfoPlist.strings */,
 				4C9C5CDF2430F478007B6CF0 /* Reachability.framework */,
 				4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */,
 				4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */,
@@ -841,6 +851,7 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
 			);
 			mainGroup = 4C74285522DCECE800D6E6F9;
 			packageReferences = (
@@ -867,9 +878,11 @@
 				4C20009B2421661C00A4D77A /* FilesPreferenceViewController.xib in Resources */,
 				4C12FE8A24045ABA000CDDCA /* FilePreviewController.xib in Resources */,
 				4C0A99FF23FC01140008A7A6 /* GeneralPreferenceViewController.xib in Resources */,
+				2AA6CC8724329D0000C96A89 /* Localizable.strings in Resources */,
 				4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */,
 				4C0A99FE23FC01140008A7A6 /* AdvancedPreferenceViewController.xib in Resources */,
 				4C20009A2421661C00A4D77A /* ChatPreferenceViewController.xib in Resources */,
+				2AA6CC8A24329D0000C96A89 /* InfoPlist.strings in Resources */,
 				4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -891,6 +904,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C0A99F223FBD4F30008A7A6 /* LICENSE in Resources */,
+				2AA6CC8D24329D0000C96A89 /* InfoPlist.strings in Resources */,
 				4CD0205D22DF11920008B36C /* wired.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1048,10 +1062,35 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		2AA6CC8524329D0000C96A89 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2AA6CC8624329D0000C96A89 /* de */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		2AA6CC8824329D0000C96A89 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2AA6CC8924329D0000C96A89 /* de */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		2AA6CC8B24329D0000C96A89 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2AA6CC8C24329D0000C96A89 /* de */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
 		4C74286722DCECE900D6E6F9 /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
 				4C74286822DCECE900D6E6F9 /* Base */,
+				2AA6CC8424329CEF00C96A89 /* de */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -1063,6 +1102,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -1126,6 +1166,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";

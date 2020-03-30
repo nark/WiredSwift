@@ -1,0 +1,6 @@
+/* Bundle name */
+"CFBundleName" = "WiredSwift";
+
+/* Copyright (human-readable) */
+"NSHumanReadableCopyright" = "Copyright © 2019 Read-Write. Alle Rechte vorbehalten.";
+

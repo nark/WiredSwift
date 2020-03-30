@@ -1,0 +1,12 @@
+/* Cancel button title */
+"Cancel" = "Abbruch";
+
+/* Quit without saves error question message */
+"Could not save changes while quitting. Quit anyway?" = "Kann Änderungen während des Beendens nicht speichern. Beenden erzwingen?";
+
+/* Quit anyway button title */
+"Quit anyway" = "Erzwinge Beenden";
+
+/* Quit without saves error question info */
+"Quitting now will lose any changes you have made since the last successful save" = "Das Beenden verwirft alle Änderungen die Du seit dem letzten Speichern vorgenommen hast.";
+
