@@ -26,12 +26,14 @@ public class Transfer: NSManagedObject {
         let sizeString = AppDelegate.byteCountFormatter.string(fromByteCount: dataTransferred)
         let totalString = AppDelegate.byteCountFormatter.string(fromByteCount: size)
         
-        var s = "\(typeString) \(state), \(percent.rounded())%, speed \(speedString)/s"
+        let speed = NSLocalizedString("speed", comment: "")
+        
+        var s = "\(typeString) \(state), \(percent.rounded())%, \(speed) \(speedString)/s"
         
         if isWorking() {
-            s = "\(typeString) \(state), \(sizeString) of \(totalString), \(percent.rounded())%, speed \(speedString)/s"
+            s = "\(typeString) \(state), \(sizeString) of \(totalString), \(percent.rounded())%, \(speed) \(speedString)/s"
         } else {
-            s = "\(typeString) \(state), \(sizeString), speed \(speedString)/s"
+            s = "\(typeString) \(state), \(sizeString), \(speed) \(speedString)/s"
         }
         
         if error != "" {

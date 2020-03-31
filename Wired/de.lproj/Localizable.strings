@@ -1,3 +1,6 @@
+/* Main Menu */
+"Add To Bookmarks" = "Zu Lesezeichen hinzufügen";
+
 /* Cancel button title */
 "Cancel" = "Abbruch";
 
@@ -10,3 +13,39 @@
 /* Quit without saves error question info */
 "Quitting now will lose any changes you have made since the last successful save" = "Das Beenden verwirft alle Änderungen die Du seit dem letzten Speichern vorgenommen hast.";
 
+/* Headitems in Advanced Preferences Window */
+"Advanced" = "Fortgeschritten";
+
+/* Headitems in Advanced Preferences Window */
+"General" = "Allgemein";
+
+/* Headitems in Advanced Preferences Window */
+"Files" = "Dateien";
+
+/* Warn Window on quitting Application */
+"Are you sure you want to disconnect?" = "Möchtest Du wirklich die Verbindung abbrechen?";
+"Every running transfers may be stopped" = "Jeder laufende Dateitransfer wird gestoppt!";
+"Cancel" = "Abbruch";
+"Yes" = "Ja";
+
+/* Chatwindow left Sidebar Headlines */
+"CONNECTIONS" = "VERBINDUNGEN";
+"BOOKMARKS" = "LESEZEICHEN";
+"TRACKERS" = "TRACKER";
+"HISTORY" = "VERLAUF";
+
+/* Transfer Queue */
+"Waiting" = "Warten";
+"LocallyQueued" = "Lokal eingereiht";
+"Queued" = "eingereiht";
+"Listing" = "Auflisten";
+"CreatingDirectories" = "Verzeichnisse anlegen";
+"Running" = "laufend";
+"Pausing" = "pausierend";
+"Paused" = "pausiert";
+"Stopping" = "stoppend";
+"Stopped" = "gestoppt";
+"Disconnecting" = "Trennung";
+"Removing" = "entfernen";
+"Finished" = "abgeschlossen";
+"speed" = "Geschwindigkeit";

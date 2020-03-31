@@ -167,11 +167,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
         if UserDefaults.standard.bool(forKey: "WSCheckActiveConnectionsBeforeQuit") == true {
             if AppDelegate.hasActiveConnections() {
                 let alert = NSAlert()
-                alert.messageText = "Are you sure you want to quit?"
-                alert.informativeText = "Every connections will be disconnected"
+                alert.messageText = NSLocalizedString("Are you sure you want to disconnect?", comment: "")
+                alert.informativeText = NSLocalizedString("Every running transfers may be stopped", comment: "")
                 alert.alertStyle = .warning
-                alert.addButton(withTitle: "OK")
-                alert.addButton(withTitle: "Cancel")
+                let YesButtonText = NSLocalizedString("Yes", comment: "")
+                alert.addButton(withTitle: YesButtonText)
+                let CancelButtonText = NSLocalizedString("Cancel", comment: "")
+                alert.addButton(withTitle: CancelButtonText)
                                 
                 if alert.runModal() == .alertFirstButtonReturn {
                     return self.safeTerminateApp(sender)
@@ -297,7 +299,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
         
-        let item = menu.addItem(withTitle: "Add To Bookmarks", action: #selector(addToBookmarks(_:)), keyEquivalent: "B")
+        let menuBookmarkTitle = NSLocalizedString("Add To Bookmarks", comment: "")
+        let item = menu.addItem(withTitle: menuBookmarkTitle, action: #selector(addToBookmarks(_:)), keyEquivalent: "B")
         item.keyEquivalentModifierMask = NSEvent.ModifierFlags.option
         item.target = self
         
