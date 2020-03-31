@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="15705" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="16096" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="15705"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="16096"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -17,7 +17,7 @@
             <rect key="frame" x="0.0" y="0.0" width="515" height="264"/>
             <subviews>
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="MKL-tG-FXJ">
-                    <rect key="frame" x="177" y="68" width="240" height="18"/>
+                    <rect key="frame" x="177" y="68" width="302" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Auto-reconnect when disconnected" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="g3Z-QA-CdU">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -99,7 +99,7 @@
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                 </box>
                 <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kfP-c1-D0J">
-                    <rect key="frame" x="177" y="48" width="248" height="18"/>
+                    <rect key="frame" x="177" y="48" width="302" height="18"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <buttonCell key="cell" type="check" title="Check active connections before quit" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="eYo-xP-d62">
                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -110,7 +110,7 @@
                     </connections>
                 </button>
                 <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="n5b-To-xFD">
-                    <rect key="frame" x="89" y="69" width="84" height="16"/>
+                    <rect key="frame" x="39" y="69" width="134" height="16"/>
                     <autoresizingMask key="autoresizingMask"/>
                     <textFieldCell key="cell" lineBreakMode="clipping" alignment="right" title="Connections:" id="gKA-3a-dlH">
                         <font key="font" metaFont="system"/>
@@ -123,7 +123,7 @@
                 <constraint firstAttribute="height" constant="264" id="Ca4-QX-Hlq"/>
                 <constraint firstAttribute="width" constant="515" id="Eck-0W-ahg"/>
             </constraints>
-            <point key="canvasLocation" x="-137" y="-48"/>
+            <point key="canvasLocation" x="-137.5" y="-48"/>
         </customView>
         <userDefaultsController representsSharedInstance="YES" id="xMH-OU-1oJ"/>
     </objects>

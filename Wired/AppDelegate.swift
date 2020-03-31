@@ -11,6 +11,7 @@ import Preferences
 import KeychainAccess
 import UserNotifications
 import Reachability
+import Sparkle
 
 
 extension PreferencePane.Identifier {

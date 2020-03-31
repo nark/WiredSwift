@@ -28,5 +28,15 @@
 	<string>Main</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUEnableSystemProfiling</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://YOUR_URL/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>YOUR_KEY</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>1</integer>
 </dict>
 </plist>
