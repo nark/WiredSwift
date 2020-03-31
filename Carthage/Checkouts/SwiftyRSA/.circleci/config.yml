@@ -1,0 +1,90 @@
+dependencies-cache-key: &dependencies-cache-key dependencies-{{ checksum "Gemfile.lock" }}-{{ checksum "Podfile.lock" }}
+
+version: 2
+jobs:
+  dependencies:
+    macos:
+      xcode: "10.0.0"
+    environment:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+      BUNDLE_PATH: vendor/bundle
+    shell: /bin/bash --login -eo pipefail
+    steps:
+      - checkout
+      - restore_cache:
+          key: *dependencies-cache-key
+      - run:
+          name: Install Ruby dependencies
+          command: bundle check || bundle install --jobs 4 --retry 3
+      - run:
+          name: Install Cocoapods dependencies
+          command: |
+              function pod_install {
+                  curl https://cocoapods-specs.circleci.com/fetch-cocoapods-repo-from-s3.sh | bash -s cf
+                  bundle exec pod install
+              }
+              diff ./Podfile.lock ./Pods/Manifest.lock > /dev/null || pod_install
+      - save_cache:
+          key: *dependencies-cache-key
+          paths:
+            - vendor/bundle/
+            - Pods/
+  lint:
+    macos:
+      xcode: "10.0.0"
+    environment:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+      BUNDLE_PATH: vendor/bundle
+    shell: /bin/bash --login -eo pipefail
+    steps:
+      - checkout
+      - restore_cache:
+          key: *dependencies-cache-key
+      - run: bundle exec fastlane lint
+  test-xcode9:
+    macos:
+      xcode: "9.4.1"
+    environment:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+      BUNDLE_PATH: vendor/bundle
+    shell: /bin/bash --login -eo pipefail
+    steps:
+      - checkout
+      - restore_cache:
+          key: *dependencies-cache-key
+      - run: instruments -s devices
+      - run: bundle exec fastlane test_carthage
+      - run: FASTLANE_EXPLICIT_OPEN_SIMULATOR=2 bundle exec fastlane test_xcode9 --verbose
+  test-xcode10:
+    macos:
+      xcode: "10.0.0"
+    environment:
+      LC_ALL: en_US.UTF-8
+      LANG: en_US.UTF-8
+      BUNDLE_PATH: vendor/bundle
+    shell: /bin/bash --login -eo pipefail
+    steps:
+      - checkout
+      - restore_cache:
+          key: *dependencies-cache-key
+      - run: instruments -s devices
+      - run: bundle exec fastlane test_carthage
+      - run: FASTLANE_EXPLICIT_OPEN_SIMULATOR=2 bundle exec fastlane test_xcode10 --verbose
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - dependencies
+      - lint:
+          requires:
+            - dependencies
+      - test-xcode9:
+          requires:
+            - dependencies
+      - test-xcode10:
+          requires:
+            - dependencies
+              

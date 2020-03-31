@@ -38,6 +38,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ConnectionDelegate {
         // perform  connect
         if connection.connect(withUrl: url) {
             // connected
+            
+            connection.joinChat(chatID: 1)
         } else {
             // not connected
             print(connection.socket.errors)

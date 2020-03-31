@@ -351,7 +351,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
         if let p = path {
             self.loadFile(path: p)
         } else {
-            print("else")
             if let p = Bundle(identifier: "fr.read-write.WiredSwift")!.path(forResource: "wired", ofType: "xml") {
                 self.loadFile(path: p)
             }
@@ -431,9 +430,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
     }
     
     
-    private func loadFile(path: String) {
-        print(path)
-        
+    private func loadFile(path: String) {        
         let url = URL(fileURLWithPath: path)
         
         self.xml = try? String(contentsOf: url, encoding: .utf8)

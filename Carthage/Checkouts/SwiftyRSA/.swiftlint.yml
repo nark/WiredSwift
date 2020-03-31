@@ -1,0 +1,14 @@
+disabled_rules:
+  - line_length
+  - trailing_whitespace
+  - file_length
+  - function_parameter_count
+  - cyclomatic_complexity
+  - trailing_comma
+  - shorthand_operator
+opt_in_rules:
+  - force_unwrapping
+included:
+  - Source/
+  - Tests/
+operator_whitespace: error
