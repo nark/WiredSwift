@@ -99,7 +99,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     override init() {
         #if DEBUG
-            Logger.setMaxLevel(.WARNING)
+            Logger.setMaxLevel(.ERROR)
             Logger.removeDestination(.Stdout)
         #else
             Logger.setMaxLevel(.ERROR)

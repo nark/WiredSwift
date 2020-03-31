@@ -253,6 +253,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     @objc func linkConnectionDidClose(_ n: Notification) {
         if let c = n.object as? Connection, c == self.connection {
             self.chatInput.isEditable = false
+            self.chatInput.placeholderString = "Disconnected..."
             self.addMessage("<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
             
             if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
@@ -266,6 +267,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     @objc func linkConnectionDidReconnect(_ n: Notification) {
         if let c = n.object as? Connection, c == self.connection {
             self.chatInput.isEditable = true
+            self.chatInput.placeholderString = "Type message here"
             self.addMessage("<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
         }
     }
@@ -275,6 +277,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     
     func connectionDidConnect(connection: Connection) {
         self.chatInput.isEditable = true
+        self.chatInput.placeholderString = "Disconnected..."
     }
     
     func connectionDidFailToConnect(connection: Connection, error: Error) {
@@ -396,8 +399,8 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
                 
                 if let userID = message.uint32(forField: "wired.user.id") {
                     if let userInfo = uc.user(forID: userID) {
-                        if let string = message.string(forField: "wired.chat.say") {
-                            view?.textField?.stringValue = string
+                        if let attrString = message.string(forField: "wired.chat.say")?.substituteURL() {
+                            view?.textField?.attributedStringValue = attrString
                         }
                         
                         if let string = message.string(forField: "wired.chat.me") {
@@ -446,7 +449,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
 
     
     // MARK: -
-    
+
     private func addMessage(_ message:Any, sent: Bool = false) {
         self.messages.append(message)
         

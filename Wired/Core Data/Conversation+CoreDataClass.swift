@@ -13,7 +13,6 @@ import CoreData
 @objc(Conversation)
 public class Conversation: NSManagedObject {
     public var connection:ServerConnection!
-    public var userID:UInt32!
     
     public func unreads() -> Int {
         var count = 0

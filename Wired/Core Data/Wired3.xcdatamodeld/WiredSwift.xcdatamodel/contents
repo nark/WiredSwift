@@ -12,6 +12,7 @@
         <attribute name="icon" optional="YES" attributeType="Binary"/>
         <attribute name="nick" optional="YES" attributeType="String"/>
         <attribute name="uri" optional="YES" attributeType="String"/>
+        <attribute name="userID" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="messages" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="Message" inverseName="conversation" inverseEntity="Message"/>
     </entity>
     <entity name="DownloadTransfer" representedClassName=".DownloadTransfer" parentEntity="Transfer" syncable="YES"/>
@@ -44,7 +45,7 @@
     <entity name="UploadTransfer" representedClassName=".UploadTransfer" parentEntity="Transfer" syncable="YES"/>
     <elements>
         <element name="Bookmark" positionX="-63" positionY="-18" width="128" height="133"/>
-        <element name="Conversation" positionX="-45" positionY="99" width="128" height="103"/>
+        <element name="Conversation" positionX="-45" positionY="99" width="128" height="118"/>
         <element name="DownloadTransfer" positionX="-36" positionY="99" width="128" height="43"/>
         <element name="Message" positionX="-36" positionY="108" width="128" height="148"/>
         <element name="Transfer" positionX="-63" positionY="18" width="128" height="268"/>
