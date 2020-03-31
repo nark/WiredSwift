@@ -14,11 +14,13 @@ class ConnectionWindow: NSWindow {
             if cwc.connection != nil && cwc.connection.isConnected() {
                 if UserDefaults.standard.bool(forKey: "WSCheckActiveConnectionsBeforeQuit") == true {
                     let alert = NSAlert()
-                    alert.messageText = "Are you sure you want to disconnect?"
-                    alert.informativeText = "Every running transfers may be stopped"
+                    alert.messageText = NSLocalizedString("Are you sure you want to disconnect?", comment: "")
+                    alert.informativeText = NSLocalizedString("Every running transfers may be stopped", comment: "")
                     alert.alertStyle = .warning
-                    alert.addButton(withTitle: "OK")
-                    alert.addButton(withTitle: "Cancel")
+                    let YesButtonText = NSLocalizedString("Yes", comment: "")
+                    alert.addButton(withTitle: YesButtonText)
+                    let CancelButtonText = NSLocalizedString("Cancel", comment: "")
+                    alert.addButton(withTitle: CancelButtonText)
                     
                     alert.beginSheetModal(for: self) { (modalResponse: NSApplication.ModalResponse) -> Void in
                         if modalResponse == .alertFirstButtonReturn {

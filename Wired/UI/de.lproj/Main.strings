@@ -65,7 +65,7 @@
 "4J7-dP-txa.title" = "Zeige als Vollbild";
 
 /* Class = "NSMenuItem"; title = "Quit Wired"; ObjectID = "4sb-4s-VLi"; */
-"4sb-4s-VLi.title" = "Beende Wired";
+"4sb-4s-VLi.title" = "Wired beenden";
 
 /* Class = "NSTabViewItem"; label = "Tab"; ObjectID = "4Sj-eF-4ho"; */
 "4Sj-eF-4ho.label" = "Tab";
@@ -880,4 +880,4 @@
 /* Class = "NSMenuItem"; title = "Add To Bookmarks"; ObjectID = "Tn7-kc-AWg"; */
 "Tn7-kc-AWg.title" = "Zu Lesezeichen hinzufügen";
 
-
+/* Translation for Swiftcode Strings  */

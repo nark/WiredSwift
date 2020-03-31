@@ -16,33 +16,47 @@ extension Transfer {
         public var description: String {
           switch self {
           case .Waiting:
-              return "Waiting"
+            let Waiting = NSLocalizedString("Waiting", comment: "")
+            return Waiting
           case .LocallyQueued:
-              return "LocallyQueued"
+            let LocallyQueued = NSLocalizedString("LocallyQueued", comment: "")
+            return LocallyQueued
           case .Queued:
-              return "Queued"
+            let Queued = NSLocalizedString("Queued", comment: "")
+            return Queued
           case .Listing:
-              return "Listing"
+            let Listing = NSLocalizedString("Listing", comment: "")
+            return Listing
           case .CreatingDirectories:
-            return "CreatingDirectories"
+            let CreatingDirectories = NSLocalizedString("CreatingDirectories", comment: "")
+            return CreatingDirectories
           case .Running:
-            return "Running"
+            let Running = NSLocalizedString("Running", comment: "")
+            return Running
           case .Pausing:
-            return "Pausing"
+            let Pausing = NSLocalizedString("Pausing", comment: "")
+            return Pausing
           case .Paused:
-            return "Paused"
+            let Paused = NSLocalizedString("Paused", comment: "")
+            return Paused
           case .Stopping:
-            return "Stopping"
+            let Stopping = NSLocalizedString("Stopping", comment: "")
+            return Stopping
           case .Stopped:
-            return "Stopped"
+            let Stopped = NSLocalizedString("Stopped", comment: "")
+            return Stopped
           case .Disconnecting:
-            return "Disconnecting"
+            let Disconnecting = NSLocalizedString("Disconnecting", comment: "")
+            return Disconnecting
           case .Disconnected:
-            return "Disconnected"
+            let Disconnected = NSLocalizedString("Disconnected", comment: "")
+            return Disconnected
           case .Removing:
-            return "Removing"
+            let Removing = NSLocalizedString("Removing", comment: "")
+            return Removing
           case .Finished:
-            return "Finished"
+            let Finished = NSLocalizedString("Finished", comment: "")
+            return Finished
             }
         }
         

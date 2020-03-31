@@ -19,10 +19,10 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
     var selectedBookmark:Bookmark!
     
     struct ResourceIdentifiers {
-        static let connections  = "CONNECTIONS"
-        static let bookmarks    = "BOOKMARKS"
-        static let trackers     = "TRACKERS"
-        static let history      = "HISTORY"
+        static let connections = NSLocalizedString("CONNECTIONS", comment: "")
+        static let bookmarks = NSLocalizedString("BOOKMARKS", comment: "")
+        static let trackers = NSLocalizedString("TRACKERS", comment: "")
+        static let history = NSLocalizedString("HISTORY", comment: "")
     }
     
     let categories = [

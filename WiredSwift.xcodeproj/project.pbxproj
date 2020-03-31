@@ -14,6 +14,7 @@
 		2A8E9E6B24333AB5005B5261 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2A8E9E6924333AB5005B5261 /* Localizable.strings */; };
 		2A8E9E6C24333C93005B5261 /* GeneralPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2A8E9E6E24333C93005B5261 /* GeneralPreferenceViewController.xib */; };
 		2A8E9E7024333E08005B5261 /* ChatPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2A8E9E7224333E08005B5261 /* ChatPreferenceViewController.xib */; };
+		2A8E9E752433511B005B5261 /* AdvancedPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2A8E9E772433511B005B5261 /* AdvancedPreferenceViewController.xib */; };
 		4C009B6024278B4200DAAB74 /* MessagesSplitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C009B5F24278B4200DAAB74 /* MessagesSplitViewController.swift */; };
 		4C009B682427D07B00DAAB74 /* MSCBadgedTemplateImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C009B672427D07B00DAAB74 /* MSCBadgedTemplateImage.swift */; };
 		4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99F023FBD4F30008A7A6 /* LICENSE */; };
@@ -23,7 +24,6 @@
 		4C0A99F823FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */; };
 		4C0A99FA23FBFE6C0008A7A6 /* Preferences.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */; };
 		4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		4C0A99FE23FC01140008A7A6 /* AdvancedPreferenceViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */; };
 		4C12FE8924045ABA000CDDCA /* FilePreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C12FE8724045ABA000CDDCA /* FilePreviewController.swift */; };
 		4C12FE8A24045ABA000CDDCA /* FilePreviewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C12FE8824045ABA000CDDCA /* FilePreviewController.xib */; };
 		4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
@@ -238,6 +238,7 @@
 		2A8E9E6F24333D55005B5261 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/GeneralPreferenceViewController.strings; sourceTree = "<group>"; };
 		2A8E9E7124333E08005B5261 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ChatPreferenceViewController.xib; sourceTree = "<group>"; };
 		2A8E9E7424333EBA005B5261 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/ChatPreferenceViewController.strings; sourceTree = "<group>"; };
+		2A8E9E762433511B005B5261 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/AdvancedPreferenceViewController.xib; sourceTree = "<group>"; };
 		4C009B5F24278B4200DAAB74 /* MessagesSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesSplitViewController.swift; sourceTree = "<group>"; };
 		4C009B672427D07B00DAAB74 /* MSCBadgedTemplateImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MSCBadgedTemplateImage.swift; sourceTree = "<group>"; };
 		4C0A99F023FBD4F30008A7A6 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -245,7 +246,6 @@
 		4C0A99F523FBFD3A0008A7A6 /* GeneralPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralPreferenceViewController.swift; sourceTree = "<group>"; };
 		4C0A99F723FBFD4E0008A7A6 /* AdvancedPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedPreferenceViewController.swift; sourceTree = "<group>"; };
 		4C0A99F923FBFE6C0008A7A6 /* Preferences.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Preferences.framework; path = Carthage/Build/Mac/Preferences.framework; sourceTree = SOURCE_ROOT; };
-		4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = AdvancedPreferenceViewController.xib; sourceTree = "<group>"; };
 		4C12FE8724045ABA000CDDCA /* FilePreviewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewController.swift; sourceTree = "<group>"; };
 		4C12FE8824045ABA000CDDCA /* FilePreviewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = FilePreviewController.xib; sourceTree = "<group>"; };
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
@@ -660,7 +660,7 @@
 				2A8E9E6E24333C93005B5261 /* GeneralPreferenceViewController.xib */,
 				2A8E9E7224333E08005B5261 /* ChatPreferenceViewController.xib */,
 				4C374DA323FE809F006D3E7C /* FilesPreferenceViewController.xib */,
-				4C0A99FC23FC01140008A7A6 /* AdvancedPreferenceViewController.xib */,
+				2A8E9E772433511B005B5261 /* AdvancedPreferenceViewController.xib */,
 				4C74286522DCECE900D6E6F9 /* Assets.xcassets */,
 			);
 			path = UI;
@@ -888,7 +888,7 @@
 				4C12FE8A24045ABA000CDDCA /* FilePreviewController.xib in Resources */,
 				2A8E9E6C24333C93005B5261 /* GeneralPreferenceViewController.xib in Resources */,
 				4C0A99F123FBD4F30008A7A6 /* LICENSE in Resources */,
-				4C0A99FE23FC01140008A7A6 /* AdvancedPreferenceViewController.xib in Resources */,
+				2A8E9E752433511B005B5261 /* AdvancedPreferenceViewController.xib in Resources */,
 				2A8E9E7024333E08005B5261 /* ChatPreferenceViewController.xib in Resources */,
 				4C74286922DCECE900D6E6F9 /* Main.storyboard in Resources */,
 				2A8E9E6824333AB5005B5261 /* InfoPlist.strings in Resources */,
@@ -1110,6 +1110,14 @@
 				2A8E9E7424333EBA005B5261 /* de */,
 			);
 			name = ChatPreferenceViewController.xib;
+			sourceTree = "<group>";
+		};
+		2A8E9E772433511B005B5261 /* AdvancedPreferenceViewController.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2A8E9E762433511B005B5261 /* Base */,
+			);
+			name = AdvancedPreferenceViewController.xib;
 			sourceTree = "<group>";
 		};
 		4C74286722DCECE900D6E6F9 /* Main.storyboard */ = {

@@ -11,7 +11,7 @@ import Preferences
 
 final class FilesPreferenceViewController: NSViewController, PreferencePane {
     let preferencePaneIdentifier = PreferencePane.Identifier.files
-    let preferencePaneTitle = "Files"
+    let preferencePaneTitle = NSLocalizedString("Files", comment: "")
     let toolbarItemIcon = NSImage(named: NSImage.folderName)!
 
     override var nibName: NSNib.Name? { "FilesPreferenceViewController" }

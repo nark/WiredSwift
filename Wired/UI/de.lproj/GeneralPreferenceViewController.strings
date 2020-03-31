@@ -1,5 +1,5 @@
 /* Class = "NSButtonCell"; title = "Check active connections before quit"; ObjectID = "eYo-xP-d62"; */
-"eYo-xP-d62.title" = "Prüfe auf aktuell bestehende Verbindungen";
+"eYo-xP-d62.title" = "Trennung bestätigen";
 
 /* Class = "NSTextFieldCell"; title = "Nickname:"; ObjectID = "fmM-6E-fLa"; */
 "fmM-6E-fLa.title" = "Nickname:";
