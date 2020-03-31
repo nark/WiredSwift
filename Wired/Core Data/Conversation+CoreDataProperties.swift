@@ -17,6 +17,7 @@ extension Conversation {
         return NSFetchRequest<Conversation>(entityName: "Conversation")
     }
 
+    @NSManaged public var userID: Int32
     @NSManaged public var nick: String?
     @NSManaged public var uri: String?
     @NSManaged public var icon: Data?

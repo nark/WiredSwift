@@ -149,14 +149,14 @@ public class P7Socket: NSObject {
                         return false
                     }
                 }
-
+                
                 if self.remoteCompatibilityCheck {
                     if !self.sendCompatibilityCheck() {
                         Logger.error("Remote Compatibility Check failed")
                         return false
                     }
                 }
-
+                
                 if self.localCompatibilityCheck {
                     if !self.receiveCompatibilityCheck() {
                         Logger.error("Local Compatibility Check failed")
@@ -553,8 +553,8 @@ public class P7Socket: NSObject {
             }
         }
                 
-        if let remoteCheck = response.bool(forField: "p7.handshake.compatibility_check"), remoteCheck == false {
-            self.remoteCompatibilityCheck = false
+        if let bool = response.bool(forField: "p7.handshake.compatibility_check") {
+            self.remoteCompatibilityCheck = bool
         }
         
         message = P7Message(withName: "p7.handshake.acknowledge", spec: self.spec)
@@ -685,15 +685,15 @@ public class P7Socket: NSObject {
         let message = P7Message(withName: "p7.compatibility_check.specification", spec: self.spec)
         
         message.addParameter(field: "p7.compatibility_check.specification", value: self.spec.xml!)
-        
+                
         _ = self.write(message)
         
         guard let response = self.readMessage() else {
             return false
         }
-        
+                
         if response.name != "p7.compatibility_check.status" {
-            Logger.error("Message should be 'p7.encryption.server_key', not '\(response.name!)'")
+            Logger.error("Message should be 'p7.compatibility_check.status', not '\(response.name!)'")
         }
         
         guard let status = response.bool(forField: "p7.compatibility_check.status") else {
