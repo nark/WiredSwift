@@ -171,55 +171,57 @@ public class P7Message: NSObject {
     
     
     public func xml(pretty: Bool = false) -> String {
-        let msg = XMLElement(name: "p7:message")
-        let xml = XMLDocument(rootElement: msg)
+        return "TODO: reimplement with AEXML"
         
-        msg.addAttribute(XMLNode.attribute(withName: "xmlns:p7", stringValue: "http://www.zankasoftware.com/P7/Message") as! XMLNode)
-        msg.addAttribute(XMLNode.attribute(withName: "name", stringValue: self.name) as! XMLNode)
-        
-        for (field, value) in self.parameters {
-            let p = XMLElement(name: "p7:field")
-            
-            if spec.fieldsByName[field]?.type == .string {
-                if let string = value as? String {
-                    p.setStringValue(string, resolvingEntities: false)
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .int32 ||
-                    spec.fieldsByName[field]?.type == .uint32 {
-                if let val = value as? UInt32 {
-                    p.setStringValue(String(val), resolvingEntities: false)
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .int64 ||
-                    spec.fieldsByName[field]?.type == .uint64 {
-                if let val = value as? UInt64 {
-                    p.setStringValue(String(val), resolvingEntities: false)
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .data {
-                if let val = value as? Data {
-                    p.setStringValue(val.toHex(), resolvingEntities: false)
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .oobdata {
-                if let val = value as? Data {
-                    p.setStringValue(val.toHex(), resolvingEntities: false)
-                }
-            }
-            // TODO: complete all types
-        
-            p.addAttribute(XMLNode.attribute(withName: "name", stringValue: field) as! XMLNode)
-            msg.addChild(p)
-        }
-        
-        var options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue
-        
-        if pretty {
-            options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue | XMLNode.Options.nodePrettyPrint.rawValue
-        }
-        
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xml.xmlString(options: XMLNode.Options(rawValue: options)) + "\r\n"
+//        let msg = XMLElement(name: "p7:message")
+//        let xml = XMLDocument(rootElement: msg)
+//
+//        msg.addAttribute(XMLNode.attribute(withName: "xmlns:p7", stringValue: "http://www.zankasoftware.com/P7/Message") as! XMLNode)
+//        msg.addAttribute(XMLNode.attribute(withName: "name", stringValue: self.name) as! XMLNode)
+//
+//        for (field, value) in self.parameters {
+//            let p = XMLElement(name: "p7:field")
+//
+//            if spec.fieldsByName[field]?.type == .string {
+//                if let string = value as? String {
+//                    p.setStringValue(string, resolvingEntities: false)
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .int32 ||
+//                    spec.fieldsByName[field]?.type == .uint32 {
+//                if let val = value as? UInt32 {
+//                    p.setStringValue(String(val), resolvingEntities: false)
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .int64 ||
+//                    spec.fieldsByName[field]?.type == .uint64 {
+//                if let val = value as? UInt64 {
+//                    p.setStringValue(String(val), resolvingEntities: false)
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .data {
+//                if let val = value as? Data {
+//                    p.setStringValue(val.toHex(), resolvingEntities: false)
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .oobdata {
+//                if let val = value as? Data {
+//                    p.setStringValue(val.toHex(), resolvingEntities: false)
+//                }
+//            }
+//            // TODO: complete all types
+//
+//            p.addAttribute(XMLNode.attribute(withName: "name", stringValue: field) as! XMLNode)
+//            msg.addChild(p)
+//        }
+//
+//        var options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue
+//
+//        if pretty {
+//            options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue | XMLNode.Options.nodePrettyPrint.rawValue
+//        }
+//
+//        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xml.xmlString(options: XMLNode.Options(rawValue: options)) + "\r\n"
     }
     
     
@@ -309,36 +311,37 @@ public class P7Message: NSObject {
 
     
     private func loadXMLMessage(_ xml:String) {
-        do {
-            let xmlDoc  = try XMLDocument(xmlString: xml)
-            let names   = try xmlDoc.nodes(forXPath: "//p7:message/@name")
-            
-            if let name = names.first?.stringValue {
-                self.name = name
-                
-                if let specMessage = spec.messagesByName[name] {
-                    self.specMessage    = specMessage
-                    self.id             = specMessage.id
-                    
-                    let nodes = try xmlDoc.nodes(forXPath: "//p7:message/p7:field")
-                    
-                    for node in nodes {
-                        if let element = node as? XMLElement {
-                            if let attribute = element.attribute(forName: "name"), let attrName = attribute.stringValue {
-                                self.addParameter(field: attrName, value: element.objectValue)
-                            }
-                        }
-                    }
-                } else {
-                    Logger.error("ERROR: Unknow message")
-                }
-            } else {
-                Logger.error("ERROR: Missing message name")
-            }
-            
-        } catch {
-            Logger.error("ERROR: Cannot parse XML message")
-        }
+        print("TODO: reimplement with AEXML")
+//        do {
+//            let xmlDoc  = try XMLDocument(xmlString: xml)
+//            let names   = try xmlDoc.nodes(forXPath: "//p7:message/@name")
+//
+//            if let name = names.first?.stringValue {
+//                self.name = name
+//
+//                if let specMessage = spec.messagesByName[name] {
+//                    self.specMessage    = specMessage
+//                    self.id             = specMessage.id
+//
+//                    let nodes = try xmlDoc.nodes(forXPath: "//p7:message/p7:field")
+//
+//                    for node in nodes {
+//                        if let element = node as? XMLElement {
+//                            if let attribute = element.attribute(forName: "name"), let attrName = attribute.stringValue {
+//                                self.addParameter(field: attrName, value: element.objectValue)
+//                            }
+//                        }
+//                    }
+//                } else {
+//                    Logger.error("ERROR: Unknow message")
+//                }
+//            } else {
+//                Logger.error("ERROR: Missing message name")
+//            }
+//
+//        } catch {
+//            Logger.error("ERROR: Cannot parse XML message")
+//        }
     }
     
     

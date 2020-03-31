@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+import AEXML
 
 public class SpecItem : NSObject {
     public var spec: P7Spec!
@@ -341,11 +341,9 @@ public class P7Spec: NSObject, XMLParserDelegate {
         self.parser.parse()
         
         do {
-            let builtinDoc = try XMLDocument(xmlString: p7xml)
-            let version = try builtinDoc.nodes(forXPath: "//p7:protocol/@version")
-            if let attr = version.first, let v = attr.stringValue {
-                self.builtinProtocolVersion = v
-            }
+            let builtinDoc = try AEXMLDocument(xml: p7xml)
+            self.builtinProtocolVersion = builtinDoc.root.attributes["version"]
+
         } catch {
             Logger.error("ERROR: Cannot parse built-in spec, fatal")
         }
@@ -432,7 +430,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
     }
     
     
-    private func loadFile(path: String) {
+    private func loadFile(path: String) {        
         let url = URL(fileURLWithPath: path)
         
         self.xml = try? String(contentsOf: url, encoding: .utf8)

@@ -1568,7 +1568,7 @@ DQ
                                                                         <constraint firstAttribute="height" constant="32" id="4N2-B7-NjA"/>
                                                                         <constraint firstAttribute="width" constant="32" id="coP-0l-2Sx"/>
                                                                     </constraints>
-                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="Dalaï" id="Ruu-79-GIu"/>
+                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="Ruu-79-GIu"/>
                                                                     <userDefinedRuntimeAttributes>
                                                                         <userDefinedRuntimeAttribute type="boolean" keyPath="wantsLayer" value="YES"/>
                                                                         <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
@@ -1607,7 +1607,7 @@ DQ
                                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="16" id="gMK-Yh-Uhf"/>
                                                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="17" id="vUY-eH-aNM"/>
                                                                             </constraints>
-                                                                            <textFieldCell key="cell" selectable="YES" sendsActionOnEndEditing="YES" alignment="right" title="IIII" id="Eiz-4l-YAF">
+                                                                            <textFieldCell key="cell" selectable="YES" sendsActionOnEndEditing="YES" alignment="right" title="IIII" allowsEditingTextAttributes="YES" id="Eiz-4l-YAF">
                                                                                 <font key="font" metaFont="system"/>
                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -1649,13 +1649,12 @@ DQ
                                                                         <constraint firstAttribute="height" constant="32" id="BEV-BL-QxG"/>
                                                                         <constraint firstAttribute="width" constant="32" id="ww1-OO-srU"/>
                                                                     </constraints>
-                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="Dalaï" id="sea-iP-Tuu"/>
+                                                                    <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="sea-iP-Tuu"/>
                                                                     <userDefinedRuntimeAttributes>
                                                                         <userDefinedRuntimeAttribute type="boolean" keyPath="wantsLayer" value="YES"/>
                                                                         <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
                                                                             <integer key="value" value="16"/>
                                                                         </userDefinedRuntimeAttribute>
-                                                                        <userDefinedRuntimeAttribute type="boolean" keyPath="masksToBounds" value="YES"/>
                                                                     </userDefinedRuntimeAttributes>
                                                                 </imageView>
                                                             </subviews>
@@ -4073,49 +4072,6 @@ DQ
                         <rect key="frame" x="0.0" y="0.0" width="697" height="464"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
-                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="F88-U6-4bi">
-                                <rect key="frame" x="0.0" y="0.0" width="697" height="49"/>
-                                <subviews>
-                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="LkX-2A-rof">
-                                        <rect key="frame" x="20" y="14" width="624" height="22"/>
-                                        <textFieldCell key="cell" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" focusRingType="none" placeholderString="Type message here" bezelStyle="round" id="Ai5-Uu-gAV">
-                                            <font key="font" metaFont="system"/>
-                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                        </textFieldCell>
-                                        <connections>
-                                            <action selector="chatAction:" target="skH-xe-eYW" id="qmL-4H-fh2"/>
-                                        </connections>
-                                    </textField>
-                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BDe-iW-bJl">
-                                        <rect key="frame" x="652" y="14" width="25" height="23"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="25" id="9dJ-fB-EE9"/>
-                                            <constraint firstAttribute="height" constant="23" id="xdD-hi-8Tw"/>
-                                        </constraints>
-                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="Smileys" imagePosition="only" alignment="center" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyDown" inset="2" id="hcC-58-NKd">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                        </buttonCell>
-                                        <connections>
-                                            <action selector="showEmojis:" target="skH-xe-eYW" id="eCl-Ql-bFC"/>
-                                        </connections>
-                                    </button>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstItem="BDe-iW-bJl" firstAttribute="leading" secondItem="LkX-2A-rof" secondAttribute="trailing" constant="8" id="7Bn-rn-ZMe"/>
-                                    <constraint firstItem="BDe-iW-bJl" firstAttribute="top" secondItem="F88-U6-4bi" secondAttribute="top" constant="12" id="7Ru-1g-Mm7"/>
-                                    <constraint firstAttribute="bottom" secondItem="LkX-2A-rof" secondAttribute="bottom" constant="14" id="nkd-4a-Lq0"/>
-                                    <constraint firstItem="LkX-2A-rof" firstAttribute="top" secondItem="F88-U6-4bi" secondAttribute="top" constant="13" id="snz-wh-ZLE"/>
-                                    <constraint firstAttribute="trailing" secondItem="BDe-iW-bJl" secondAttribute="trailing" constant="20" id="wrm-4R-2wR"/>
-                                    <constraint firstItem="LkX-2A-rof" firstAttribute="leading" secondItem="F88-U6-4bi" secondAttribute="leading" constant="20" id="yTI-IS-Gw2"/>
-                                </constraints>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
-                                        <color key="value" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                            </customView>
                             <scrollView borderType="line" autohidesScrollers="YES" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Es0-tY-wmC">
                                 <rect key="frame" x="-1" y="49" width="699" height="416"/>
                                 <clipView key="contentView" id="eMY-QD-gCI">
@@ -4229,13 +4185,13 @@ DQ
                                                                 <customView translatesAutoresizingMaskIntoConstraints="NO" id="601-IU-D6k">
                                                                     <rect key="frame" x="611" y="14" width="33" height="34"/>
                                                                     <subviews>
-                                                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="zr7-sO-UBz">
+                                                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" textCompletion="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zr7-sO-UBz">
                                                                             <rect key="frame" x="6" y="9" width="20" height="17"/>
                                                                             <constraints>
                                                                                 <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="16" id="WB6-Uu-6Pa"/>
                                                                                 <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="17" id="hCT-Hc-tH8"/>
                                                                             </constraints>
-                                                                            <textFieldCell key="cell" selectable="YES" sendsActionOnEndEditing="YES" alignment="right" title="IIII" id="9vV-Gv-ekm">
+                                                                            <textFieldCell key="cell" selectable="YES" refusesFirstResponder="YES" sendsActionOnEndEditing="YES" alignment="right" title="IIII" allowsEditingTextAttributes="YES" id="9vV-Gv-ekm">
                                                                                 <font key="font" metaFont="system"/>
                                                                                 <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                                                                 <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -4283,7 +4239,6 @@ DQ
                                                                         <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
                                                                             <integer key="value" value="16"/>
                                                                         </userDefinedRuntimeAttribute>
-                                                                        <userDefinedRuntimeAttribute type="boolean" keyPath="masksToBounds" value="YES"/>
                                                                     </userDefinedRuntimeAttributes>
                                                                 </imageView>
                                                             </subviews>
@@ -4323,6 +4278,49 @@ DQ
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                             </scrollView>
+                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="F88-U6-4bi">
+                                <rect key="frame" x="0.0" y="0.0" width="697" height="49"/>
+                                <subviews>
+                                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="LkX-2A-rof">
+                                        <rect key="frame" x="20" y="14" width="624" height="22"/>
+                                        <textFieldCell key="cell" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" focusRingType="none" placeholderString="Type message here" bezelStyle="round" id="Ai5-Uu-gAV">
+                                            <font key="font" metaFont="system"/>
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                        </textFieldCell>
+                                        <connections>
+                                            <action selector="chatAction:" target="skH-xe-eYW" id="qmL-4H-fh2"/>
+                                        </connections>
+                                    </textField>
+                                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="BDe-iW-bJl">
+                                        <rect key="frame" x="652" y="14" width="25" height="23"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="25" id="9dJ-fB-EE9"/>
+                                            <constraint firstAttribute="height" constant="23" id="xdD-hi-8Tw"/>
+                                        </constraints>
+                                        <buttonCell key="cell" type="roundTextured" bezelStyle="texturedRounded" image="Smileys" imagePosition="only" alignment="center" lineBreakMode="truncatingTail" state="on" imageScaling="proportionallyDown" inset="2" id="hcC-58-NKd">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="showEmojis:" target="skH-xe-eYW" id="eCl-Ql-bFC"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="BDe-iW-bJl" firstAttribute="leading" secondItem="LkX-2A-rof" secondAttribute="trailing" constant="8" id="7Bn-rn-ZMe"/>
+                                    <constraint firstItem="BDe-iW-bJl" firstAttribute="top" secondItem="F88-U6-4bi" secondAttribute="top" constant="12" id="7Ru-1g-Mm7"/>
+                                    <constraint firstAttribute="bottom" secondItem="LkX-2A-rof" secondAttribute="bottom" constant="14" id="nkd-4a-Lq0"/>
+                                    <constraint firstItem="LkX-2A-rof" firstAttribute="top" secondItem="F88-U6-4bi" secondAttribute="top" constant="13" id="snz-wh-ZLE"/>
+                                    <constraint firstAttribute="trailing" secondItem="BDe-iW-bJl" secondAttribute="trailing" constant="20" id="wrm-4R-2wR"/>
+                                    <constraint firstItem="LkX-2A-rof" firstAttribute="leading" secondItem="F88-U6-4bi" secondAttribute="leading" constant="20" id="yTI-IS-Gw2"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
+                                        <color key="value" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </customView>
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="trailing" secondItem="F88-U6-4bi" secondAttribute="trailing" id="2ce-tL-tEi"/>
@@ -4372,7 +4370,6 @@ DQ
         <image name="ClearTransfers" width="25" height="25"/>
         <image name="ConnectionStatusDisconnected" width="16" height="16"/>
         <image name="Console" width="25" height="25"/>
-        <image name="Dalaï" width="128" height="128"/>
         <image name="DeleteThread" width="100" height="100"/>
         <image name="Disconnect" width="25" height="25"/>
         <image name="Download" width="25" height="25"/>

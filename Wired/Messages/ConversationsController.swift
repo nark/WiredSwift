@@ -46,11 +46,11 @@ class ConversationsController {
                     let uc = ConnectionsController.shared.usersController(forConnection: connection)
                                         
                     if let user = uc.user(withNick: conversation.nick!) {
-                        conversation.userID = user.userID
+                        conversation.userID = Int32(user.userID)
                         conversation.connection = connection
                     } else {
                         conversation.connection = nil
-                        conversation.userID = nil
+                        conversation.userID = -1
                     }
                 }
             }
@@ -74,7 +74,7 @@ class ConversationsController {
             conversation!.nick = user.nick!
             conversation!.icon = user.icon
             conversation!.uri = connection.URI
-            conversation?.userID = connection.userID
+            conversation?.userID = Int32(user.userID)
             
             conversation?.connection = connection
             

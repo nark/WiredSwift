@@ -185,18 +185,20 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
     // MARK: -
     
     private func updateView() {
-        self.chatInput.isEnabled = false
-        //self.sendButton.isEnabled = false
+        self.chatInput.isEditable = false
         self.emojiButton.isEnabled = false
+        self.chatInput.placeholderString = "Unavailable"
                 
         if let conversation = self.conversation {
-            print("conversation.connection : \(conversation.connection)")
+
             if conversation.connection != nil && conversation.connection.isConnected() {
-                self.chatInput.isEnabled = true
-                //self.sendButton.isEnabled = true
-                self.emojiButton.isEnabled = true
-                
-                self.chatInput.becomeFirstResponder()
+                let uc = ConnectionsController.shared.usersController(forConnection: conversation.connection)
+                if conversation.userID != -1 && uc.user(forID: UInt32(conversation.userID)) != nil {
+                    self.chatInput.isEditable = true
+                    self.emojiButton.isEnabled = true
+                    self.chatInput.placeholderString = "Type message here"
+                    self.chatInput.becomeFirstResponder()
+                }
                 AppDelegate.updateUnreadMessages(forConnection: conversation.connection)
             }
         }
@@ -236,7 +238,7 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                 self.substituteEmojis()
                 
                 let message = P7Message(withName: "wired.message.send_message", spec: self.connection.spec)
-                message.addParameter(field: "wired.user.id", value: self.conversation.userID)
+                message.addParameter(field: "wired.user.id", value: UInt32(self.conversation.userID))
                 message.addParameter(field: "wired.message.message", value: textField.stringValue)
                 
                 if self.connection.isConnected() {
@@ -320,9 +322,8 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: sentOrReceived), owner: self) as? MessageCellView
             
             view?.nickLabel.stringValue = message.nick ?? ""
-            view?.textField?.stringValue = message.body ?? ""
-            
-            let uc = ConnectionsController.shared.usersController(forConnection: conversation.connection)
+            view?.textField?.attributedStringValue = message.body?.substituteURL() ?? NSAttributedString(string: "")
+                        
             if message.me {
                 if let data = UserDefaults.standard.data(forKey: "WSUserIcon") {
                     if let image = try! NSKeyedUnarchiver.unarchivedObject(ofClass: NSImage.self, from: data) {
@@ -330,8 +331,12 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
                     }
                 }
             } else {
-                if let icon = uc.getIcon(forUserID: UInt32(message.userID)) {
-                    view?.imageView?.image = icon
+                if conversation.connection != nil {
+                    let uc = ConnectionsController.shared.usersController(forConnection: conversation.connection)
+
+                    if let icon = uc.getIcon(forUserID: UInt32(message.userID)) {
+                        view?.imageView?.image = icon
+                    }
                 }
             }
             

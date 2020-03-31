@@ -194,9 +194,9 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         conversation!.nick = userInfo.nick!
                         conversation!.icon = userInfo.icon
                         conversation!.uri = connection.URI
-                        conversation?.userID = connection.userID
+                        conversation?.userID = Int32(userInfo.userID)
                         
-                        conversation?.connection = connection as! ServerConnection
+                        conversation?.connection = connection as? ServerConnection
                         
                         AppDelegate.shared.saveAction(self as AnyObject)
                         
@@ -204,7 +204,7 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         conversationsTableView.reloadData()
                     }
                     
-                    conversation!.connection = connection as! ServerConnection
+                    conversation!.connection = connection as? ServerConnection
                     
                     if let cdObject = NSEntityDescription.insertNewObject(forEntityName: "Message", into: context) as? Message {
                         cdObject.body = messageString
