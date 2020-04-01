@@ -26,26 +26,22 @@ https://developer.apple.com/library/archive/documentation/ToolsLanguages/Concept
 
 Minimal connection to a Wired 2.0 server:
 
-    // import module
-    import WiredSwfit
-
-    // this automatically load P7 and Wired 2.0 specification
     let spec = P7Spec()
-    
+
     // the Wired URL to connect to
-    let url = Url(withString: "wired://guest@locahost:4871")
-    
+    let url = Url(withString: "wired://192.168.1.23:4871")
+
     // init connection
     let connection = Connection(withSpec: spec, delegate: self)
     connection.nick = "Me"
     connection.status = "Testing WiredSwift"
-    
+
     // perform  connect
-    if self.connection.connect(withUrl: url) {
+    if connection.connect(withUrl: url) {
         // connected
     } else {
         // not connected
-        print(self.connection.socket.errors)
+        print(connection.socket.errors)
     }
     
 ### Interactive socket

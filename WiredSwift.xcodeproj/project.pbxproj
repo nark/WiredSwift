@@ -119,9 +119,8 @@
 		4C75B9A92433717B00BE8857 /* AEXML in Frameworks */ = {isa = PBXBuildFile; productRef = 4C75B9A82433717B00BE8857 /* AEXML */; };
 		4C75B9AB2433722900BE8857 /* AEXML in Frameworks */ = {isa = PBXBuildFile; productRef = 4C75B9AA2433722900BE8857 /* AEXML */; };
 		4C75B9B3243374D900BE8857 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C75B9B2243374D900BE8857 /* AppDelegate.swift */; };
-		4C75B9B5243374D900BE8857 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C75B9B4243374D900BE8857 /* SceneDelegate.swift */; };
-		4C75B9B7243374D900BE8857 /* MasterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C75B9B6243374D900BE8857 /* MasterViewController.swift */; };
-		4C75B9B9243374D900BE8857 /* DetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C75B9B8243374D900BE8857 /* DetailViewController.swift */; };
+		4C75B9B7243374D900BE8857 /* BookmarksViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */; };
+		4C75B9B9243374D900BE8857 /* ChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C75B9B8243374D900BE8857 /* ChatViewController.swift */; };
 		4C75B9BC243374D900BE8857 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C75B9BA243374D900BE8857 /* Main.storyboard */; };
 		4C75B9BE243374DA00BE8857 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4C75B9BD243374DA00BE8857 /* Assets.xcassets */; };
 		4C75B9C1243374DA00BE8857 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */; };
@@ -130,11 +129,26 @@
 		4C75B9E2243375F900BE8857 /* WiredSwift_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */; };
 		4C75B9E42433764700BE8857 /* WiredSwift_iOS.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C75B9E5243379A500BE8857 /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
+		4C75BA272433928F00BE8857 /* Wired3.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161823FC7D01000EE688 /* Wired3.xcdatamodeld */; };
+		4C75BA2C2433932C00BE8857 /* Bookmark+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161B23FC843C000EE688 /* Bookmark+CoreDataClass.swift */; };
+		4C75BA2D2433932C00BE8857 /* Bookmark+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFB161C23FC843C000EE688 /* Bookmark+CoreDataProperties.swift */; };
+		4C75BA362433938400BE8857 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 4C75BA352433938400BE8857 /* KeychainAccess */; };
+		4C75BA382433998600BE8857 /* BookmarkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C75BA372433998600BE8857 /* BookmarkViewController.swift */; };
 		4C7A45AB242937CA008F0FFE /* TimeAgo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7A45AA242937CA008F0FFE /* TimeAgo.swift */; };
 		4C7D19222431DD91002897CB /* NSColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7D19212431DD91002897CB /* NSColor.swift */; };
 		4C7D199824322B31002897CB /* MessageCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7D199724322B31002897CB /* MessageCellView.swift */; };
 		4C8829E824254A0B00B4EF36 /* TabViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E724254A0B00B4EF36 /* TabViewController.swift */; };
 		4C8829EA2425672700B4EF36 /* ConnectionWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8829E92425672700B4EF36 /* ConnectionWindow.swift */; };
+		4C88747324347D4500A5D4A0 /* MainSplitViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C88747224347D4500A5D4A0 /* MainSplitViewController.swift */; };
+		4C88747524347DC300A5D4A0 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C88747424347DC300A5D4A0 /* SceneDelegate.swift */; };
+		4C887477243480F200A5D4A0 /* ProfileViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C887476243480F200A5D4A0 /* ProfileViewController.swift */; };
+		4C88747C243483A100A5D4A0 /* JGProgressHUD in Frameworks */ = {isa = PBXBuildFile; productRef = 4C88747B243483A100A5D4A0 /* JGProgressHUD */; };
+		4C88747E2434A10900A5D4A0 /* ServerInfoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C88747D2434A10900A5D4A0 /* ServerInfoViewController.swift */; };
+		4C8874802434A7FD00A5D4A0 /* UserTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C88747F2434A7FD00A5D4A0 /* UserTableViewCell.swift */; };
+		4C8874822434AB6F00A5D4A0 /* UIImage+Resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8874812434AB6F00A5D4A0 /* UIImage+Resize.swift */; };
+		4C8874842434B81800A5D4A0 /* BookmarkTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8874832434B81800A5D4A0 /* BookmarkTableViewCell.swift */; };
+		4C8874872434DE9000A5D4A0 /* Reachability in Frameworks */ = {isa = PBXBuildFile; productRef = 4C8874862434DE9000A5D4A0 /* Reachability */; };
+		4C8874882434E18B00A5D4A0 /* MessageKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C75BA422433E28200BE8857 /* MessageKit.framework */; };
 		4C93B2E7242F9BD500A956C3 /* BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2E3242F9BD500A956C3 /* BBCodeString.m */; };
 		4C93B2E8242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2E6242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m */; };
 		4C93B2F2242F9CAE00A956C3 /* BBAttribute.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2EA242F9CAD00A956C3 /* BBAttribute.m */; };
@@ -286,7 +300,7 @@
 		};
 		4C75B9E32433763F00BE8857 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 12;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
@@ -385,9 +399,8 @@
 		4C75B98C24336DDC00BE8857 /* Gzip.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Gzip.framework; path = Carthage/Build/iOS/Gzip.framework; sourceTree = SOURCE_ROOT; };
 		4C75B9B0243374D900BE8857 /* Wired iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Wired iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C75B9B2243374D900BE8857 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		4C75B9B4243374D900BE8857 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		4C75B9B6243374D900BE8857 /* MasterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterViewController.swift; sourceTree = "<group>"; };
-		4C75B9B8243374D900BE8857 /* DetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
+		4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksViewController.swift; sourceTree = "<group>"; };
+		4C75B9B8243374D900BE8857 /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
 		4C75B9BB243374D900BE8857 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4C75B9BD243374DA00BE8857 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4C75B9C0243374DA00BE8857 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -398,11 +411,20 @@
 		4C75B9D2243374DA00BE8857 /* Wired iOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Wired iOSUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C75B9D6243374DA00BE8857 /* Wired_iOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wired_iOSUITests.swift; sourceTree = "<group>"; };
 		4C75B9D8243374DA00BE8857 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4C75BA372433998600BE8857 /* BookmarkViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkViewController.swift; sourceTree = "<group>"; };
+		4C75BA422433E28200BE8857 /* MessageKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MessageKit.framework; path = Carthage/Build/iOS/MessageKit.framework; sourceTree = SOURCE_ROOT; };
 		4C7A45AA242937CA008F0FFE /* TimeAgo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeAgo.swift; sourceTree = "<group>"; };
 		4C7D19212431DD91002897CB /* NSColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSColor.swift; sourceTree = "<group>"; };
 		4C7D199724322B31002897CB /* MessageCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageCellView.swift; sourceTree = "<group>"; };
 		4C8829E724254A0B00B4EF36 /* TabViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewController.swift; sourceTree = "<group>"; };
 		4C8829E92425672700B4EF36 /* ConnectionWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionWindow.swift; sourceTree = "<group>"; };
+		4C88747224347D4500A5D4A0 /* MainSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainSplitViewController.swift; sourceTree = "<group>"; };
+		4C88747424347DC300A5D4A0 /* SceneDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		4C887476243480F200A5D4A0 /* ProfileViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViewController.swift; sourceTree = "<group>"; };
+		4C88747D2434A10900A5D4A0 /* ServerInfoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerInfoViewController.swift; sourceTree = "<group>"; };
+		4C88747F2434A7FD00A5D4A0 /* UserTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserTableViewCell.swift; sourceTree = "<group>"; };
+		4C8874812434AB6F00A5D4A0 /* UIImage+Resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+Resize.swift"; sourceTree = "<group>"; };
+		4C8874832434B81800A5D4A0 /* BookmarkTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkTableViewCell.swift; sourceTree = "<group>"; };
 		4C93B2E1242F9BD400A956C3 /* Wired-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Wired-Bridging-Header.h"; sourceTree = "<group>"; };
 		4C93B2E2242F9BD400A956C3 /* BBCodeStringDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeStringDelegate.h; sourceTree = "<group>"; };
 		4C93B2E3242F9BD500A956C3 /* BBCodeString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBCodeString.m; sourceTree = "<group>"; };
@@ -497,7 +519,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C88747C243483A100A5D4A0 /* JGProgressHUD in Frameworks */,
+				4C75BA362433938400BE8857 /* KeychainAccess in Frameworks */,
+				4C8874872434DE9000A5D4A0 /* Reachability in Frameworks */,
 				4C75B9E2243375F900BE8857 /* WiredSwift_iOS.framework in Frameworks */,
+				4C8874882434E18B00A5D4A0 /* MessageKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -688,13 +714,21 @@
 			isa = PBXGroup;
 			children = (
 				4C75B9B2243374D900BE8857 /* AppDelegate.swift */,
-				4C75B9B4243374D900BE8857 /* SceneDelegate.swift */,
-				4C75B9B6243374D900BE8857 /* MasterViewController.swift */,
-				4C75B9B8243374D900BE8857 /* DetailViewController.swift */,
+				4C88747424347DC300A5D4A0 /* SceneDelegate.swift */,
+				4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */,
+				4C75B9B8243374D900BE8857 /* ChatViewController.swift */,
+				4C88747D2434A10900A5D4A0 /* ServerInfoViewController.swift */,
+				4C88747224347D4500A5D4A0 /* MainSplitViewController.swift */,
+				4C75BA372433998600BE8857 /* BookmarkViewController.swift */,
+				4C887476243480F200A5D4A0 /* ProfileViewController.swift */,
+				4C88747F2434A7FD00A5D4A0 /* UserTableViewCell.swift */,
+				4C8874832434B81800A5D4A0 /* BookmarkTableViewCell.swift */,
+				4C8874812434AB6F00A5D4A0 /* UIImage+Resize.swift */,
 				4C75B9BA243374D900BE8857 /* Main.storyboard */,
 				4C75B9BD243374DA00BE8857 /* Assets.xcassets */,
 				4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */,
 				4C75B9C2243374DA00BE8857 /* Info.plist */,
+				4C75BA422433E28200BE8857 /* MessageKit.framework */,
 			);
 			path = "Wired iOS";
 			sourceTree = "<group>";
@@ -1033,12 +1067,18 @@
 				4C75B9AD243374D900BE8857 /* Frameworks */,
 				4C75B9AE243374D900BE8857 /* Resources */,
 				4C75B9E32433763F00BE8857 /* CopyFiles */,
+				4CA64D092433E49B00DFB20D /* ShellScript */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = "Wired iOS";
+			packageProductDependencies = (
+				4C75BA352433938400BE8857 /* KeychainAccess */,
+				4C88747B243483A100A5D4A0 /* JGProgressHUD */,
+				4C8874862434DE9000A5D4A0 /* Reachability */,
+			);
 			productName = "Wired iOS";
 			productReference = 4C75B9B0243374D900BE8857 /* Wired iOS.app */;
 			productType = "com.apple.product-type.application";
@@ -1219,6 +1259,9 @@
 				4C75B9A1243370C900BE8857 /* XCRemoteSwiftPackageReference "Socket.swift" */,
 				4C75B9A4243370F700BE8857 /* XCRemoteSwiftPackageReference "BlueRSA" */,
 				4C75B9A72433717B00BE8857 /* XCRemoteSwiftPackageReference "AEXML" */,
+				4C75BA342433938400BE8857 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+				4C8874782434836C00A5D4A0 /* XCRemoteSwiftPackageReference "JGProgressHUD" */,
+				4C8874852434DE9000A5D4A0 /* XCRemoteSwiftPackageReference "Reachability" */,
 			);
 			productRefGroup = 4C74285F22DCECE800D6E6F9 /* Products */;
 			projectDirPath = "";
@@ -1318,6 +1361,27 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		4CA64D092433E49B00DFB20D /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/MessageKit.framework",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n/usr/local/bin/carthage copy-frameworks\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		4C74285A22DCECE800D6E6F9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -1415,10 +1479,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C88747E2434A10900A5D4A0 /* ServerInfoViewController.swift in Sources */,
 				4C75B9B3243374D900BE8857 /* AppDelegate.swift in Sources */,
-				4C75B9B5243374D900BE8857 /* SceneDelegate.swift in Sources */,
-				4C75B9B7243374D900BE8857 /* MasterViewController.swift in Sources */,
-				4C75B9B9243374D900BE8857 /* DetailViewController.swift in Sources */,
+				4C8874842434B81800A5D4A0 /* BookmarkTableViewCell.swift in Sources */,
+				4C75BA272433928F00BE8857 /* Wired3.xcdatamodeld in Sources */,
+				4C887477243480F200A5D4A0 /* ProfileViewController.swift in Sources */,
+				4C8874802434A7FD00A5D4A0 /* UserTableViewCell.swift in Sources */,
+				4C8874822434AB6F00A5D4A0 /* UIImage+Resize.swift in Sources */,
+				4C88747524347DC300A5D4A0 /* SceneDelegate.swift in Sources */,
+				4C75BA2C2433932C00BE8857 /* Bookmark+CoreDataClass.swift in Sources */,
+				4C75BA2D2433932C00BE8857 /* Bookmark+CoreDataProperties.swift in Sources */,
+				4C75BA382433998600BE8857 /* BookmarkViewController.swift in Sources */,
+				4C75B9B7243374D900BE8857 /* BookmarksViewController.swift in Sources */,
+				4C75B9B9243374D900BE8857 /* ChatViewController.swift in Sources */,
+				4C88747324347D4500A5D4A0 /* MainSplitViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1821,8 +1895,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JSVJHJ78QE;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = "Wired iOS/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1841,8 +1919,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JSVJHJ78QE;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = "Wired iOS/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2088,7 +2170,7 @@
 				);
 				INFOPLIST_FILE = WiredSwift_iOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2122,7 +2204,7 @@
 				);
 				INFOPLIST_FILE = WiredSwift_iOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -2312,6 +2394,30 @@
 				minimumVersion = 4.5.0;
 			};
 		};
+		4C75BA342433938400BE8857 /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.1.0;
+			};
+		};
+		4C8874782434836C00A5D4A0 /* XCRemoteSwiftPackageReference "JGProgressHUD" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/JonasGessner/JGProgressHUD";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.0;
+			};
+		};
+		4C8874852434DE9000A5D4A0 /* XCRemoteSwiftPackageReference "Reachability" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ashleymills/Reachability.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
 		4CF673762404191600A8EDC2 /* XCRemoteSwiftPackageReference "CZlib" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/IBM-Swift/CZlib.git";
@@ -2352,6 +2458,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4C75B9A72433717B00BE8857 /* XCRemoteSwiftPackageReference "AEXML" */;
 			productName = AEXML;
+		};
+		4C75BA352433938400BE8857 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75BA342433938400BE8857 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+		4C88747B243483A100A5D4A0 /* JGProgressHUD */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C8874782434836C00A5D4A0 /* XCRemoteSwiftPackageReference "JGProgressHUD" */;
+			productName = JGProgressHUD;
+		};
+		4C8874862434DE9000A5D4A0 /* Reachability */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C8874852434DE9000A5D4A0 /* XCRemoteSwiftPackageReference "Reachability" */;
+			productName = Reachability;
 		};
 		4CF673772404191E00A8EDC2 /* CZlib */ = {
 			isa = XCSwiftPackageProductDependency;
