@@ -2177,13 +2177,13 @@ DQ
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView borderType="line" autohidesScrollers="YES" horizontalLineScroll="128" horizontalPageScroll="10" verticalLineScroll="128" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="IMz-Ay-LBK">
-                                <rect key="frame" x="-1" y="-1" width="527" height="481"/>
+                                <rect key="frame" x="-1" y="-1" width="527" height="491"/>
                                 <clipView key="contentView" id="Tan-dq-K3n">
-                                    <rect key="frame" x="1" y="1" width="525" height="479"/>
+                                    <rect key="frame" x="1" y="1" width="525" height="489"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="126" rowSizeStyle="automatic" usesAutomaticRowHeights="YES" viewBased="YES" id="BXd-GW-Awu">
-                                            <rect key="frame" x="0.0" y="0.0" width="525" height="479"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="525" height="489"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -2311,7 +2311,7 @@ DQ
                                 </scroller>
                             </scrollView>
                             <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="X2T-gA-fIN">
-                                <rect key="frame" x="500" y="488" width="16" height="16"/>
+                                <rect key="frame" x="500" y="498" width="16" height="16"/>
                             </progressIndicator>
                         </subviews>
                         <constraints>
@@ -2535,7 +2535,7 @@ DQ
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="Status" id="fJu-nb-OG5">
                                                                         <font key="font" metaFont="system"/>
-                                                                        <color key="textColor" name="disabledControlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="textColor" name="systemGrayColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
@@ -2544,7 +2544,7 @@ DQ
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                                                                     <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" title="User nick" id="cUN-r6-RJp">
                                                                         <font key="font" metaFont="system"/>
-                                                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                                                                     </textFieldCell>
                                                                 </textField>
@@ -4362,7 +4362,7 @@ DQ
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="Grk-AN-qBx"/>
+        <segue reference="Ovw-RS-Cjt"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="Boards" width="25" height="25"/>
