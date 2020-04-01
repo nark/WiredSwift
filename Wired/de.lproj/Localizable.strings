@@ -49,3 +49,7 @@
 "Removing" = "entfernen";
 "Finished" = "abgeschlossen";
 "speed" = "Geschwindigkeit";
+
+/* Console */
+"Received" = "Empfangen";
+"Sent" = "Gesendet";
