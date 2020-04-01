@@ -71,7 +71,7 @@
 "4Sj-eF-4ho.label" = "Tab";
 
 /* Class = "NSTextFieldCell"; title = "Files"; ObjectID = "4tX-tk-I9K"; */
-"4tX-tk-I9K.title" = "Dateien";
+"4tX-tk-I9K.title" = "Dateien:";
 
 /* Class = "NSMenuItem"; title = "About Wired"; ObjectID = "5kV-Vb-QxS"; */
 "5kV-Vb-QxS.title" = "Über Wired";
@@ -242,10 +242,10 @@
 "DVo-aG-piG.title" = "Schliessen";
 
 /* Class = "NSTextFieldCell"; title = "Protocol"; ObjectID = "dWY-sb-eqJ"; */
-"dWY-sb-eqJ.title" = "Protokoll";
+"dWY-sb-eqJ.title" = "Protokoll:";
 
 /* Class = "NSTextFieldCell"; title = "Description"; ObjectID = "Dxk-bu-rgK"; */
-"Dxk-bu-rgK.title" = "Beschreibung";
+"Dxk-bu-rgK.title" = "Beschreibung:";
 
 /* Class = "NSTableColumn"; headerCell.title = "Creation Date"; ObjectID = "E40-mr-Le1"; */
 "E40-mr-Le1.headerCell.title" = "Erstellungsdatum";
@@ -254,13 +254,13 @@
 "Eiz-4l-YAF.title" = "IIII";
 
 /* Class = "NSTextFieldCell"; title = "Uptime"; ObjectID = "ekj-hu-P1o"; */
-"ekj-hu-P1o.title" = "Uptime";
+"ekj-hu-P1o.title" = "Online seit:";
 
 /* Class = "NSTextFieldCell"; title = "Text Cell"; ObjectID = "EKr-7C-YF8"; */
 "EKr-7C-YF8.title" = "Textzelle";
 
 /* Class = "NSTextFieldCell"; title = "Address"; ObjectID = "EqA-qZ-J3x"; */
-"EqA-qZ-J3x.title" = "Address:";
+"EqA-qZ-J3x.title" = "Adresse:";
 
 /* Class = "NSTextFieldCell"; title = "Password"; ObjectID = "eVu-KD-a5g"; */
 "eVu-KD-a5g.title" = "Passwort";
@@ -314,7 +314,7 @@
 "GB9-OM-e27.title" = "Fett";
 
 /* Class = "NSTextFieldCell"; title = "Version"; ObjectID = "GD0-hb-LaT"; */
-"GD0-hb-LaT.title" = "Version";
+"GD0-hb-LaT.title" = "Version:";
 
 /* Class = "NSTableColumn"; headerCell.title = "Size"; ObjectID = "GE5-Es-iY2"; */
 "GE5-Es-iY2.headerCell.title" = "Größe";
@@ -536,7 +536,7 @@
 "odv-Eq-aaG.title" = "Item 2";
 
 /* Class = "NSTextFieldCell"; title = "Size"; ObjectID = "OdX-60-MXh"; */
-"OdX-60-MXh.title" = "Größe";
+"OdX-60-MXh.title" = "Größe:";
 
 /* Class = "NSMenuItem"; title = "Chat"; ObjectID = "OFt-Qb-Wp0"; */
 "OFt-Qb-Wp0.title" = "Chat";
@@ -650,7 +650,7 @@
 "Td7-aD-5lo.title" = "Fenster";
 
 /* Class = "NSTextFieldCell"; title = "Compression"; ObjectID = "tdG-Zc-1Fw"; */
-"tdG-Zc-1Fw.title" = "Kompression";
+"tdG-Zc-1Fw.title" = "Kompression:";
 
 /* Class = "NSViewController"; title = "Settings"; ObjectID = "tIF-Fn-L6g"; */
 "tIF-Fn-L6g.title" = "Einstellungen";
@@ -764,7 +764,7 @@
 "WeT-3V-zwk.title" = "Paste and Match Style";
 
 /* Class = "NSTextFieldCell"; title = "Address"; ObjectID = "Wg3-kq-wAm"; */
-"Wg3-kq-wAm.title" = "Addresse";
+"Wg3-kq-wAm.title" = "Adresse";
 
 /* Class = "NSTextFieldCell"; title = "Table View Cell"; ObjectID = "WGz-Ph-7Cp"; */
 "WGz-Ph-7Cp.title" = "Table View Cell";
@@ -794,7 +794,7 @@
 "xaP-SN-ZI5.title" = "Info";
 
 /* Class = "NSTextFieldCell"; title = "URL"; ObjectID = "xEL-2j-1Xy"; */
-"xEL-2j-1Xy.title" = "URL";
+"xEL-2j-1Xy.title" = "URL:";
 
 /* Class = "NSViewController"; title = "showPublicChat"; ObjectID = "XfG-lQ-9wD"; */
 "XfG-lQ-9wD.title" = "showPublicChat";
@@ -803,7 +803,7 @@
 "xLx-FS-YhX.label" = "Konsole";
 
 /* Class = "NSMenuItem"; title = "Remove Bookmark"; ObjectID = "XPa-kv-WjE"; */
-"XPa-kv-WjE.title" = "Entferne Lesezeichen";
+"XPa-kv-WjE.title" = "Lesezeichen entfernen";
 
 /* Class = "NSMenuItem"; title = "Use All"; ObjectID = "xQD-1f-W4t"; */
 "xQD-1f-W4t.title" = "Alle benutzen";
@@ -842,7 +842,7 @@
 "yyY-sa-dn0.title" = "--";
 
 /* Class = "NSMenuItem"; title = "Show Substitutions"; ObjectID = "z6F-FW-3nz"; */
-"z6F-FW-3nz.title" = "Zeige Ersetzungen";
+"z6F-FW-3nz.title" = "Ersetzungen zeigen";
 
 /* Class = "NSTextFieldCell"; title = "Text Cell"; ObjectID = "ZgX-oT-0xN"; */
 "ZgX-oT-0xN.title" = "Textzelle";
