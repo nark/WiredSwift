@@ -11,6 +11,12 @@ import Foundation
 import CoreData
 import KeychainAccess
 
+#if os(iOS)
+import WiredSwift_iOS
+#else
+import WiredSwift
+#endif
+
 @objc(Bookmark)
 public class Bookmark: NSManagedObject {
     
