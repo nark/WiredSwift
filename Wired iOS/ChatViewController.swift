@@ -263,6 +263,16 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
                 self.avatars[userID] = Avatar(image: UIImage(data: iconData), initials: nick)
             }
         }
+        else if message.name == "wired.message.message" {
+            let response = P7Message(withName: "wired.message.send_message", spec: self.connection!.spec)
+            
+            if let userID = message.uint32(forField: "wired.user.id") {
+                response.addParameter(field: "wired.user.id", value: userID)
+                response.addParameter(field: "wired.message.message", value: "Not implemented yet, sorry. 🙂")
+                
+                _ = self.connection!.send(message: response)
+            }
+        }
     }
     
     func connectionDidReceiveError(connection: Connection, message: P7Message) {

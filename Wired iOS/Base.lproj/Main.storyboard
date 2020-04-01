@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15705" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="H1p-Uh-vWS">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16096" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="H1p-Uh-vWS">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16086"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -123,9 +123,9 @@
                         <barButtonItem key="backBarButtonItem" title="Connections" id="R12-Af-eff"/>
                     </navigationItem>
                     <connections>
-                        <segue destination="Yk1-PC-VHa" kind="presentation" identifier="ShowBookmark" id="nlz-eJ-wry"/>
+                        <segue destination="Yk1-PC-VHa" kind="presentation" identifier="ShowBookmark" modalPresentationStyle="fullScreen" id="nlz-eJ-wry"/>
                         <segue destination="vC3-pB-5Vb" kind="showDetail" identifier="showDetail" id="9yF-XO-LCP"/>
-                        <segue destination="Vsc-Yk-9vw" kind="presentation" identifier="ShowProfile" id="L1X-sa-ROx"/>
+                        <segue destination="Vsc-Yk-9vw" kind="presentation" identifier="ShowProfile" modalPresentationStyle="fullScreen" id="L1X-sa-ROx"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Rux-fX-hf1" sceneMemberID="firstResponder"/>
@@ -137,7 +137,7 @@
             <objects>
                 <navigationController id="Yk1-PC-VHa" sceneMemberID="viewController">
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="6DJ-Fb-Ktt">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="56"/>
+                        <rect key="frame" x="0.0" y="44" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <connections>
@@ -152,8 +152,9 @@
         <scene sceneID="d9N-dZ-8hi">
             <objects>
                 <navigationController id="Vsc-Yk-9vw" sceneMemberID="viewController">
+                    <navigationItem key="navigationItem" id="T4W-g8-zHh"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="36Y-No-BgA">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="56"/>
+                        <rect key="frame" x="0.0" y="44" width="414" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <connections>
@@ -169,25 +170,25 @@
             <objects>
                 <viewController id="u62-Gc-ULh" customClass="ProfileViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="o2p-j8-Jfk">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="842"/>
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="DefaultUser" translatesAutoresizingMaskIntoConstraints="NO" id="NCP-rD-XmM">
-                                <rect key="frame" x="175" y="184" width="64" height="64"/>
+                                <rect key="frame" x="175" y="109" width="64" height="64"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="64" id="PRT-Y8-1If"/>
                                     <constraint firstAttribute="width" constant="64" id="y2u-6h-m6H"/>
                                 </constraints>
                             </imageView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="qQ4-ys-wcH">
-                                <rect key="frame" x="163.5" y="256" width="87" height="30"/>
+                                <rect key="frame" x="163.5" y="181" width="87" height="30"/>
                                 <state key="normal" title="Change Icon"/>
                                 <connections>
                                     <action selector="changeIcon:" destination="u62-Gc-ULh" eventType="touchUpInside" id="kes-r0-n9S"/>
                                 </connections>
                             </button>
                             <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="2cw-KT-Xsr">
-                                <rect key="frame" x="75" y="358" width="264" height="34"/>
+                                <rect key="frame" x="75" y="283" width="264" height="34"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="264" id="4co-4P-SMO"/>
                                 </constraints>
@@ -195,7 +196,7 @@
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
                             <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ocv-4S-zGY">
-                                <rect key="frame" x="75" y="429" width="264" height="34"/>
+                                <rect key="frame" x="75" y="354" width="264" height="34"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="264" id="Bqj-hb-Zxx"/>
                                 </constraints>
@@ -203,7 +204,7 @@
                                 <textInputTraits key="textInputTraits"/>
                             </textField>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Nick" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rA9-9t-ewO">
-                                <rect key="frame" x="75" y="329" width="264" height="21"/>
+                                <rect key="frame" x="75" y="254" width="264" height="21"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="21" id="15e-Mv-vMa"/>
                                     <constraint firstAttribute="width" constant="264" id="Chk-ZB-jlE"/>
@@ -213,7 +214,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Status" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="M2x-hr-Wzb">
-                                <rect key="frame" x="75" y="400" width="264" height="21"/>
+                                <rect key="frame" x="75" y="325" width="264" height="21"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="21" id="0Wg-1A-6h0"/>
                                     <constraint firstAttribute="width" constant="264" id="1Tg-rH-2Bq"/>
@@ -237,7 +238,7 @@
                             <constraint firstItem="qQ4-ys-wcH" firstAttribute="top" secondItem="NCP-rD-XmM" secondAttribute="bottom" constant="8" id="edJ-aX-AHp"/>
                             <constraint firstItem="rA9-9t-ewO" firstAttribute="top" secondItem="qQ4-ys-wcH" secondAttribute="bottom" constant="43" id="hOo-0g-4NU"/>
                             <constraint firstItem="M2x-hr-Wzb" firstAttribute="top" secondItem="2cw-KT-Xsr" secondAttribute="bottom" constant="8" id="nUF-bi-9Pb"/>
-                            <constraint firstItem="NCP-rD-XmM" firstAttribute="top" secondItem="Tln-6a-DvY" secondAttribute="top" constant="128" id="vVr-x6-LZh"/>
+                            <constraint firstItem="NCP-rD-XmM" firstAttribute="top" secondItem="Tln-6a-DvY" secondAttribute="top" constant="21" id="vVr-x6-LZh"/>
                             <constraint firstItem="rA9-9t-ewO" firstAttribute="centerX" secondItem="o2p-j8-Jfk" secondAttribute="centerX" id="z4X-zj-Nbf"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="Tln-6a-DvY"/>
@@ -269,7 +270,7 @@
             <objects>
                 <tableViewController id="7tu-8D-Cfm" customClass="BookmarkViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="static" style="grouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" id="RXX-LA-ioq">
-                        <rect key="frame" x="0.0" y="0.0" width="414" height="842"/>
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <sections>
@@ -455,11 +456,11 @@
             <point key="canvasLocation" x="-45" y="129"/>
         </scene>
     </scenes>
-    <resources>
-        <image name="DefaultUser" width="32" height="32"/>
-        <image name="info.circle.fill" catalog="system" width="64" height="60"/>
-    </resources>
     <inferredMetricsTieBreakers>
         <segue reference="9yF-XO-LCP"/>
     </inferredMetricsTieBreakers>
+    <resources>
+        <image name="DefaultUser" width="32" height="32"/>
+        <image name="info.circle.fill" catalog="system" width="128" height="121"/>
+    </resources>
 </document>
