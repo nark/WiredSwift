@@ -371,9 +371,25 @@ public class Connection: NSObject {
         message.addParameter(field: "wired.info.application.name", value: "Wired Swift")
         message.addParameter(field: "wired.info.application.version", value: "1.0")
         message.addParameter(field: "wired.info.application.build", value: "1")
+
+        #if os(iOS)
+        message.addParameter(field: "wired.info.os.name", value: "iOS")
+        #elseif os(macOS)
         message.addParameter(field: "wired.info.os.name", value: "macOS")
-        message.addParameter(field: "wired.info.os.version", value: "10.14")
+        #else
+        message.addParameter(field: "wired.info.os.name", value: "Linux")
+        #endif
+        
+        message.addParameter(field: "wired.info.os.version", value: ProcessInfo.processInfo.operatingSystemVersionString)
+        
+        #if os(iOS)
+        message.addParameter(field: "wired.info.arch", value: "armv7")
+        #elseif os(macOS)
         message.addParameter(field: "wired.info.arch", value: "x86_64")
+        #else
+        message.addParameter(field: "wired.info.arch", value: "x86_64")
+        #endif
+        
         message.addParameter(field: "wired.info.supports_rsrc", value: false)
         
         _ = self.send(message: message)

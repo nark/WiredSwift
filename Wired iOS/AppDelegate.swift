@@ -39,6 +39,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     override init() {
         super.init()
         
+        UIButton.appearance().tintColor = UIColor.systemGreen
+        UIBarButtonItem.appearance().tintColor = UIColor.systemGreen
+        
         // Default preferences
         UserDefaults.standard.register(defaults: [
             "WSUserNick": "WiredSwift",
