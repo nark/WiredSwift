@@ -84,7 +84,7 @@ class ServerInfoViewController: UITableViewController {
             return 2
         }
         else if section == 1 {
-            return 2
+            return 1
         }
         
         return users.count
@@ -125,9 +125,6 @@ class ServerInfoViewController: UITableViewController {
         } else if indexPath.section == 1 {
             if indexPath.row == 0 {
                 cell.textLabel!.text = "Protocol \(self.connection!.socket.remoteName!) \(self.connection!.socket.remoteVersion!)"
-            }
-            else if indexPath.row == 1 {
-                cell.textLabel!.text = "Encryption \(P7Socket.CipherType.pretty(self.connection!.socket.cipherType))"
             }
         } else if indexPath.section == 2 {
             let userCell = tableView.dequeueReusableCell(withIdentifier: "UserCell", for: indexPath) as? UserTableViewCell

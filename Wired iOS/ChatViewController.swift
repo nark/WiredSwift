@@ -8,8 +8,24 @@
 
 import UIKit
 import MessageKit
+import InputBarAccessoryView
 import WiredSwift_iOS
 
+public enum DefaultStyle {
+
+    public enum Colors {
+
+        public static let label: UIColor = {
+            if #available(iOS 13.0, *) {
+                return UIColor.label
+            } else {
+                return .black
+            }
+        }()
+    }
+}
+
+public let Style = DefaultStyle.self
 
 public struct Sender: SenderType {
     public let senderId: String
@@ -40,6 +56,10 @@ extension ChatViewController: MessagesDisplayDelegate, MessagesLayoutDelegate {
     func enabledDetectors(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> [DetectorType] {
         return [.url]
     }
+    
+//    func messageTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+//        <#code#>
+//    }
 }
 
 
@@ -66,8 +86,17 @@ extension ChatViewController: MessageCellDelegate {
 }
 
 
+extension ChatViewController : AttachmentManagerDelegate {
+    func attachmentManager(_ manager: AttachmentManager, shouldBecomeVisible: Bool) {
 
-class ChatViewController: MessagesViewController, ConnectionDelegate {
+    }
+    
+    
+}
+
+
+
+class ChatViewController: MessagesViewController, ConnectionDelegate, UIImagePickerControllerDelegate & UINavigationControllerDelegate {
     @IBOutlet var infoButton: UIBarButtonItem!
     
     var selfSender:Sender = Sender(senderId: "-1", displayName: "Nark iOS")
@@ -91,6 +120,19 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
         messagesCollectionView.messagesDisplayDelegate = self
         messagesCollectionView.messageCellDelegate = self
         
+
+        let charCountButton = InputBarButtonItem()
+        .configure {
+            $0.image = UIImage(named: "Camera")?.withRenderingMode(.alwaysTemplate)
+            $0.setSize(CGSize(width: 25, height: 35), animated: false)
+            $0.contentHorizontalAlignment = .left
+        }.onSelected { (item) in
+            self.openCamera(item)
+        }
+
+        messageInputBar.setLeftStackViewWidthConstant(to: 40, animated: false)
+        messageInputBar.setStackViewItems([charCountButton], forStack: .left, animated: false)
+  
         messageInputBar.sendButton.addTarget(self, action: #selector(sendMessage), for: UIControl.Event.touchDown)
         
         configureView()
@@ -137,6 +179,32 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
         }
     }
 
+    
+    func openCamera(_ sender:Any) {
+        let imagePicker = UIImagePickerController()
+        imagePicker.delegate = self
+        
+        
+        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: .actionSheet)
+        
+        alert.popoverPresentationController?.sourceView = self.messageInputBar.contentView
+        
+        alert.addAction(UIAlertAction(title: "Take Picture", style: .default, handler: { (action) in
+            imagePicker.sourceType = .camera
+            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Photo Library", style: .default, handler: { (action) in
+            imagePicker.sourceType = .photoLibrary
+            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { (action) in }))
+        
+        self.navigationController?.present(alert, animated: true, completion: {
+            
+        })
+    }
     
     
     // MARK: -
@@ -217,9 +285,7 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
     // MARK: -
     func connectionDisconnected(connection: Connection, error: Error?) {
         configureView()
-        
-        print("connectionDisconnected")
-        
+                
         let alertController = UIAlertController(
             title: "Connection Error",
             message: "You have beed disconnected from \(bookmark.hostname!)",
@@ -237,14 +303,22 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
             if let userID = message.uint32(forField: "wired.user.id") {
                 let string = message.string(forField: "wired.chat.say") ?? message.string(forField: "wired.chat.me")
                 
+                let isSender = userID == self.connection?.userID
+                
                 if let s = string {
                     let uuid = UUID().uuidString
                     if let sender = self.senders[userID] {
+                        let font = UIFont.systemFont(ofSize: 17)
+                        let attributes: [NSAttributedString.Key: Any] = [
+                            .font: font,
+                            .foregroundColor: isSender ? UIColor.darkText : Style.Colors.label
+                        ]
+                        
                         let message = Message(
                             sender: sender,
                             messageId: uuid,
                             sentDate: Date(),
-                            kind: MessageKind.attributedText(NSAttributedString(string: s)))
+                            kind: MessageKind.attributedText(NSAttributedString(string: s, attributes: attributes)))
                         
                         self.messages.append(message)
                         

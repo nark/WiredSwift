@@ -37,7 +37,7 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="mOI-FS-AaM">
                         <barButtonItem key="backBarButtonItem" title="Connections" id="L4h-CX-Oex"/>
-                        <barButtonItem key="rightBarButtonItem" title="Info" image="info.circle.fill" catalog="system" id="qER-ox-3d2">
+                        <barButtonItem key="rightBarButtonItem" title="Info" id="qER-ox-3d2">
                             <connections>
                                 <segue destination="kuL-Q9-ctc" kind="show" identifier="ShowServerInfo" id="IXj-Xp-AFQ"/>
                             </connections>
@@ -461,6 +461,5 @@
     </inferredMetricsTieBreakers>
     <resources>
         <image name="DefaultUser" width="32" height="32"/>
-        <image name="info.circle.fill" catalog="system" width="128" height="121"/>
     </resources>
 </document>

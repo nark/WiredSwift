@@ -415,7 +415,7 @@
 		4C75B98A24336DDC00BE8857 /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoSwift.framework; path = Carthage/Build/iOS/CryptoSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C75B98B24336DDC00BE8857 /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/iOS/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C75B98C24336DDC00BE8857 /* Gzip.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Gzip.framework; path = Carthage/Build/iOS/Gzip.framework; sourceTree = SOURCE_ROOT; };
-		4C75B9B0243374D900BE8857 /* Wired iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Wired iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C75B9B0243374D900BE8857 /* Wired.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wired.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C75B9B2243374D900BE8857 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksViewController.swift; sourceTree = "<group>"; };
 		4C75B9B8243374D900BE8857 /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
@@ -697,7 +697,7 @@
 				4C93B2FC242FE96200A956C3 /* WiredSwfitTests.xctest */,
 				4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */,
 				4CE2AA6324336AF30072E0B3 /* WiredSwift_iOSTests.xctest */,
-				4C75B9B0243374D900BE8857 /* Wired iOS.app */,
+				4C75B9B0243374D900BE8857 /* Wired.app */,
 				4C75B9C7243374DA00BE8857 /* Wired iOSTests.xctest */,
 				4C75B9D2243374DA00BE8857 /* Wired iOSUITests.xctest */,
 			);
@@ -734,8 +734,8 @@
 			isa = PBXGroup;
 			children = (
 				4C75B9B2243374D900BE8857 /* AppDelegate.swift */,
-				4C88747424347DC300A5D4A0 /* SceneDelegate.swift */,
 				4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */,
+				4C88747424347DC300A5D4A0 /* SceneDelegate.swift */,
 				4C75B9B8243374D900BE8857 /* ChatViewController.swift */,
 				4C88747D2434A10900A5D4A0 /* ServerInfoViewController.swift */,
 				4C88747224347D4500A5D4A0 /* MainSplitViewController.swift */,
@@ -1104,7 +1104,7 @@
 				4C8874972434E99700A5D4A0 /* CZlib */,
 			);
 			productName = "Wired iOS";
-			productReference = 4C75B9B0243374D900BE8857 /* Wired iOS.app */;
+			productReference = 4C75B9B0243374D900BE8857 /* Wired.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4C75B9C6243374DA00BE8857 /* Wired iOSTests */ = {
@@ -1931,7 +1931,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = JSVJHJ78QE;
+				DEVELOPMENT_TEAM = 7KTXA5Y36K;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
@@ -1942,8 +1942,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.wired.client.ios";
+				PRODUCT_NAME = Wired;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1955,7 +1955,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = JSVJHJ78QE;
+				DEVELOPMENT_TEAM = 7KTXA5Y36K;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
@@ -1966,8 +1966,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.wired.client.ios";
+				PRODUCT_NAME = Wired;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;
