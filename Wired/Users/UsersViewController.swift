@@ -196,7 +196,6 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
         if let uc = self.usersController, let user = uc.user(at: row) {
             view?.userNick?.stringValue = user.nick
             view?.userNick?.textColor = NSColor.color(forEnum: user.color)
-
             view?.userStatus?.stringValue = user.status
             
             if let base64ImageString = user.icon?.base64EncodedData() {
