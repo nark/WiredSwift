@@ -197,16 +197,6 @@ class UsersViewController: ConnectionViewController, ConnectionDelegate, NSTable
             view?.userNick?.stringValue = user.nick
             view?.userNick?.textColor = NSColor.color(forEnum: user.color)
 
-//            ### Preparation of Theme Detection (Light or Dark) to switch the Nick text color
-//            enum InterfaceStyle : String {
-//               case Dark, Light
-//               init() {
-//                  let type = UserDefaults.standard.string(forKey: "AppleInterfaceStyle") ?? "Light"
-//                  self = InterfaceStyle(rawValue: type)!
-//                }
-//            }
-//            let currentStyle = InterfaceStyle()
-
             view?.userStatus?.stringValue = user.status
             
             if let base64ImageString = user.icon?.base64EncodedData() {
