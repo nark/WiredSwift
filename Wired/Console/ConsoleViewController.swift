@@ -64,7 +64,9 @@ class ConsoleViewController: ConnectionViewController, ConnectionDelegate, NSOut
                 view?.textField?.stringValue = AppDelegate.dateTimeFormatter.string(from: Date())
             }
             else if tableColumn?.identifier.rawValue == "Type" {
-                view?.textField?.stringValue = receivedMessages.contains(message) ? "Received" : "Sent"
+                let Received = NSLocalizedString("Received", comment: "")
+                let Sent = NSLocalizedString("Sent", comment: "")
+                view?.textField?.stringValue = receivedMessages.contains(message) ? Received : Sent
             }
             else if tableColumn?.identifier.rawValue == "Message" {
                 view?.textField?.stringValue = message.name
@@ -137,7 +139,7 @@ class ConsoleViewController: ConnectionViewController, ConnectionDelegate, NSOut
             self.receivedMessages.append(message)
         }
         
-        self.messagesOutlineView.reloadData()        
+        self.messagesOutlineView.reloadData()
         self.messagesOutlineView.scrollRowToVisible(self.messages.count - 1)
     }
 }

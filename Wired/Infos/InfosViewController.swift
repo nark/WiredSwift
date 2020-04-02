@@ -50,7 +50,8 @@ class InfosViewController: ConnectionViewController, ConnectionDelegate {
             self.protocolLabel.stringValue = "\(self.connection.socket.remoteName!) \(self.connection.socket.remoteVersion!)"
             self.cipherLabel.stringValue = "\(P7Socket.CipherType.pretty(self.connection.socket.cipherType))"
             self.urlLabel.stringValue = "wiredp7://\(self.connection.url.hostname):\(self.connection.url.port)"
-            self.compressionLabel.stringValue = "Unsupported (yet)"
+            let unsupported = NSLocalizedString("Unsupported (yet)", comment: "")
+            self.compressionLabel.stringValue = unsupported
             
             let image = NSImage(data: self.connection.serverInfo.serverBanner)
             self.bannerImage.image = image

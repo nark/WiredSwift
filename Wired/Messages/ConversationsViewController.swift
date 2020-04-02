@@ -140,7 +140,8 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
         menu.removeAllItems()
         
         if self.selectedConversation != nil {
-            menu.addItem(withTitle: "Delete Conversation", action: #selector(deleteConversation(_:)), keyEquivalent: "")
+            let localstring = NSLocalizedString("Delete Conversation", comment: "")
+            menu.addItem(withTitle: localstring, action: #selector(deleteConversation(_:)), keyEquivalent: "")
         }
     }
     
@@ -227,7 +228,8 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
                         // add unread
                         
                         if NSApp.isActive == false || self.view.window?.isKeyWindow == false || AppDelegate.selectedToolbarIdentifier(forConnection: connection) != "Messages" {
-                            AppDelegate.notify(identifier: "privateMessage", title: "New Message", subtitle: userInfo.nick!, text: messageString, connection: connection)
+                            let localstring = NSLocalizedString("New Message", comment: "")
+                            AppDelegate.notify(identifier: "privateMessage", title: localstring, subtitle: userInfo.nick!, text: messageString, connection: connection)
                             AppDelegate.updateUnreadMessages(forConnection: connection)
                         }
                     }

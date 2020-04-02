@@ -143,11 +143,12 @@ class ResourcesController: ConnectionViewController, ConnectionDelegate, NSOutli
         if let selectedItem = self.selectedItem()  {
             if let bookmark = selectedItem as? Bookmark {
                 let alert = NSAlert()
-                alert.messageText = "Are you sure you want to delete this bookmark?"
-                alert.informativeText = "This operation is not recoverable"
+                alert.messageText = NSLocalizedString("Are you sure you want to delete this bookmark?", comment: "")
+                alert.informativeText = NSLocalizedString("This operation is not recoverable!", comment: "")
                 alert.alertStyle = .warning
                 alert.addButton(withTitle: "OK")
-                alert.addButton(withTitle: "Cancel")
+                let Cancel = NSLocalizedString("Cancel", comment: "")
+                alert.addButton(withTitle: Cancel)
                 
                 alert.beginSheetModal(for: self.view.window!) { (modalResponse: NSApplication.ModalResponse) -> Void in
                     if modalResponse == .alertFirstButtonReturn {
