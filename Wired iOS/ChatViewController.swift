@@ -477,17 +477,67 @@ extension ChatViewController: ConnectionDelegate {
             }
         }
         else if message.name == "wired.chat.topic" {
-            print(message.name)
             if  let chatID = message.uint32(forField: "wired.chat.id"),
                 let nick = message.string(forField: "wired.user.nick"),
                 let topic = message.string(forField: "wired.chat.topic.topic"),
                 let time = message.date(forField: "wired.chat.topic.time") {
                 
-                print("chatID : \(chatID)")
-
                 if chatID == 1 {
                     let text = "<< Topic: \(topic) by \(nick) on \(AppDelegate.dateTimeFormatter.string(from: time)) >>"
                     print("append : \(text)")
+                    self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
+                }
+            }
+        }
+        else if message.name == "wired.chat.user_disconnect" {
+            if let disconnectedID = message.uint32(forField: "wired.user.disconnected_id") {
+                let disconnectMessage = message.string(forField: "wired.user.disconnect_message")
+                
+                if let user = self.user(withID: disconnectedID) {
+                    var text = "<< \(user.nick!) has been disconnected"
+                    
+                    if disconnectMessage != nil {
+                        text = text + " with message: \(disconnectMessage!)"
+                    }
+                    
+                    text = text + " >>"
+                    self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
+                }
+            }
+        }
+        else if message.name == "wired.chat.user_kick" {
+            if  let chatID = message.uint32(forField: "wired.chat.id"),
+                let userID = message.uint32(forField: "wired.user.id"),
+                let disconnectedID = message.uint32(forField: "wired.user.disconnected_id"){
+                let disconnectMessage = message.string(forField: "wired.user.disconnect_message")
+                
+                if  let kickedUser = self.user(withID: disconnectedID),
+                    let kickerUser = self.user(withID: userID),
+                    chatID == 1 {
+                    
+                    var text = "<< \(kickedUser.nick!) has been kicked by \(kickerUser.nick!)"
+                    
+                    if disconnectMessage != nil {
+                        text = text + " with message: \(disconnectMessage!)"
+                    }
+                    
+                    text = text + " >>"
+                    self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
+                }
+            }
+        }
+        else if message.name == "wired.chat.user_ban" {
+            if let disconnectedID = message.uint32(forField: "wired.user.disconnected_id") {
+                let disconnectMessage = message.string(forField: "wired.user.disconnect_message")
+                
+                if let user = self.user(withID: disconnectedID) {
+                    var text = "<< \(user.nick!) has been banned"
+                    
+                    if disconnectMessage != nil {
+                        text = text + " with message: \(disconnectMessage!)"
+                    }
+                    
+                    text = text + " >>"
                     self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
                 }
             }
@@ -574,6 +624,7 @@ extension ChatViewController: MessagesDisplayDelegate, MessagesLayoutDelegate {
     func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
         avatarView.backgroundColor = UIColor.clear
         avatarView.image = UIImage(named: "DefaultUser")
+        
         if let userID = UInt32(message.sender.senderId) {
             if let avatar = self.avatars[userID] {
                 avatarView.image = avatar.image
