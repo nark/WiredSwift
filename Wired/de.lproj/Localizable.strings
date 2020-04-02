@@ -53,3 +53,20 @@
 /* Console */
 "Received" = "Empfangen";
 "Sent" = "Gesendet";
+
+/* Calender */
+"years ago" = "Jahre her";
+"Last year" = "Letztes Jahr";
+"months ago" = "Monate her";
+"Last Month" = "Letzter Monat";
+"weeks ago" = "Wochen her";
+"Last week" = "Letzte Woche";
+"days ago" = "Tage her";
+"Yesterday" = "Gestern";
+"hours ago" = "Stunden her";
+"An hour ago" = "Vor einer Stunde";
+"minutes ago" = "Minuten her";
+"A minute ago" = "Eine Minute her";
+"seconds ago" = "Sekunden her";
+"Just now" = "Gerade eben";
+
