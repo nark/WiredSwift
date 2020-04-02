@@ -101,7 +101,8 @@ public class File: ConnectionObject, ConnectionDelegate {
             }
         }
         else if self.type == .directory {
-            return "Directory"
+            let Directory = NSLocalizedString("Directory", comment: "")
+            return Directory
         }
         else if self.type == .uploads {
             return "Uploads"
@@ -110,7 +111,8 @@ public class File: ConnectionObject, ConnectionDelegate {
             return "Dropbox"
         }
         
-        return "Unknow"
+        let Unknown = NSLocalizedString("Unknown", comment: "")
+        return Unknown
     }
     
     

@@ -253,12 +253,15 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     @objc func linkConnectionDidClose(_ n: Notification) {
         if let c = n.object as? Connection, c == self.connection {
             self.chatInput.isEditable = false
-            self.chatInput.placeholderString = "Disconnected..."
-            self.addMessage("<< Disconnected from \(self.connection.serverInfo.serverName!) >>")
+            let disconnected = NSLocalizedString("Disconnected...", comment: "")
+            self.chatInput.placeholderString = disconnected
+            let disconnectedfrom = NSLocalizedString("Disconnected from", comment: "")
+            self.addMessage("<< " + disconnectedfrom + " " + "\(self.connection.serverInfo.serverName!) >>")
             
             if UserDefaults.standard.bool(forKey: "WSAutoReconnect") {
                 if !self.connection.connectionWindowController!.manualyDisconnected {
-                    self.addMessage("<< Auto-reconnecting... ⏱ >>")
+                    let autoreconnecting = NSLocalizedString("Auto-reconnecting...", comment: "")
+                    self.addMessage("<< " + autoreconnecting + " ⏱ >>")
                 }
             }
         }
@@ -268,7 +271,8 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
         if let c = n.object as? Connection, c == self.connection {
             self.chatInput.isEditable = true
             self.chatInput.placeholderString = "Type message here"
-            self.addMessage("<< Reconnected to \(self.connection.serverInfo.serverName!) >>")
+            let reconnectedto = NSLocalizedString("Auto-reconnecting to", comment: "")
+            self.addMessage("<< " + reconnectedto + " \(self.connection.serverInfo.serverName!) >>")
         }
     }
     
@@ -277,7 +281,8 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     
     func connectionDidConnect(connection: Connection) {
         self.chatInput.isEditable = true
-        self.chatInput.placeholderString = "Disconnected..."
+        let disconnected = NSLocalizedString("Disconnected...", comment: "")
+        self.chatInput.placeholderString = disconnected
     }
     
     func connectionDidFailToConnect(connection: Connection, error: Error) {
@@ -291,8 +296,10 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
     func connectionDidReceiveError(connection: Connection, message: P7Message) {
         if let specError = spec.error(forMessage: message), let message = specError.name {
             let alert = NSAlert()
-            alert.messageText = "Wired Alert"
-            alert.informativeText = "Wired Error: \(message)"
+            let wiredalert = NSLocalizedString("Wired Alert", comment: "")
+            alert.messageText = wiredalert
+            let wirederror = NSLocalizedString("Wired Error:", comment: "")
+            alert.informativeText = wirederror + " \(message)"
             alert.alertStyle = .warning
             alert.addButton(withTitle: "OK")
             alert.runModal()
@@ -318,7 +325,8 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
                 if userInfo.userID != self.connection.userID {
                     if self.chatInput.currentEditor() == nil || NSApp.isActive == false || self.view.window?.isKeyWindow == false {
                         AppDelegate.incrementChatUnread(forConnection: connection)
-                        AppDelegate.notify(identifier: "chatMessage", title: "New Chat Message", subtitle: userInfo.nick!, text: sayString, connection: connection)
+                        let newchatmessage = NSLocalizedString("New Chat Message", comment: "")
+                        AppDelegate.notify(identifier: "chatMessage", title: newchatmessage, subtitle: userInfo.nick!, text: sayString, connection: connection)
                     }
                 }
             }
@@ -421,17 +429,21 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
             else if message.name == "wired.chat.topic" {
                 if  let userNick = message.string(forField: "wired.user.nick"),
                     let chatTopic = message.string(forField: "wired.chat.topic.topic") {
-                    view?.textField?.stringValue = "<< Topic: \(chatTopic) by \(userNick) >>"
+                    let topicstring = NSLocalizedString("Topic:", comment: "")
+                    let bystring = NSLocalizedString("by", comment: "")
+                    view?.textField?.stringValue = "<< " + topicstring + " \(chatTopic) " + bystring + " \(userNick) >>"
                 }
                 
             }
             else if message.name == "wired.chat.user_join" {
                 let userInfo = UserInfo(message: message)
-                view?.textField?.stringValue = "<< \(userInfo.nick!) joined the chat >>"
+                let joinedthechat = NSLocalizedString("joined the chat", comment: "")
+                view?.textField?.stringValue = "<< \(userInfo.nick!) " + joinedthechat + " >>"
             }
             else if message.name == "wired.chat.user_leave" {
                 if let nick = message.string(forField: "wired.user.nick") {
-                    view?.textField?.stringValue = "<< \(nick) left the chat >>"
+                    let leftthechat = NSLocalizedString("left the chat", comment: "")
+                    view?.textField?.stringValue = "<< \(nick) " + leftthechat + " >>"
                 }
             }
         } else if let string = messages[row] as? String {

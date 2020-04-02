@@ -13,13 +13,9 @@
 /* Quit without saves error question info */
 "Quitting now will lose any changes you have made since the last successful save" = "Das Beenden verwirft alle Änderungen die Du seit dem letzten Speichern vorgenommen hast.";
 
-/* Headitems in Advanced Preferences Window */
+/* Headitems Preferences Window */
 "Advanced" = "Fortgeschritten";
-
-/* Headitems in Advanced Preferences Window */
 "General" = "Allgemein";
-
-/* Headitems in Advanced Preferences Window */
 "Files" = "Dateien";
 
 /* Warn Window on quitting Application */
@@ -27,6 +23,10 @@
 "Every running transfers may be stopped" = "Jeder laufende Dateitransfer wird gestoppt!";
 "Cancel" = "Abbruch";
 "Yes" = "Ja";
+
+/* Warn Window on deleting Bookmarks */
+"Are you sure you want to delete this bookmark?" = "Möchtest Du wirklich das Lesezeichen löschen?";
+"This operation is not recoverable!" = "Dieser Vorgang kann nicht rückgängig gemacht werden!";
 
 /* Chatwindow left Sidebar Headlines */
 "CONNECTIONS" = "VERBINDUNGEN";
@@ -70,4 +70,44 @@
 "seconds ago" = "Sekunden her";
 "Just now" = "Gerade eben";
 
+/* Messages/Conversations */
+"Delete Conversation" = "Unterhaltung löschen";
+"New Message" = "Neue Nachricht";
+
+/* Mainchat */
+"Disconnected..." = "Getrennt...";
+"Disconnected from" = "Getrennt von";
+"Auto-reconnecting..." = "Auto-wiederverbinden...";
+"Reconnected to" = "Wiederverbinden zu";
+"Auto-reconnecting to" = "Auto-wiederverbinden zu";
+"Wired Alert" = "Wiredalarm";
+"Wired Error:" = "Wiredfehler:";
+"New Chat Message" = "Neue Chatnachricht";
+"Topic:" = "Thema:";
+"by" = "von";
+"joined the chat" = "betritt den Chat";
+"left the chat" = "hat den Chat verlassen";
+
+/* Files */
+"Directory" = "Verzeichnis";
+"Unknown" = "Unbekannt";
+
+/* Transfer */
+"Download Error" = "Downloadfehler";
+"Transfer cannot connect" = "Transfer kann keine Verbindung herstellen!";
+"Transfer cannot download file" = "Transfer kann die Datei nicht herunterladen";
+"File already exists" = "Datei existiert bereits";
+"Do you want to overwrite" = "Überschreibe nun";
+"Transfer failed" = "Übertragung fehlgeschlagen";
+"Transfer rename failed" = "Übertragung umbenennen fehlgeschlagen";
+"Upload Error" = "Uploadfehler";
+"Transfer cannot upload file" = "Transfer kann die Datei nicht hochladen";
+"Transfer cannot upload" = "Transfer kann nicht hochladen";
+"Cannot read local data" = "Kann lokale Daten nicht lesen";
+"Transfer cannot read message, probably timed out" = "Transfer kann die Nachricht nicht lesen. Vermutlich liegt ein Timeout vor";
+"Transfer cannot reply ping" = "Transfer kann den Ping nicht erwidern";
+"Transfer error" = "Transferfehler";
+
+/* Infos */
+"Unsupported (yet)" = "Nicht unterstützt (derzeit)";
 

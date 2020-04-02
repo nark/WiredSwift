@@ -264,7 +264,9 @@ public class TransfersController {
             self.semaphore.signal()
             
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Download Error", message: "Transfer cannot connect")
+                let downloaderror = NSLocalizedString("Download Error", comment: "")
+                let transfercannotconnect = NSLocalizedString("Transfer cannot connect", comment: "")
+                error = WiredError(withTitle: downloaderror, message: transfercannotconnect)
                 
                 Logger.error(error!)
                 
@@ -295,7 +297,9 @@ public class TransfersController {
             self.semaphore.signal()
             
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Download Error", message: "Transfer cannot download_file")
+                let downloaderror = NSLocalizedString("Download Error", comment: "")
+                let transfercannot = NSLocalizedString("Transfer cannot download file", comment: "")
+                error = WiredError(withTitle: downloaderror, message: transfercannot)
                 
                 Logger.error(error!)
                 
@@ -343,11 +347,15 @@ public class TransfersController {
                         self.finish(transfer)
                         
                         let alert = NSAlert()
-                        alert.messageText = "File already exists"
-                        alert.informativeText = "Do you want to overwrite '\(transfer.localPath!)'?"
+                        let filealreadyexists = NSLocalizedString("File already exists", comment: "")
+                        alert.messageText = filealreadyexists
+                        let doyouwanttooverwrite = NSLocalizedString("Do you want to overwrite", comment: "")
+                        alert.informativeText = doyouwanttooverwrite + " '\(transfer.localPath!)'?"
                         alert.alertStyle = .warning
-                        alert.addButton(withTitle: "Overwrite")
-                        alert.addButton(withTitle: "Cancel")
+                        let Yes = NSLocalizedString("Yes", comment: "")
+                        alert.addButton(withTitle: Yes)
+                        let Cancel = NSLocalizedString("Cancel", comment: "")
+                        alert.addButton(withTitle: Cancel)
                         
                         if let mainWindow = NSApp.mainWindow {
                             AppDelegate.shared.showTransfers(self)
@@ -362,7 +370,8 @@ public class TransfersController {
                                         self.request(transfer)
                                         
                                     } catch let e {
-                                        error = WiredError(withTitle: "Download Error", message: "\(e)")
+                                        let downloaderror = NSLocalizedString("Download Error", comment: "")
+                                        error = WiredError(withTitle: downloaderror, message: "\(e)")
                                         
                                         transfer.state = .Disconnecting
                                         
@@ -384,7 +393,8 @@ public class TransfersController {
                                         self.finish(transfer)
                                         
                                     } catch let e {
-                                        error = WiredError(withTitle: "Download Error", message: "\(e)")
+                                        let downloaderror = NSLocalizedString("Download Error", comment: "")
+                                        error = WiredError(withTitle: downloaderror, message: "\(e)")
                                         
                                         transfer.state = .Disconnecting
                                         
@@ -402,7 +412,8 @@ public class TransfersController {
             } catch let e {
                 self.semaphore.signal()
                 
-                error = WiredError(withTitle: "Download Error", message: "IO Error: \(e)")
+                let downloaderror = NSLocalizedString("Download Error", comment: "")
+                error = WiredError(withTitle: downloaderror, message: "IO Error: \(e)")
                 
                 Logger.error(error!)
                 
@@ -454,7 +465,8 @@ public class TransfersController {
                     fileHandle.closeFile()
                 } else {
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Download Error", message: "Transfer failed")
+                        let downloaderror = NSLocalizedString("Download Error", comment: "")
+                        error = WiredError(withTitle: downloaderror, message: "Transfer failed")
                         
                         Logger.error(error!)
                     }
@@ -465,7 +477,9 @@ public class TransfersController {
                     try oobdata.write(to: URL(fileURLWithPath: data ? dataPath! : rsrcPath), options: .atomicWrite)
                 } catch let e {
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Download Error", message: "Transfer failed \(e)")
+                        let downloaderror = NSLocalizedString("Download Error", comment: "")
+                        let transferfailed = NSLocalizedString("Transfer failed", comment: "")
+                        error = WiredError(withTitle: downloaderror, message: transferfailed + " \(e)")
                         
                         Logger.error(error!)
                     }
@@ -508,7 +522,9 @@ public class TransfersController {
                     try FileManager.default.moveItem(atPath: dataPath!, toPath: self.defaultDownloadDestination(forPath: transfer.remotePath!)!)
                 } catch let e {
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Download Error", message: "Transfer rename failed \(e)")
+                        let downloaderror = NSLocalizedString("Download Error", comment: "")
+                        let transferrenamefailed = NSLocalizedString("Transfer rename failed", comment: "")
+                        error = WiredError(withTitle: downloaderror, message: transferrenamefailed + " \(e)")
                         
                         Logger.error(error!)
                     }
@@ -551,7 +567,9 @@ public class TransfersController {
             self.semaphore.signal()
             
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Upload Error", message: "Transfer cannot connect")
+                let uploaderror = NSLocalizedString("Upload Error", comment: "")
+                let transfercannotconnect = NSLocalizedString("Transfer cannot connect", comment: "")
+                error = WiredError(withTitle: uploaderror, message: transfercannotconnect)
                 
                 Logger.error(error!)
 
@@ -569,7 +587,9 @@ public class TransfersController {
             self.semaphore.signal()
             
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Upload Error", message: "Transfer upload_file")
+                let uploaderror = NSLocalizedString("Upload Error", comment: "")
+                let transfercannotuploadfile = NSLocalizedString("Transfer cannot upload file", comment: "")
+                error = WiredError(withTitle: uploaderror, message: transfercannotuploadfile)
                 
                 Logger.error(error!)
                 
@@ -612,7 +632,9 @@ public class TransfersController {
             self.semaphore.signal()
             
             DispatchQueue.main.async {
-                error = WiredError(withTitle: "Upload Error", message: "Transfer cannot upload")
+                let uploaderror = NSLocalizedString("Upload Error", comment: "")
+                let transfercannotupload = NSLocalizedString("Transfer cannot upload", comment: "")
+                error = WiredError(withTitle: uploaderror, message: transfercannotupload)
                 
                 Logger.error(error!)
                 
@@ -651,7 +673,9 @@ public class TransfersController {
                     }
                     
                     DispatchQueue.main.async {
-                        error = WiredError(withTitle: "Upload Error", message: "Read local data")
+                        let uploaderror = NSLocalizedString("Upload Error", comment: "")
+                        let cannotreadlocaldata = NSLocalizedString("Cannot read local data", comment: "")
+                        error = WiredError(withTitle: uploaderror, message: cannotreadlocaldata)
 
                         Logger.error(error!)
                         
@@ -761,7 +785,8 @@ public class TransfersController {
     private func run(_ connection: TransferConnection, forTransfer transfer:Transfer, untilReceivingMessageName messageName:String) -> P7Message? {
         while transfer.isWorking() {
             guard let message = transfer.transferConnection?.readMessage() else {
-                print("Transfer cannot read message, probably timed out")
+                let localstring = NSLocalizedString("Transfer cannot read message, probably timed out", comment: "")
+                print(localstring)
                 return nil
             }
             
@@ -779,14 +804,17 @@ public class TransfersController {
                 }
                 
                 if transfer.transferConnection?.send(message: message) == false {
-                    print("Transfer cannot reply ping")
+                    let localstring = NSLocalizedString("Transfer cannot reply ping", comment: "")
+                    print(localstring)
                     return nil
                 }
                 
             } else if message.name == "wired.error" {
-                print("Transfer error")
+                let localstring = NSLocalizedString("Transfer error", comment: "")
+                print(localstring)
                 if let error = transfer.connection.spec.error(forMessage: message) {
-                    print("Transfer error: \(error.name!)")
+                    let localstring = NSLocalizedString("Transfer error", comment: "")
+                    print(localstring + ": \(error.name!)")
                 }
                 return nil
             }
