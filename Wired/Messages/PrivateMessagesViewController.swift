@@ -8,6 +8,16 @@
 
 import Cocoa
 
+extension NSTextAttachment {
+    func setImageHeight(height: CGFloat) {
+        guard let image = image else { return }
+        let ratio = image.size.width / image.size.height
+
+        bounds = CGRect(x: bounds.origin.x, y: bounds.origin.y, width: ratio * height, height: height)
+    }
+}
+
+
 class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegate, NSTextFieldDelegate, NSTableViewDelegate, NSTableViewDataSource {
     @IBOutlet weak var messagesTableView: NSTableView!
     @IBOutlet weak var chatInput: NSTextField!
@@ -322,8 +332,22 @@ class PrivateMessagesViewController: ConnectionViewController, ConnectionDelegat
             view = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: sentOrReceived), owner: self) as? MessageCellView
             
             view?.nickLabel.stringValue = message.nick ?? ""
-            view?.textField?.attributedStringValue = message.body?.substituteURL() ?? NSAttributedString(string: "")
-                        
+            
+            if let string = message.body {
+                if string.starts(with: "<img src='data:image/png;base64,") {
+                    let base64String = String(string.dropFirst(32).dropLast(3))
+                    if let data = Data(base64Encoded: base64String, options: Data.Base64DecodingOptions.ignoreUnknownCharacters) {
+                        let ta = NSTextAttachment()
+                        ta.image = NSImage(data: data)
+                        ta.setImageHeight(height: 350)
+
+                        view?.textField?.attributedStringValue =  NSAttributedString(attachment: ta)
+                    }
+                } else {
+                    view?.textField?.attributedStringValue = string.substituteURL() ?? NSAttributedString(string: "")
+                }
+            }
+                                    
             if message.me {
                 if let data = UserDefaults.standard.data(forKey: "WSUserIcon") {
                     if let image = try! NSKeyedUnarchiver.unarchivedObject(ofClass: NSImage.self, from: data) {

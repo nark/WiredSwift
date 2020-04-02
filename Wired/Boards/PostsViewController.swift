@@ -131,16 +131,6 @@ class PostsViewController: ConnectionViewController, NSTableViewDelegate, NSTabl
     
     
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
-        class UnselectedTableRowView: NSTableRowView {
-            override func drawSelection(in dirtyRect: NSRect) { }
-            override var isEmphasized: Bool {
-                set {}
-                get {
-                    return false
-                }
-            }
-        }
-        
         return UnselectedTableRowView()
     }
     
