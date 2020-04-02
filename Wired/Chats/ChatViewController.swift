@@ -233,6 +233,7 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
                     self.substituteEmojis()
                     
                     message = P7Message(withName: "wired.chat.send_say", spec: self.connection.spec)
+                    
                     message!.addParameter(field: "wired.chat.id", value: UInt32(1))
                     message!.addParameter(field: "wired.chat.say", value: textField.stringValue)
                 }
