@@ -78,6 +78,7 @@
 		4C6656B32434F7120022E7D7 /* WiredSwift_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */; };
 		4C6656B42434F7120022E7D7 /* WiredSwift_iOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C6656B72434FB390022E7D7 /* InputBarAccessoryView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */; };
+		4C6656B92436095D0022E7D7 /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */; };
 		4C6A89E82405613A00780FEF /* FileManager+ResourceFork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */; };
 		4C74286222DCECE800D6E6F9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286122DCECE800D6E6F9 /* AppDelegate.swift */; };
 		4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286322DCECE800D6E6F9 /* ConnectController.swift */; };
@@ -403,6 +404,7 @@
 		4C5C1D202426812E00A751AA /* Message+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C5C1D212426812E00A751AA /* Message+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InputBarAccessoryView.framework; path = Carthage/Build/iOS/InputBarAccessoryView.framework; sourceTree = SOURCE_ROOT; };
+		4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
 		4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+ResourceFork.swift"; sourceTree = "<group>"; };
 		4C74285E22DCECE800D6E6F9 /* Wired.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wired.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C74286122DCECE800D6E6F9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -744,6 +746,7 @@
 				4C88747F2434A7FD00A5D4A0 /* UserTableViewCell.swift */,
 				4C8874832434B81800A5D4A0 /* BookmarkTableViewCell.swift */,
 				4C8874812434AB6F00A5D4A0 /* UIImage+Resize.swift */,
+				4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */,
 				4C75B9BA243374D900BE8857 /* Main.storyboard */,
 				4C75B9BD243374DA00BE8857 /* Assets.xcassets */,
 				4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */,
@@ -1515,6 +1518,7 @@
 				4C8874822434AB6F00A5D4A0 /* UIImage+Resize.swift in Sources */,
 				4C88747524347DC300A5D4A0 /* SceneDelegate.swift in Sources */,
 				4C75BA2C2433932C00BE8857 /* Bookmark+CoreDataClass.swift in Sources */,
+				4C6656B92436095D0022E7D7 /* KeyboardHelper.swift in Sources */,
 				4C75BA2D2433932C00BE8857 /* Bookmark+CoreDataProperties.swift in Sources */,
 				4C75BA382433998600BE8857 /* BookmarkViewController.swift in Sources */,
 				4C75B9B7243374D900BE8857 /* BookmarksViewController.swift in Sources */,
