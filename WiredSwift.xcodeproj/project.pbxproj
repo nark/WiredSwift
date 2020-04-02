@@ -78,6 +78,8 @@
 		4C6656B32434F7120022E7D7 /* WiredSwift_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */; };
 		4C6656B42434F7120022E7D7 /* WiredSwift_iOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C6656B72434FB390022E7D7 /* InputBarAccessoryView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */; };
+		4C6656B92436095D0022E7D7 /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */; };
+		4C6656BB24362BE20022E7D7 /* UnselectedTableRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6656BA24362BE20022E7D7 /* UnselectedTableRowView.swift */; };
 		4C6A89E82405613A00780FEF /* FileManager+ResourceFork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */; };
 		4C74286222DCECE800D6E6F9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286122DCECE800D6E6F9 /* AppDelegate.swift */; };
 		4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286322DCECE800D6E6F9 /* ConnectController.swift */; };
@@ -403,6 +405,8 @@
 		4C5C1D202426812E00A751AA /* Message+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C5C1D212426812E00A751AA /* Message+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InputBarAccessoryView.framework; path = Carthage/Build/iOS/InputBarAccessoryView.framework; sourceTree = SOURCE_ROOT; };
+		4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
+		4C6656BA24362BE20022E7D7 /* UnselectedTableRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnselectedTableRowView.swift; sourceTree = "<group>"; };
 		4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+ResourceFork.swift"; sourceTree = "<group>"; };
 		4C74285E22DCECE800D6E6F9 /* Wired.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wired.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C74286122DCECE800D6E6F9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -415,7 +419,7 @@
 		4C75B98A24336DDC00BE8857 /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CryptoSwift.framework; path = Carthage/Build/iOS/CryptoSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C75B98B24336DDC00BE8857 /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/iOS/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C75B98C24336DDC00BE8857 /* Gzip.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Gzip.framework; path = Carthage/Build/iOS/Gzip.framework; sourceTree = SOURCE_ROOT; };
-		4C75B9B0243374D900BE8857 /* Wired iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Wired iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C75B9B0243374D900BE8857 /* Wired.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wired.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C75B9B2243374D900BE8857 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksViewController.swift; sourceTree = "<group>"; };
 		4C75B9B8243374D900BE8857 /* ChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewController.swift; sourceTree = "<group>"; };
@@ -664,6 +668,7 @@
 				4C9C5CE82431322F007B6CF0 /* WiredColors.swift */,
 				4C7D19212431DD91002897CB /* NSColor.swift */,
 				4CE2AA5024329D640072E0B3 /* AttributedString.swift */,
+				4C6656BA24362BE20022E7D7 /* UnselectedTableRowView.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -697,7 +702,7 @@
 				4C93B2FC242FE96200A956C3 /* WiredSwfitTests.xctest */,
 				4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */,
 				4CE2AA6324336AF30072E0B3 /* WiredSwift_iOSTests.xctest */,
-				4C75B9B0243374D900BE8857 /* Wired iOS.app */,
+				4C75B9B0243374D900BE8857 /* Wired.app */,
 				4C75B9C7243374DA00BE8857 /* Wired iOSTests.xctest */,
 				4C75B9D2243374DA00BE8857 /* Wired iOSUITests.xctest */,
 			);
@@ -734,8 +739,8 @@
 			isa = PBXGroup;
 			children = (
 				4C75B9B2243374D900BE8857 /* AppDelegate.swift */,
-				4C88747424347DC300A5D4A0 /* SceneDelegate.swift */,
 				4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */,
+				4C88747424347DC300A5D4A0 /* SceneDelegate.swift */,
 				4C75B9B8243374D900BE8857 /* ChatViewController.swift */,
 				4C88747D2434A10900A5D4A0 /* ServerInfoViewController.swift */,
 				4C88747224347D4500A5D4A0 /* MainSplitViewController.swift */,
@@ -744,6 +749,7 @@
 				4C88747F2434A7FD00A5D4A0 /* UserTableViewCell.swift */,
 				4C8874832434B81800A5D4A0 /* BookmarkTableViewCell.swift */,
 				4C8874812434AB6F00A5D4A0 /* UIImage+Resize.swift */,
+				4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */,
 				4C75B9BA243374D900BE8857 /* Main.storyboard */,
 				4C75B9BD243374DA00BE8857 /* Assets.xcassets */,
 				4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */,
@@ -1104,7 +1110,7 @@
 				4C8874972434E99700A5D4A0 /* CZlib */,
 			);
 			productName = "Wired iOS";
-			productReference = 4C75B9B0243374D900BE8857 /* Wired iOS.app */;
+			productReference = 4C75B9B0243374D900BE8857 /* Wired.app */;
 			productType = "com.apple.product-type.application";
 		};
 		4C75B9C6243374DA00BE8857 /* Wired iOSTests */ = {
@@ -1436,6 +1442,7 @@
 				4C93B2F4242F9CAE00A956C3 /* BBElement.m in Sources */,
 				4CD8C47A23FD2C31002895C1 /* FilesViewController.swift in Sources */,
 				4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */,
+				4C6656BB24362BE20022E7D7 /* UnselectedTableRowView.swift in Sources */,
 				4C93B2E8242F9BD500A956C3 /* NSMutableAttributedString+BBCodeString.m in Sources */,
 				4CB6A109242E4CF300AB4C89 /* BoardThread.swift in Sources */,
 				4C4C3EE822E10F6A00BC2DD9 /* Url.swift in Sources */,
@@ -1515,6 +1522,7 @@
 				4C8874822434AB6F00A5D4A0 /* UIImage+Resize.swift in Sources */,
 				4C88747524347DC300A5D4A0 /* SceneDelegate.swift in Sources */,
 				4C75BA2C2433932C00BE8857 /* Bookmark+CoreDataClass.swift in Sources */,
+				4C6656B92436095D0022E7D7 /* KeyboardHelper.swift in Sources */,
 				4C75BA2D2433932C00BE8857 /* Bookmark+CoreDataProperties.swift in Sources */,
 				4C75BA382433998600BE8857 /* BookmarkViewController.swift in Sources */,
 				4C75B9B7243374D900BE8857 /* BookmarksViewController.swift in Sources */,
@@ -1931,7 +1939,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = JSVJHJ78QE;
+				DEVELOPMENT_TEAM = 7KTXA5Y36K;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
@@ -1942,8 +1950,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.wired.client.ios";
+				PRODUCT_NAME = Wired;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1955,7 +1963,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = JSVJHJ78QE;
+				DEVELOPMENT_TEAM = 7KTXA5Y36K;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
@@ -1966,8 +1974,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-iOS";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.wired.client.ios";
+				PRODUCT_NAME = Wired;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;

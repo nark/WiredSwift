@@ -38,10 +38,11 @@ class BookmarkViewController: UITableViewController {
     
     @IBAction func ok(_ sender: Any) {
         // validate
-        if self.addressTextField.text == nil && self.addressTextField.text!.isEmpty ||
-            self.loginTextField.text == nil && self.loginTextField.text!.isEmpty {
+        if (self.addressTextField.text == nil || self.addressTextField.text!.isEmpty) ||
+            (self.loginTextField.text == nil || self.loginTextField.text!.isEmpty) {
             return
         }
+        
         let context = AppDelegate.shared.persistentContainer.viewContext
         let bookmark:Bookmark = NSEntityDescription.insertNewObject(
             forEntityName: "Bookmark", into: context) as! Bookmark

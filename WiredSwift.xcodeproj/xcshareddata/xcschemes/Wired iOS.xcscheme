@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4C75B9AF243374D900BE8857"
-               BuildableName = "Wired iOS.app"
+               BuildableName = "Wired.app"
                BlueprintName = "Wired iOS"
                ReferencedContainer = "container:WiredSwift.xcodeproj">
             </BuildableReference>
@@ -65,7 +65,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4C75B9AF243374D900BE8857"
-            BuildableName = "Wired iOS.app"
+            BuildableName = "Wired.app"
             BlueprintName = "Wired iOS"
             ReferencedContainer = "container:WiredSwift.xcodeproj">
          </BuildableReference>
@@ -82,7 +82,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4C75B9AF243374D900BE8857"
-            BuildableName = "Wired iOS.app"
+            BuildableName = "Wired.app"
             BlueprintName = "Wired iOS"
             ReferencedContainer = "container:WiredSwift.xcodeproj">
          </BuildableReference>

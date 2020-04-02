@@ -8,8 +8,24 @@
 
 import UIKit
 import MessageKit
+import InputBarAccessoryView
 import WiredSwift_iOS
 
+public enum DefaultStyle {
+
+    public enum Colors {
+
+        public static let label: UIColor = {
+            if #available(iOS 13.0, *) {
+                return UIColor.label
+            } else {
+                return .black
+            }
+        }()
+    }
+}
+
+public let Style = DefaultStyle.self
 
 public struct Sender: SenderType {
     public let senderId: String
@@ -17,7 +33,7 @@ public struct Sender: SenderType {
     public let displayName: String
 }
 
-public struct Message : MessageType {
+public struct ChatMessage : MessageType {
     public var sender: SenderType
     
     public var messageId: String
@@ -27,19 +43,31 @@ public struct Message : MessageType {
     public var kind: MessageKind
 }
 
+public struct EventMessage : MessageType {
+    public var sender: SenderType
+    public var messageId: String
+    public var sentDate: Date
+    public var kind: MessageKind
+}
+
 extension ChatViewController: MessagesDisplayDelegate, MessagesLayoutDelegate {
     func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
-        if let userID = UInt32(message.sender.senderId) {
-            if let avatar = self.avatars[userID] {
-                avatarView.backgroundColor = UIColor.clear
-                avatarView.image = avatar.image
+        //if message is ChatMessage {
+            if let userID = UInt32(message.sender.senderId) {
+                if let avatar = self.avatars[userID] {
+                    avatarView.backgroundColor = UIColor.clear
+                    avatarView.image = avatar.image
+                }
             }
-        }
+        //} else if message is EventMessage {
+        //    avatarView.image = nil
+        //}
     }
     
     func enabledDetectors(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> [DetectorType] {
         return [.url]
     }
+
 }
 
 
@@ -58,16 +86,63 @@ extension ChatViewController: MessagesDataSource {
     }
 }
 
+extension UIColor {
+    static var incomingGray: UIColor {
+        if #available(iOS 13, *) {
+            return UIColor.systemGray5
+        } else {
+            return UIColor(red: 230/255, green: 230/255, blue: 235/255, alpha: 1.0)
+        }
+    }
+
+
+    static var outgoingGreen: UIColor {
+        if #available(iOS 13, *) {
+            return UIColor.systemGreen
+        } else {
+            return UIColor(red: 69/255, green: 214/255, blue: 93/255, alpha: 1.0)
+        }
+    }
+}
 
 extension ChatViewController: MessageCellDelegate {
     func didSelectURL(_ url: URL) {
         UIApplication.shared.open(url)
     }
+    
+    func backgroundColor(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> UIColor {
+        if message is EventMessage {
+            return UIColor.clear
+        }
+        
+        return self.messagesCollectionView.messagesDataSource!.isFromCurrentSender(message: message) ? UIColor.outgoingGreen : UIColor.incomingGray
+    }
+}
+
+
+extension ChatViewController : AttachmentManagerDelegate  {
+    func attachmentManager(_ manager: AttachmentManager, shouldBecomeVisible: Bool) {
+        //setAttachmentManager(active: shouldBecomeVisible)
+    }
+    
+    func attachmentManager(_ manager: AttachmentManager, didRemove attachment: AttachmentManager.Attachment, at index: Int) {
+        setAttachmentManager(active: manager.attachments.count > 0)
+        messageInputBar.sendButton.isEnabled = manager.attachments.count > 0
+    }
+    
+    func attachmentManager(_ manager: AttachmentManager, didReloadTo attachments: [AttachmentManager.Attachment]) {
+        messageInputBar.sendButton.isEnabled = manager.attachments.count > 0
+    }
+    
+    func attachmentManager(_ manager: AttachmentManager, didInsert attachment: AttachmentManager.Attachment, at index: Int) {
+        setAttachmentManager(active: true)
+        messageInputBar.sendButton.isEnabled = manager.attachments.count > 0
+    }
 }
 
 
 
-class ChatViewController: MessagesViewController, ConnectionDelegate {
+class ChatViewController: MessagesViewController, ConnectionDelegate, UIImagePickerControllerDelegate & UINavigationControllerDelegate {
     @IBOutlet var infoButton: UIBarButtonItem!
     
     var selfSender:Sender = Sender(senderId: "-1", displayName: "Nark iOS")
@@ -77,20 +152,53 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
     var avatars:[UInt32:Avatar] = [:]
     var bookmark:Bookmark!
     
+    private var keyboardHelper: KeyboardHelper?
+    
+    open lazy var attachmentManager: AttachmentManager = { [unowned self] in
+        let manager = AttachmentManager()
+        manager.delegate = self
+        return manager
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         NotificationCenter.default.addObserver(self, selector: #selector(userDidUpdateProfile(_:)), name: .userDidUpdateProfile, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(willTerminateNotification(_ :)), name: UIApplication.willTerminateNotification, object: nil)
+        
+        keyboardHelper = KeyboardHelper { [unowned self] animation, keyboardFrame, duration in
+            switch animation {
+            case .keyboardWillShow:
+                self.messagesCollectionView.scrollToBottom()
+            case .keyboardWillHide:
+                self.messagesCollectionView.scrollToBottom()
+            }
+        }
 
         messagesCollectionView.contentInset = UIEdgeInsets(top: 44, left: 0, bottom: 0, right: 0)
-        
         messagesCollectionView.messagesDataSource = self
         messagesCollectionView.messagesLayoutDelegate = self
         messagesCollectionView.messagesDisplayDelegate = self
         messagesCollectionView.messageCellDelegate = self
         
+        if let layout = messagesCollectionView.collectionViewLayout as? MessagesCollectionViewFlowLayout {
+            layout.textMessageSizeCalculator.outgoingAvatarSize = .zero
+            layout.setMessageOutgoingAvatarSize(.zero)
+        }
+
+//        let charCountButton = InputBarButtonItem()
+//        .configure {
+//            $0.image = UIImage(named: "Camera")?.withRenderingMode(.alwaysTemplate)
+//            $0.setSize(CGSize(width: 25, height: 35), animated: false)
+//            $0.contentHorizontalAlignment = .left
+//        }.onSelected { (item) in
+//            self.openCamera(item)
+//        }
+//
+//        messageInputBar.setLeftStackViewWidthConstant(to: 50, animated: false)
+//        messageInputBar.setStackViewItems([charCountButton], forStack: .left, animated: false)
+  
+        messageInputBar.inputPlugins = [attachmentManager]
         messageInputBar.sendButton.addTarget(self, action: #selector(sendMessage), for: UIControl.Event.touchDown)
         
         configureView()
@@ -138,12 +246,56 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
     }
 
     
+    func openCamera(_ sender:Any) {
+        let imagePicker = UIImagePickerController()
+        imagePicker.delegate = self
+        
+        
+        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: .actionSheet)
+        
+        alert.popoverPresentationController?.sourceView = self.messageInputBar.contentView
+        
+        alert.addAction(UIAlertAction(title: "Take Picture", style: .default, handler: { (action) in
+            imagePicker.sourceType = .camera
+            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Photo Library", style: .default, handler: { (action) in
+            imagePicker.sourceType = .photoLibrary
+            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        
+        self.navigationController?.present(alert, animated: true, completion: nil)
+    }
+    
+    
+    
+    // MARK: -
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        // Local variable inserted by Swift 4.2 migrator.
+        let info = convertFromUIImagePickerControllerInfoKeyDictionary(info)
+
+        
+        dismiss(animated: true, completion: {
+            if let pickedImage = info[self.convertFromUIImagePickerControllerInfoKey(UIImagePickerController.InfoKey.originalImage)] as? UIImage {
+                let compressedImage = pickedImage.resize(withNewWidth: 420)
+                    let handled = self.attachmentManager.handleInput(of: compressedImage as AnyObject)
+                    if !handled {
+                        // throw error
+                    }
+            }
+        })
+    }
+    
     
     // MARK: -
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "ShowServerInfo" {
             if let controller = segue.destination as? ServerInfoViewController {
+                print("ShowServerInfo")
                 controller.users        = self.users
                 controller.connection   = self.connection
             }
@@ -199,6 +351,7 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
     // MARK: -
     
     @objc func sendMessage() {
+        // send text
         if let text = messageInputBar.inputTextView.text {
             if self.connection != nil && self.connection!.isConnected() {
                 let message = P7Message(withName: "wired.chat.send_say", spec: self.connection!.spec)
@@ -211,15 +364,46 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
                 }
             }
         }
+        
+        // send attachments
+        for attachment in self.attachmentManager.attachments {
+             switch attachment {
+             case .image(let image):
+                print(image)
+                if let base64String = image.pngData()?.base64EncodedString() {
+                    let htmlString = "<img src='data:image/png;base64,\(base64String)'/>"
+                    
+                    let message = P7Message(withName: "wired.chat.send_say", spec: self.connection!.spec)
+                    message.addParameter(field: "wired.chat.id", value: UInt32(1))
+                    message.addParameter(field: "wired.user.id", value: UInt32(self.selfSender.senderId))
+                    message.addParameter(field: "wired.chat.say", value: htmlString)
+                    
+                    if self.connection!.send(message: message) {
+                        messageInputBar.inputTextView.text = ""
+                    }
+                }
+                
+                
+                
+                break
+             default: break
+            }
+        }
+
+        // remove attachments
+        while self.attachmentManager.attachments.count > 0 {
+            self.attachmentManager.removeAttachment(at: 0)
+        }
+    
+        // hide attachments
+        setAttachmentManager(active: self.attachmentManager.attachments.count > 0)
     }
 
     
     // MARK: -
     func connectionDisconnected(connection: Connection, error: Error?) {
         configureView()
-        
-        print("connectionDisconnected")
-        
+                
         let alertController = UIAlertController(
             title: "Connection Error",
             message: "You have beed disconnected from \(bookmark.hostname!)",
@@ -232,23 +416,37 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
         }
     }
     
+    private struct ImageMediaItem: MediaItem {
+
+        var url: URL?
+        var image: UIImage?
+        var placeholderImage: UIImage
+        var size: CGSize
+
+        init(image: UIImage) {
+            self.image = image
+            self.size = image.size
+            self.placeholderImage = UIImage()
+        }
+
+    }
+    
     func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
         if message.name == "wired.chat.say" || message.name == "wired.chat.me" {
             if let userID = message.uint32(forField: "wired.user.id") {
                 let string = message.string(forField: "wired.chat.say") ?? message.string(forField: "wired.chat.me")
                 
+                let isSender = userID == self.connection?.userID
+                
                 if let s = string {
-                    let uuid = UUID().uuidString
                     if let sender = self.senders[userID] {
-                        let message = Message(
-                            sender: sender,
-                            messageId: uuid,
-                            sentDate: Date(),
-                            kind: MessageKind.attributedText(NSAttributedString(string: s)))
-                        
-                        self.messages.append(message)
-                        
-                        self.messagesCollectionView.reloadDataAndKeepOffset()
+                        if s.starts(with: "<img src='data:image/png;base64,") {
+                            let base64String = s.dropFirst(32).dropLast(3)
+                            self.append(base64Image: String(base64String), sender: sender, sent: isSender)
+                            
+                        } else {
+                            self.append(textMessage: s, sender: sender, sent: isSender)
+                        }
                     }
                 }
             }
@@ -261,6 +459,37 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
                 self.users.append(UserInfo(message: message))
                 self.senders[userID] = Sender(senderId: "\(userID)", displayName: nick)
                 self.avatars[userID] = Avatar(image: UIImage(data: iconData), initials: nick)
+            }
+        }
+        else if message.name == "wired.chat.user_join" {
+            if  let userID = message.uint32(forField: "wired.user.id"),
+                let iconData = message.data(forField: "wired.user.icon"),
+                let nick = message.string(forField: "wired.user.nick") {
+                
+                let isSender = userID == self.connection?.userID
+                
+                self.users.append(UserInfo(message: message))
+                self.senders[userID] = Sender(senderId: "\(userID)", displayName: nick)
+                self.avatars[userID] = Avatar(image: UIImage(data: iconData), initials: nick)
+                
+                if let sender = self.senders[userID] {
+                    let text = "<< \(nick) joined the chat >>"
+                    self.append(textMessage: text, sender: sender, sent: isSender, event: true)
+                }
+            }
+        }
+        else if message.name == "wired.chat.user_leave" {
+            if  let userID = message.uint32(forField: "wired.user.id") {
+                let isSender = userID == self.connection?.userID
+                
+                if let sender = self.senders[userID] {
+                    let text = "<< \(sender.displayName) left the chat >>"
+                    self.append(textMessage: text, sender: sender, sent: isSender, event: true)
+                }
+                
+                self.removeUser(withID: userID)
+                self.senders.removeValue(forKey: userID)
+                //self.avatars.removeValue(forKey: userID)
             }
         }
         else if message.name == "wired.message.message" {
@@ -279,4 +508,110 @@ class ChatViewController: MessagesViewController, ConnectionDelegate {
 
     }
     
+    
+    
+    // MARK: -
+    
+    private func append(base64Image string:String, sender: Sender, sent:Bool) {
+        let uuid = UUID().uuidString
+        
+        if let data = Data(base64Encoded: string, options: .ignoreUnknownCharacters) {
+            if let image = UIImage(data: data) {
+                let mediaItem = ImageMediaItem(image: image)
+                
+                let message = ChatMessage(
+                    sender: sender,
+                    messageId: uuid,
+                    sentDate: Date(),
+                    kind: MessageKind.photo(mediaItem as MediaItem))
+                
+                self.messages.append(message)
+                
+                self.messagesCollectionView.reloadDataAndKeepOffset()
+                self.messagesCollectionView.scrollToBottom()
+            }
+        }
+    }
+    
+    
+    private func append(textMessage text:String, sender: Sender, sent:Bool, event:Bool = false) {
+        let uuid = UUID().uuidString
+        let font = UIFont.systemFont(ofSize: event ? 14 : 17)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: sent ? UIColor.darkText : Style.Colors.label
+        ]
+        
+        if !event {
+            let message = ChatMessage(
+                sender: sender,
+                messageId: uuid,
+                sentDate: Date(),
+                kind: MessageKind.attributedText(NSAttributedString(string: text, attributes: attributes)))
+            
+            self.messages.append(message)
+        } else {
+            let message = EventMessage(
+                    sender: sender,
+                    messageId: uuid,
+                    sentDate: Date(),
+                    kind: MessageKind.attributedText(NSAttributedString(string: text, attributes: attributes)))
+                
+                self.messages.append(message)
+        }
+        
+        self.messagesCollectionView.reloadDataAndKeepOffset()
+        self.messagesCollectionView.scrollToBottom()
+    }
+    
+    
+    private func removeUser(withID uid: UInt32) {
+        var index = 0
+        var remove:Int?
+        
+        for u in self.users {
+            if uid == u.userID {
+                remove = index
+            }
+            index += 1
+        }
+        
+        
+        if let i = remove {
+            self.users.remove(at: i)
+        }
+    }
+    
+    
+    // MARK: - AttachmentManagerDelegate Helper
+    
+    func setAttachmentManager(active: Bool) {
+        let topStackView = messageInputBar.topStackView
+        if active && !topStackView.arrangedSubviews.contains(attachmentManager.attachmentView) {
+            topStackView.insertArrangedSubview(attachmentManager.attachmentView, at: topStackView.arrangedSubviews.count)
+            topStackView.layoutIfNeeded()
+        } else if !active && topStackView.arrangedSubviews.contains(attachmentManager.attachmentView) {
+            topStackView.removeArrangedSubview(attachmentManager.attachmentView)
+            topStackView.layoutIfNeeded()
+            
+            // Grrrr
+//            messageInputBar.reloadInputViews()
+//            messageInputBar.inputTextView.layoutIfNeeded()
+//            messageInputBar.layoutStackViews()
+//            messageInputBar.layoutIfNeeded()
+        }
+    }
+    
+    
+    // MARK: - Helper function inserted by Swift 4.2 migrator.
+    
+    // Helper function inserted by Swift 4.2 migrator.
+    fileprivate func convertFromUIImagePickerControllerInfoKeyDictionary(_ input: [UIImagePickerController.InfoKey: Any]) -> [String: Any] {
+        return Dictionary(uniqueKeysWithValues: input.map {key, value in (key.rawValue, value)})
+    }
+
+    // Helper function inserted by Swift 4.2 migrator.
+    fileprivate func convertFromUIImagePickerControllerInfoKey(_ input: UIImagePickerController.InfoKey) -> String {
+        return input.rawValue
+    }
 }

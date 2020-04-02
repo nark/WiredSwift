@@ -407,12 +407,26 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
                 
                 if let userID = message.uint32(forField: "wired.user.id") {
                     if let userInfo = uc.user(forID: userID) {
-                        if let attrString = message.string(forField: "wired.chat.say")?.substituteURL() {
-                            view?.textField?.attributedStringValue = attrString
+                        if let string = message.string(forField: "wired.chat.say") {
+                            // we received HTML image
+                            if string.starts(with: "<img src='data:image/png;base64,") {
+                                let base64String = String(string.dropFirst(32).dropLast(3))
+                                if let data = Data(base64Encoded: base64String, options: Data.Base64DecodingOptions.ignoreUnknownCharacters) {
+                                    let textAttachment = NSTextAttachment()
+                                    textAttachment.image = NSImage(data: data)
+                                    textAttachment.setImageHeight(height: 350)
+                                    view?.textField?.attributedStringValue =  NSAttributedString(attachment: textAttachment)
+                                }
+                                
+                            } else {
+                                if let attrString = string.substituteURL() {
+                                    view?.textField?.attributedStringValue = attrString
+                                }
+                            }
                         }
                         
                         if let string = message.string(forField: "wired.chat.me") {
-                            view?.textField?.stringValue = " Nark \(string)"
+                            view?.textField?.stringValue = "* \(userInfo.nick!) \(string)"
                         }
                         
                         if let base64ImageString = userInfo.icon?.base64EncodedData() {
@@ -450,14 +464,27 @@ class ChatViewController: ConnectionViewController, ConnectionDelegate, NSTextFi
             view?.textField?.stringValue = string
         }
         
+        view?.textField?.isEditable = false
+        view?.textField?.isSelectable = true
+        view?.textField?.allowsEditingTextAttributes = true
+        
         return view
     }
     
+    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        return UnselectedTableRowView()
+    }
+    
+    
+    func tableView(_ tableView: NSTableView, acceptDrop info: NSDraggingInfo, row: Int, dropOperation: NSTableView.DropOperation) -> Bool {
+        return true
+    }
     
     
     func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
         return 80 // minimum row size
     }
+    
 
     
     // MARK: -
