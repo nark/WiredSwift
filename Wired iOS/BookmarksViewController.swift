@@ -26,7 +26,8 @@ class BookmarksViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let userProfileButton = UIBarButtonItem(title: "Profile", style: .plain, target: self, action: #selector(showUserProfile(_:)))
+        let userProfileButton = UIBarButtonItem(image: UIImage(named: "Settings"), style: .plain, target: self, action: #selector(showUserProfile(_:)))
+        //let userProfileButton = UIBarButtonItem(title: "Profile", style: .plain, target: self, action: #selector(showUserProfile(_:)))
         navigationItem.leftBarButtonItem = userProfileButton
         
         self.reloadBookmarks()
@@ -245,8 +246,6 @@ extension BookmarksViewController {
                    if let controller = self.chatViewControllers[connection] {
                        if UIDevice.current.userInterfaceIdiom == .pad {
                            if let split = splitViewController {
-                               print("split")
-
                                if let navController = split.viewControllers[1] as? UINavigationController {
                                    navController.viewControllers = [controller]
                                    UIView.animate(withDuration: 0.3, animations: {
@@ -255,8 +254,6 @@ extension BookmarksViewController {
                                }
                            }
                        } else {
-                           print("push")
-
                            self.navigationController?.pushViewController(controller, animated: true)
                        }
                    }

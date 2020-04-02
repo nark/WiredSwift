@@ -15,6 +15,7 @@ import Reachability
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
     public static let shared:AppDelegate = UIApplication.shared.delegate as! AppDelegate
+    public static let dateTimeFormatter = DateFormatter()
     
     var window:UIWindow?
 
@@ -24,6 +25,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         self.setupAppearance()
         self.setupUserDefaults()
         
+        AppDelegate.dateTimeFormatter.dateStyle = .medium
+        AppDelegate.dateTimeFormatter.timeStyle = .medium
     }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {

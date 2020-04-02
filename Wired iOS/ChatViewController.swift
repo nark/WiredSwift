@@ -79,7 +79,6 @@ class ChatViewController: MessagesViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "ShowServerInfo" {
             if let controller = segue.destination as? ServerInfoViewController {
-                print("ShowServerInfo")
                 controller.users        = self.users
                 controller.connection   = self.connection
             }
@@ -178,6 +177,11 @@ class ChatViewController: MessagesViewController {
 
 
     // MARK: - Privates
+    
+    private func systemSender() -> Sender {
+        return Sender(senderId: "-1", displayName: "")
+    }
+
     
     private func configureView() {
         self.navigationItem.title = self.connection?.serverInfo.serverName
@@ -320,6 +324,15 @@ class ChatViewController: MessagesViewController {
     }
     
     
+    private func user(withID uid: UInt32) -> UserInfo? {
+        for u in self.users {
+            if uid == u.userID {
+                return u
+            }
+        }
+        return nil
+    }
+    
     private func removeUser(withID uid: UInt32) {
         var index = 0
         var remove:Int?
@@ -392,8 +405,6 @@ extension ChatViewController: ConnectionDelegate {
     }
     
     func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
-        print("connectionDidReceiveMessage")
-        
         if message.name == "wired.chat.say" || message.name == "wired.chat.me" {
             if let userID = message.uint32(forField: "wired.user.id") {
                 let string = message.string(forField: "wired.chat.say") ?? message.string(forField: "wired.chat.me")
@@ -454,6 +465,33 @@ extension ChatViewController: ConnectionDelegate {
                 //self.avatars.removeValue(forKey: userID)
             }
         }
+        else if message.name == "wired.chat.user_status" ||
+                message.name == "wired.chat.user_icon" {
+            if  let userID = message.uint32(forField: "wired.user.id") {
+                if let user = self.user(withID: userID) {
+                    user.update(withMessage: message)
+                    
+                    self.senders[userID] = Sender(senderId: "\(userID)", displayName: user.nick!)
+                    self.avatars[userID] = Avatar(image: UIImage(data: user.icon!), initials: user.nick!)
+                }
+            }
+        }
+        else if message.name == "wired.chat.topic" {
+            print(message.name)
+            if  let chatID = message.uint32(forField: "wired.chat.id"),
+                let nick = message.string(forField: "wired.user.nick"),
+                let topic = message.string(forField: "wired.chat.topic.topic"),
+                let time = message.date(forField: "wired.chat.topic.time") {
+                
+                print("chatID : \(chatID)")
+
+                if chatID == 1 {
+                    let text = "<< Topic: \(topic) by \(nick) on \(AppDelegate.dateTimeFormatter.string(from: time)) >>"
+                    print("append : \(text)")
+                    self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
+                }
+            }
+        }
         else if message.name == "wired.message.message" {
             let response = P7Message(withName: "wired.message.send_message", spec: self.connection!.spec)
             
@@ -464,6 +502,7 @@ extension ChatViewController: ConnectionDelegate {
                 _ = self.connection!.send(message: response)
             }
         }
+        
     }
     
     func connectionDidReceiveError(connection: Connection, message: P7Message) {
@@ -533,12 +572,14 @@ public struct EventMessage : MessageType {
 
 extension ChatViewController: MessagesDisplayDelegate, MessagesLayoutDelegate {
     func configureAvatarView(_ avatarView: AvatarView, for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) {
+        avatarView.backgroundColor = UIColor.clear
+        avatarView.image = UIImage(named: "DefaultUser")
         if let userID = UInt32(message.sender.senderId) {
             if let avatar = self.avatars[userID] {
-                avatarView.backgroundColor = UIColor.clear
                 avatarView.image = avatar.image
             }
         }
+        
     }
     
     func enabledDetectors(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> [DetectorType] {

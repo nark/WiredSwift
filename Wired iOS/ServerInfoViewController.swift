@@ -66,10 +66,11 @@ class ServerInfoViewController: UITableViewController {
             self.present(alertController, animated: true) { }
         }
     }
-    
+}
     
     // MARK: -
-    
+ 
+extension ServerInfoViewController {
     override func numberOfSections(in tableView: UITableView) -> Int {
         if self.connection == nil || self.connection?.isConnected() == false {
             return 0
