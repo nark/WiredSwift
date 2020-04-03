@@ -484,7 +484,6 @@ extension ChatViewController: ConnectionDelegate {
                 
                 if chatID == 1 {
                     let text = "<< Topic: \(topic) by \(nick) on \(AppDelegate.dateTimeFormatter.string(from: time)) >>"
-                    print("append : \(text)")
                     self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
                 }
             }

@@ -123,6 +123,7 @@ extension ServerInfoViewController {
                 cell.textLabel!.numberOfLines = 0
                 cell.textLabel!.text = "\(self.connection!.serverInfo.applicationName!) \(self.connection!.serverInfo.applicationVersion!) on \(self.connection!.serverInfo.osName!) \(self.connection!.serverInfo.osVersion!) (\(self.connection!.serverInfo.arch!))"
             }
+
         } else if indexPath.section == 1 {
             if indexPath.row == 0 {
                 cell.textLabel!.text = "Protocol \(self.connection!.socket.remoteName!) \(self.connection!.socket.remoteVersion!)"

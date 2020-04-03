@@ -97,13 +97,17 @@ class BookmarksViewController: UITableViewController {
                         self.hud.dismiss(afterDelay: 1.0)
                         
                         self.connections[bookmark] = connection
-                                                
+  
                         self.performSegue(withIdentifier: "showDetail", sender: self)
                         
-                        if let split = self.splitViewController {
-                            UIView.animate(withDuration: 0.3, animations: {
-                                split.preferredDisplayMode = .primaryHidden
-                            }, completion: nil)
+                        if UIDevice.current.userInterfaceIdiom == .pad {
+                            if let split = self.splitViewController {
+                                UIView.animate(withDuration: 0.3, animations: {
+                                    split.preferredDisplayMode = .primaryHidden
+                                }) { (ok) in
+                                    self.performSegue(withIdentifier: "showDetail", sender: self)
+                                }
+                            }
                         }
                         
                         // update bookmark with server name
