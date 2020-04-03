@@ -66,10 +66,11 @@ class ServerInfoViewController: UITableViewController {
             self.present(alertController, animated: true) { }
         }
     }
-    
+}
     
     // MARK: -
-    
+ 
+extension ServerInfoViewController {
     override func numberOfSections(in tableView: UITableView) -> Int {
         if self.connection == nil || self.connection?.isConnected() == false {
             return 0
@@ -133,6 +134,14 @@ class ServerInfoViewController: UITableViewController {
             userCell?.nickLabel!.text = user.nick
             userCell?.statusLabel!.text = user.status
             
+            if user.idle! {
+                userCell?.nickLabel?.alpha = 0.5
+                userCell?.imageView?.alpha = 0.5
+            } else {
+                userCell?.nickLabel?.alpha = 1.0
+                userCell?.imageView?.alpha = 1.0
+            }
+            
             if let base64ImageString = user.icon?.base64EncodedData() {
                 if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
                     let image = UIImage(data: data)?.resize(withNewWidth: 32.0)
@@ -142,6 +151,8 @@ class ServerInfoViewController: UITableViewController {
             
             return userCell ?? cell
         }
+        
+        
         
         return cell
     }

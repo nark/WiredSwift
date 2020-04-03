@@ -225,20 +225,32 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Copyright © 2020 - Rafaël Warnault, wired.read-write.fr" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DIl-de-m3u">
+                                <rect key="frame" x="20" y="784" width="374" height="21"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="21" id="1yN-EC-Ehy"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                <color key="textColor" systemColor="secondaryLabelColor" red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
+                            <constraint firstItem="Tln-6a-DvY" firstAttribute="trailing" secondItem="DIl-de-m3u" secondAttribute="trailing" constant="20" id="4N6-j6-gzh"/>
                             <constraint firstItem="M2x-hr-Wzb" firstAttribute="centerX" secondItem="o2p-j8-Jfk" secondAttribute="centerX" id="4RL-lx-VbL"/>
                             <constraint firstItem="ocv-4S-zGY" firstAttribute="centerX" secondItem="o2p-j8-Jfk" secondAttribute="centerX" id="7nB-6D-HUm"/>
                             <constraint firstItem="ocv-4S-zGY" firstAttribute="top" secondItem="M2x-hr-Wzb" secondAttribute="bottom" constant="8" id="9o6-oQ-rcO"/>
                             <constraint firstItem="2cw-KT-Xsr" firstAttribute="centerX" secondItem="o2p-j8-Jfk" secondAttribute="centerX" id="Cz9-Cp-w0m"/>
                             <constraint firstItem="NCP-rD-XmM" firstAttribute="centerX" secondItem="o2p-j8-Jfk" secondAttribute="centerX" id="LaO-zn-f4i"/>
                             <constraint firstItem="2cw-KT-Xsr" firstAttribute="top" secondItem="rA9-9t-ewO" secondAttribute="bottom" constant="8" id="Qad-2S-Cug"/>
+                            <constraint firstItem="DIl-de-m3u" firstAttribute="leading" secondItem="Tln-6a-DvY" secondAttribute="leading" constant="20" id="Z7T-2S-moF"/>
                             <constraint firstItem="qQ4-ys-wcH" firstAttribute="centerX" secondItem="o2p-j8-Jfk" secondAttribute="centerX" id="agt-5d-484"/>
                             <constraint firstItem="qQ4-ys-wcH" firstAttribute="top" secondItem="NCP-rD-XmM" secondAttribute="bottom" constant="8" id="edJ-aX-AHp"/>
                             <constraint firstItem="rA9-9t-ewO" firstAttribute="top" secondItem="qQ4-ys-wcH" secondAttribute="bottom" constant="43" id="hOo-0g-4NU"/>
                             <constraint firstItem="M2x-hr-Wzb" firstAttribute="top" secondItem="2cw-KT-Xsr" secondAttribute="bottom" constant="8" id="nUF-bi-9Pb"/>
                             <constraint firstItem="NCP-rD-XmM" firstAttribute="top" secondItem="Tln-6a-DvY" secondAttribute="top" constant="21" id="vVr-x6-LZh"/>
+                            <constraint firstItem="Tln-6a-DvY" firstAttribute="bottom" secondItem="DIl-de-m3u" secondAttribute="bottom" constant="57" id="w2q-Ln-JYE"/>
                             <constraint firstItem="rA9-9t-ewO" firstAttribute="centerX" secondItem="o2p-j8-Jfk" secondAttribute="centerX" id="z4X-zj-Nbf"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="Tln-6a-DvY"/>

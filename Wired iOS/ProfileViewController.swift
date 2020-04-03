@@ -20,7 +20,7 @@ class ProfileViewController: UIViewController, UINavigationControllerDelegate, U
     @IBOutlet var iconImageView:    UIImageView!
     
     public var masterViewController:BookmarksViewController!
-    
+        
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -43,7 +43,7 @@ class ProfileViewController: UIViewController, UINavigationControllerDelegate, U
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)
 
-        guard let image = info[.editedImage] as? UIImage else {
+        guard let image = info[picker.sourceType == .photoLibrary ? .editedImage : .originalImage] as? UIImage else {
             print("No image found")
             return
         }
@@ -59,11 +59,33 @@ class ProfileViewController: UIViewController, UINavigationControllerDelegate, U
     // MARK: -
     
     @IBAction func changeIcon(_ sender: Any) {
-        let vc = UIImagePickerController()
-        vc.sourceType = .photoLibrary
-        vc.allowsEditing = true
-        vc.delegate = self
-        present(vc, animated: true)
+        self.openCamera(sender)
+    }
+    
+    private func openCamera(_ sender:Any) {
+        let imagePicker = UIImagePickerController()
+        imagePicker.delegate = self
+        
+        
+        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: .actionSheet)
+        
+        alert.popoverPresentationController?.sourceView = self.iconImageView
+        alert.popoverPresentationController?.permittedArrowDirections = .up
+        alert.popoverPresentationController?.sourceRect = CGRect(x: self.iconImageView.frame.size.width/2, y: self.iconImageView.center.y, width: 0, height: 0)
+
+        alert.addAction(UIAlertAction(title: "Take Picture", style: .default, handler: { (action) in
+            imagePicker.sourceType = .camera
+            self.navigationController!.present(imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Photo Library", style: .default, handler: { (action) in
+            imagePicker.sourceType = .photoLibrary
+            self.navigationController!.present(imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        
+        self.navigationController?.present(alert, animated: true, completion: nil)
     }
     
     

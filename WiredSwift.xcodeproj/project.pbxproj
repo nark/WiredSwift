@@ -80,6 +80,8 @@
 		4C6656B72434FB390022E7D7 /* InputBarAccessoryView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */; };
 		4C6656B92436095D0022E7D7 /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */; };
 		4C6656BB24362BE20022E7D7 /* UnselectedTableRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6656BA24362BE20022E7D7 /* UnselectedTableRowView.swift */; };
+		4C6656BD243642030022E7D7 /* UserDefaults+UIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6656BC243642030022E7D7 /* UserDefaults+UIImage.swift */; };
+		4C6656C1243644EB0022E7D7 /* UIColor+Custom.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6656C0243644EB0022E7D7 /* UIColor+Custom.swift */; };
 		4C6A89E82405613A00780FEF /* FileManager+ResourceFork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */; };
 		4C74286222DCECE800D6E6F9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286122DCECE800D6E6F9 /* AppDelegate.swift */; };
 		4C74286422DCECE800D6E6F9 /* ConnectController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74286322DCECE800D6E6F9 /* ConnectController.swift */; };
@@ -407,6 +409,8 @@
 		4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InputBarAccessoryView.framework; path = Carthage/Build/iOS/InputBarAccessoryView.framework; sourceTree = SOURCE_ROOT; };
 		4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
 		4C6656BA24362BE20022E7D7 /* UnselectedTableRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnselectedTableRowView.swift; sourceTree = "<group>"; };
+		4C6656BC243642030022E7D7 /* UserDefaults+UIImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+UIImage.swift"; sourceTree = "<group>"; };
+		4C6656C0243644EB0022E7D7 /* UIColor+Custom.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Custom.swift"; sourceTree = "<group>"; };
 		4C6A89E72405613A00780FEF /* FileManager+ResourceFork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+ResourceFork.swift"; sourceTree = "<group>"; };
 		4C74285E22DCECE800D6E6F9 /* Wired.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wired.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C74286122DCECE800D6E6F9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -656,6 +660,27 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		4C6656BE2436449B0022E7D7 /* Extentsions */ = {
+			isa = PBXGroup;
+			children = (
+				4C8874812434AB6F00A5D4A0 /* UIImage+Resize.swift */,
+				4C6656BC243642030022E7D7 /* UserDefaults+UIImage.swift */,
+				4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */,
+				4C6656C0243644EB0022E7D7 /* UIColor+Custom.swift */,
+			);
+			path = Extentsions;
+			sourceTree = "<group>";
+		};
+		4C6656BF243644AB0022E7D7 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				4C75B9BA243374D900BE8857 /* Main.storyboard */,
+				4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */,
+				4C75B9BD243374DA00BE8857 /* Assets.xcassets */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 		4C6A89E62405612400780FEF /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -739,8 +764,8 @@
 			isa = PBXGroup;
 			children = (
 				4C75B9B2243374D900BE8857 /* AppDelegate.swift */,
-				4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */,
 				4C88747424347DC300A5D4A0 /* SceneDelegate.swift */,
+				4C75B9B6243374D900BE8857 /* BookmarksViewController.swift */,
 				4C75B9B8243374D900BE8857 /* ChatViewController.swift */,
 				4C88747D2434A10900A5D4A0 /* ServerInfoViewController.swift */,
 				4C88747224347D4500A5D4A0 /* MainSplitViewController.swift */,
@@ -748,11 +773,8 @@
 				4C887476243480F200A5D4A0 /* ProfileViewController.swift */,
 				4C88747F2434A7FD00A5D4A0 /* UserTableViewCell.swift */,
 				4C8874832434B81800A5D4A0 /* BookmarkTableViewCell.swift */,
-				4C8874812434AB6F00A5D4A0 /* UIImage+Resize.swift */,
-				4C6656B82436095D0022E7D7 /* KeyboardHelper.swift */,
-				4C75B9BA243374D900BE8857 /* Main.storyboard */,
-				4C75B9BD243374DA00BE8857 /* Assets.xcassets */,
-				4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */,
+				4C6656BE2436449B0022E7D7 /* Extentsions */,
+				4C6656BF243644AB0022E7D7 /* UI */,
 				4C75B9C2243374DA00BE8857 /* Info.plist */,
 				4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */,
 				4C8874902434E6D700A5D4A0 /* MessageKit.framework */,
@@ -1521,6 +1543,8 @@
 				4C8874802434A7FD00A5D4A0 /* UserTableViewCell.swift in Sources */,
 				4C8874822434AB6F00A5D4A0 /* UIImage+Resize.swift in Sources */,
 				4C88747524347DC300A5D4A0 /* SceneDelegate.swift in Sources */,
+				4C6656C1243644EB0022E7D7 /* UIColor+Custom.swift in Sources */,
+				4C6656BD243642030022E7D7 /* UserDefaults+UIImage.swift in Sources */,
 				4C75BA2C2433932C00BE8857 /* Bookmark+CoreDataClass.swift in Sources */,
 				4C6656B92436095D0022E7D7 /* KeyboardHelper.swift in Sources */,
 				4C75BA2D2433932C00BE8857 /* Bookmark+CoreDataProperties.swift in Sources */,
@@ -1883,7 +1907,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 4ATFWV7M4B;
+				DEVELOPMENT_TEAM = JSVJHJ78QE;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1913,7 +1937,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = 4ATFWV7M4B;
+				DEVELOPMENT_TEAM = JSVJHJ78QE;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2134,7 +2158,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = 4ATFWV7M4B;
+				DEVELOPMENT_TEAM = JSVJHJ78QE;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
@@ -2171,7 +2195,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = 4ATFWV7M4B;
+				DEVELOPMENT_TEAM = JSVJHJ78QE;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";

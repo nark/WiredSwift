@@ -13,7 +13,7 @@ import JGProgressHUD
 import Reachability
 
 
-class BookmarksViewController: UITableViewController, ConnectionDelegate {
+class BookmarksViewController: UITableViewController {
     let hud = JGProgressHUD(style: .dark)
     //var chatViewController: ChatViewController? = nil
     
@@ -26,7 +26,8 @@ class BookmarksViewController: UITableViewController, ConnectionDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let userProfileButton = UIBarButtonItem(title: "Profile", style: .plain, target: self, action: #selector(showUserProfile(_:)))
+        let userProfileButton = UIBarButtonItem(image: UIImage(named: "Settings"), style: .plain, target: self, action: #selector(showUserProfile(_:)))
+        //let userProfileButton = UIBarButtonItem(title: "Profile", style: .plain, target: self, action: #selector(showUserProfile(_:)))
         navigationItem.leftBarButtonItem = userProfileButton
         
         self.reloadBookmarks()
@@ -46,20 +47,28 @@ class BookmarksViewController: UITableViewController, ConnectionDelegate {
     }
 
     override func viewWillAppear(_ animated: Bool) {
-        //clearsSelectionOnViewWillAppear = splitViewController!.isCollapsed
         super.viewWillAppear(animated)
     }
+    
+    // MARK: - @objc
 
-    @objc
-    func insertNewObject(_ sender: Any) {
+    @objc func insertNewObject(_ sender: Any) {
         self.performSegue(withIdentifier: "ShowBookmark", sender: self)
     }
     
-    @objc
-    func showUserProfile(_ sender: Any) {
+    @objc func showUserProfile(_ sender: Any) {
         self.performSegue(withIdentifier: "ShowProfile", sender: self)
     }
     
+    @objc func showConnections() {
+        if let split = self.splitViewController {
+            if UIApplication.shared.statusBarOrientation == .portrait {
+                UIView.animate(withDuration: 0.3, animations: {
+                    split.preferredDisplayMode = .primaryOverlay
+                }, completion: nil)
+            }
+        }
+    }
 
     
     // MARK: - IBAction
@@ -143,92 +152,8 @@ class BookmarksViewController: UITableViewController, ConnectionDelegate {
         }
     }
     
-    // MARK: - Segues
     
-    @objc func showConnections() {
-        if let split = self.splitViewController {
-            if UIApplication.shared.statusBarOrientation == .portrait {
-                UIView.animate(withDuration: 0.3, animations: {
-                    split.preferredDisplayMode = .primaryOverlay
-                }, completion: nil)
-            }
-        }
-    }
 
-    // MARK: - Table View
-
-    override func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
-    }
-
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return bookmarks.count
-    }
-
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? BookmarkTableViewCell
-        
-        let bookmark = bookmarks[indexPath.row]
-        let connection = self.connections[bookmark]
-        
-        cell?.nameLabel!.text = bookmark.name
-        
-        if connection != nil && connection?.isConnected() == true {
-            cell?.statusImageView.image = UIImage(named: "ConnectionStatusConnected")
-        } else {
-            cell?.statusImageView.image = nil
-        }
-        
-        return cell!
-    }
-    
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let bookmark = bookmarks[indexPath.row]
-        
-        if let connection = self.connections[bookmark] {
-            if connection.isConnected() == true {
-                if let controller = self.chatViewControllers[connection] {
-                    if UIDevice.current.userInterfaceIdiom == .pad {
-                        if let split = splitViewController {
-                            print("split")
-
-                            if let navController = split.viewControllers[1] as? UINavigationController {
-                                navController.viewControllers = [controller]
-                                UIView.animate(withDuration: 0.3, animations: {
-                                    split.preferredDisplayMode = .primaryHidden
-                                }, completion: nil)
-                            }
-                        }
-                    } else {
-                        print("push")
-
-                        self.navigationController?.pushViewController(controller, animated: true)
-                    }
-                }
-            }
-        } else {
-            self.connect(self)
-        }
-    }
-
-    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the specified item to be editable.
-        return true
-    }
-
-
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            let bookmark = bookmarks.remove(at: indexPath.row)
-            
-            AppDelegate.shared.persistentContainer.viewContext.delete(bookmark)
-            AppDelegate.shared.saveContext()
-            
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
-        }
-    }
 
     // MARK: -
     
@@ -254,27 +179,6 @@ class BookmarksViewController: UITableViewController, ConnectionDelegate {
         self.tableView.reloadData()
     }
     
-    
-    // MARK: -
-    func connectionDisconnected(connection: Connection, error: Error?) {
-        if let controller = self.chatViewControllers[connection] {
-            if let bookmark = controller.bookmark {
-                self.connections.removeValue(forKey: bookmark)
-                self.chatViewControllers.removeValue(forKey: connection)
-                
-                self.tableView.reloadData()
-            }
-        }
-    }
-    
-    
-    func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
-    
-    }
-    
-    func connectionDidReceiveError(connection: Connection, message: P7Message) {
-        
-    }
     
     
     // MARK: -
@@ -304,3 +208,103 @@ class BookmarksViewController: UITableViewController, ConnectionDelegate {
 
 
 
+
+
+// MARK: - Table View
+
+extension BookmarksViewController {
+    override func numberOfSections(in tableView: UITableView) -> Int {
+           return 1
+       }
+
+       override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+           return bookmarks.count
+       }
+
+       override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+           let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? BookmarkTableViewCell
+           
+           let bookmark = bookmarks[indexPath.row]
+           let connection = self.connections[bookmark]
+           
+           cell?.nameLabel!.text = bookmark.name
+           
+           if connection != nil && connection?.isConnected() == true {
+               cell?.statusImageView.image = UIImage(named: "ConnectionStatusConnected")
+           } else {
+               cell?.statusImageView.image = nil
+           }
+           
+           return cell!
+       }
+       
+       override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+           let bookmark = bookmarks[indexPath.row]
+           
+           if let connection = self.connections[bookmark] {
+               if connection.isConnected() == true {
+                   if let controller = self.chatViewControllers[connection] {
+                       if UIDevice.current.userInterfaceIdiom == .pad {
+                           if let split = splitViewController {
+                               if let navController = split.viewControllers[1] as? UINavigationController {
+                                   navController.viewControllers = [controller]
+                                   UIView.animate(withDuration: 0.3, animations: {
+                                       split.preferredDisplayMode = .primaryHidden
+                                   }, completion: nil)
+                               }
+                           }
+                       } else {
+                           self.navigationController?.pushViewController(controller, animated: true)
+                       }
+                   }
+               }
+           } else {
+               self.connect(self)
+           }
+       }
+
+       override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+           // Return false if you do not want the specified item to be editable.
+           return true
+       }
+
+
+       override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+           if editingStyle == .delete {
+               let bookmark = bookmarks.remove(at: indexPath.row)
+               
+               AppDelegate.shared.persistentContainer.viewContext.delete(bookmark)
+               AppDelegate.shared.saveContext()
+               
+               tableView.deleteRows(at: [indexPath], with: .fade)
+           } else if editingStyle == .insert {
+               // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
+           }
+       }
+}
+
+
+
+
+extension BookmarksViewController: ConnectionDelegate {
+    // MARK: -
+    func connectionDisconnected(connection: Connection, error: Error?) {
+        if let controller = self.chatViewControllers[connection] {
+            if let bookmark = controller.bookmark {
+                self.connections.removeValue(forKey: bookmark)
+                self.chatViewControllers.removeValue(forKey: connection)
+                
+                self.tableView.reloadData()
+            }
+        }
+    }
+    
+    
+    func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
+    
+    }
+    
+    func connectionDidReceiveError(connection: Connection, message: P7Message) {
+        
+    }
+}

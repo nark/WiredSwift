@@ -11,50 +11,22 @@ import CoreData
 import WiredSwift_iOS
 import Reachability
 
-extension UserDefaults {
-    func image(forKey key: String) -> UIImage? {
-        var image: UIImage?
-        if let imageData = data(forKey: key) {
-            image = try! NSKeyedUnarchiver.unarchivedObject(ofClass: UIImage.self, from: imageData)
-        }
-        return image
-    }
-    func set(image: UIImage?, forKey key: String) {
-        var imageData: NSData?
-        if let image = image {
-            imageData = try! NSKeyedArchiver.archivedData(withRootObject: image, requiringSecureCoding: false) as NSData
-        }
-        set(imageData, forKey: key)
-    }
-}
-
-
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
     public static let shared:AppDelegate = UIApplication.shared.delegate as! AppDelegate
-
+    public static let dateTimeFormatter = DateFormatter()
+    
     var window:UIWindow?
 
     override init() {
         super.init()
         
-        UIButton.appearance().tintColor = UIColor.systemGreen
-        UIBarButtonItem.appearance().tintColor = UIColor.systemGreen
+        self.setupAppearance()
+        self.setupUserDefaults()
         
-        // Default preferences
-        UserDefaults.standard.register(defaults: [
-            "WSUserNick": "WiredSwift",
-            "WSUserStatus": "Share The Wealth"
-        ])
-        
-        if UserDefaults.standard.image(forKey: "WSUserIcon") == nil {
-            if let image = UIImage(named: "DefaultIcon") {
-                UserDefaults.standard.set(image: image, forKey: "WSUserIcon")
-            }
-        }
-        
-        UserDefaults.standard.synchronize()
+        AppDelegate.dateTimeFormatter.dateStyle = .medium
+        AppDelegate.dateTimeFormatter.timeStyle = .medium
     }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -62,7 +34,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         let splitViewController = window!.rootViewController as! UISplitViewController
         splitViewController.preferredDisplayMode = UISplitViewController.DisplayMode.primaryOverlay
-
+        
         return true
     }
 
@@ -110,6 +82,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
             }
         }
+    }
+
+    
+
+    
+    
+    // MARK: - Private
+    
+    private func setupAppearance() {
+        UIButton.appearance().tintColor = UIColor.systemGreen
+        UIBarButtonItem.appearance().tintColor = UIColor.systemGreen
+    }
+    
+    
+    
+    private func setupUserDefaults() {
+        // Default preferences
+        UserDefaults.standard.register(defaults: [
+            "WSUserNick": "WiredSwift",
+            "WSUserStatus": "Share The Wealth"
+        ])
+        
+        if UserDefaults.standard.image(forKey: "WSUserIcon") == nil {
+            if let image = UIImage(named: "DefaultIcon") {
+                UserDefaults.standard.set(image: image, forKey: "WSUserIcon")
+            }
+        }
+        
+        UserDefaults.standard.synchronize()
     }
 }
 
