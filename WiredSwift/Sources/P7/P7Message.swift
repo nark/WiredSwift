@@ -7,7 +7,7 @@
 //
 
 import Foundation
-
+import AEXML
 
 
 /**
@@ -170,58 +170,47 @@ public class P7Message: NSObject {
     }
     
     
-    public func xml(pretty: Bool = false) -> String {
-        return "TODO: reimplement with AEXML"
+    public func xml() -> String {
+        let message = AEXMLDocument()
+        let root = message.addChild(name: "p7:message", attributes: ["name": self.name] )
         
-//        let msg = XMLElement(name: "p7:message")
-//        let xml = XMLDocument(rootElement: msg)
-//
-//        msg.addAttribute(XMLNode.attribute(withName: "xmlns:p7", stringValue: "http://www.zankasoftware.com/P7/Message") as! XMLNode)
-//        msg.addAttribute(XMLNode.attribute(withName: "name", stringValue: self.name) as! XMLNode)
-//
-//        for (field, value) in self.parameters {
-//            let p = XMLElement(name: "p7:field")
-//
-//            if spec.fieldsByName[field]?.type == .string {
-//                if let string = value as? String {
-//                    p.setStringValue(string, resolvingEntities: false)
-//                }
-//            }
-//            else if spec.fieldsByName[field]?.type == .int32 ||
-//                    spec.fieldsByName[field]?.type == .uint32 {
-//                if let val = value as? UInt32 {
-//                    p.setStringValue(String(val), resolvingEntities: false)
-//                }
-//            }
-//            else if spec.fieldsByName[field]?.type == .int64 ||
-//                    spec.fieldsByName[field]?.type == .uint64 {
-//                if let val = value as? UInt64 {
-//                    p.setStringValue(String(val), resolvingEntities: false)
-//                }
-//            }
-//            else if spec.fieldsByName[field]?.type == .data {
-//                if let val = value as? Data {
-//                    p.setStringValue(val.toHex(), resolvingEntities: false)
-//                }
-//            }
-//            else if spec.fieldsByName[field]?.type == .oobdata {
-//                if let val = value as? Data {
-//                    p.setStringValue(val.toHex(), resolvingEntities: false)
-//                }
-//            }
-//            // TODO: complete all types
-//
-//            p.addAttribute(XMLNode.attribute(withName: "name", stringValue: field) as! XMLNode)
-//            msg.addChild(p)
-//        }
-//
-//        var options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue
-//
-//        if pretty {
-//            options = XMLNode.Options.nodePromoteSignificantWhitespace.rawValue | XMLNode.Options.nodePrettyPrint.rawValue
-//        }
-//
-//        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + xml.xmlString(options: XMLNode.Options(rawValue: options)) + "\r\n"
+        for (field, value) in self.parameters {
+            let p = root.addChild(name: "p7:field", attributes: ["name": field])
+
+            if  spec.fieldsByName[field]?.type == .string ||
+                spec.fieldsByName[field]?.type == .uuid {
+                if let string = value as? String {
+                    p.value = string
+                }
+            }
+            else if spec.fieldsByName[field]?.type == .int32 ||
+                    spec.fieldsByName[field]?.type == .uint32 {
+                if let val = value as? UInt32 {
+                    p.value = String(val)
+                }
+            }
+            else if spec.fieldsByName[field]?.type == .int64 ||
+                    spec.fieldsByName[field]?.type == .uint64 {
+                if let val = value as? UInt64 {
+                    p.value = String(val)
+                }
+            }
+            else if spec.fieldsByName[field]?.type == .data ||
+                    spec.fieldsByName[field]?.type == .oobdata {
+                if let val = value as? Data {
+                    p.value = val.toHex()
+                }
+            }
+            else if spec.fieldsByName[field]?.type == .date {
+                if let val = value as? Double {
+                    let dateFormatter = ISO8601DateFormatter()
+                    p.value = dateFormatter.string(from: Date(timeIntervalSince1970: val))
+                }
+            }
+            // TODO: complete all types
+        }
+        
+        return "\(message.xml)\r\n"
     }
     
     
