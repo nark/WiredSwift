@@ -391,13 +391,18 @@ class ChatViewController: MessagesViewController {
 extension ChatViewController: ConnectionDelegate {
     func connectionDisconnected(connection: Connection, error: Error?) {
         configureView()
+        
+        let text = "You have beed disconnected from \(bookmark.hostname!)"
+        
+        self.append(textMessage: "<< \(text) >>", sender: self.systemSender(), sent: false, event: true)
                 
         let alertController = UIAlertController(
             title: "Connection Error",
-            message: "You have beed disconnected from \(bookmark.hostname!)",
+            message: text,
             preferredStyle: .alert)
         
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        
 
         self.present(alertController, animated: true) {
             self.navigationController?.popToRootViewController(animated: true)
@@ -495,7 +500,7 @@ extension ChatViewController: ConnectionDelegate {
                 if let user = self.user(withID: disconnectedID) {
                     var text = "<< \(user.nick!) has been disconnected"
                     
-                    if disconnectMessage != nil {
+                    if disconnectMessage != nil && !disconnectMessage!.isEmpty {
                         text = text + " with message: \(disconnectMessage!)"
                     }
                     
@@ -571,11 +576,12 @@ extension ChatViewController: UIImagePickerControllerDelegate & UINavigationCont
         
         dismiss(animated: true, completion: {
             if let pickedImage = info[self.convertFromUIImagePickerControllerInfoKey(UIImagePickerController.InfoKey.originalImage)] as? UIImage {
-                let compressedImage = pickedImage.resize(withNewWidth: 420)
+                if let compressedImage = pickedImage.scale(with: CGSize(width: 420.0, height: 420.0)) {
                     let handled = self.attachmentManager.handleInput(of: compressedImage as AnyObject)
                     if !handled {
                         // throw error
                     }
+                }
             }
         })
     }

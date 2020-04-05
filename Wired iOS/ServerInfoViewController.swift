@@ -145,8 +145,9 @@ extension ServerInfoViewController {
             
             if let base64ImageString = user.icon?.base64EncodedData() {
                 if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
-                    let image = UIImage(data: data)?.resize(withNewWidth: 32.0)
-                    userCell?.imageView?.image = image
+                    if let image = UIImage(data: data)?.scale(with: CGSize(width: 32.0, height: 32.0)) {
+                        userCell?.imageView?.image = image
+                    }
                 }
             }
             

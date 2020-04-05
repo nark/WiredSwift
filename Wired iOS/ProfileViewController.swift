@@ -14,12 +14,14 @@ extension Notification.Name {
 
 
 
-class ProfileViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+class ProfileViewController: UIViewController  {
     @IBOutlet var nickTextField:    UITextField!
     @IBOutlet var statusTextField:  UITextField!
     @IBOutlet var iconImageView:    UIImageView!
     
     public var masterViewController:BookmarksViewController!
+    
+    let imagePicker = UIImagePickerController()
         
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,22 +38,6 @@ class ProfileViewController: UIViewController, UINavigationControllerDelegate, U
             self.statusTextField.text = status
         }
     }
-    
-    
-    // MARK: -
-    
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        picker.dismiss(animated: true)
-
-        guard let image = info[picker.sourceType == .photoLibrary ? .editedImage : .originalImage] as? UIImage else {
-            print("No image found")
-            return
-        }
-
-        if let newImage = image.resize(withNewWidth: 64) {
-            self.iconImageView.image = newImage
-        }
-    }
 
 
     
@@ -60,32 +46,6 @@ class ProfileViewController: UIViewController, UINavigationControllerDelegate, U
     
     @IBAction func changeIcon(_ sender: Any) {
         self.openCamera(sender)
-    }
-    
-    private func openCamera(_ sender:Any) {
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        
-        
-        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: .actionSheet)
-        
-        alert.popoverPresentationController?.sourceView = self.iconImageView
-        alert.popoverPresentationController?.permittedArrowDirections = .up
-        alert.popoverPresentationController?.sourceRect = CGRect(x: self.iconImageView.frame.size.width/2, y: self.iconImageView.center.y, width: 0, height: 0)
-
-        alert.addAction(UIAlertAction(title: "Take Picture", style: .default, handler: { (action) in
-            imagePicker.sourceType = .camera
-            self.navigationController!.present(imagePicker, animated: true, completion: nil)
-        }))
-        
-        alert.addAction(UIAlertAction(title: "Photo Library", style: .default, handler: { (action) in
-            imagePicker.sourceType = .photoLibrary
-            self.navigationController!.present(imagePicker, animated: true, completion: nil)
-        }))
-        
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        
-        self.navigationController?.present(alert, animated: true, completion: nil)
     }
     
     
@@ -111,4 +71,58 @@ class ProfileViewController: UIViewController, UINavigationControllerDelegate, U
         }
     }
     
+    
+    
+    // MARK: -
+    private func openCamera(_ sender:Any) {
+        self.imagePicker.delegate = self
+        //self.imagePicker.allowsEditing = true
+        self.imagePicker.mediaTypes = ["public.image"]
+        self.imagePicker.navigationBar.barStyle = .default
+        
+        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: .actionSheet)
+        
+        alert.popoverPresentationController?.sourceView = self.iconImageView
+        alert.popoverPresentationController?.permittedArrowDirections = .up
+        alert.popoverPresentationController?.sourceRect = CGRect(x: self.iconImageView.frame.size.width/2, y: self.iconImageView.center.y, width: 0, height: 0)
+
+        alert.addAction(UIAlertAction(title: "Take Picture", style: .default, handler: { (action) in
+            self.imagePicker.sourceType = .camera
+            self.navigationController!.present(self.imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Photo Library", style: .default, handler: { (action) in
+            self.imagePicker.sourceType = .photoLibrary
+            self.navigationController!.present(self.imagePicker, animated: true, completion: nil)
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        
+        self.navigationController?.present(alert, animated: true, completion: nil)
+    }
+    
+    
+    private func pickerController(_ controller: UIImagePickerController, didSelect image: UIImage?) {
+        controller.dismiss(animated: true, completion: nil)
+        
+        if let i = image?.scale(with: CGSize(width: 64.0, height: 64.0)) {
+            self.iconImageView.image = i
+        }
+    }
+}
+
+
+extension ProfileViewController: UIImagePickerControllerDelegate & UINavigationControllerDelegate & UIPopoverControllerDelegate {
+    public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        self.pickerController(picker, didSelect: nil)
+    }
+
+    public func imagePickerController(_ picker: UIImagePickerController,
+                                      didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        guard let image = info[.originalImage] as? UIImage else {
+            return self.pickerController(picker, didSelect: nil)
+        }
+        
+        self.pickerController(picker, didSelect: image)
+    }
 }

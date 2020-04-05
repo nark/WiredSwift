@@ -9,14 +9,26 @@
 import UIKit
 
 extension UIImage {
-    public func resize(withNewWidth newWidth: CGFloat) -> UIImage? {
-        let scale = newWidth / self.size.width
-        let newHeight = self.size.height * scale
-        UIGraphicsBeginImageContext(CGSize(width: newWidth, height: newHeight))
-        self.draw(in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
-        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+    func scale(with size: CGSize) -> UIImage? {
+        var scaledImageRect = CGRect.zero
+
+        let aspectWidth:CGFloat = size.width / self.size.width
+        let aspectHeight:CGFloat = size.height / self.size.height
+        let aspectRatio:CGFloat = min(aspectWidth, aspectHeight)
+
+        scaledImageRect.size.width = self.size.width * aspectRatio
+        scaledImageRect.size.height = self.size.height * aspectRatio
+        scaledImageRect.origin.x = (size.width - scaledImageRect.size.width) / 2.0
+        scaledImageRect.origin.y = (size.height - scaledImageRect.size.height) / 2.0
+
+        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+
+        self.draw(in: scaledImageRect)
+
+        let scaledImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        return newImage
+
+        return scaledImage
     }
     
     public enum JPEGQuality: CGFloat {
