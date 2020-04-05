@@ -80,7 +80,13 @@ class ProfileViewController: UIViewController  {
         self.imagePicker.mediaTypes = ["public.image"]
         self.imagePicker.navigationBar.barStyle = .default
         
-        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: .actionSheet)
+        var style = UIAlertController.Style.alert
+        
+        if #available(iOS 13.0, *) {
+            style = .actionSheet
+        }
+        
+        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: style)
         
         alert.popoverPresentationController?.sourceView = self.iconImageView
         alert.popoverPresentationController?.permittedArrowDirections = .up

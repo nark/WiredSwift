@@ -22,4 +22,15 @@ extension String {
         guard self.hasPrefix(prefix) else { return self }
         return String(self.dropFirst(prefix.count))
     }
+
+    
+    public var isBlank: Bool {
+        return allSatisfy({ $0.isWhitespace })
+    }
+}
+
+extension Optional where Wrapped == String {
+  public var isBlank: Bool {
+    return self?.isBlank ?? true
+  }
 }

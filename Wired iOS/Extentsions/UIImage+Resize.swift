@@ -9,7 +9,12 @@
 import UIKit
 
 extension UIImage {
-    func scale(with size: CGSize) -> UIImage? {
+    func scale(with size: CGSize, ifNeeded: Bool = false) -> UIImage? {
+        if ifNeeded {
+            if size.width <= 420 {
+                return self
+            }
+        }
         var scaledImageRect = CGRect.zero
 
         let aspectWidth:CGFloat = size.width / self.size.width
