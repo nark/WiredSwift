@@ -30,13 +30,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-//        self.window = UIWindow(frame: UIScreen.main.bounds)
+        
+        // really needed?
         self.window?.makeKeyAndVisible()
+        
+        // deal with first launch
+        if UserDefaults.standard.bool(forKey: "WSFirstLaunch") == true {
+            // show onboarding view
+            let storyboard = UIStoryboard.init(name: "Main", bundle: nil)
+            if let onboarding = storyboard.instantiateViewController(withIdentifier: "OnboardingViewController") as? OnboardingViewController {
+                onboarding.modalPresentationStyle = .fullScreen
+                self.window?.rootViewController?.present(onboarding, animated: false, completion: { })
+            }
+            UserDefaults.standard.set(false, forKey: "WSFirstLaunch")
+        }
         
         Logger.setMaxLevel(.INFO)
         
-        let splitViewController = window!.rootViewController as! UISplitViewController
-        splitViewController.preferredDisplayMode = UISplitViewController.DisplayMode.primaryOverlay
+        if let splitViewController = window!.rootViewController as? UISplitViewController {
+            splitViewController.preferredDisplayMode = UISplitViewController.DisplayMode.primaryOverlay
+        }
         
         return true
     }
@@ -104,7 +117,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Default preferences
         UserDefaults.standard.register(defaults: [
             "WSUserNick": "WiredSwift",
-            "WSUserStatus": "Share The Wealth"
+            "WSUserStatus": "Share The Wealth",
+            "WSFirstLaunch": true
         ])
         
         if UserDefaults.standard.image(forKey: "WSUserIcon") == nil {

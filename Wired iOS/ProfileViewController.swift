@@ -14,7 +14,7 @@ extension Notification.Name {
 
 
 
-class ProfileViewController: UIViewController  {
+class ProfileViewController: UITableViewController  {
     @IBOutlet var nickTextField:    UITextField!
     @IBOutlet var statusTextField:  UITextField!
     @IBOutlet var iconImageView:    UIImageView!
