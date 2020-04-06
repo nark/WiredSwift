@@ -27,7 +27,7 @@
         <!--Chat-->
         <scene sceneID="yUG-lL-AsK">
             <objects>
-                <viewController storyboardIdentifier="ChatViewController" title="Chat" id="JEX-9P-axG" customClass="ChatViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ChatViewController" title="Chat" id="JEX-9P-axG" customClass="ChatViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="svH-Pt-448">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -54,7 +54,7 @@
         <!--Main Split View Controller-->
         <scene sceneID="Nki-YV-4Qg">
             <objects>
-                <splitViewController id="H1p-Uh-vWS" customClass="MainSplitViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                <splitViewController id="H1p-Uh-vWS" customClass="MainSplitViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <toolbarItems/>
                     <connections>
                         <segue destination="RMx-3f-FxP" kind="relationship" relationship="masterViewController" id="BlO-5A-QYV"/>
@@ -68,13 +68,13 @@
         <!--Connections-->
         <scene sceneID="smW-Zh-WAh">
             <objects>
-                <tableViewController title="Connections" clearsSelectionOnViewWillAppear="NO" id="7bK-jq-Zjz" customClass="BookmarksViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController title="Connections" clearsSelectionOnViewWillAppear="NO" id="7bK-jq-Zjz" customClass="BookmarksViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="r7i-6Z-zg0">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <prototypes>
-                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Cell" rowHeight="57" id="WCw-Qf-5nD" customClass="BookmarkTableViewCell" customModule="Wired_iOS" customModuleProvider="target">
+                            <tableViewCell contentMode="scaleToFill" selectionStyle="blue" accessoryType="disclosureIndicator" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="Cell" rowHeight="57" id="WCw-Qf-5nD" customClass="BookmarkTableViewCell" customModule="Wired" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="28" width="414" height="57"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="WCw-Qf-5nD" id="37f-cq-3Eg">
@@ -168,7 +168,7 @@
         <!--Profile-->
         <scene sceneID="gWH-AV-m52">
             <objects>
-                <viewController id="u62-Gc-ULh" customClass="ProfileViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="u62-Gc-ULh" customClass="ProfileViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="o2p-j8-Jfk">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -280,7 +280,7 @@
         <!--New Connection-->
         <scene sceneID="Sdp-sf-A2d">
             <objects>
-                <tableViewController id="7tu-8D-Cfm" customClass="BookmarkViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController id="7tu-8D-Cfm" customClass="BookmarkViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="static" style="grouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" id="RXX-LA-ioq">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -373,7 +373,7 @@
         <!--Server Info-->
         <scene sceneID="Wac-TW-JNx">
             <objects>
-                <tableViewController title="Server Info" id="kuL-Q9-ctc" customClass="ServerInfoViewController" customModule="Wired_iOS" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController title="Server Info" id="kuL-Q9-ctc" customClass="ServerInfoViewController" customModule="Wired" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" sectionFooterHeight="18" id="dWr-aj-Iv6">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -387,7 +387,7 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                 </tableViewCellContentView>
                             </tableViewCell>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="UserCell" rowHeight="60" id="UjB-ZQ-NFB" customClass="UserTableViewCell" customModule="Wired_iOS" customModuleProvider="target">
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="UserCell" rowHeight="60" id="UjB-ZQ-NFB" customClass="UserTableViewCell" customModule="Wired" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="99" width="414" height="60"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="UjB-ZQ-NFB" id="seE-3j-6oM">
@@ -469,7 +469,7 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="9yF-XO-LCP"/>
+        <segue reference="Tll-UG-LXB"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="DefaultUser" width="32" height="32"/>

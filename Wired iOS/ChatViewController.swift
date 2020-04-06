@@ -126,52 +126,94 @@ class ChatViewController: MessagesViewController {
         }
     }
 
+
     @objc func sendMessage() {
+        // send pastboard image
+        let stringWithoutAttachments:NSMutableAttributedString = NSMutableAttributedString(attributedString: messageInputBar.inputTextView.attributedText)
+        
+        // disable Text attachment for now
+        messageInputBar.inputTextView.attributedText.enumerateAttribute(NSAttributedString.Key.attachment, in: NSRange(location: 0, length: messageInputBar.inputTextView.attributedText.length), options: [], using: {(value,range,_) -> Void in
+            if (value is NSTextAttachment) {
+//               let attachment: NSTextAttachment? = (value as? NSTextAttachment)
+//               var image: UIImage?
+//
+//               if ((attachment?.image) != nil) {
+//                   image = attachment?.image
+//               } else {
+//                   image = attachment?.image(forBounds: (attachment?.bounds)!, textContainer: nil, characterIndex: range.location)
+//               }
+//
+//                guard let pasteImage = image?.scale(with: CGSize(width: 320, height: 320), ifNeeded: true) else { return }
+//
+//               guard let pngData = pasteImage.pngData() else { return }
+//               //guard let pngImage = UIImage(data: pngData) else { return }
+//
+//               let base64String = pngData.base64EncodedString()
+//               let htmlString = "<img src='data:image/png;base64,\(base64String)'/>"
+//
+//               let message = P7Message(withName: "wired.chat.send_say", spec: self.connection!.spec)
+//               message.addParameter(field: "wired.chat.id", value: UInt32(1))
+//               message.addParameter(field: "wired.user.id", value: UInt32(self.selfSender.senderId))
+//               message.addParameter(field: "wired.chat.say", value: htmlString)
+//
+//               if self.connection!.send(message: message) {
+//
+//               }
+
+                stringWithoutAttachments.deleteCharacters(in: range)
+                // return
+           }
+        })
+        
         // send text
-        if let text = messageInputBar.inputTextView.text {
+        let text = stringWithoutAttachments.string
+
+        if text.isBlank == false {
             if self.connection != nil && self.connection!.isConnected() {
                 let message = P7Message(withName: "wired.chat.send_say", spec: self.connection!.spec)
                 message.addParameter(field: "wired.chat.id", value: UInt32(1))
                 message.addParameter(field: "wired.user.id", value: UInt32(self.selfSender.senderId))
                 message.addParameter(field: "wired.chat.say", value: text)
-                
+
                 if self.connection!.send(message: message) {
-                    messageInputBar.inputTextView.text = ""
+                    
                 }
             }
         }
         
-        // send attachments
-        for attachment in self.attachmentManager.attachments {
-             switch attachment {
-             case .image(let image):
-                print(image)
-                if let base64String = image.pngData()?.base64EncodedString() {
-                    let htmlString = "<img src='data:image/png;base64,\(base64String)'/>"
-                    
-                    let message = P7Message(withName: "wired.chat.send_say", spec: self.connection!.spec)
-                    message.addParameter(field: "wired.chat.id", value: UInt32(1))
-                    message.addParameter(field: "wired.user.id", value: UInt32(self.selfSender.senderId))
-                    message.addParameter(field: "wired.chat.say", value: htmlString)
-                    
-                    if self.connection!.send(message: message) {
-                        messageInputBar.inputTextView.text = ""
-                    }
-                }
-                
-                
-                
-                break
-             default: break
-            }
-        }
-
-        // remove attachments
-        while self.attachmentManager.attachments.count > 0 {
-            self.attachmentManager.removeAttachment(at: 0)
-        }
-    
-        // hide attachments
+        messageInputBar.inputTextView.text = ""
+        
+        
+//        // send attachments
+//        for attachment in self.attachmentManager.attachments {
+//             switch attachment {
+//             case .image(let image):
+//                if let base64String = image.pngData()?.base64EncodedString() {
+//                    let htmlString = "<img src='data:image/png;base64,\(base64String)'/>"
+//
+//                    let message = P7Message(withName: "wired.chat.send_say", spec: self.connection!.spec)
+//                    message.addParameter(field: "wired.chat.id", value: UInt32(1))
+//                    message.addParameter(field: "wired.user.id", value: UInt32(self.selfSender.senderId))
+//                    message.addParameter(field: "wired.chat.say", value: htmlString)
+//
+//                    if self.connection!.send(message: message) {
+//                        messageInputBar.inputTextView.text = ""
+//                    }
+//                }
+//
+//
+//
+//                break
+//             default: break
+//            }
+//        }
+//
+//        // remove attachments
+//        while self.attachmentManager.attachments.count > 0 {
+//            self.attachmentManager.removeAttachment(at: 0)
+//        }
+//
+//        // hide attachments
         setAttachmentManager(active: self.attachmentManager.attachments.count > 0)
     }
 
@@ -211,6 +253,7 @@ class ChatViewController: MessagesViewController {
 
         messageInputBar.inputPlugins = [attachmentManager]
         messageInputBar.sendButton.addTarget(self, action: #selector(sendMessage), for: UIControl.Event.touchDown)
+        messageInputBar.inputTextView.allowsEditingTextAttributes = false
     }
     
     
@@ -391,13 +434,18 @@ class ChatViewController: MessagesViewController {
 extension ChatViewController: ConnectionDelegate {
     func connectionDisconnected(connection: Connection, error: Error?) {
         configureView()
+        
+        let text = "You have beed disconnected from \(bookmark.hostname!)"
+        
+        self.append(textMessage: "<< \(text) >>", sender: self.systemSender(), sent: false, event: true)
                 
         let alertController = UIAlertController(
             title: "Connection Error",
-            message: "You have beed disconnected from \(bookmark.hostname!)",
+            message: text,
             preferredStyle: .alert)
         
         alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        
 
         self.present(alertController, animated: true) {
             self.navigationController?.popToRootViewController(animated: true)
@@ -484,7 +532,6 @@ extension ChatViewController: ConnectionDelegate {
                 
                 if chatID == 1 {
                     let text = "<< Topic: \(topic) by \(nick) on \(AppDelegate.dateTimeFormatter.string(from: time)) >>"
-                    print("append : \(text)")
                     self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
                 }
             }
@@ -496,7 +543,7 @@ extension ChatViewController: ConnectionDelegate {
                 if let user = self.user(withID: disconnectedID) {
                     var text = "<< \(user.nick!) has been disconnected"
                     
-                    if disconnectMessage != nil {
+                    if disconnectMessage != nil && !disconnectMessage!.isEmpty {
                         text = text + " with message: \(disconnectMessage!)"
                     }
                     
@@ -572,11 +619,12 @@ extension ChatViewController: UIImagePickerControllerDelegate & UINavigationCont
         
         dismiss(animated: true, completion: {
             if let pickedImage = info[self.convertFromUIImagePickerControllerInfoKey(UIImagePickerController.InfoKey.originalImage)] as? UIImage {
-                let compressedImage = pickedImage.resize(withNewWidth: 420)
+                if let compressedImage = pickedImage.scale(with: CGSize(width: 420.0, height: 420.0)) {
                     let handled = self.attachmentManager.handleInput(of: compressedImage as AnyObject)
                     if !handled {
                         // throw error
                     }
+                }
             }
         })
     }
@@ -667,6 +715,45 @@ extension ChatViewController: MessageCellDelegate {
         }
         
         return self.messagesCollectionView.messagesDataSource!.isFromCurrentSender(message: message) ? UIColor.outgoingGreen : UIColor.incomingGray
+    }
+    
+    func messageTopLabelHeight(for message: MessageType, at indexPath: IndexPath, in messagesCollectionView: MessagesCollectionView) -> CGFloat {
+        if message is ChatMessage {
+            if message.sender.senderId != self.currentSender().senderId {
+                if message.sender.senderId != self.previous(forMessage: message)?.sender.senderId {
+                    return 16.0
+                }
+            }
+        }
+        return 0
+    }
+    
+    private func previous(forMessage message: MessageType) -> MessageType? {
+        var previous:MessageType? = nil
+        
+        for m in self.messages {
+            if previous != nil && m.messageId == message.messageId {
+                return previous
+            }
+            
+            previous = m
+        }
+        return nil
+    }
+    
+    
+    func messageTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+        if message is ChatMessage {
+            if message.sender.senderId != self.currentSender().senderId {
+                let attrs = [
+                    NSAttributedString.Key.font: UIFont.systemFont(ofSize: 12.0),
+                    NSAttributedString.Key.foregroundColor: UIColor.lightGray
+                ]
+                let attrString = NSAttributedString(string: message.sender.displayName, attributes: attrs)
+                return attrString
+            }
+        }
+        return nil
     }
 }
 

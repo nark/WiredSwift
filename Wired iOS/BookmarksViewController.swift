@@ -97,13 +97,28 @@ class BookmarksViewController: UITableViewController {
                         self.hud.dismiss(afterDelay: 1.0)
                         
                         self.connections[bookmark] = connection
-                                                
-                        self.performSegue(withIdentifier: "showDetail", sender: self)
+  
+                        //
                         
-                        if let split = self.splitViewController {
-                            UIView.animate(withDuration: 0.3, animations: {
-                                split.preferredDisplayMode = .primaryHidden
-                            }, completion: nil)
+                        if UIDevice.current.userInterfaceIdiom == .pad {
+                            if let split = self.splitViewController {
+                                UIView.animate(withDuration: 0.3, animations: {
+                                    split.preferredDisplayMode = .primaryHidden
+                                }) { (ok) in
+                                    // we use the initial chat view controller created at startup
+                                    if let navController = split.viewControllers[1] as? UINavigationController {
+                                        if let controller = navController.topViewController as? ChatViewController {
+                                            controller.bookmark = bookmark
+                                            controller.connection = self.connections[bookmark]
+                                            self.chatViewControllers[controller.connection!] = controller
+                                            controller.navigationItem.leftBarButtonItem = self.splitViewController?.displayModeButtonItem
+                                            controller.navigationItem.leftItemsSupplementBackButton = true
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            self.performSegue(withIdentifier: "showDetail", sender: self)
                         }
                         
                         // update bookmark with server name
@@ -248,6 +263,7 @@ extension BookmarksViewController {
                            if let split = splitViewController {
                                if let navController = split.viewControllers[1] as? UINavigationController {
                                    navController.viewControllers = [controller]
+                                
                                    UIView.animate(withDuration: 0.3, animations: {
                                        split.preferredDisplayMode = .primaryHidden
                                    }, completion: nil)
@@ -301,7 +317,7 @@ extension BookmarksViewController: ConnectionDelegate {
     
     
     func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
-    
+
     }
     
     func connectionDidReceiveError(connection: Connection, message: P7Message) {

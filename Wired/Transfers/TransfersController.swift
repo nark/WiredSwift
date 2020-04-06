@@ -772,7 +772,7 @@ public class TransfersController {
         data = FileManager.default.finderInfo(atPath: transfer.file!.path)!
         message.addParameter(field: "wired.transfer.finderinfo", value: data)
         
-        print("message : \(message.xml(pretty: true))")
+        print("message : \(message.xml())")
 
         if transfer.transferConnection?.send(message: message) == false {
             return false

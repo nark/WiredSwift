@@ -60,6 +60,11 @@ class ConversationsViewController: ConnectionViewController, ConnectionDelegate,
     // MARK: -
     @IBAction func deleteConversation(_ sender: Any) {
         if let c = self.selectedConversation {
+            // TODO: fix that: we want to clean unread message before remove the conv
+            if let connection = c.connection {
+                AppDelegate.updateUnreadMessages(forConnection: connection)
+            }
+            
             ConnectionsController.shared.removeConversation(c)
             ConversationsController.shared.reload()
             conversationsTableView.reloadData()

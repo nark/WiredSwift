@@ -123,6 +123,7 @@ extension ServerInfoViewController {
                 cell.textLabel!.numberOfLines = 0
                 cell.textLabel!.text = "\(self.connection!.serverInfo.applicationName!) \(self.connection!.serverInfo.applicationVersion!) on \(self.connection!.serverInfo.osName!) \(self.connection!.serverInfo.osVersion!) (\(self.connection!.serverInfo.arch!))"
             }
+
         } else if indexPath.section == 1 {
             if indexPath.row == 0 {
                 cell.textLabel!.text = "Protocol \(self.connection!.socket.remoteName!) \(self.connection!.socket.remoteVersion!)"
@@ -144,8 +145,9 @@ extension ServerInfoViewController {
             
             if let base64ImageString = user.icon?.base64EncodedData() {
                 if let data = Data(base64Encoded: base64ImageString, options: .ignoreUnknownCharacters) {
-                    let image = UIImage(data: data)?.resize(withNewWidth: 32.0)
-                    userCell?.imageView?.image = image
+                    if let image = UIImage(data: data)?.scale(with: CGSize(width: 32.0, height: 32.0)) {
+                        userCell?.imageView?.image = image
+                    }
                 }
             }
             
