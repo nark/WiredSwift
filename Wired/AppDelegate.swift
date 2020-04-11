@@ -12,6 +12,7 @@ import KeychainAccess
 import UserNotifications
 import Reachability
 import Sparkle
+import LetsMove
 
 
 extension PreferencePane.Identifier {
@@ -161,6 +162,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
                 _ = ConnectionWindowController.connectConnectionWindowController(withBookmark: bookmark)
             }
         }
+        PFMoveToApplicationsFolderIfNecessary()
     }
     
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
