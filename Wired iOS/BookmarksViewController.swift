@@ -25,6 +25,8 @@ class BookmarksViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(shouldOpenNewConnection(_:)), name: .shouldOpenNewConnection, object: nil)
 
         let userProfileButton = UIBarButtonItem(image: UIImage(named: "Settings"), style: .plain, target: self, action: #selector(showUserProfile(_:)))
         //let userProfileButton = UIBarButtonItem(title: "Profile", style: .plain, target: self, action: #selector(showUserProfile(_:)))
@@ -45,12 +47,17 @@ class BookmarksViewController: UITableViewController {
             }
         }
     }
+    
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
     }
     
     // MARK: - @objc
+    
+    @objc func shouldOpenNewConnection(_ n: Notification) {
+        self.performSegue(withIdentifier: "ShowBookmark", sender: self)
+    }
 
     @objc func insertNewObject(_ sender: Any) {
         self.performSegue(withIdentifier: "ShowBookmark", sender: self)
