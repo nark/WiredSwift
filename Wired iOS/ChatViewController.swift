@@ -17,7 +17,7 @@ import WiredSwift_iOS
 class ChatViewController: MessagesViewController {
     @IBOutlet var infoButton: UIBarButtonItem!
     
-    var selfSender:Sender = Sender(senderId: "-1", displayName: "Nark iOS")
+    var selfSender:Sender = Sender(senderId: "-1", displayName: "Wired iOS")
     var messages:[MessageType] = []
     var users:[UserInfo] = []
     var senders:[UInt32:Sender] = [:]
@@ -254,6 +254,11 @@ class ChatViewController: MessagesViewController {
         messageInputBar.inputPlugins = [attachmentManager]
         messageInputBar.sendButton.addTarget(self, action: #selector(sendMessage), for: UIControl.Event.touchDown)
         messageInputBar.inputTextView.allowsEditingTextAttributes = false
+        
+        messageInputBar.sendButton.configure {
+            $0.title = ""
+            $0.image = UIImage(named: "Send")
+       }
     }
     
     
@@ -274,27 +279,27 @@ class ChatViewController: MessagesViewController {
 
     
     private func openCamera(_ sender:Any) {
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        
-        
-        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: .actionSheet)
-        
-        alert.popoverPresentationController?.sourceView = self.messageInputBar.contentView
-        
-        alert.addAction(UIAlertAction(title: "Take Picture", style: .default, handler: { (action) in
-            imagePicker.sourceType = .camera
-            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
-        }))
-        
-        alert.addAction(UIAlertAction(title: "Photo Library", style: .default, handler: { (action) in
-            imagePicker.sourceType = .photoLibrary
-            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
-        }))
-        
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        
-        self.navigationController?.present(alert, animated: true, completion: nil)
+//        let imagePicker = UIImagePickerController()
+//        imagePicker.delegate = self
+//
+//
+//        let alert = UIAlertController(title: NSLocalizedString("Photo"), message: NSLocalizedString("Select below"), preferredStyle: .actionSheet)
+//
+//        alert.popoverPresentationController?.sourceView = self.messageInputBar.contentView
+//
+//        alert.addAction(UIAlertAction(title: NSLocalizedString("Take Picture"), style: .default, handler: { (action) in
+//            imagePicker.sourceType = .camera
+//            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
+//        }))
+//
+//        alert.addAction(UIAlertAction(title: NSLS("Photo Library"), style: .default, handler: { (action) in
+//            imagePicker.sourceType = .photoLibrary
+//            (UIApplication.shared.delegate as? AppDelegate)?.window?.rootViewController?.present(imagePicker, animated: true, completion: nil)
+//        }))
+//
+//        alert.addAction(UIAlertAction(title: NSLS("Cancel"), style: .cancel, handler: nil))
+//
+//        self.navigationController?.present(alert, animated: true, completion: nil)
     }
     
     
@@ -435,16 +440,16 @@ extension ChatViewController: ConnectionDelegate {
     func connectionDisconnected(connection: Connection, error: Error?) {
         configureView()
         
-        let text = "You have beed disconnected from \(bookmark.hostname!)"
+        let text = NSLocalizedString("You have beed disconnected from \(bookmark.hostname!)", comment: "Disconnected Alert Message")
         
         self.append(textMessage: "<< \(text) >>", sender: self.systemSender(), sent: false, event: true)
                 
         let alertController = UIAlertController(
-            title: "Connection Error",
+            title: NSLocalizedString("Connection Error", comment: "Disconnected Alert Title"),
             message: text,
             preferredStyle: .alert)
         
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+        alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Disconnected Alert Button"), style: .default))
         
 
         self.present(alertController, animated: true) {
@@ -494,7 +499,7 @@ extension ChatViewController: ConnectionDelegate {
                 self.avatars[userID] = Avatar(image: UIImage(data: iconData), initials: nick)
                 
                 if let sender = self.senders[userID] {
-                    let text = "<< \(nick) joined the chat >>"
+                    let text = NSLocalizedString("<< \(nick) joined the chat >>", comment: "User Joined Public Chat Event")
                     self.append(textMessage: text, sender: sender, sent: isSender, event: true)
                 }
             }
@@ -504,7 +509,7 @@ extension ChatViewController: ConnectionDelegate {
                 let isSender = userID == self.connection?.userID
                 
                 if let sender = self.senders[userID] {
-                    let text = "<< \(sender.displayName) left the chat >>"
+                    let text = NSLocalizedString("<< \(sender.displayName) left the chat >>", comment: "User Leave Public Chat Event")
                     self.append(textMessage: text, sender: sender, sent: isSender, event: true)
                 }
                 
@@ -531,7 +536,7 @@ extension ChatViewController: ConnectionDelegate {
                 let time = message.date(forField: "wired.chat.topic.time") {
                 
                 if chatID == 1 {
-                    let text = "<< Topic: \(topic) by \(nick) on \(AppDelegate.dateTimeFormatter.string(from: time)) >>"
+                    let text = NSLocalizedString("<< Topic: \(topic) by \(nick) on \(AppDelegate.dateTimeFormatter.string(from: time)) >>", comment: "Public Chat Topic Changed Event")
                     self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
                 }
             }
@@ -541,10 +546,10 @@ extension ChatViewController: ConnectionDelegate {
                 let disconnectMessage = message.string(forField: "wired.user.disconnect_message")
                 
                 if let user = self.user(withID: disconnectedID) {
-                    var text = "<< \(user.nick!) has been disconnected"
+                    var text = NSLocalizedString("<< \(user.nick!) has been disconnected", comment: "Disconnected User Public Chat Event")
                     
                     if disconnectMessage != nil && !disconnectMessage!.isEmpty {
-                        text = text + " with message: \(disconnectMessage!)"
+                        text = text + NSLocalizedString(" with message: \(disconnectMessage!)", comment: "Disconnected User Public Chat Message")
                     }
                     
                     text = text + " >>"
@@ -562,10 +567,10 @@ extension ChatViewController: ConnectionDelegate {
                     let kickerUser = self.user(withID: userID),
                     chatID == 1 {
                     
-                    var text = "<< \(kickedUser.nick!) has been kicked by \(kickerUser.nick!)"
+                    var text = NSLocalizedString("<< \(kickedUser.nick!) has been kicked by \(kickerUser.nick!)", comment: "Kicked User Public Chat Event")
                     
                     if disconnectMessage != nil {
-                        text = text + " with message: \(disconnectMessage!)"
+                        text = text + NSLocalizedString(" with message: \(disconnectMessage!)", comment: "Kicked User Public Chat Message")
                     }
                     
                     text = text + " >>"
@@ -578,10 +583,10 @@ extension ChatViewController: ConnectionDelegate {
                 let disconnectMessage = message.string(forField: "wired.user.disconnect_message")
                 
                 if let user = self.user(withID: disconnectedID) {
-                    var text = "<< \(user.nick!) has been banned"
+                    var text = NSLocalizedString("<< \(user.nick!) has been banned", comment: "Banned User Public Chat Event")
                     
                     if disconnectMessage != nil {
-                        text = text + " with message: \(disconnectMessage!)"
+                        text = text + NSLocalizedString(" with message: \(disconnectMessage!)", comment: "Banned User Public Chat Message")
                     }
                     
                     text = text + " >>"
@@ -594,7 +599,7 @@ extension ChatViewController: ConnectionDelegate {
             
             if let userID = message.uint32(forField: "wired.user.id") {
                 response.addParameter(field: "wired.user.id", value: userID)
-                response.addParameter(field: "wired.message.message", value: "Not implemented yet, sorry. 🙂")
+                response.addParameter(field: "wired.message.message", value: NSLocalizedString("Not implemented yet, sorry. 🙂", comment: "Not implemented yet"))
                 
                 _ = self.connection!.send(message: response)
             }

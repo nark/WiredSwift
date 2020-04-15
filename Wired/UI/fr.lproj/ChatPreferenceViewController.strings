@@ -1,0 +1,21 @@
+
+/* Class = "NSTextFieldCell"; title = "Table View Cell"; ObjectID = "Rp9-ty-ZUV"; */
+"Rp9-ty-ZUV.title" = "Table View Cell";
+
+/* Class = "NSTextFieldCell"; title = "Text Cell"; ObjectID = "Umf-39-6Yg"; */
+"Umf-39-6Yg.title" = "Text Cell";
+
+/* Class = "NSButtonCell"; title = "Enable Emoji Substitutions"; ObjectID = "bcP-I3-g68"; */
+"bcP-I3-g68.title" = "Enable Emoji Substitutions";
+
+/* Class = "NSTableColumn"; headerCell.title = "Emoji"; ObjectID = "fwG-zK-vud"; */
+"fwG-zK-vud.headerCell.title" = "Emoji";
+
+/* Class = "NSTableColumn"; headerCell.title = "Key"; ObjectID = "hDL-KM-ZGP"; */
+"hDL-KM-ZGP.headerCell.title" = "Key";
+
+/* Class = "NSTextFieldCell"; title = "Text Cell"; ObjectID = "lKD-M3-1Lr"; */
+"lKD-M3-1Lr.title" = "Text Cell";
+
+/* Class = "NSTextFieldCell"; title = "Table View Cell"; ObjectID = "vun-DE-1Ep"; */
+"vun-DE-1Ep.title" = "Table View Cell";

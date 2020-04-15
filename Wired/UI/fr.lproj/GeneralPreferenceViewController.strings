@@ -1,0 +1,18 @@
+
+/* Class = "NSTextFieldCell"; title = "Status:"; ObjectID = "Sde-4B-3H3"; */
+"Sde-4B-3H3.title" = "Status:";
+
+/* Class = "NSTextFieldCell"; title = "Icon:"; ObjectID = "U5F-qg-GbJ"; */
+"U5F-qg-GbJ.title" = "Icon:";
+
+/* Class = "NSButtonCell"; title = "Check active connections before quit"; ObjectID = "eYo-xP-d62"; */
+"eYo-xP-d62.title" = "Check active connections before quit";
+
+/* Class = "NSTextFieldCell"; title = "Nickname:"; ObjectID = "fmM-6E-fLa"; */
+"fmM-6E-fLa.title" = "Nickname:";
+
+/* Class = "NSButtonCell"; title = "Auto-reconnect when disconnected"; ObjectID = "g3Z-QA-CdU"; */
+"g3Z-QA-CdU.title" = "Auto-reconnect when disconnected";
+
+/* Class = "NSTextFieldCell"; title = "Connections:"; ObjectID = "gKA-3a-dlH"; */
+"gKA-3a-dlH.title" = "Connections:";

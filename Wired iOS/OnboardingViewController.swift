@@ -107,27 +107,29 @@ class OnboardingViewController: UIViewController {
             style = .actionSheet
         }
         
-        let alert = UIAlertController(title: "Photo", message: "Select below", preferredStyle: style)
+        let alert = UIAlertController(title: NSLocalizedString("Photo", comment: "Image Picker Alert Title"), message: NSLocalizedString("Select below", comment: "Image Picker Alert Message"), preferredStyle: style)
         
         alert.popoverPresentationController?.sourceView = self.iconImageView
         alert.popoverPresentationController?.permittedArrowDirections = .up
         alert.popoverPresentationController?.sourceRect = CGRect(x: self.iconImageView.frame.size.width/2, y: self.iconImageView.center.y, width: 0, height: 0)
 
-        alert.addAction(UIAlertAction(title: "Take Picture", style: .default, handler: { (action) in
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Take Picture", comment: "Image Picker Take Picture Button"), style: .default, handler: { (action) in
             self.imagePicker.sourceType = .camera
             self.present(self.imagePicker, animated: true, completion: nil)
         }))
         
-        alert.addAction(UIAlertAction(title: "Photo Library", style: .default, handler: { (action) in
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Photo Library", comment: "Image Picker Photo Library Button"), style: .default, handler: { (action) in
             self.imagePicker.sourceType = .photoLibrary
             self.present(self.imagePicker, animated: true, completion: nil)
         }))
         
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: "Image Picker Cancel Button"), style: .cancel, handler: nil))
         
         self.present(alert, animated: true, completion: nil)
     }
     
+    
+
     
     private func save() {
         if let image = self.iconImageView.image {

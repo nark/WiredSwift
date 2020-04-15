@@ -1,0 +1,108 @@
+
+/* Class = "UIBarButtonItem"; title = "Cancel"; ObjectID = "5wV-Xf-PRF"; */
+"5wV-Xf-PRF.title" = "Annuler";
+
+/* Class = "UITableViewSection"; headerTitle = "Password"; ObjectID = "7GE-4I-LAD"; */
+"7GE-4I-LAD.headerTitle" = "Mot de passe";
+
+/* Class = "UITableViewController"; title = "Connections"; ObjectID = "7bK-jq-Zjz"; */
+"7bK-jq-Zjz.title" = "Connexions";
+
+/* Class = "UINavigationItem"; title = "New Connection"; ObjectID = "BPx-S8-Yy2"; */
+"BPx-S8-Yy2.title" = "Nouvelle connexion";
+
+/* Class = "UILabel"; text = "Copyright © 2020 - Rafaël Warnault, wired.read-write.fr"; ObjectID = "DIl-de-m3u"; */
+"DIl-de-m3u.text" = "Copyright © 2020 - Rafaël Warnault, wired.read-write.fr";
+
+/* Class = "UITableViewSection"; headerTitle = "Login"; ObjectID = "F8F-Va-sC9"; */
+"F8F-Va-sC9.headerTitle" = "Identifiant";
+
+/* Class = "UIViewController"; title = "Chat"; ObjectID = "JEX-9P-axG"; */
+"JEX-9P-axG.title" = "Chat";
+
+/* Class = "UIBarButtonItem"; title = "Done"; ObjectID = "JYJ-L3-dIy"; */
+"JYJ-L3-dIy.title" = "OK";
+
+/* Class = "UIBarButtonItem"; title = "Connections"; ObjectID = "L4h-CX-Oex"; */
+"L4h-CX-Oex.title" = "Connexions";
+
+/* Class = "UINavigationItem"; title = "Profile"; ObjectID = "LAq-4r-SAO"; */
+"LAq-4r-SAO.title" = "Profile";
+
+/* Class = "UILabel"; text = "Status"; ObjectID = "M2x-hr-Wzb"; */
+"M2x-hr-Wzb.text" = "Statut";
+
+/* Class = "UIBarButtonItem"; title = "Connections"; ObjectID = "R12-Af-eff"; */
+"R12-Af-eff.title" = "Connexions";
+
+/* Class = "UINavigationController"; title = "Connections"; ObjectID = "RMx-3f-FxP"; */
+"RMx-3f-FxP.title" = "Connexions";
+
+/* Class = "UIButton"; normalTitle = "Skip"; ObjectID = "Uwp-cn-75a"; */
+"Uwp-cn-75a.normalTitle" = "Passer";
+
+/* Class = "UINavigationItem"; title = "Wired"; ObjectID = "Zdf-7t-Un8"; */
+"Zdf-7t-Un8.title" = "Wired";
+
+/* Class = "UITableViewSection"; headerTitle = "Address"; ObjectID = "dLL-nA-itQ"; */
+"dLL-nA-itQ.headerTitle" = "Adresse";
+
+/* Class = "UILabel"; text = "status"; ObjectID = "ebs-3h-H17"; */
+"ebs-3h-H17.text" = "statut";
+
+/* Class = "UITableViewController"; title = "Server Info"; ObjectID = "kuL-Q9-ctc"; */
+"kuL-Q9-ctc.title" = "Info du serveur";
+
+/* Class = "UILabel"; text = "Server Name"; ObjectID = "mhz-gY-nNM"; */
+"mhz-gY-nNM.text" = "Nom du serveur";
+
+/* Class = "UITextField"; placeholder = "NICKNAME"; ObjectID = "oJt-Ku-ygk"; */
+"oJt-Ku-ygk.placeholder" = "PSEUDO";
+
+/* Class = "UITableViewSection"; headerTitle = "NICKNAME"; ObjectID = "oM2-9U-k4d"; */
+"oM2-9U-k4d.headerTitle" = "PSEUDO";
+
+/* Class = "UINavigationItem"; title = "Server Info"; ObjectID = "p37-MV-Jrd"; */
+"p37-MV-Jrd.title" = "Info du serveur";
+
+/* Class = "UIBarButtonItem"; title = "Done"; ObjectID = "p5n-a6-dtS"; */
+"p5n-a6-dtS.title" = "OK";
+
+/* Class = "UIBarButtonItem"; title = "Info"; ObjectID = "qER-ox-3d2"; */
+"qER-ox-3d2.title" = "Info";
+
+/* Class = "UIButton"; normalTitle = "Change Icon"; ObjectID = "qQ4-ys-wcH"; */
+"qQ4-ys-wcH.normalTitle" = "Modifier l'icône";
+
+/* Class = "UILabel"; text = "Nick"; ObjectID = "rA9-9t-ewO"; */
+"rA9-9t-ewO.text" = "Pseudo";
+
+/* Class = "UITableViewSection"; headerTitle = "ICON"; ObjectID = "rgU-eF-8Iy"; */
+"rgU-eF-8Iy.headerTitle" = "ICÔNE";
+
+/* Class = "UILabel"; text = "For getting started, you can set your icon and nickname"; ObjectID = "sZG-qy-UDD"; */
+"sZG-qy-UDD.text" = "Avant de commencer, veuillez définir votre pseudo";
+
+/* Class = "UIBarButtonItem"; title = "Cancel"; ObjectID = "t1l-CE-XZt"; */
+"t1l-CE-XZt.title" = "Annuler";
+
+/* Class = "UIBarButtonItem"; title = "Done"; ObjectID = "tjj-oz-sfL"; */
+"tjj-oz-sfL.title" = "OK";
+
+/* Class = "UILabel"; text = "Welcome to Wired"; ObjectID = "vU2-Ge-AZI"; */
+"vU2-Ge-AZI.text" = "Bienvenu sur Wired";
+
+/* Class = "UILabel"; text = "Nick"; ObjectID = "wvm-5o-9wx"; */
+"wvm-5o-9wx.text" = "Pseudo";
+
+/* Class = "UITableViewSection"; headerTitle = "STATUS"; ObjectID = "yBm-9U-ye9"; */
+"yBm-9U-ye9.headerTitle" = "STATUT";
+
+/* Class = "UINavigationItem"; title = "Settings"; ObjectID = "yH5-Yp-rm9"; */
+"yH5-Yp-rm9.title" = "Réglages";
+
+/* Class = "UIButton"; normalTitle = "Connect"; ObjectID = "zMG-7V-b9d"; */
+"zMG-7V-b9d.normalTitle" = "Connecter";
+
+/* Class = "UIBarButtonItem"; title = "Cancel"; ObjectID = "zsi-Vw-QsL"; */
+"zsi-Vw-QsL.title" = "Annuler";

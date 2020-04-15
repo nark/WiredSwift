@@ -37,7 +37,7 @@ class BookmarksViewController: UITableViewController {
         let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(insertNewObject(_:)))
         navigationItem.rightBarButtonItem = addButton
         
-        hud.textLabel.text = "Loading"
+        hud.textLabel.text = NSLocalizedString("Loading", comment: "Loading Indicator Title")
 
         if let split = self.splitViewController {
             if UIApplication.shared.statusBarOrientation == .portrait {
@@ -140,9 +140,9 @@ class BookmarksViewController: UITableViewController {
                         // not connected
                         print(connection.socket.errors)
                         
-                        let alertController = UIAlertController(title: "Connection Error", message:
-                            "Enable to connect to \(bookmark.hostname!)", preferredStyle: .alert)
-                        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+                        let alertController = UIAlertController(title: NSLocalizedString("Connection Error", comment: "Connection Error Alert Title"), message:
+                            NSLocalizedString("Enable to connect to \(bookmark.hostname!)", comment: "Connection Error Alert Message"), preferredStyle: .alert)
+                        alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Connection Error Alert Button"), style: .default))
 
                         self.present(alertController, animated: true, completion: nil)
                     }

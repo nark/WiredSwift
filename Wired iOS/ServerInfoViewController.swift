@@ -10,6 +10,7 @@ import UIKit
 import WiredSwift_iOS
 import MessageKit
 
+
 class ServerInfoViewController: UITableViewController {
     var users:[UserInfo] = []
     
@@ -26,7 +27,7 @@ class ServerInfoViewController: UITableViewController {
     func updateView() {
         self.tableView.reloadData()
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Disconnect", style: .done, target: self, action: #selector(disconnect))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: NSLocalizedString("Disconnect", comment: "Disconnect Bar Button"), style: .done, target: self, action: #selector(disconnect))
         navigationItem.rightBarButtonItem?.tintColor = UIColor.red
     }
     
@@ -52,12 +53,12 @@ class ServerInfoViewController: UITableViewController {
     @objc func disconnect() {
         if self.connection != nil && self.connection?.isConnected() == true {
             let alertController = UIAlertController(
-                title: "Warning",
-                message: "Are you sure you want to disconnect?",
+                title: NSLocalizedString("Warning", comment: "Disconnect Alert Title"),
+                message: NSLocalizedString("Are you sure you want to disconnect?", comment: "Disconnect Alert Message"),
                 preferredStyle: .alert)
         
-            alertController.addAction(UIAlertAction(title: "Cancel", style: .default))
-            alertController.addAction(UIAlertAction(title: "OK", style: .default) { (action) in
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: "Disconnect Alert Cancel Button"), style: .default))
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Disconnect Alert OK Button"), style: .default) { (action) in
                 self.connection?.disconnect()
                 
                 self.navigationController?.popToRootViewController(animated: true)
@@ -94,13 +95,13 @@ extension ServerInfoViewController {
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         if section == 0 {
-            return "Server Info"
+            return NSLocalizedString("Server Info", comment: "Server Info Table Header")
         }
         else if section == 1 {
-            return "Connection"
+            return NSLocalizedString("Connection", comment: "Connection Table Header")
         }
         
-        return "Connected Users"
+        return NSLocalizedString("Connected Users", comment: "Connected Users Table Header")
     }
     
     

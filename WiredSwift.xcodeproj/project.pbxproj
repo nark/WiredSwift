@@ -71,6 +71,7 @@
 		4C4EF4BB242B602100E38B44 /* ServerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4EF4BA242B602100E38B44 /* ServerConnection.swift */; };
 		4C4EF4BF242B782000E38B44 /* BookmarkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4EF4BE242B782000E38B44 /* BookmarkViewController.swift */; };
 		4C52DADB242682920085C7D7 /* ConversationsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52DADA242682920085C7D7 /* ConversationsController.swift */; };
+		4C5BB6D524465BDF0089D6D2 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 4C5BB6D324465BDF0089D6D2 /* Localizable.strings */; };
 		4C5C1D222426812E00A751AA /* Conversation+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5C1D1E2426812E00A751AA /* Conversation+CoreDataClass.swift */; };
 		4C5C1D232426812E00A751AA /* Conversation+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5C1D1F2426812E00A751AA /* Conversation+CoreDataProperties.swift */; };
 		4C5C1D242426812E00A751AA /* Message+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5C1D202426812E00A751AA /* Message+CoreDataClass.swift */; };
@@ -403,6 +404,17 @@
 		4C4EF4BA242B602100E38B44 /* ServerConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConnection.swift; sourceTree = "<group>"; };
 		4C4EF4BE242B782000E38B44 /* BookmarkViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkViewController.swift; sourceTree = "<group>"; };
 		4C52DADA242682920085C7D7 /* ConversationsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsController.swift; sourceTree = "<group>"; };
+		4C5BB6C5244656680089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Main.strings; sourceTree = "<group>"; };
+		4C5BB6C6244656680089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/GeneralPreferenceViewController.strings; sourceTree = "<group>"; };
+		4C5BB6C7244656680089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/ChatPreferenceViewController.strings; sourceTree = "<group>"; };
+		4C5BB6C8244656680089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/AdvancedPreferenceViewController.strings; sourceTree = "<group>"; };
+		4C5BB6C9244656680089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Main.strings; sourceTree = "<group>"; };
+		4C5BB6CA244656680089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/LaunchScreen.strings; sourceTree = "<group>"; };
+		4C5BB6CB244656690089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		4C5BB6CC244656690089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		4C5BB6CD244656690089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		4C5BB6D424465BDF0089D6D2 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		4C5BB6D624465BEB0089D6D2 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = Base.lproj/Localizable.strings; sourceTree = "<group>"; };
 		4C5C1D1E2426812E00A751AA /* Conversation+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Conversation+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C5C1D1F2426812E00A751AA /* Conversation+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Conversation+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C5C1D202426812E00A751AA /* Message+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Message+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -673,16 +685,6 @@
 			path = Extentsions;
 			sourceTree = "<group>";
 		};
-		4C6656BF243644AB0022E7D7 /* UI */ = {
-			isa = PBXGroup;
-			children = (
-				4C75B9BA243374D900BE8857 /* Main.storyboard */,
-				4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */,
-				4C75B9BD243374DA00BE8857 /* Assets.xcassets */,
-			);
-			path = UI;
-			sourceTree = "<group>";
-		};
 		4C6A89E62405612400780FEF /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
@@ -765,6 +767,10 @@
 		4C75B9B1243374D900BE8857 /* Wired iOS */ = {
 			isa = PBXGroup;
 			children = (
+				4C5BB6D324465BDF0089D6D2 /* Localizable.strings */,
+				4C75B9BA243374D900BE8857 /* Main.storyboard */,
+				4C75B9BF243374DA00BE8857 /* LaunchScreen.storyboard */,
+				4C75B9BD243374DA00BE8857 /* Assets.xcassets */,
 				4C75B9B2243374D900BE8857 /* AppDelegate.swift */,
 				4C88747424347DC300A5D4A0 /* SceneDelegate.swift */,
 				4C8E98E6243B77EF00E19494 /* OnboardingViewController.swift */,
@@ -777,7 +783,6 @@
 				4C88747F2434A7FD00A5D4A0 /* UserTableViewCell.swift */,
 				4C8874832434B81800A5D4A0 /* BookmarkTableViewCell.swift */,
 				4C6656BE2436449B0022E7D7 /* Extentsions */,
-				4C6656BF243644AB0022E7D7 /* UI */,
 				4C75B9C2243374DA00BE8857 /* Info.plist */,
 				4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */,
 				4C8874902434E6D700A5D4A0 /* MessageKit.framework */,
@@ -1306,6 +1311,7 @@
 				en,
 				Base,
 				de,
+				fr,
 			);
 			mainGroup = 4C74285522DCECE800D6E6F9;
 			packageReferences = (
@@ -1358,6 +1364,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C75B9C1243374DA00BE8857 /* LaunchScreen.storyboard in Resources */,
+				4C5BB6D524465BDF0089D6D2 /* Localizable.strings in Resources */,
 				4C75B9BE243374DA00BE8857 /* Assets.xcassets in Resources */,
 				4C75B9BC243374D900BE8857 /* Main.storyboard in Resources */,
 			);
@@ -1706,6 +1713,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				2A8E9E6424333AB5005B5261 /* de */,
+				4C5BB6CD244656690089D6D2 /* fr */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -1714,6 +1722,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				2A8E9E6724333AB5005B5261 /* de */,
+				4C5BB6CC244656690089D6D2 /* fr */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -1722,6 +1731,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				2A8E9E6A24333AB5005B5261 /* de */,
+				4C5BB6CB244656690089D6D2 /* fr */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -1731,6 +1741,7 @@
 			children = (
 				2A8E9E6D24333C93005B5261 /* Base */,
 				2A8E9E6F24333D55005B5261 /* de */,
+				4C5BB6C6244656680089D6D2 /* fr */,
 			);
 			name = GeneralPreferenceViewController.xib;
 			sourceTree = "<group>";
@@ -1740,6 +1751,7 @@
 			children = (
 				2A8E9E7124333E08005B5261 /* Base */,
 				2A8E9E7424333EBA005B5261 /* de */,
+				4C5BB6C7244656680089D6D2 /* fr */,
 			);
 			name = ChatPreferenceViewController.xib;
 			sourceTree = "<group>";
@@ -1748,8 +1760,18 @@
 			isa = PBXVariantGroup;
 			children = (
 				2A8E9E762433511B005B5261 /* Base */,
+				4C5BB6C8244656680089D6D2 /* fr */,
 			);
 			name = AdvancedPreferenceViewController.xib;
+			sourceTree = "<group>";
+		};
+		4C5BB6D324465BDF0089D6D2 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4C5BB6D424465BDF0089D6D2 /* fr */,
+				4C5BB6D624465BEB0089D6D2 /* Base */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 		4C74286722DCECE900D6E6F9 /* Main.storyboard */ = {
@@ -1757,6 +1779,7 @@
 			children = (
 				4C74286822DCECE900D6E6F9 /* Base */,
 				2A8E9E5E2433357E005B5261 /* de */,
+				4C5BB6C5244656680089D6D2 /* fr */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -1765,6 +1788,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				4C75B9BB243374D900BE8857 /* Base */,
+				4C5BB6C9244656680089D6D2 /* fr */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -1773,6 +1797,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				4C75B9C0243374DA00BE8857 /* Base */,
+				4C5BB6CA244656680089D6D2 /* fr */,
 			);
 			name = LaunchScreen.storyboard;
 			sourceTree = "<group>";
