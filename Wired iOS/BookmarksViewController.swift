@@ -138,13 +138,20 @@ class BookmarksViewController: UITableViewController {
                     DispatchQueue.main.async {
                         self.hud.dismiss(afterDelay: 1.0)
                         // not connected
-                        print(connection.socket.errors)
+                        // print(connection.socket.errors)
                         
-                        let alertController = UIAlertController(title: NSLocalizedString("Connection Error", comment: "Connection Error Alert Title"), message:
-                            NSLocalizedString("Enable to connect to \(bookmark.hostname!)", comment: "Connection Error Alert Message"), preferredStyle: .alert)
-                        alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Connection Error Alert Button"), style: .default))
+                        let alertController = UIAlertController(
+                            title: NSLocalizedString("Connection Error", comment: "Connection Error Alert Title"),
+                            message: String(format: NSLocalizedString("Enable to connect to %@", comment: "Connection Error Alert Message"), bookmark.hostname!),
+                            preferredStyle: .alert)
+                        
+                        alertController.addAction(UIAlertAction(
+                            title: NSLocalizedString("OK", comment: "Connection Error Alert Button"),
+                            style: .default))
 
-                        self.present(alertController, animated: true, completion: nil)
+                        self.present(alertController,
+                                     animated: true,
+                                     completion: nil)
                     }
                 }
             }

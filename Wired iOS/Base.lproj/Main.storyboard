@@ -296,9 +296,11 @@
                             <rect key="frame" x="0.0" y="429.5" width="414" height="52"/>
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
-                                <label opaque="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" usesAttributedText="YES" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5jm-CA-skq">
+                                <label opaque="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" usesAttributedText="YES" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5jm-CA-skq">
                                     <rect key="frame" x="8" y="15" width="398" height="29"/>
-                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    <constraints>
+                                        <constraint firstAttribute="height" constant="29" id="xcu-cb-GG4"/>
+                                    </constraints>
                                     <attributedString key="attributedText">
                                         <fragment>
                                             <string key="content">Copyright © 2020, Rafaël Warnault. All Rights Reserved.
@@ -322,6 +324,12 @@
                                 </label>
                             </subviews>
                             <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                            <constraints>
+                                <constraint firstAttribute="trailing" secondItem="5jm-CA-skq" secondAttribute="trailing" constant="8" id="2gw-XY-qwh"/>
+                                <constraint firstItem="5jm-CA-skq" firstAttribute="top" secondItem="v2S-LY-IZn" secondAttribute="top" constant="15" id="HCB-RQ-GJe"/>
+                                <constraint firstAttribute="bottom" secondItem="5jm-CA-skq" secondAttribute="bottom" constant="8" id="rZe-uC-QxV"/>
+                                <constraint firstItem="5jm-CA-skq" firstAttribute="leading" secondItem="v2S-LY-IZn" secondAttribute="leading" constant="8" id="taP-LT-Zgk"/>
+                            </constraints>
                         </view>
                         <sections>
                             <tableViewSection headerTitle="ICON" id="rgU-eF-8Iy">

@@ -440,7 +440,7 @@ extension ChatViewController: ConnectionDelegate {
     func connectionDisconnected(connection: Connection, error: Error?) {
         configureView()
         
-        let text = NSLocalizedString("You have beed disconnected from \(bookmark.hostname!)", comment: "Disconnected Alert Message")
+        let text = String(format: NSLocalizedString("You have beed disconnected from %@", comment: "Disconnected Alert Message"), bookmark.hostname!)
         
         self.append(textMessage: "<< \(text) >>", sender: self.systemSender(), sent: false, event: true)
                 
@@ -499,7 +499,7 @@ extension ChatViewController: ConnectionDelegate {
                 self.avatars[userID] = Avatar(image: UIImage(data: iconData), initials: nick)
                 
                 if let sender = self.senders[userID] {
-                    let text = NSLocalizedString("<< \(nick) joined the chat >>", comment: "User Joined Public Chat Event")
+                    let text = String(format: NSLocalizedString("<< %@ joined the chat >>", comment: "User Joined Public Chat Event"), nick)
                     self.append(textMessage: text, sender: sender, sent: isSender, event: true)
                 }
             }
@@ -509,7 +509,7 @@ extension ChatViewController: ConnectionDelegate {
                 let isSender = userID == self.connection?.userID
                 
                 if let sender = self.senders[userID] {
-                    let text = NSLocalizedString("<< \(sender.displayName) left the chat >>", comment: "User Leave Public Chat Event")
+                    let text = String(format: NSLocalizedString("<< %@ left the chat >>", comment: "User Leave Public Chat Event"), sender.displayName)
                     self.append(textMessage: text, sender: sender, sent: isSender, event: true)
                 }
                 
@@ -536,7 +536,7 @@ extension ChatViewController: ConnectionDelegate {
                 let time = message.date(forField: "wired.chat.topic.time") {
                 
                 if chatID == 1 {
-                    let text = NSLocalizedString("<< Topic: \(topic) by \(nick) on \(AppDelegate.dateTimeFormatter.string(from: time)) >>", comment: "Public Chat Topic Changed Event")
+                    let text = String(format: NSLocalizedString("<< Topic: %@ by %@ on %@ >>", comment: "Public Chat Topic Changed Event"), topic, nick, AppDelegate.dateTimeFormatter.string(from: time))
                     self.append(textMessage: text, sender: self.systemSender(), sent: false, event: true)
                 }
             }
@@ -546,10 +546,10 @@ extension ChatViewController: ConnectionDelegate {
                 let disconnectMessage = message.string(forField: "wired.user.disconnect_message")
                 
                 if let user = self.user(withID: disconnectedID) {
-                    var text = NSLocalizedString("<< \(user.nick!) has been disconnected", comment: "Disconnected User Public Chat Event")
+                    var text = String(format: NSLocalizedString("<< %@ has been disconnected", comment: "Disconnected User Public Chat Event"), user.nick!)
                     
                     if disconnectMessage != nil && !disconnectMessage!.isEmpty {
-                        text = text + NSLocalizedString(" with message: \(disconnectMessage!)", comment: "Disconnected User Public Chat Message")
+                        text = text + String(format: NSLocalizedString(" with message: %@", comment: "Disconnected User Public Chat Message"), disconnectMessage!)
                     }
                     
                     text = text + " >>"
@@ -567,10 +567,10 @@ extension ChatViewController: ConnectionDelegate {
                     let kickerUser = self.user(withID: userID),
                     chatID == 1 {
                     
-                    var text = NSLocalizedString("<< \(kickedUser.nick!) has been kicked by \(kickerUser.nick!)", comment: "Kicked User Public Chat Event")
+                    var text = String(format: NSLocalizedString("<< %@ has been kicked by %@", comment: "Kicked User Public Chat Event"), kickedUser.nick!, kickerUser.nick!)
                     
-                    if disconnectMessage != nil {
-                        text = text + NSLocalizedString(" with message: \(disconnectMessage!)", comment: "Kicked User Public Chat Message")
+                    if disconnectMessage != nil && !disconnectMessage!.isEmpty {
+                        text = text + String(format: NSLocalizedString(" with message: %@", comment: "Kicked User Public Chat Message"), disconnectMessage!)
                     }
                     
                     text = text + " >>"
@@ -583,10 +583,10 @@ extension ChatViewController: ConnectionDelegate {
                 let disconnectMessage = message.string(forField: "wired.user.disconnect_message")
                 
                 if let user = self.user(withID: disconnectedID) {
-                    var text = NSLocalizedString("<< \(user.nick!) has been banned", comment: "Banned User Public Chat Event")
+                    var text = String(format: NSLocalizedString("<< %@ has been banned", comment: "Banned User Public Chat Event"), user.nick!)
                     
-                    if disconnectMessage != nil {
-                        text = text + NSLocalizedString(" with message: \(disconnectMessage!)", comment: "Banned User Public Chat Message")
+                    if disconnectMessage != nil && !disconnectMessage!.isEmpty {
+                        text = text + String(format: NSLocalizedString(" with message: %@", comment: "Banned User Public Chat Message"), disconnectMessage!)
                     }
                     
                     text = text + " >>"
