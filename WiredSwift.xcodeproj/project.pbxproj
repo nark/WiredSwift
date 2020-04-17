@@ -27,9 +27,7 @@
 		4C12FE8924045ABA000CDDCA /* FilePreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C12FE8724045ABA000CDDCA /* FilePreviewController.swift */; };
 		4C12FE8A24045ABA000CDDCA /* FilePreviewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4C12FE8824045ABA000CDDCA /* FilePreviewController.xib */; };
 		4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
-		4C1319AA2316E4E700C9FA0C /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		4C1319AD2316E79F00C9FA0C /* SocketSwift.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C1319AF231862DF00C9FA0C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 4C1319AE231862DF00C9FA0C /* README.md */; };
 		4C2000952421530B00A4D77A /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000942421530B00A4D77A /* WiredError.swift */; };
 		4C2000962421588C00A4D77A /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000942421530B00A4D77A /* WiredError.swift */; };
@@ -40,6 +38,11 @@
 		4C20DD89242EA8C4009F64E6 /* PostCellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD88242EA8C4009F64E6 /* PostCellView.swift */; };
 		4C20DD8B242EA98D009F64E6 /* Post.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD8A242EA98D009F64E6 /* Post.swift */; };
 		4C20DD8E242EABDA009F64E6 /* PostsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C20DD8C242EABDA009F64E6 /* PostsViewController.swift */; };
+		4C2870562449BF4000E792AC /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2870552449BF4000E792AC /* CryptoSwift */; };
+		4C2870582449BF4000E792AC /* CryptorRSA in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2870572449BF4000E792AC /* CryptorRSA */; };
+		4C28705D2449BFD000E792AC /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 4C28705C2449BFD000E792AC /* Gzip */; };
+		4C28705F2449BFDA00E792AC /* SocketSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4C28705E2449BFDA00E792AC /* SocketSwift */; };
+		4C2870612449C02C00E792AC /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2870602449C02C00E792AC /* Gzip */; };
 		4C36AEF82401CB6300AEC18E /* Transfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */; };
 		4C36AEF92401CB6300AEC18E /* Transfer+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */; };
 		4C36AEFE2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */; };
@@ -211,12 +214,8 @@
 		4CE59DB1242D4710000D79BC /* ConsoleViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE59DB0242D4710000D79BC /* ConsoleViewController.swift */; };
 		4CED2FBF22E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
 		4CED2FC022E8EF90000E5B9E /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
-		4CED2FC222E8F4AC000E5B9E /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
 		4CED2FC322E8F4B0000E5B9E /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
 		4CED2FC522E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */; };
-		4CED2FC622E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */; };
-		4CED2FC722E8FA3D000E5B9E /* CryptoSwift.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		4CED2FC822E8FA3F000E5B9E /* CryptorRSA.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CED2FC922E8FA4D000E5B9E /* CryptorRSA.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CED2FCA22E8FA4F000E5B9E /* CryptoSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CED2FCC22E9A7FD000E5B9E /* P7Cipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */; };
@@ -224,10 +223,6 @@
 		4CEF0AB223FD57CA0097E37E /* FilesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB123FD57CA0097E37E /* FilesController.swift */; };
 		4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */; };
 		4CEF0AB623FDD4DD0097E37E /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB523FDD4DD0097E37E /* File.swift */; };
-		4CF6736F2403FD7A00A8EDC2 /* Gzip.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; };
-		4CF673702403FD8100A8EDC2 /* Gzip.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		4CF673712403FF3C00A8EDC2 /* Gzip.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; };
-		4CF673722403FF4200A8EDC2 /* Gzip.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4CF673782404191E00A8EDC2 /* CZlib in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF673772404191E00A8EDC2 /* CZlib */; };
 		4CF6737A2404214800A8EDC2 /* CZlib in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF673792404214800A8EDC2 /* CZlib */; };
 		4CFA18C2230B07D100E2A2EC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
@@ -306,20 +301,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		4C4C3EF322E115A800BC2DD9 /* Copy Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				4CF673702403FD8100A8EDC2 /* Gzip.framework in Copy Frameworks */,
-				4C1319AD2316E79F00C9FA0C /* SocketSwift.framework in Copy Frameworks */,
-				4CED2FC722E8FA3D000E5B9E /* CryptoSwift.framework in Copy Frameworks */,
-				4CED2FC822E8FA3F000E5B9E /* CryptorRSA.framework in Copy Frameworks */,
-			);
-			name = "Copy Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		4C6656B52434F7120022E7D7 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -340,7 +321,6 @@
 				4CE2AA54243350160072E0B3 /* (null) in Embed Frameworks */,
 				4C9C5CE12430F590007B6CF0 /* Reachability.framework in Embed Frameworks */,
 				4C9C5CDC2430DF2F007B6CF0 /* WiredSwift.framework in Embed Frameworks */,
-				4CF673722403FF4200A8EDC2 /* Gzip.framework in Embed Frameworks */,
 				4CFB162123FC89B7000EE688 /* KeychainAccess.framework in Embed Frameworks */,
 				2A8E9E8124337B6F005B5261 /* Sparkle.framework in Embed Frameworks */,
 				4C0A99FB23FC007E0008A7A6 /* Preferences.framework in Embed Frameworks */,
@@ -382,6 +362,7 @@
 		4C20DD88242EA8C4009F64E6 /* PostCellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCellView.swift; sourceTree = "<group>"; };
 		4C20DD8A242EA98D009F64E6 /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
 		4C20DD8C242EABDA009F64E6 /* PostsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostsViewController.swift; sourceTree = "<group>"; };
+		4C2870542449BEC900E792AC /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		4C36AEF62401CB6300AEC18E /* Transfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataClass.swift"; sourceTree = "<group>"; };
 		4C36AEF72401CB6300AEC18E /* Transfer+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Transfer+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		4C36AEFA2401CE4300AEC18E /* UploadTransfer+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UploadTransfer+CoreDataClass.swift"; sourceTree = "<group>"; };
@@ -551,7 +532,6 @@
 				4C0A99FA23FBFE6C0008A7A6 /* Preferences.framework in Frameworks */,
 				2A8E9E8024337B6F005B5261 /* Sparkle.framework in Frameworks */,
 				4C1319A92316E4E700C9FA0C /* SocketSwift.framework in Frameworks */,
-				4CF673712403FF3C00A8EDC2 /* Gzip.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -599,11 +579,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C75B9AB2433722900BE8857 /* AEXML in Frameworks */,
-				4CF6736F2403FD7A00A8EDC2 /* Gzip.framework in Frameworks */,
+				4C28705D2449BFD000E792AC /* Gzip in Frameworks */,
 				4CF673782404191E00A8EDC2 /* CZlib in Frameworks */,
-				4CED2FC622E8F9A6000E5B9E /* CryptorRSA.framework in Frameworks */,
-				4CED2FC222E8F4AC000E5B9E /* CryptoSwift.framework in Frameworks */,
-				4C1319AA2316E4E700C9FA0C /* SocketSwift.framework in Frameworks */,
+				4C28705F2449BFDA00E792AC /* SocketSwift in Frameworks */,
+				4C2870582449BF4000E792AC /* CryptorRSA in Frameworks */,
+				4C2870562449BF4000E792AC /* CryptoSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -613,6 +593,7 @@
 			files = (
 				4C75B96C24336D3600BE8857 /* CZlib in Frameworks */,
 				4C75B9A3243370C900BE8857 /* SocketSwift in Frameworks */,
+				4C2870612449C02C00E792AC /* Gzip in Frameworks */,
 				4C75B9A92433717B00BE8857 /* AEXML in Frameworks */,
 				4C75B9A02433705C00BE8857 /* CryptoSwift in Frameworks */,
 				4C75B9A6243370F700BE8857 /* CryptorRSA in Frameworks */,
@@ -634,6 +615,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4C2870622449C37100E792AC /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				4C74286022DCECE800D6E6F9 /* Wired */,
+				4CD0204E22DF04BD0008B36C /* WiredSwift */,
+				4C93B2FD242FE96200A956C3 /* WiredSwfitTests */,
+				4C75B9B1243374D900BE8857 /* Wired iOS */,
+				4C75B9CA243374DA00BE8857 /* Wired iOSTests */,
+				4C75B9D5243374DA00BE8857 /* Wired iOSUITests */,
+				4CE2AA5C24336AF20072E0B3 /* WiredSwift_iOS */,
+				4CE2AA6724336AF30072E0B3 /* WiredSwift_iOSTests */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
 		4C374D9923FDD6A9006D3E7C /* Boards */ = {
 			isa = PBXGroup;
 			children = (
@@ -649,20 +645,6 @@
 				4C20DD88242EA8C4009F64E6 /* PostCellView.swift */,
 			);
 			path = Boards;
-			sourceTree = "<group>";
-		};
-		4C4C3EF622E1164700BC2DD9 /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				4CFA18D0230C6EB100E2A2EC /* Data */,
-				4CFA18BF230B078F00E2A2EC /* Core */,
-				4CFA18BE230B078300E2A2EC /* Network */,
-				4CFA18BD230B077A00E2A2EC /* P7 */,
-				4CFA18BC230B076A00E2A2EC /* Crypto */,
-				4CFA18C0230B07B700E2A2EC /* Additions */,
-				4CD0205C22DF11920008B36C /* wired.xml */,
-			);
-			path = Sources;
 			sourceTree = "<group>";
 		};
 		4C4EF4BD242B780200E38B44 /* Resources */ = {
@@ -705,19 +687,13 @@
 		4C74285522DCECE800D6E6F9 = {
 			isa = PBXGroup;
 			children = (
+				4C2870622449C37100E792AC /* Sources */,
+				4C2870542449BEC900E792AC /* Package.swift */,
 				4C990ED12405D7380059BC8B /* .gitignore */,
 				4C0A99F023FBD4F30008A7A6 /* LICENSE */,
 				4C1319AE231862DF00C9FA0C /* README.md */,
 				4C4C3EDE22E10B2000BC2DD9 /* Cartfile */,
 				4C374D9B23FDE02E006D3E7C /* swift.yml */,
-				4C74286022DCECE800D6E6F9 /* Wired */,
-				4CD0204E22DF04BD0008B36C /* WiredSwift */,
-				4C93B2FD242FE96200A956C3 /* WiredSwfitTests */,
-				4C75B9B1243374D900BE8857 /* Wired iOS */,
-				4C75B9CA243374DA00BE8857 /* Wired iOSTests */,
-				4C75B9D5243374DA00BE8857 /* Wired iOSUITests */,
-				4CE2AA5C24336AF20072E0B3 /* WiredSwift_iOS */,
-				4CE2AA6724336AF30072E0B3 /* WiredSwift_iOSTests */,
 				4C74285F22DCECE800D6E6F9 /* Products */,
 				4CF6736B2403F48000A8EDC2 /* Frameworks */,
 			);
@@ -842,7 +818,13 @@
 			isa = PBXGroup;
 			children = (
 				4CD0204F22DF04BD0008B36C /* WiredSwift.h */,
-				4C4C3EF622E1164700BC2DD9 /* Sources */,
+				4CFA18D0230C6EB100E2A2EC /* Data */,
+				4CFA18BF230B078F00E2A2EC /* Core */,
+				4CFA18BE230B078300E2A2EC /* Network */,
+				4CFA18BD230B077A00E2A2EC /* P7 */,
+				4CFA18BC230B076A00E2A2EC /* Crypto */,
+				4CFA18C0230B07B700E2A2EC /* Additions */,
+				4CD0205C22DF11920008B36C /* wired.xml */,
 				4CD0205022DF04BD0008B36C /* Info.plist */,
 				2A8E9E6324333AB5005B5261 /* InfoPlist.strings */,
 				4C9C5CDF2430F478007B6CF0 /* Reachability.framework */,
@@ -1205,7 +1187,6 @@
 				4CD0204922DF04BD0008B36C /* Sources */,
 				4CD0204A22DF04BD0008B36C /* Frameworks */,
 				4CD0204B22DF04BD0008B36C /* Resources */,
-				4C4C3EF322E115A800BC2DD9 /* Copy Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1215,6 +1196,10 @@
 			packageProductDependencies = (
 				4CF673772404191E00A8EDC2 /* CZlib */,
 				4C75B9AA2433722900BE8857 /* AEXML */,
+				4C2870552449BF4000E792AC /* CryptoSwift */,
+				4C2870572449BF4000E792AC /* CryptorRSA */,
+				4C28705C2449BFD000E792AC /* Gzip */,
+				4C28705E2449BFDA00E792AC /* SocketSwift */,
 			);
 			productName = Wired;
 			productReference = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */;
@@ -1240,6 +1225,7 @@
 				4C75B9A2243370C900BE8857 /* SocketSwift */,
 				4C75B9A5243370F700BE8857 /* CryptorRSA */,
 				4C75B9A82433717B00BE8857 /* AEXML */,
+				4C2870602449C02C00E792AC /* Gzip */,
 			);
 			productName = WiredSwift_iOS;
 			productReference = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */;
@@ -1323,6 +1309,7 @@
 				4C75BA342433938400BE8857 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 				4C8874782434836C00A5D4A0 /* XCRemoteSwiftPackageReference "JGProgressHUD" */,
 				4C8874852434DE9000A5D4A0 /* XCRemoteSwiftPackageReference "Reachability" */,
+				4C2870592449BFBA00E792AC /* XCRemoteSwiftPackageReference "GzipSwift" */,
 			);
 			productRefGroup = 4C74285F22DCECE800D6E6F9 /* Products */;
 			projectDirPath = "";
@@ -1932,17 +1919,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Wired/WiredSwift.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Sources/Wired/WiredSwift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = JSVJHJ78QE;
+				DEVELOPMENT_TEAM = 7KTXA5Y36K;
 				ENABLE_HARDENED_RUNTIME = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = Wired/Info.plist;
+				INFOPLIST_FILE = Sources/Wired/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1951,7 +1938,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired-Debug";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_OBJC_BRIDGING_HEADER = "Wired/Extensions/Wired-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Wired/Extensions/Wired-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 			};
@@ -1962,7 +1949,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Wired/WiredSwift.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Sources/Wired/WiredSwift.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1972,7 +1959,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = Wired/Info.plist;
+				INFOPLIST_FILE = Sources/Wired/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1981,7 +1968,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.Wired";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_OBJC_BRIDGING_HEADER = "Wired/Extensions/Wired-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Wired/Extensions/Wired-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 			};
@@ -1992,18 +1979,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = 7KTXA5Y36K;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = "Wired iOS/Info.plist";
+				INFOPLIST_FILE = "Sources/Wired iOS/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.wired.client.ios";
 				PRODUCT_NAME = Wired;
 				SDKROOT = iphoneos;
@@ -2017,18 +2005,19 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_TEAM = 7KTXA5Y36K;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = "Wired iOS/Info.plist";
+				INFOPLIST_FILE = "Sources/Wired iOS/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.wired.client.ios";
 				PRODUCT_NAME = Wired;
 				SDKROOT = iphoneos;
@@ -2046,7 +2035,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JSVJHJ78QE;
-				INFOPLIST_FILE = "Wired iOSTests/Info.plist";
+				INFOPLIST_FILE = "Sources/Wired iOSTests/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2069,7 +2058,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JSVJHJ78QE;
-				INFOPLIST_FILE = "Wired iOSTests/Info.plist";
+				INFOPLIST_FILE = "Sources/Wired iOSTests/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2093,7 +2082,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JSVJHJ78QE;
-				INFOPLIST_FILE = "Wired iOSUITests/Info.plist";
+				INFOPLIST_FILE = "Sources/Wired iOSUITests/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2115,7 +2104,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = JSVJHJ78QE;
-				INFOPLIST_FILE = "Wired iOSUITests/Info.plist";
+				INFOPLIST_FILE = "Sources/Wired iOSUITests/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2143,7 +2132,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = WiredSwfitTests/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwfitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -2166,7 +2155,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
-				INFOPLIST_FILE = WiredSwfitTests/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwfitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -2198,7 +2187,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = WiredSwift/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwift/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2235,7 +2224,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 				);
 				FRAMEWORK_VERSION = A;
-				INFOPLIST_FILE = WiredSwift/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwift/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2268,7 +2257,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = WiredSwift_iOS/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwift_iOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2302,7 +2291,7 @@
 					"$(PROJECT_DIR)/Carthage/Build/Mac",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = WiredSwift_iOS/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwift_iOS/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2333,7 +2322,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = WiredSwift_iOSTests/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwift_iOSTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2358,7 +2347,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = WiredSwift_iOSTests/Info.plist;
+				INFOPLIST_FILE = Sources/WiredSwift_iOSTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2462,6 +2451,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4C2870592449BFBA00E792AC /* XCRemoteSwiftPackageReference "GzipSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/1024jp/GzipSwift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.1.1;
+			};
+		};
 		4C75B99E2433705C00BE8857 /* XCRemoteSwiftPackageReference "CryptoSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/krzyzanowskim/CryptoSwift.git";
@@ -2529,6 +2526,31 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4C2870552449BF4000E792AC /* CryptoSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75B99E2433705C00BE8857 /* XCRemoteSwiftPackageReference "CryptoSwift" */;
+			productName = CryptoSwift;
+		};
+		4C2870572449BF4000E792AC /* CryptorRSA */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75B9A4243370F700BE8857 /* XCRemoteSwiftPackageReference "BlueRSA" */;
+			productName = CryptorRSA;
+		};
+		4C28705C2449BFD000E792AC /* Gzip */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C2870592449BFBA00E792AC /* XCRemoteSwiftPackageReference "GzipSwift" */;
+			productName = Gzip;
+		};
+		4C28705E2449BFDA00E792AC /* SocketSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75B9A1243370C900BE8857 /* XCRemoteSwiftPackageReference "Socket.swift" */;
+			productName = SocketSwift;
+		};
+		4C2870602449C02C00E792AC /* Gzip */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C2870592449BFBA00E792AC /* XCRemoteSwiftPackageReference "GzipSwift" */;
+			productName = Gzip;
+		};
 		4C75B96B24336D3600BE8857 /* CZlib */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4CF673762404191600A8EDC2 /* XCRemoteSwiftPackageReference "CZlib" */;
