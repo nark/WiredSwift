@@ -14,8 +14,7 @@ let package = Package(
     platforms: [
         // Add support for all platforms starting from a specific version.
         .macOS(.v10_13),
-        .iOS(.v12),
-        .linux
+        .iOS(.v12)
     ],
     products: [
         .library(
