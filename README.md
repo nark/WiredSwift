@@ -26,7 +26,7 @@ https://developer.apple.com/library/archive/documentation/ToolsLanguages/Concept
 
 Minimal connection to a Wired 2.0 server:
 
-    let spec = P7Spec()
+    let spec = P7Spec(withPath: "wired.xml")
 
     // the Wired URL to connect to
     let url = Url(withString: "wired://192.168.1.23:4871")
