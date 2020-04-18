@@ -21,7 +21,7 @@
 - (void)setFont:(NSFont *)font
 {
     NSRange range = NSMakeRange(0, [self.string length]);
-    [self addAttribute:kCTFontAttributeName
+    [self addAttribute:NSFontAttributeName
                  value:font
                  range:range];
 }
@@ -37,10 +37,10 @@
 
 
 #if !TARGET_OS_IOS
-- (void)setColor:(UIColor *)color
+- (void)setColor:(NSColor *)color
 {
     NSRange range = NSMakeRange(0, [self.string length]);
-    [self addAttribute:kCTForegroundColorAttributeName
+    [self addAttribute:NSForegroundColorAttributeName
                  value:color
                  range:range];
 }
