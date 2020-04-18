@@ -159,7 +159,7 @@ public class SpecError: SpecItem {
  @author Rafaël Warnault (mailto:dev@read-write.fr)
  */
 public class P7Spec: NSObject, XMLParserDelegate {
-    private var parser = XMLParser()
+    private var parser:XMLParser = XMLParser(data: Data())
     
     public var xml: String?
     
