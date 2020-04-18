@@ -10,7 +10,7 @@ import Foundation
 
 
 extension String {
-    var nullTerminated: Data? {
+    public var nullTerminated: Data? {
         if var data = self.data(using: String.Encoding.utf8) {
             data.append(0)
             return data
@@ -18,7 +18,7 @@ extension String {
         return nil
     }
     
-    func deletingPrefix(_ prefix: String) -> String {
+    public func deletingPrefix(_ prefix: String) -> String {
         guard self.hasPrefix(prefix) else { return self }
         return String(self.dropFirst(prefix.count))
     }

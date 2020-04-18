@@ -15,37 +15,37 @@ extension Data {
         return self.reduce("") { $0 + String(format: "%02x", $1) }
     }
     
-    mutating func append(byte data: Int8, count:Int = 1) {
+    public mutating func append(byte data: Int8, count:Int = 1) {
         var data = data
         self.append(UnsafeBufferPointer(start: &data, count: count))
     }
     
     
-    mutating func append(uint8 data: UInt8, bigEndian: Bool = true) {
+    public mutating func append(uint8 data: UInt8, bigEndian: Bool = true) {
         var data = bigEndian ? data.bigEndian : data.littleEndian
         self.append(UnsafeBufferPointer(start: &data, count: 1))
     }
     
     
-    mutating func append(uint16 data: UInt16, bigEndian: Bool = true) {
+    public mutating func append(uint16 data: UInt16, bigEndian: Bool = true) {
         var data = bigEndian ? data.bigEndian : data.littleEndian
         self.append(UnsafeBufferPointer(start: &data, count: 1))
     }
     
     
-    mutating func append(uint32 data: UInt32, bigEndian: Bool = true) {
+    public mutating func append(uint32 data: UInt32, bigEndian: Bool = true) {
         var data = bigEndian ? data.bigEndian : data.littleEndian
         self.append(UnsafeBufferPointer(start: &data, count: 1))
     }
     
     
-    mutating func append(uint64 data: UInt64, bigEndian: Bool = true) {
+    public mutating func append(uint64 data: UInt64, bigEndian: Bool = true) {
         var data = bigEndian ? data.bigEndian : data.littleEndian
         self.append(UnsafeBufferPointer(start: &data, count: 1))
     }
     
     
-    mutating func append(double data: Double, bigEndian: Bool = true) {
+    public mutating func append(double data: Double, bigEndian: Bool = true) {
         let d = bigEndian ? data.bitPattern.bigEndian : data.bitPattern.littleEndian
         self.append(Swift.withUnsafeBytes(of: d) { Data($0) })
     }
@@ -59,7 +59,7 @@ extension Data {
         }
     }
     
-    var uint16: UInt16? {
+    public var uint16: UInt16? {
         get {
             self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
                 let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt16.self).pointee
@@ -68,7 +68,7 @@ extension Data {
         }
     }
     
-    var uint32: UInt32? {
+    public var uint32: UInt32? {
         get {
             self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
                 let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt32.self).pointee
@@ -77,7 +77,7 @@ extension Data {
         }
     }
     
-    var uint64: UInt64? {
+    public var uint64: UInt64? {
         get {
             self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
                 let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt64.self).pointee
@@ -86,7 +86,7 @@ extension Data {
         }
     }
     
-    var double:Double? {
+    public var double:Double? {
         get {
             self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
                 let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt64.self).pointee
@@ -95,20 +95,21 @@ extension Data {
         }
     }
         
-    var uuid: NSUUID? {
+    public var uuid: NSUUID? {
         get {
             var bytes = [UInt8](repeating: 0, count: self.count)
             self.copyBytes(to:&bytes, count: self.count * MemoryLayout<UInt32>.size)
             return NSUUID(uuidBytes: bytes)
         }
     }
-    var stringASCII: String? {
+    
+    public var stringASCII: String? {
         get {
             return NSString(data: self, encoding: String.Encoding.ascii.rawValue) as String?
         }
     }
     
-    var stringUTF8: String? {
+    public var stringUTF8: String? {
         get {
             return NSString(data: self, encoding: String.Encoding.utf8.rawValue) as String?
         }
