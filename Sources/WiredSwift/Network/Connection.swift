@@ -38,7 +38,7 @@ public extension ConnectionDelegate {
 }
 
 
-public class Connection: NSObject {
+open class Connection: NSObject {
     public var spec:        P7Spec
     public var url:         Url!
     public var socket:      P7Socket!
