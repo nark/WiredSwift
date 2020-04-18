@@ -11,34 +11,6 @@
 		4C0A99F223FBD4F30008A7A6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 4C0A99F023FBD4F30008A7A6 /* LICENSE */; };
 		4C1F9639244B27DA00AF5EBE /* ThreadViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F9638244B27DA00AF5EBE /* ThreadViewCell.swift */; };
 		4C1F965E244B68E100AF5EBE /* PostViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F965D244B68E100AF5EBE /* PostViewCell.swift */; };
-		4C1F9672244BAE1D00AF5EBE /* BBCodeString.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9666244BAE1B00AF5EBE /* BBCodeString.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F9673244BAE1D00AF5EBE /* BBCodeString.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9666244BAE1B00AF5EBE /* BBCodeString.h */; };
-		4C1F9674244BAE1D00AF5EBE /* BBAttribute.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F9667244BAE1B00AF5EBE /* BBAttribute.m */; };
-		4C1F9675244BAE1D00AF5EBE /* BBAttribute.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F9667244BAE1B00AF5EBE /* BBAttribute.m */; };
-		4C1F9676244BAE1D00AF5EBE /* BBCodeParserDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9668244BAE1B00AF5EBE /* BBCodeParserDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F9677244BAE1D00AF5EBE /* BBCodeParserDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9668244BAE1B00AF5EBE /* BBCodeParserDelegate.h */; };
-		4C1F9678244BAE1D00AF5EBE /* BBElement.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9669244BAE1C00AF5EBE /* BBElement.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F9679244BAE1D00AF5EBE /* BBElement.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9669244BAE1C00AF5EBE /* BBElement.h */; };
-		4C1F967A244BAE1D00AF5EBE /* BBCodeStringDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F966A244BAE1C00AF5EBE /* BBCodeStringDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F967B244BAE1D00AF5EBE /* BBCodeStringDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F966A244BAE1C00AF5EBE /* BBCodeStringDelegate.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F967C244BAE1D00AF5EBE /* BBCodeParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F966B244BAE1C00AF5EBE /* BBCodeParser.m */; };
-		4C1F967D244BAE1D00AF5EBE /* BBCodeParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F966B244BAE1C00AF5EBE /* BBCodeParser.m */; };
-		4C1F967E244BAE1D00AF5EBE /* BBElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F966C244BAE1C00AF5EBE /* BBElement.m */; };
-		4C1F967F244BAE1D00AF5EBE /* BBElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F966C244BAE1C00AF5EBE /* BBElement.m */; };
-		4C1F9680244BAE1D00AF5EBE /* BBParsingElement.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F966D244BAE1C00AF5EBE /* BBParsingElement.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F9681244BAE1D00AF5EBE /* BBParsingElement.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F966D244BAE1C00AF5EBE /* BBParsingElement.h */; };
-		4C1F9682244BAE1D00AF5EBE /* BBCodeParser.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F966E244BAE1C00AF5EBE /* BBCodeParser.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F9683244BAE1D00AF5EBE /* BBCodeParser.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F966E244BAE1C00AF5EBE /* BBCodeParser.h */; };
-		4C1F9684244BAE1D00AF5EBE /* BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F966F244BAE1C00AF5EBE /* BBCodeString.m */; };
-		4C1F9685244BAE1D00AF5EBE /* BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F966F244BAE1C00AF5EBE /* BBCodeString.m */; };
-		4C1F9686244BAE1D00AF5EBE /* BBParsingElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F9670244BAE1C00AF5EBE /* BBParsingElement.m */; };
-		4C1F9687244BAE1D00AF5EBE /* BBParsingElement.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F9670244BAE1C00AF5EBE /* BBParsingElement.m */; };
-		4C1F9688244BAE1D00AF5EBE /* BBAttribute.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9671244BAE1C00AF5EBE /* BBAttribute.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F9689244BAE1D00AF5EBE /* BBAttribute.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F9671244BAE1C00AF5EBE /* BBAttribute.h */; };
-		4C1F968C244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F968A244BAE4600AF5EBE /* NSMutableAttributedString+BBCodeString.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F968D244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.h in Headers */ = {isa = PBXBuildFile; fileRef = 4C1F968A244BAE4600AF5EBE /* NSMutableAttributedString+BBCodeString.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4C1F968E244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F968B244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m */; };
-		4C1F968F244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F968B244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m */; };
 		4C2000952421530B00A4D77A /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000942421530B00A4D77A /* WiredError.swift */; };
 		4C2870562449BF4000E792AC /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2870552449BF4000E792AC /* CryptoSwift */; };
 		4C2870582449BF4000E792AC /* CryptorRSA in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2870572449BF4000E792AC /* CryptorRSA */; };
@@ -224,20 +196,6 @@
 		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4C1F9638244B27DA00AF5EBE /* ThreadViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadViewCell.swift; sourceTree = "<group>"; };
 		4C1F965D244B68E100AF5EBE /* PostViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostViewCell.swift; sourceTree = "<group>"; };
-		4C1F9666244BAE1B00AF5EBE /* BBCodeString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeString.h; sourceTree = "<group>"; };
-		4C1F9667244BAE1B00AF5EBE /* BBAttribute.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBAttribute.m; sourceTree = "<group>"; };
-		4C1F9668244BAE1B00AF5EBE /* BBCodeParserDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeParserDelegate.h; sourceTree = "<group>"; };
-		4C1F9669244BAE1C00AF5EBE /* BBElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBElement.h; sourceTree = "<group>"; };
-		4C1F966A244BAE1C00AF5EBE /* BBCodeStringDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeStringDelegate.h; sourceTree = "<group>"; };
-		4C1F966B244BAE1C00AF5EBE /* BBCodeParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBCodeParser.m; sourceTree = "<group>"; };
-		4C1F966C244BAE1C00AF5EBE /* BBElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBElement.m; sourceTree = "<group>"; };
-		4C1F966D244BAE1C00AF5EBE /* BBParsingElement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBParsingElement.h; sourceTree = "<group>"; };
-		4C1F966E244BAE1C00AF5EBE /* BBCodeParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBCodeParser.h; sourceTree = "<group>"; };
-		4C1F966F244BAE1C00AF5EBE /* BBCodeString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBCodeString.m; sourceTree = "<group>"; };
-		4C1F9670244BAE1C00AF5EBE /* BBParsingElement.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BBParsingElement.m; sourceTree = "<group>"; };
-		4C1F9671244BAE1C00AF5EBE /* BBAttribute.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BBAttribute.h; sourceTree = "<group>"; };
-		4C1F968A244BAE4600AF5EBE /* NSMutableAttributedString+BBCodeString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSMutableAttributedString+BBCodeString.h"; sourceTree = "<group>"; };
-		4C1F968B244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSMutableAttributedString+BBCodeString.m"; sourceTree = "<group>"; };
 		4C2000942421530B00A4D77A /* WiredError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiredError.swift; sourceTree = "<group>"; };
 		4C2870542449BEC900E792AC /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		4C2870632449C70D00E792AC /* RootSplitViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootSplitViewController.swift; sourceTree = "<group>"; };
@@ -388,27 +346,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4C1F9665244BAE0D00AF5EBE /* BBCodeString */ = {
-			isa = PBXGroup;
-			children = (
-				4C1F9671244BAE1C00AF5EBE /* BBAttribute.h */,
-				4C1F9667244BAE1B00AF5EBE /* BBAttribute.m */,
-				4C1F966E244BAE1C00AF5EBE /* BBCodeParser.h */,
-				4C1F966B244BAE1C00AF5EBE /* BBCodeParser.m */,
-				4C1F9668244BAE1B00AF5EBE /* BBCodeParserDelegate.h */,
-				4C1F9666244BAE1B00AF5EBE /* BBCodeString.h */,
-				4C1F966F244BAE1C00AF5EBE /* BBCodeString.m */,
-				4C1F966A244BAE1C00AF5EBE /* BBCodeStringDelegate.h */,
-				4C1F9669244BAE1C00AF5EBE /* BBElement.h */,
-				4C1F966C244BAE1C00AF5EBE /* BBElement.m */,
-				4C1F966D244BAE1C00AF5EBE /* BBParsingElement.h */,
-				4C1F9670244BAE1C00AF5EBE /* BBParsingElement.m */,
-				4C1F968A244BAE4600AF5EBE /* NSMutableAttributedString+BBCodeString.h */,
-				4C1F968B244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m */,
-			);
-			path = BBCodeString;
-			sourceTree = "<group>";
-		};
 		4C2870622449C37100E792AC /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -604,7 +541,6 @@
 		4CFA18C0230B07B700E2A2EC /* Additions */ = {
 			isa = PBXGroup;
 			children = (
-				4C1F9665244BAE0D00AF5EBE /* BBCodeString */,
 				4CFA18C1230B07D100E2A2EC /* String.swift */,
 				4CFA18C3230B07E500E2A2EC /* Data.swift */,
 			);
@@ -627,16 +563,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C1F9682244BAE1D00AF5EBE /* BBCodeParser.h in Headers */,
-				4C1F9672244BAE1D00AF5EBE /* BBCodeString.h in Headers */,
-				4C1F9688244BAE1D00AF5EBE /* BBAttribute.h in Headers */,
 				4CD0205122DF04BD0008B36C /* WiredSwift.h in Headers */,
 				4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */,
-				4C1F967A244BAE1D00AF5EBE /* BBCodeStringDelegate.h in Headers */,
-				4C1F9680244BAE1D00AF5EBE /* BBParsingElement.h in Headers */,
-				4C1F9676244BAE1D00AF5EBE /* BBCodeParserDelegate.h in Headers */,
-				4C1F9678244BAE1D00AF5EBE /* BBElement.h in Headers */,
-				4C1F968C244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -644,15 +572,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C1F9683244BAE1D00AF5EBE /* BBCodeParser.h in Headers */,
-				4C1F968D244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.h in Headers */,
-				4C1F9673244BAE1D00AF5EBE /* BBCodeString.h in Headers */,
-				4C1F967B244BAE1D00AF5EBE /* BBCodeStringDelegate.h in Headers */,
-				4C1F9689244BAE1D00AF5EBE /* BBAttribute.h in Headers */,
-				4C1F9677244BAE1D00AF5EBE /* BBCodeParserDelegate.h in Headers */,
 				4CE2AA6B24336AF30072E0B3 /* WiredSwift_iOS.h in Headers */,
-				4C1F9681244BAE1D00AF5EBE /* BBParsingElement.h in Headers */,
-				4C1F9679244BAE1D00AF5EBE /* BBElement.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -975,20 +895,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				4CFA18C2230B07D100E2A2EC /* String.swift in Sources */,
-				4C1F9684244BAE1D00AF5EBE /* BBCodeString.m in Sources */,
 				4CED2FCD22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
-				4C1F9686244BAE1D00AF5EBE /* BBParsingElement.m in Sources */,
-				4C1F967E244BAE1D00AF5EBE /* BBElement.m in Sources */,
-				4C1F9674244BAE1D00AF5EBE /* BBAttribute.m in Sources */,
 				4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4C4C3EE622E10C3700BC2DD9 /* Connection.swift in Sources */,
-				4C1F967C244BAE1D00AF5EBE /* BBCodeParser.m in Sources */,
 				4C2000952421530B00A4D77A /* WiredError.swift in Sources */,
 				4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */,
 				4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
 				4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */,
 				4CFA18D3230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
-				4C1F968E244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m in Sources */,
 				4C4C3EE922E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4C4C3EEC22E1131B00BC2DD9 /* Const.swift in Sources */,
 				4C4C3EF222E1154900BC2DD9 /* P7Message.swift in Sources */,
@@ -1002,20 +916,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C75B97A24336D9000BE8857 /* SwCrypt.swift in Sources */,
-				4C1F9685244BAE1D00AF5EBE /* BBCodeString.m in Sources */,
 				4C75B97B24336D9000BE8857 /* String.swift in Sources */,
-				4C1F9687244BAE1D00AF5EBE /* BBParsingElement.m in Sources */,
-				4C1F967F244BAE1D00AF5EBE /* BBElement.m in Sources */,
-				4C1F9675244BAE1D00AF5EBE /* BBAttribute.m in Sources */,
 				4C75B96E24336D7300BE8857 /* UserInfo.swift in Sources */,
 				4C75B97424336D9000BE8857 /* Url.swift in Sources */,
-				4C1F967D244BAE1D00AF5EBE /* BBCodeParser.m in Sources */,
 				4C75B97224336D9000BE8857 /* Const.swift in Sources */,
 				4C75B97624336D9000BE8857 /* P7Cipher.swift in Sources */,
 				4C75B97124336D9000BE8857 /* Logger.swift in Sources */,
 				4C75B97C24336D9000BE8857 /* Data.swift in Sources */,
 				4C75B96D24336D7300BE8857 /* ServerInfo.swift in Sources */,
-				4C1F968F244BAE4700AF5EBE /* NSMutableAttributedString+BBCodeString.m in Sources */,
 				4C75B97824336D9000BE8857 /* P7Message.swift in Sources */,
 				4C75B97324336D9000BE8857 /* WiredError.swift in Sources */,
 				4C75B97524336D9000BE8857 /* Connection.swift in Sources */,
