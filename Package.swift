@@ -11,15 +11,11 @@ import PackageDescription
 
 let package = Package(
     name: "WiredSwift",
-    platforms: [
-        // Add support for all platforms starting from a specific version.
-        .macOS(.v10_13),
-        .iOS(.v12)
-    ],
     products: [
         .library(
             name: "WiredSwift",
             targets: ["WiredSwift"])
+            
     ],
     dependencies: [
         .package(name: "AEXML", url: "https://github.com/tadija/AEXML.git", from: "4.5.0"),
