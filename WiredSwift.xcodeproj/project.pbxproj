@@ -236,7 +236,6 @@
 		4CEF0AB423FD5D580097E37E /* ConnectionObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB323FD5D580097E37E /* ConnectionObject.swift */; };
 		4CEF0AB623FDD4DD0097E37E /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEF0AB523FDD4DD0097E37E /* File.swift */; };
 		4CF673782404191E00A8EDC2 /* CZlib in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF673772404191E00A8EDC2 /* CZlib */; };
-		4CF6737A2404214800A8EDC2 /* CZlib in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF673792404214800A8EDC2 /* CZlib */; };
 		4CFA18C2230B07D100E2A2EC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4CFA18C5230B085D00E2A2EC /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
@@ -542,7 +541,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				4CE2AA55243350190072E0B3 /* (null) in Frameworks */,
-				4CF6737A2404214800A8EDC2 /* CZlib in Frameworks */,
 				4CD0205422DF04BD0008B36C /* WiredSwift.framework in Frameworks */,
 				2AE0C6A5244B84220021BE28 /* KeychainAccess in Frameworks */,
 				2AE0C69F244B83E10021BE28 /* Preferences in Frameworks */,
@@ -1123,7 +1121,6 @@
 			);
 			name = Wired;
 			packageProductDependencies = (
-				4CF673792404214800A8EDC2 /* CZlib */,
 				2AE0C69E244B83E10021BE28 /* Preferences */,
 				2AE0C6A4244B84220021BE28 /* KeychainAccess */,
 				2AE0C6A6244B843E0021BE28 /* Reachability */,
@@ -2683,11 +2680,6 @@
 			productName = CZlib;
 		};
 		4CF673772404191E00A8EDC2 /* CZlib */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4CF673762404191600A8EDC2 /* XCRemoteSwiftPackageReference "CZlib" */;
-			productName = CZlib;
-		};
-		4CF673792404214800A8EDC2 /* CZlib */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4CF673762404191600A8EDC2 /* XCRemoteSwiftPackageReference "CZlib" */;
 			productName = CZlib;
