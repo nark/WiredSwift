@@ -10,7 +10,6 @@ import Foundation
 import SocketSwift
 import CryptorRSA
 import CryptoSwift
-import CommonCrypto
 import CZlib
 
 
