@@ -7,11 +7,21 @@
 //
 
 #import <Foundation/Foundation.h>
+
+#if !TARGET_OS_IOS
 #import <Cocoa/Cocoa.h>
+#else
+#import <UIKit/UIKit.h>
+#endif
 
 @interface NSMutableAttributedString (BBCodeString)
 
+#if !TARGET_OS_IOS
 - (void)setFont:(NSColor *)font;
 - (void)setColor:(NSColor *)color;
+#else
+- (void)setFont:(UIColor *)font;
+- (void)setColor:(UIColor *)color;
+#endif
 
 @end

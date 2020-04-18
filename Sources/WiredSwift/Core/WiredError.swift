@@ -15,12 +15,12 @@ public class WiredError: NSObject {
     private var errorMessage:String!
     
     
-    init(withSPecError specError: SpecError) {
+    public init(withSPecError specError: SpecError) {
         self.specError = specError
     }
     
     
-    init(withTitle title:String, message: String) {
+    public init(withTitle title:String, message: String) {
         self.errorTitle = title
         self.errorMessage = message
     }

@@ -8,9 +8,9 @@
 
 import UIKit
 
-class ThreadViewCell: UITableViewCell {
-    @IBOutlet var subjectTextField:     UILabel!
-    @IBOutlet var nickTextField:        UILabel!
-    @IBOutlet var dateTextField:        UILabel!
-    @IBOutlet var repliesTextField:     UILabel!
+class PostViewCell: UITableViewCell {
+    @IBOutlet var nickLabel: UILabel!
+    @IBOutlet var dateLabel: UILabel!
+    @IBOutlet var bodyLabel: UILabel!
+    @IBOutlet var iconView:  UIImageView!
 }

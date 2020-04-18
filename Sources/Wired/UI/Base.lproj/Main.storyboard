@@ -1912,7 +1912,7 @@ DQ
                                 </popUpButtonCell>
                             </popUpButton>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aVM-4k-RQx">
-                                <rect key="frame" x="6" y="450" width="34" height="23"/>
+                                <rect key="frame" x="6" y="450" width="35" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="WLh-9I-sdn"/>
                                     <constraint firstAttribute="width" constant="34" id="swr-hE-t8O"/>
@@ -2126,7 +2126,7 @@ DQ
                                 </popUpButtonCell>
                             </popUpButton>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="dlO-Nw-zg8">
-                                <rect key="frame" x="6" y="332" width="34" height="23"/>
+                                <rect key="frame" x="6" y="332" width="35" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="34" id="NWk-c0-s3G"/>
                                     <constraint firstAttribute="height" constant="22" id="Npm-sS-zmD"/>
@@ -2137,7 +2137,7 @@ DQ
                                 </buttonCell>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="vH9-dc-wEh">
-                                <rect key="frame" x="48" y="332" width="35" height="23"/>
+                                <rect key="frame" x="48" y="332" width="36" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="35" id="DuF-8Z-mtr"/>
                                     <constraint firstAttribute="height" constant="22" id="ZLE-ZC-L68"/>
@@ -2178,13 +2178,13 @@ DQ
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <scrollView borderType="line" autohidesScrollers="YES" horizontalLineScroll="128" horizontalPageScroll="10" verticalLineScroll="128" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="IMz-Ay-LBK">
-                                <rect key="frame" x="-1" y="-1" width="527" height="503"/>
+                                <rect key="frame" x="-1" y="-1" width="527" height="507"/>
                                 <clipView key="contentView" id="Tan-dq-K3n">
-                                    <rect key="frame" x="1" y="1" width="525" height="501"/>
+                                    <rect key="frame" x="1" y="1" width="525" height="505"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" autosaveColumns="NO" typeSelect="NO" rowHeight="126" rowSizeStyle="automatic" usesAutomaticRowHeights="YES" viewBased="YES" id="BXd-GW-Awu">
-                                            <rect key="frame" x="0.0" y="0.0" width="525" height="501"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="525" height="505"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                             <size key="intercellSpacing" width="3" height="2"/>
                                             <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -2312,7 +2312,7 @@ DQ
                                 </scroller>
                             </scrollView>
                             <progressIndicator wantsLayer="YES" maxValue="100" displayedWhenStopped="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="X2T-gA-fIN">
-                                <rect key="frame" x="500" y="510" width="16" height="16"/>
+                                <rect key="frame" x="500" y="514" width="16" height="16"/>
                             </progressIndicator>
                         </subviews>
                         <constraints>
@@ -3180,7 +3180,7 @@ DQ
                                 </connections>
                             </tabView>
                             <segmentedControl verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aSA-4K-BJu">
-                                <rect key="frame" x="75" y="379" width="60" height="22"/>
+                                <rect key="frame" x="75" y="379" width="61" height="22"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="21" id="W2k-Z7-QU6"/>
                                     <constraint firstAttribute="width" constant="60" id="q7Y-FE-D1a"/>
@@ -3197,7 +3197,7 @@ DQ
                                 </connections>
                             </segmentedControl>
                             <segmentedControl verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="XWy-0H-ftr">
-                                <rect key="frame" x="6" y="379" width="61" height="22"/>
+                                <rect key="frame" x="6" y="379" width="62" height="22"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="61" id="Ebf-UN-XcZ"/>
                                     <constraint firstAttribute="height" constant="21" id="WzP-r2-JGK"/>
@@ -3221,7 +3221,7 @@ DQ
                                 </constraints>
                             </progressIndicator>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="vLA-cB-dnX">
-                                <rect key="frame" x="143" y="379" width="33" height="23"/>
+                                <rect key="frame" x="143" y="379" width="34" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="LaU-Oe-zgt"/>
                                     <constraint firstAttribute="width" constant="33" id="cmg-9V-9ac"/>
@@ -3235,7 +3235,7 @@ DQ
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wHf-Em-XQT">
-                                <rect key="frame" x="184" y="379" width="34" height="23"/>
+                                <rect key="frame" x="184" y="379" width="35" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="Ha4-Aa-vBh"/>
                                     <constraint firstAttribute="width" constant="34" id="iaa-Va-hl6"/>
@@ -3249,7 +3249,7 @@ DQ
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Ppj-gb-nqm">
-                                <rect key="frame" x="226" y="379" width="35" height="23"/>
+                                <rect key="frame" x="226" y="379" width="36" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="NAg-qn-ks9"/>
                                     <constraint firstAttribute="width" constant="35" id="uwG-Xx-bhJ"/>
@@ -3886,7 +3886,7 @@ DQ
                                 </scroller>
                             </scrollView>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="NHa-dK-f4s">
-                                <rect key="frame" x="6" y="431" width="34" height="23"/>
+                                <rect key="frame" x="6" y="431" width="35" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="34" id="lmL-4F-dZf"/>
                                     <constraint firstAttribute="height" constant="22" id="uHo-0m-7MC"/>
@@ -3900,7 +3900,7 @@ DQ
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="M6B-XQ-4ct">
-                                <rect key="frame" x="48" y="431" width="35" height="23"/>
+                                <rect key="frame" x="48" y="431" width="36" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="35" id="o2y-JU-Q7A"/>
                                     <constraint firstAttribute="height" constant="22" id="wP1-aV-7eU"/>
@@ -3914,7 +3914,7 @@ DQ
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="znN-UA-rd8">
-                                <rect key="frame" x="91" y="431" width="36" height="23"/>
+                                <rect key="frame" x="91" y="431" width="37" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="6Sy-vE-qoK"/>
                                     <constraint firstAttribute="width" constant="36" id="w3i-ZW-4BU"/>
@@ -3928,7 +3928,7 @@ DQ
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="SYr-Q0-ofK">
-                                <rect key="frame" x="135" y="431" width="37" height="23"/>
+                                <rect key="frame" x="135" y="431" width="38" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="37" id="OnY-w6-BAp"/>
                                     <constraint firstAttribute="height" constant="22" id="e5a-tF-o5H"/>
@@ -3942,7 +3942,7 @@ DQ
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="wGG-zl-VUS">
-                                <rect key="frame" x="180" y="431" width="38" height="23"/>
+                                <rect key="frame" x="180" y="431" width="39" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="22" id="SZE-LA-sAk"/>
                                     <constraint firstAttribute="width" constant="38" id="ZM7-iq-DHn"/>
@@ -3956,7 +3956,7 @@ DQ
                                 </connections>
                             </button>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Aw1-ue-WBH">
-                                <rect key="frame" x="226" y="431" width="39" height="23"/>
+                                <rect key="frame" x="226" y="431" width="40" height="23"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="39" id="PEU-0x-vvT"/>
                                     <constraint firstAttribute="height" constant="22" id="REH-y4-oSS"/>

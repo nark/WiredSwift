@@ -171,46 +171,47 @@ public class P7Message: NSObject {
     
     
     public func xml() -> String {
-        let message = AEXMLDocument()
-        let root = message.addChild(name: "p7:message", attributes: ["name": self.name] )
-        
-        for (field, value) in self.parameters {
-            let p = root.addChild(name: "p7:field", attributes: ["name": field])
-
-            if  spec.fieldsByName[field]?.type == .string ||
-                spec.fieldsByName[field]?.type == .uuid {
-                if let string = value as? String {
-                    p.value = string
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .int32 ||
-                    spec.fieldsByName[field]?.type == .uint32 {
-                if let val = value as? UInt32 {
-                    p.value = String(val)
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .int64 ||
-                    spec.fieldsByName[field]?.type == .uint64 {
-                if let val = value as? UInt64 {
-                    p.value = String(val)
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .data ||
-                    spec.fieldsByName[field]?.type == .oobdata {
-                if let val = value as? Data {
-                    p.value = val.toHex()
-                }
-            }
-            else if spec.fieldsByName[field]?.type == .date {
-                if let val = value as? Double {
-                    let dateFormatter = ISO8601DateFormatter()
-                    p.value = dateFormatter.string(from: Date(timeIntervalSince1970: val))
-                }
-            }
-            // TODO: complete all types
-        }
-        
-        return "\(message.xml)\r\n"
+//        let message = AEXMLDocument()
+//        let root = message.addChild(name: "p7:message", attributes: ["name": self.name] )
+//
+//        for (field, value) in self.parameters {
+//            let p = root.addChild(name: "p7:field", attributes: ["name": field])
+//
+//            if  spec.fieldsByName[field]?.type == .string ||
+//                spec.fieldsByName[field]?.type == .uuid {
+//                if let string = value as? String {
+//                    p.value = string
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .int32 ||
+//                    spec.fieldsByName[field]?.type == .uint32 {
+//                if let val = value as? UInt32 {
+//                    p.value = String(val)
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .int64 ||
+//                    spec.fieldsByName[field]?.type == .uint64 {
+//                if let val = value as? UInt64 {
+//                    p.value = String(val)
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .data ||
+//                    spec.fieldsByName[field]?.type == .oobdata {
+//                if let val = value as? Data {
+//                    p.value = val.toHex()
+//                }
+//            }
+//            else if spec.fieldsByName[field]?.type == .date {
+//                if let val = value as? Double {
+//                    let dateFormatter = ISO8601DateFormatter()
+//                    p.value = dateFormatter.string(from: Date(timeIntervalSince1970: val))
+//                }
+//            }
+//            // TODO: complete all types
+//        }
+//
+//        return "\(message.xml)\r\n"
+        return ""
     }
     
     

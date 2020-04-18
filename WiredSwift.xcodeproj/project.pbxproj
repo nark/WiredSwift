@@ -30,6 +30,7 @@
 		4C1319AB2316E78600C9FA0C /* SocketSwift.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C1319AF231862DF00C9FA0C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 4C1319AE231862DF00C9FA0C /* README.md */; };
 		4C1F9639244B27DA00AF5EBE /* ThreadViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F9638244B27DA00AF5EBE /* ThreadViewCell.swift */; };
+		4C1F965E244B68E100AF5EBE /* PostViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1F965D244B68E100AF5EBE /* PostViewCell.swift */; };
 		4C2000952421530B00A4D77A /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000942421530B00A4D77A /* WiredError.swift */; };
 		4C2000962421588C00A4D77A /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000942421530B00A4D77A /* WiredError.swift */; };
 		4C200099242162BB00A4D77A /* ChatPreferenceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */; };
@@ -376,6 +377,7 @@
 		4C1319A82316E4E700C9FA0C /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SocketSwift.framework; path = Carthage/Build/Mac/SocketSwift.framework; sourceTree = SOURCE_ROOT; };
 		4C1319AE231862DF00C9FA0C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		4C1F9638244B27DA00AF5EBE /* ThreadViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadViewCell.swift; sourceTree = "<group>"; };
+		4C1F965D244B68E100AF5EBE /* PostViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostViewCell.swift; sourceTree = "<group>"; };
 		4C2000942421530B00A4D77A /* WiredError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiredError.swift; sourceTree = "<group>"; };
 		4C200098242162BB00A4D77A /* ChatPreferenceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPreferenceViewController.swift; sourceTree = "<group>"; };
 		4C20DD81242E95F4009F64E6 /* ThreadsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadsViewController.swift; sourceTree = "<group>"; };
@@ -806,6 +808,7 @@
 				4CDE91AD2449FF2D00ED9695 /* BoardThread.swift */,
 				4CDE91AE2449FF2D00ED9695 /* Post.swift */,
 				4C1F9638244B27DA00AF5EBE /* ThreadViewCell.swift */,
+				4C1F965D244B68E100AF5EBE /* PostViewCell.swift */,
 				4C6656BE2436449B0022E7D7 /* Extentsions */,
 				4C75B9C2243374DA00BE8857 /* Info.plist */,
 				4C6656B62434FB390022E7D7 /* InputBarAccessoryView.framework */,
@@ -1615,6 +1618,7 @@
 				4CDE91A82449D07800ED9695 /* ConnectionsController.swift in Sources */,
 				4C75B9B7243374D900BE8857 /* BookmarksViewController.swift in Sources */,
 				4C75B9B9243374D900BE8857 /* ChatViewController.swift in Sources */,
+				4C1F965E244B68E100AF5EBE /* PostViewCell.swift in Sources */,
 				4CDE91B42449FF3F00ED9695 /* ConnectionObject.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

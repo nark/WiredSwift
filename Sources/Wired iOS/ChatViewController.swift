@@ -14,6 +14,7 @@ import WiredSwift_iOS
 
 
 
+
 class ChatViewController: MessagesViewController {
     @IBOutlet var infoButton: UIBarButtonItem!
     
@@ -23,6 +24,8 @@ class ChatViewController: MessagesViewController {
     var senders:[UInt32:Sender] = [:]
     var avatars:[UInt32:Avatar] = [:]
     var bookmark:Bookmark!
+    
+    var joined:Bool = false
     
     private var keyboardHelper: KeyboardHelper?
     
@@ -60,8 +63,8 @@ class ChatViewController: MessagesViewController {
             // Update the view.
             configureView()
             
-            if let c = self.connection {
-                if c.isConnected() {
+            if let c = self.connection, c.isConnected() {
+                if !joined {
                     c.addDelegate(self)
                     
                     self.selfSender = Sender(senderId: "\(self.connection!.userID!)", displayName: "Wired iOS")
@@ -250,15 +253,16 @@ class ChatViewController: MessagesViewController {
             layout.textMessageSizeCalculator.outgoingAvatarSize = .zero
             layout.setMessageOutgoingAvatarSize(.zero)
         }
-
+        
         messageInputBar.inputPlugins = [attachmentManager]
         messageInputBar.sendButton.addTarget(self, action: #selector(sendMessage), for: UIControl.Event.touchDown)
         messageInputBar.inputTextView.allowsEditingTextAttributes = false
-        
+
         messageInputBar.sendButton.configure {
             $0.title = ""
             $0.image = UIImage(named: "Send")
-       }
+        }
+        
     }
     
     
@@ -486,6 +490,9 @@ extension ChatViewController: ConnectionDelegate {
                 self.senders[userID] = Sender(senderId: "\(userID)", displayName: nick)
                 self.avatars[userID] = Avatar(image: UIImage(data: iconData), initials: nick)
             }
+        }
+        else if message.name == "wired.chat.user_list.done" {
+            self.joined = true
         }
         else if message.name == "wired.chat.user_join" {
             if  let userID = message.uint32(forField: "wired.user.id"),

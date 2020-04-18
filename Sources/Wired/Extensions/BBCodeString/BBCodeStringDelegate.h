@@ -6,7 +6,11 @@
 //  Copyright (c) 2013 Miha Rataj. All rights reserved.
 //
 
+#if !TARGET_OS_IOS
 #import <Cocoa/Cocoa.h>
+#else
+#import <UIKit/UIKit.h>
+#endif
 
 @class BBElement;
 
@@ -20,11 +24,21 @@
 /** Returns the attributed text which will be displayed for the given BBCode element. **/
 - (NSAttributedString *)getAttributedTextForElement:(BBElement *)element;
 
+#if !TARGET_OS_IOS
 /** Deprecated. Returns the font for the given BBCode element. **/
 - (NSFont *)getFont:(BBElement *)element;
+#else
+- (UIFont *)getFont:(BBElement *)element;
+#endif
 
+
+#if !TARGET_OS_IOS
 /** Deprecated. Returns the text color for the given BBCode element. **/
 - (NSColor *)getTextColor:(BBElement *)element;
+#else
+- (UIColor *)getTextColor:(BBElement *)element;
+#endif
+
 
 @required
 

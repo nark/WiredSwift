@@ -152,6 +152,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, UNUserNotifi
     
     // MARK: - Application Delegate
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        self.hud.textLabel.text = NSLocalizedString("Loading", comment: "Loading Indicator Title")
+        
         self.setupReachability()
         self.setupUserNotifications()
                 

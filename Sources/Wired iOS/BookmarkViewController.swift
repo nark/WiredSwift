@@ -56,7 +56,7 @@ class BookmarkViewController: UITableViewController {
         
         AppDelegate.shared.saveContext()
         
-        self.masterViewController.reloadBookmarks()
+        //self.masterViewController.reloadBookmarks()
         
         self.dismiss(animated: true) {  }
     }

@@ -11,10 +11,10 @@ import Dispatch
 
 
 extension Notification.Name {
-    static let linkConnectionWillDisconnect     = Notification.Name("linkConnectionWillDisconnect")
-    static let linkConnectionDidClose           = Notification.Name("linkConnectionDidClose")
-    static let linkConnectionDidReconnect       = Notification.Name("linkConnectionDidReconnect")
-    static let linkConnectionDidFailReconnect   = Notification.Name("linkConnectionDidFailReconnect")
+    public static let linkConnectionWillDisconnect     = Notification.Name("linkConnectionWillDisconnect")
+    public static let linkConnectionDidClose           = Notification.Name("linkConnectionDidClose")
+    public static let linkConnectionDidReconnect       = Notification.Name("linkConnectionDidReconnect")
+    public static let linkConnectionDidFailReconnect   = Notification.Name("linkConnectionDidFailReconnect")
 }
 
 

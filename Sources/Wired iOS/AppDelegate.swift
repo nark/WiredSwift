@@ -10,6 +10,7 @@ import UIKit
 import CoreData
 import WiredSwift_iOS
 import Reachability
+import JGProgressHUD
 
 
 @UIApplicationMain
@@ -18,7 +19,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     public static let dateTimeFormatter = DateFormatter()
     
     var window:UIWindow?
-
+    let hud = JGProgressHUD(style: .dark)
+    
     override init() {
         super.init()
         
@@ -53,6 +55,76 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         return true
     }
+    
+    
+    // MARK: - Connection Helpers
+    public var currentConnection:Connection? {
+        if let ctbc = AppDelegate.shared.window?.rootViewController as? ConnectionTabBarController {
+            return ctbc.connection
+        }
+        
+        return nil
+    }
+    
+    public func connect(withBookmark bookmark:Bookmark,
+                        inViewController vc: UIViewController,
+                        connectionDelegate:ConnectionDelegate?,
+                        completion: ((_ connection:Connection) -> Void)?) {
+        
+      let spec = P7Spec()
+      let url = bookmark.url()
+      
+      let connection = Connection(withSpec: spec, delegate: connectionDelegate)
+      connection.nick = UserDefaults.standard.string(forKey: "WSUserNick") ?? "Swift iOS"
+      connection.status = UserDefaults.standard.string(forKey: "WSUserStatus") ?? "Around"
+      
+      if let b64string = UserDefaults.standard.image(forKey: "WSUserIcon")?.pngData()?.base64EncodedString() {
+          connection.icon = b64string
+      }
+          
+        AppDelegate.shared.hud.show(in: vc.view)
+      
+      // perform  connect
+      DispatchQueue.global().async {
+          if connection.connect(withUrl: url) {
+              DispatchQueue.main.async {
+                  AppDelegate.shared.hud.dismiss(afterDelay: 1.0)
+                  
+                  ConnectionsController.shared.connections[bookmark] = connection
+
+                  if let ctbc = AppDelegate.shared.window?.rootViewController as? ConnectionTabBarController {
+                      ctbc.bookmark = bookmark
+                      ctbc.connection = connection
+                  }
+
+                  // update bookmark with server name
+                  bookmark.name = connection.serverInfo.serverName
+                  AppDelegate.shared.saveContext()
+                  
+                completion?(connection)
+              }
+              
+          } else {
+              DispatchQueue.main.async {
+                  AppDelegate.shared.hud.dismiss(afterDelay: 1.0)
+                  
+                  let alertController = UIAlertController(
+                      title: NSLocalizedString("Connection Error", comment: "Connection Error Alert Title"),
+                      message: String(format: NSLocalizedString("Enable to connect to %@", comment: "Connection Error Alert Message"), bookmark.hostname!),
+                      preferredStyle: .alert)
+                  
+                  alertController.addAction(UIAlertAction(
+                      title: NSLocalizedString("OK", comment: "Connection Error Alert Button"),
+                      style: .default))
+
+                  vc.present(alertController, animated: true) {
+                     completion?(connection)
+                    }
+                }
+            }
+        }
+    }
+    
 
     
     // MARK: - Core Data stack
@@ -109,6 +181,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private func setupAppearance() {
         UIButton.appearance().tintColor = UIColor.systemGreen
         UIBarButtonItem.appearance().tintColor = UIColor.systemGreen
+        UITabBar.appearance().tintColor = UIColor.systemGreen
     }
     
     
