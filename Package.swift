@@ -13,8 +13,8 @@ let package = Package(
     name: "WiredSwift",
     platforms: [
         // Add support for all platforms starting from a specific version.
-        .macOS(.v10_15),
-        .iOS(.v11)
+        .macOS(.v10_13),
+        .iOS(.v12)
     ],
     products: [
         .library(
