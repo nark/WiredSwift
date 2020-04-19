@@ -36,6 +36,7 @@ targetDependencies.append(.byName(name: "SocketSwift"))
 
 let package = Package(
     name: "WiredSwift",
+    platforms: [.iOS(.v12), .macOS(.v10_13)],
     products: [
         .library(
             name: "WiredSwift",
