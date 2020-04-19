@@ -2,6 +2,9 @@
 
 WiredSwift is an implementation of the Wired 2.0 protocol written in Swift. 
 
+[![Actions Status](https://github.com/nark/WiredSwift/workflows/Swift/badge.svg)](https://github.com/nark/WiredSwift/actions)
+
+
 ## Requirements
 
 * macOS 10.14
