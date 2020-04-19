@@ -22,6 +22,8 @@ public typealias SpecError      = P7SpecError
 
 
 
+
+
 /**
  This class is a wrapper for the Wired 2.0 specification.
  The specification is based on a XML file named "wired.xml"
@@ -208,15 +210,10 @@ public class P7Spec: NSObject, XMLParserDelegate {
     
     
     /**
-     Init a new specification object for a given XML
-     specification file.
-
-    - Parameters:
-        - path: The path of your XML specification file
-
-    - Returns: An instance of P7Spec
+    Init the built-in spec
     */
-    public init(withPath path: String? = nil) {
+    
+    private override init() {
         super.init()
         
         let data = p7xml.data(using: .utf8)
@@ -232,6 +229,21 @@ public class P7Spec: NSObject, XMLParserDelegate {
         } catch {
             Logger.error("ERROR: Cannot parse built-in spec, fatal")
         }
+    }
+    
+    
+    
+    /**
+     Init a new specification object for a given XML
+     specification file.
+
+    - Parameters:
+        - path: The path of your XML specification file
+
+    - Returns: An instance of P7Spec
+    */
+    public convenience init(withPath path: String? = nil) {
+        self.init()
         
         if let p = path {
             self.loadFile(path: p)
@@ -241,6 +253,24 @@ public class P7Spec: NSObject, XMLParserDelegate {
             }
         }
     }
+    
+    /**
+     Init a new specification object for a given XML
+     specification file.
+
+    - Parameters:
+        - url: The URL of your XML specification file
+
+    - Returns: An instance of P7Spec
+    */
+    public convenience init?(withUrl url:URL) {
+        self.init()
+        
+        if !self.loadFile(at: url) {
+            return nil
+        }
+    }
+    
     
     
     /**
@@ -315,15 +345,28 @@ public class P7Spec: NSObject, XMLParserDelegate {
     }
     
     
-    private func loadFile(path: String) {        
+    private func loadFile(path: String) {
         let url = URL(fileURLWithPath: path)
         
-        self.xml = try? String(contentsOf: url, encoding: .utf8)
-        
-        self.parser = XMLParser(contentsOf: url)!
-        
-        self.parser.delegate = self
-        self.parser.parse()
+        self.loadFile(at: url)
+    }
+    
+    
+    @discardableResult
+    private func loadFile(at url:URL) -> Bool {
+        do {
+            self.xml = try String(contentsOf: url, encoding: .utf8)
+            
+            self.parser = XMLParser(contentsOf: url)!
+            
+            self.parser.delegate = self
+            self.parser.parse()
+            
+        } catch let e {
+            Logger.error("Cannot load spec at URL: \(e.localizedDescription)")
+            return false
+        }
+        return true
     }
 
     

@@ -2,11 +2,9 @@ import XCTest
 @testable import WiredSwift
 
 final class WiredSwiftTests: XCTestCase {
-    let specPath = Bundle(for: WiredSwiftTests.self).path(forResource: "wired", ofType: "xml")
+    let specURL = URL(string: "httpw://wired.read-write.fr/wired.xml")!
 
     func testUrl() {
-        print("specPath : \(specPath)")
-        let spec = P7Spec(withPath: specPath)
         let url = Url(withString: "wired://guest:password@localhost:4871")
         
         XCTAssert(url.scheme == "wired")
@@ -19,9 +17,12 @@ final class WiredSwiftTests: XCTestCase {
     
     func testConnect() {
         Logger.setMaxLevel(.VERBOSE)
-        print("specPath : \(specPath)")
-        let spec = P7Spec(withPath: specPath)
-        let url = Url(withString: "wired://localhost")
+        guard let spec = P7Spec(withUrl: specURL) else {
+            XCTFail()
+            return
+        }
+        
+        let url = Url(withString: "wired://wired.read-write.fr")
         let connection = Connection(withSpec: spec)
         
         XCTAssert(connection.connect(withUrl: url) == true)
@@ -30,6 +31,6 @@ final class WiredSwiftTests: XCTestCase {
 
     static var allTests = [
         ("testUrl", testUrl),
-        //("testConnect", testConnect),
+        ("testConnect", testConnect),
     ]
 }
