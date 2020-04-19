@@ -7,10 +7,10 @@
 //
 
 import XCTest
-import WiredSwfit
 
 class WiredSwfitTests: XCTestCase {
-
+    let specPath = Bundle(for: WiredSwfitTests.self).path(forResource: "wired", ofType: "xml")
+    
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }
@@ -20,7 +20,8 @@ class WiredSwfitTests: XCTestCase {
     }
 
     func testUrl() {
-        let spec = P7Spec()
+        print("specPath : \(specPath)")
+        let spec = P7Spec(withPath: specPath)
         let url = Url(withString: "wired://guest:password@localhost:4871")
         
         XCTAssert(url.scheme == "wired")
@@ -28,6 +29,17 @@ class WiredSwfitTests: XCTestCase {
         XCTAssert(url.password == "password")
         XCTAssert(url.hostname == "localhost")
         XCTAssert(url.port == 4871)
+    }
+    
+    
+    func testConnect() {
+        Logger.setMaxLevel(.VERBOSE)
+        print("specPath : \(specPath)")
+        let spec = P7Spec(withPath: specPath)
+        let url = Url(withString: "wired://localhost")
+        let connection = Connection(withSpec: spec)
+        
+        XCTAssert(connection.connect(withUrl: url) == true)
     }
 
     func testPerformanceExample() {

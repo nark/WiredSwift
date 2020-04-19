@@ -47,15 +47,6 @@
         }
       },
       {
-        "package": "JGProgressHUD",
-        "repositoryURL": "https://github.com/JonasGessner/JGProgressHUD",
-        "state": {
-          "branch": null,
-          "revision": "08d130dd614a743f813286f096804c43a6ffa3f6",
-          "version": "2.1.0"
-        }
-      },
-      {
         "package": "KeychainAccess",
         "repositoryURL": "https://github.com/kishikawakatsumi/KeychainAccess",
         "state": {

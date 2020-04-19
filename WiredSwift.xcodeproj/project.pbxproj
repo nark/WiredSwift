@@ -15,13 +15,11 @@
 		4C28705D2449BFD000E792AC /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 4C28705C2449BFD000E792AC /* Gzip */; };
 		4C28705F2449BFDA00E792AC /* SocketSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4C28705E2449BFDA00E792AC /* SocketSwift */; };
 		4C2870612449C02C00E792AC /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2870602449C02C00E792AC /* Gzip */; };
-		4C3EE088242FEBA1000B89D9 /* CryptorRSA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */; };
 		4C3EE08B242FEBFF000B89D9 /* Gzip.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; };
 		4C3EE08C242FEBFF000B89D9 /* SocketSwift.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4C1319A82316E4E700C9FA0C /* SocketSwift.framework */; };
 		4C3EE08D242FEBFF000B89D9 /* CryptorRSA.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CED2FC422E8F9A6000E5B9E /* CryptorRSA.framework */; };
 		4C3EE08E242FEBFF000B89D9 /* CryptoSwift.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
 		4C3EE08F242FEBFF000B89D9 /* WiredSwift.framework in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; };
-		4C3EE090242FECBA000B89D9 /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CED2FC122E8F4AC000E5B9E /* CryptoSwift.framework */; };
 		4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C4C3EE622E10C3700BC2DD9 /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE422E10C3700BC2DD9 /* Connection.swift */; };
 		4C4C3EE922E10F6A00BC2DD9 /* Url.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE722E10F6A00BC2DD9 /* Url.swift */; };
@@ -41,7 +39,6 @@
 		4C75B97724336D9000BE8857 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C75B97824336D9000BE8857 /* P7Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EF022E1154900BC2DD9 /* P7Message.swift */; };
 		4C75B97924336D9000BE8857 /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; };
-		4C75B97A24336D9000BE8857 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4C75B97B24336D9000BE8857 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4C75B97C24336D9000BE8857 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4C75B97D24336D9000BE8857 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
@@ -53,7 +50,6 @@
 		4C75B98324336D9000BE8857 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C75B98424336D9000BE8857 /* P7Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EF022E1154900BC2DD9 /* P7Message.swift */; };
 		4C75B98524336D9000BE8857 /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; };
-		4C75B98624336D9000BE8857 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4C75B98724336D9000BE8857 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4C75B98824336D9000BE8857 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4C75B98E24336DDC00BE8857 /* CryptorRSA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4C75B98924336DDC00BE8857 /* CryptorRSA.framework */; };
@@ -67,7 +63,6 @@
 		4C75B9AB2433722900BE8857 /* AEXML in Frameworks */ = {isa = PBXBuildFile; productRef = 4C75B9AA2433722900BE8857 /* AEXML */; };
 		4C75B9E5243379A500BE8857 /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
 		4C93B2FF242FE96200A956C3 /* WiredSwfitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C93B2FE242FE96200A956C3 /* WiredSwfitTests.swift */; };
-		4C93B301242FE96200A956C3 /* WiredSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CD0204D22DF04BD0008B36C /* WiredSwift.framework */; };
 		4C93B315242FEB2200A956C3 /* ServerInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D1230C6ECE00E2A2EC /* ServerInfo.swift */; };
 		4C93B316242FEB2200A956C3 /* UserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D4230C741800E2A2EC /* UserInfo.swift */; };
 		4C93B317242FEB2200A956C3 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CED2FBE22E8EF90000E5B9E /* Logger.swift */; };
@@ -79,10 +74,8 @@
 		4C93B31D242FEB2200A956C3 /* P7Socket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */; };
 		4C93B31E242FEB2200A956C3 /* P7Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C4C3EF022E1154900BC2DD9 /* P7Message.swift */; };
 		4C93B31F242FEB2200A956C3 /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; };
-		4C93B320242FEB2200A956C3 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4C93B321242FEB2200A956C3 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4C93B322242FEB2200A956C3 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
-		4C93B323242FEB8D00A956C3 /* Gzip.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CF6736E2403FD7A00A8EDC2 /* Gzip.framework */; };
 		4CD0205122DF04BD0008B36C /* WiredSwift.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0204F22DF04BD0008B36C /* WiredSwift.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0205D22DF11920008B36C /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
@@ -97,7 +90,19 @@
 		4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4CFA18D3230C6ECE00E2A2EC /* ServerInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D1230C6ECE00E2A2EC /* ServerInfo.swift */; };
 		4CFA18D6230C741800E2A2EC /* UserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D4230C741800E2A2EC /* UserInfo.swift */; };
-		4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
+		4CFCE48D244C48F4007E1568 /* CZlib in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE48C244C48F4007E1568 /* CZlib */; };
+		4CFCE48F244C48F4007E1568 /* CryptoSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE48E244C48F4007E1568 /* CryptoSwift */; };
+		4CFCE491244C48F4007E1568 /* SocketSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE490244C48F4007E1568 /* SocketSwift */; };
+		4CFCE493244C48F4007E1568 /* CryptorRSA in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE492244C48F4007E1568 /* CryptorRSA */; };
+		4CFCE495244C48F4007E1568 /* AEXML in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE494244C48F4007E1568 /* AEXML */; };
+		4CFCE497244C48F4007E1568 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE496244C48F4007E1568 /* KeychainAccess */; };
+		4CFCE49B244C48F4007E1568 /* Reachability in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE49A244C48F4007E1568 /* Reachability */; };
+		4CFCE49D244C48F4007E1568 /* Gzip in Frameworks */ = {isa = PBXBuildFile; productRef = 4CFCE49C244C48F4007E1568 /* Gzip */; };
+		4CFCE49E244C4947007E1568 /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
+		4CFCE49F244C623F007E1568 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
+		4CFCE4A0244C6240007E1568 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
+		4CFCE4AA244C7FAF007E1568 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
+		4CFCE4AB244C7FAF007E1568 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -172,10 +177,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C3EE088242FEBA1000B89D9 /* CryptorRSA.framework in Frameworks */,
-				4C3EE090242FECBA000B89D9 /* CryptoSwift.framework in Frameworks */,
-				4C93B301242FE96200A956C3 /* WiredSwift.framework in Frameworks */,
-				4C93B323242FEB8D00A956C3 /* Gzip.framework in Frameworks */,
+				4CFCE48D244C48F4007E1568 /* CZlib in Frameworks */,
+				4CFCE49D244C48F4007E1568 /* Gzip in Frameworks */,
+				4CFCE48F244C48F4007E1568 /* CryptoSwift in Frameworks */,
+				4CFCE497244C48F4007E1568 /* KeychainAccess in Frameworks */,
+				4CFCE495244C48F4007E1568 /* AEXML in Frameworks */,
+				4CFCE49B244C48F4007E1568 /* Reachability in Frameworks */,
+				4CFCE491244C48F4007E1568 /* SocketSwift in Frameworks */,
+				4CFCE493244C48F4007E1568 /* CryptorRSA in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,6 +422,16 @@
 				4C93B303242FE96200A956C3 /* PBXTargetDependency */,
 			);
 			name = WiredSwfitTests;
+			packageProductDependencies = (
+				4CFCE48C244C48F4007E1568 /* CZlib */,
+				4CFCE48E244C48F4007E1568 /* CryptoSwift */,
+				4CFCE490244C48F4007E1568 /* SocketSwift */,
+				4CFCE492244C48F4007E1568 /* CryptorRSA */,
+				4CFCE494244C48F4007E1568 /* AEXML */,
+				4CFCE496244C48F4007E1568 /* KeychainAccess */,
+				4CFCE49A244C48F4007E1568 /* Reachability */,
+				4CFCE49C244C48F4007E1568 /* Gzip */,
+			);
 			productName = WiredSwfitTests;
 			productReference = 4C93B2FC242FE96200A956C3 /* WiredSwfitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -531,7 +550,6 @@
 				4C75B9A4243370F700BE8857 /* XCRemoteSwiftPackageReference "BlueRSA" */,
 				4C75B9A72433717B00BE8857 /* XCRemoteSwiftPackageReference "AEXML" */,
 				4C75BA342433938400BE8857 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
-				4C8874782434836C00A5D4A0 /* XCRemoteSwiftPackageReference "JGProgressHUD" */,
 				4C8874852434DE9000A5D4A0 /* XCRemoteSwiftPackageReference "Reachability" */,
 				4C2870592449BFBA00E792AC /* XCRemoteSwiftPackageReference "GzipSwift" */,
 			);
@@ -557,6 +575,7 @@
 				4C3EE08D242FEBFF000B89D9 /* CryptorRSA.framework in Resources */,
 				4C3EE08E242FEBFF000B89D9 /* CryptoSwift.framework in Resources */,
 				4C3EE08F242FEBFF000B89D9 /* WiredSwift.framework in Resources */,
+				4CFCE49E244C4947007E1568 /* wired.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -604,9 +623,9 @@
 				4C93B2FF242FE96200A956C3 /* WiredSwfitTests.swift in Sources */,
 				4C93B31E242FEB2200A956C3 /* P7Message.swift in Sources */,
 				4C93B31F242FEB2200A956C3 /* P7Spec.swift in Sources */,
+				4CFCE4A0244C6240007E1568 /* SwCrypt.swift in Sources */,
 				4C93B317242FEB2200A956C3 /* Logger.swift in Sources */,
 				4C93B318242FEB2200A956C3 /* Const.swift in Sources */,
-				4C93B320242FEB2200A956C3 /* SwCrypt.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -620,7 +639,7 @@
 				4C4C3EE622E10C3700BC2DD9 /* Connection.swift in Sources */,
 				4C2000952421530B00A4D77A /* WiredError.swift in Sources */,
 				4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */,
-				4CFA18D9230D3A6F00E2A2EC /* SwCrypt.swift in Sources */,
+				4CFCE49F244C623F007E1568 /* SwCrypt.swift in Sources */,
 				4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */,
 				4CFA18D3230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
 				4C4C3EE922E10F6A00BC2DD9 /* Url.swift in Sources */,
@@ -635,13 +654,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C75B97A24336D9000BE8857 /* SwCrypt.swift in Sources */,
 				4C75B97B24336D9000BE8857 /* String.swift in Sources */,
 				4C75B96E24336D7300BE8857 /* UserInfo.swift in Sources */,
 				4C75B97424336D9000BE8857 /* Url.swift in Sources */,
 				4C75B97224336D9000BE8857 /* Const.swift in Sources */,
 				4C75B97624336D9000BE8857 /* P7Cipher.swift in Sources */,
 				4C75B97124336D9000BE8857 /* Logger.swift in Sources */,
+				4CFCE4AA244C7FAF007E1568 /* SwCrypt.swift in Sources */,
 				4C75B97C24336D9000BE8857 /* Data.swift in Sources */,
 				4C75B96D24336D7300BE8857 /* ServerInfo.swift in Sources */,
 				4C75B97824336D9000BE8857 /* P7Message.swift in Sources */,
@@ -668,9 +687,9 @@
 				4CE2AA6924336AF30072E0B3 /* WiredSwift_iOSTests.swift in Sources */,
 				4C75B98424336D9000BE8857 /* P7Message.swift in Sources */,
 				4C75B98524336D9000BE8857 /* P7Spec.swift in Sources */,
+				4CFCE4AB244C7FAF007E1568 /* SwCrypt.swift in Sources */,
 				4C75B97D24336D9000BE8857 /* Logger.swift in Sources */,
 				4C75B97E24336D9000BE8857 /* Const.swift in Sources */,
-				4C75B98624336D9000BE8857 /* SwCrypt.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1174,14 +1193,6 @@
 				minimumVersion = 4.1.0;
 			};
 		};
-		4C8874782434836C00A5D4A0 /* XCRemoteSwiftPackageReference "JGProgressHUD" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/JonasGessner/JGProgressHUD";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.1.0;
-			};
-		};
 		4C8874852434DE9000A5D4A0 /* XCRemoteSwiftPackageReference "Reachability" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ashleymills/Reachability.swift";
@@ -1260,6 +1271,46 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4CF673762404191600A8EDC2 /* XCRemoteSwiftPackageReference "CZlib" */;
 			productName = CZlib;
+		};
+		4CFCE48C244C48F4007E1568 /* CZlib */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CF673762404191600A8EDC2 /* XCRemoteSwiftPackageReference "CZlib" */;
+			productName = CZlib;
+		};
+		4CFCE48E244C48F4007E1568 /* CryptoSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75B99E2433705C00BE8857 /* XCRemoteSwiftPackageReference "CryptoSwift" */;
+			productName = CryptoSwift;
+		};
+		4CFCE490244C48F4007E1568 /* SocketSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75B9A1243370C900BE8857 /* XCRemoteSwiftPackageReference "Socket.swift" */;
+			productName = SocketSwift;
+		};
+		4CFCE492244C48F4007E1568 /* CryptorRSA */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75B9A4243370F700BE8857 /* XCRemoteSwiftPackageReference "BlueRSA" */;
+			productName = CryptorRSA;
+		};
+		4CFCE494244C48F4007E1568 /* AEXML */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75B9A72433717B00BE8857 /* XCRemoteSwiftPackageReference "AEXML" */;
+			productName = AEXML;
+		};
+		4CFCE496244C48F4007E1568 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C75BA342433938400BE8857 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+		4CFCE49A244C48F4007E1568 /* Reachability */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C8874852434DE9000A5D4A0 /* XCRemoteSwiftPackageReference "Reachability" */;
+			productName = Reachability;
+		};
+		4CFCE49C244C48F4007E1568 /* Gzip */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C2870592449BFBA00E792AC /* XCRemoteSwiftPackageReference "GzipSwift" */;
+			productName = Gzip;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
