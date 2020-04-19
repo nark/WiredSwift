@@ -5,6 +5,7 @@ WiredSwift is an implementation of the Wired 2.0 protocol written in Swift.
 ## Requirements
 
 * macOS 10.14
+* iOS 12
 * Xcode 
 
 ## Dependencies
