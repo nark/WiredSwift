@@ -19,6 +19,7 @@ extension Notification.Name {
 
 
 
+
 public protocol ConnectionDelegate: class {
     func connectionDidConnect(connection: Connection)
     func connectionDidFailToConnect(connection: Connection, error: Error)
@@ -27,7 +28,9 @@ public protocol ConnectionDelegate: class {
     func connectionDidSendMessage(connection: Connection, message: P7Message)
     func connectionDidReceiveMessage(connection: Connection, message: P7Message)
     func connectionDidReceiveError(connection: Connection, message: P7Message)
-    
+}
+
+public protocol ClientInfoDelegate: class {
     func clientInfoApplicationName(for connection: Connection) -> String?
     func clientInfoApplicationVersion(for connection: Connection) -> String?
     func clientInfoApplicationBuild(for connection: Connection) -> String?
@@ -39,11 +42,16 @@ public extension ConnectionDelegate {
     func connectionDidFailToConnect(connection: Connection, error: Error) { }
     func connectionDisconnected(connection: Connection, error: Error?) { }
     func connectionDidSendMessage(connection: Connection, message: P7Message) { }
-    
+}
+
+public extension ConnectionDelegate {
+    // optional delegate methods
     func clientInfoApplicationName(for connection: Connection) -> String? { return nil }
     func clientInfoApplicationVersion(for connection: Connection) -> String? { return nil }
     func clientInfoApplicationBuild(for connection: Connection) -> String? { return nil }
 }
+
+
 
 
 open class Connection: NSObject {
@@ -51,6 +59,7 @@ open class Connection: NSObject {
     public var url:         Url!
     public var socket:      P7Socket!
     public var delegates:   [ConnectionDelegate] = []
+    public var clientInfoDelegate:ClientInfoDelegate?
     public var interactive: Bool = true
     
     public var userID: UInt32!
@@ -377,31 +386,20 @@ open class Connection: NSObject {
     private func clientInfo() -> Bool {
         let message = P7Message(withName: "wired.client_info", spec: self.spec)
         message.addParameter(field: "wired.info.application.name", value: "Wired Swift")
-        
-        for d in self.delegates {
-            if let value = d.clientInfoApplicationName(for: self) {
-                message.addParameter(field: "wired.info.application.name", value: value)
-                break
-            }
+        if let value = self.clientInfoDelegate?.clientInfoApplicationName(for: self) {
+            message.addParameter(field: "wired.info.application.name", value: value)
         }
         
         message.addParameter(field: "wired.info.application.version", value: "1.0")
-        
-        for d in self.delegates {
-            if let value = d.clientInfoApplicationVersion(for: self) {
-                message.addParameter(field: "wired.info.application.name", value: value)
-                break
-            }
+        if let value = self.clientInfoDelegate?.clientInfoApplicationVersion(for: self) {
+            message.addParameter(field: "wired.info.application.name", value: value)
         }
         
         message.addParameter(field: "wired.info.application.build", value: "1")
-        
-        for d in self.delegates {
-            if let value = d.clientInfoApplicationBuild(for: self) {
-                message.addParameter(field: "wired.info.application.name", value: value)
-                break
-            }
+        if let value = self.clientInfoDelegate?.clientInfoApplicationBuild(for: self) {
+            message.addParameter(field: "wired.info.application.name", value: value)
         }
+        
         
         #if os(iOS)
         message.addParameter(field: "wired.info.os.name", value: "iOS")
