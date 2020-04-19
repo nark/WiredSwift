@@ -12,131 +12,13 @@ import FoundationXML
 #endif
 import AEXML
 
-public class SpecItem : NSObject {
-    public var spec: P7Spec!
-    public var name: String!
-    public var id: String!
-    public var version: String?
-    public var attributes: [String : Any] = [:]
-    
-    public init(name: String, spec: P7Spec, attributes: [String : Any]) {
-        self.spec       = spec
-        self.name       = name
-        self.id         = attributes["id"] as? String
-        self.version    = attributes["version"] as? String
-        self.attributes = attributes
-    }
-    
-    public override var description: String {
-        return "[\(self.id!)] \(self.name!)"
-    }
-}
 
 
-
-public enum SpecType : UInt32 {
-    case bool    = 1
-    case enum32  = 2
-    case int32   = 3
-    case uint32  = 4
-    case int64   = 5
-    case uint64  = 6
-    case double  = 7
-    case string  = 8
-    case uuid    = 9
-    case date    = 10
-    case data    = 11
-    case oobdata = 12
-    case list    = 13
-    
-    
-    public static func specType(forString: String) -> SpecType {
-        switch forString {
-        case "bool":
-            return .bool
-        case "enum32":
-            return .enum32
-        case "int32":
-            return .int32
-        case "uint32":
-            return .uint32
-        case "int64":
-            return .int64
-        case "uint64":
-            return .uint64
-        case "double":
-            return .double
-        case "string":
-            return .string
-        case "uuid":
-            return .uuid
-        case "date":
-            return .date
-        case "data":
-            return .data
-        case "oobdata":
-            return .oobdata
-        case "list":
-            return .list
-        default:
-            return .uint32
-        }
-    }
-    
-    public static func size(forType: SpecType) -> Int {
-        switch forType {
-        case bool:      return 1
-        case enum32:    return 4
-        case int32:     return 4
-        case uint32:    return 4
-        case int64:     return 8
-        case uint64:    return 8
-        case double:    return 8
-        case uuid:      return 16
-        case date:      return 8
-        case oobdata:   return 8
-            
-        default:
-            return 0
-        }
-    }
-}
-
-
-
-public class SpecField: SpecItem {
-    public var type: SpecType!
-    public var required: Bool = false
-    
-    public override init(name: String, spec: P7Spec, attributes: [String : Any]) {
-        super.init(name: name, spec: spec, attributes: attributes)
-        
-        if let typeName = attributes["type"] as? String {
-            self.type = SpecType.specType(forString: typeName)
-        }
-    }
-    
-    public func hasExplicitLength() -> Bool {
-        return type == .string || type == .data || type == .list
-    }
-}
-
-
-
-public class SpecMessage: SpecItem {
-    public var parameters : [SpecField] = []
-    
-    public override init(name: String, spec: P7Spec, attributes: [String : Any]) {
-        super.init(name: name, spec: spec, attributes: attributes)
-    }
-}
-
-
-
-public class SpecError: SpecItem {
-    
-}
-
+public typealias SpecItem       = P7SpecItem
+public typealias SpecType       = P7SpecType
+public typealias SpecField      = P7SpecField
+public typealias SpecMessage    = P7SpecMessage
+public typealias SpecError      = P7SpecError
 
 
 
