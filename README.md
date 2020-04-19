@@ -27,7 +27,6 @@ Latest upstream version:
 
     .package(name: "WiredSwift", url: "https://github.com/nark/WiredSwift", .branch("master"))
     
-
 ### Connection
 
 Minimal connection to a Wired 2.0 server:
@@ -50,15 +49,6 @@ Minimal connection to a Wired 2.0 server:
         // not connected
         print(connection.socket.errors)
     }
-    
-### Interactive socket
-
-The `Connection` class provides two ways of handling messages:
-
-* connection instance is set as `interactive` so it will automatically manage a listening loop in a separated thread and dispatch receive message through `ConnectionDelegate` protocol to registered delegates in the main thread. This is the default behavior.
-* connection instance is NOT `interactive`, and in that case you have to handle every message read/write transactions by yourself using `Connection.readMessage()` and `Connection.sendMessage()` methods. This for example is used for transfers separated connections that have different behaviors.
-
-Set the `interactive` attribute to `false` before calling `Connection.connect()` if you want to use uninteractive mode.
 
 ### Join to the public chat
 
@@ -98,9 +88,18 @@ The following example illustrate how to send a message:
     
 To learn more about the Wired 2.0 specification you can visit this documentation: [http://wired.read-write.fr/spec.html](http://wired.read-write.fr/spec.html) and read the orginal code of the `libwired` C library: [https://github.com/nark/libwired](https://github.com/nark/libwired)
 
+### Interactive socket
+
+The `Connection` class provides two ways of handling messages:
+
+* connection instance is set as `interactive` so it will automatically manage a listening loop in a separated thread and dispatch receive message through `ConnectionDelegate` protocol to registered delegates in the main thread. This is the default behavior.
+* connection instance is NOT `interactive`, and in that case you have to handle every message read/write transactions by yourself using `Connection.readMessage()` and `Connection.sendMessage()` methods. This for example is used for transfers separated connections that have different behaviors.
+
+Set the `interactive` attribute to `false` before calling `Connection.connect()` if you want to use uninteractive mode.
+
 ### Client Info Delegate
 
-The `Connection` class provieds the `ClientInfoDelegate` to return custom values for `wired.info.application.name`, `wired.info.application.version` and `wired.info.application.build` of the `wired.client_info` message. 
+The `Connection` class provides the `ClientInfoDelegate` to return custom values for `wired.info.application.name`, `wired.info.application.version` and `wired.info.application.build` of the `wired.client_info` message. 
 
     extension Controller: ClientInfoDelegate {
         func clientInfoApplicationName(for connection: Connection) -> String? {
