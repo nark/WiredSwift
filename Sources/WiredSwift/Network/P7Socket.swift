@@ -205,7 +205,7 @@ public class P7Socket: NSObject {
                 lengthData.append(uint32: UInt32(messageData.count))
                 
                 Logger.info("WRITE [\(self.hash)]: \(message.name!)")
-                Logger.debug("\(message.xml())\n")
+                Logger.debug("\n\(message.xml())\n")
                 
                 // deflate
                 if self.compressionEnabled {
@@ -296,7 +296,6 @@ public class P7Socket: NSObject {
                     if messageData.count > 0 {
                         // decryption
                         if self.encryptionEnabled {
-                            print("self.encryptionEnabled")
                             guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
                                 error = WiredError(withTitle: "Read Error", message: "Cannot decrypt data")
 
@@ -326,7 +325,7 @@ public class P7Socket: NSObject {
                         let message = P7Message(withData: messageData, spec: self.spec)
                         
                         Logger.info("READ [\(self.hash)]: \(message.name!)")
-                        Logger.debug("\(message.xml())\n")
+                        Logger.debug("\n\(message.xml())\n")
                         
                         return message
                     }

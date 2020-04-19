@@ -37,9 +37,7 @@ open class RSA {
             var encryptedData:Data? = nil
             
             #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-                let k = SwKeyConvert.PublicKey.derToPKCS8PEM(self.publicKey)
-                let pk = try SwKeyConvert.PublicKey.pemToPKCS1DER(k)
-                encryptedData = try CC.RSA.encrypt(data, derKey: pk, tag: Data(), padding: .oaep, digest: .sha1)
+                encryptedData = try CC.RSA.encrypt(data, derKey: self.publicKey, tag: Data(), padding: .oaep, digest: .sha1)
             #elseif os(Linux)
                 
             #endif
