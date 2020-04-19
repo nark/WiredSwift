@@ -8,8 +8,6 @@
 
 import Foundation
 import SocketSwift
-import CryptorRSA
-import CryptoSwift
 import CZlib
 
 
@@ -86,6 +84,7 @@ public class P7Socket: NSObject {
     public var connected: Bool = false
     
     private var socket: Socket!
+    private var rsa:RSA!
     //private var publicKey: CryptorRSA.PublicKey!
     //private var publicKey: String!
     private var publicKey: Data!
@@ -586,15 +585,9 @@ public class P7Socket: NSObject {
             return false
         }
         
-        self.publicKey = publicRSAKeyData
+        self.rsa = RSA(publicKey: publicRSAKeyData)
         
-//        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-//            self.publicKey = SwKeyConvert.PublicKey.derToPKCS8PEM(publicRSAKeyData)
-//        #elseif os(Linux)
-//            self.publicKey = try? CryptorRSA.convertDerToPem(from: publicRSAKeyData, type: CryptorRSA.RSAKey.KeyType.publicType)
-//        #endif
-        
-        if self.publicKey == nil {
+        if self.rsa == nil {
             Logger.error("Public key cannot be created")
             return false
         }
@@ -723,33 +716,11 @@ public class P7Socket: NSObject {
     }
     
     
+
+    
     
     private func encryptData(_ data: Data) -> Data? {
-        do {
-            var encryptedData:Data? = Data()
-            
-            let k = SwKeyConvert.PublicKey.derToPKCS8PEM(self.publicKey)
-            let pk = try SwKeyConvert.PublicKey.pemToPKCS1DER(k)
-            print("SwKeyConvert.PublicKey.pemToPKCS1DER() :")
-            print(k)
-            print("\n\n")
-            
-            encryptedData = try CC.RSA.encrypt(data, derKey: pk, tag: Data(), padding: .oaep, digest: .sha1)
-            print("SwCrypt:")
-            print(encryptedData?.toHex())
-            print("\n\n")
-            
-//            let dataKey = try CryptorRSA.createPublicKey(withPEM: k)
-//            print("CryptorRSA.createPublicKey(withPEM:) : \(dataKey.pemString)")
-//            let plainTextData = try CryptorRSA.createPlaintext(with: data)
-//            encryptedData = try plainTextData.encrypted(with: dataKey, algorithm: .sha1)?.data
-//            print("CryptorRSA: \(encryptedData?.toHex())")
-            
-            return encryptedData
-        } catch  {
-            Logger.error("RSA Public encrypt failed")
-        }
-        return nil
+        return self.rsa.encrypt(data: data)
     }
     
     

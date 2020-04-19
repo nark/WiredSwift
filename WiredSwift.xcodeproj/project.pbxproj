@@ -77,9 +77,7 @@
 		4C93B321242FEB2200A956C3 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C1230B07D100E2A2EC /* String.swift */; };
 		4C93B322242FEB2200A956C3 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18C3230B07E500E2A2EC /* Data.swift */; };
 		4CD0205122DF04BD0008B36C /* WiredSwift.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0204F22DF04BD0008B36C /* WiredSwift.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CD0205D22DF11920008B36C /* wired.xml in Resources */ = {isa = PBXBuildFile; fileRef = 4CD0205C22DF11920008B36C /* wired.xml */; };
-		4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; settings = {ATTRIBUTES = (Public, ); }; };
 		4CE2AA6424336AF30072E0B3 /* WiredSwift_iOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CE2AA5B24336AF20072E0B3 /* WiredSwift_iOS.framework */; };
 		4CE2AA6924336AF30072E0B3 /* WiredSwift_iOSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE2AA6824336AF30072E0B3 /* WiredSwift_iOSTests.swift */; };
 		4CE2AA6B24336AF30072E0B3 /* WiredSwift_iOS.h in Headers */ = {isa = PBXBuildFile; fileRef = 4CE2AA5D24336AF20072E0B3 /* WiredSwift_iOS.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -103,6 +101,31 @@
 		4CFCE4A0244C6240007E1568 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4CFCE4AA244C7FAF007E1568 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
 		4CFCE4AB244C7FAF007E1568 /* SwCrypt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */; };
+		4CFCE4AE244CB59D007E1568 /* RSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4AD244CB59D007E1568 /* RSA.swift */; };
+		4CFCE4AF244CB59D007E1568 /* RSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4AD244CB59D007E1568 /* RSA.swift */; };
+		4CFCE4B0244CB59D007E1568 /* RSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4AD244CB59D007E1568 /* RSA.swift */; };
+		4CFCE4B1244CB59D007E1568 /* RSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4AD244CB59D007E1568 /* RSA.swift */; };
+		4CFCE4B4244CBB7D007E1568 /* P7SpecItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B2244CBB7D007E1568 /* P7SpecItem.swift */; };
+		4CFCE4B5244CBB7D007E1568 /* P7SpecItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B2244CBB7D007E1568 /* P7SpecItem.swift */; };
+		4CFCE4B6244CBB7D007E1568 /* P7SpecItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B2244CBB7D007E1568 /* P7SpecItem.swift */; };
+		4CFCE4B9244CBBBC007E1568 /* P7SpecField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B8244CBBBC007E1568 /* P7SpecField.swift */; };
+		4CFCE4BB244CBBBC007E1568 /* P7SpecField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B8244CBBBC007E1568 /* P7SpecField.swift */; };
+		4CFCE4BC244CBBBC007E1568 /* P7SpecField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B8244CBBBC007E1568 /* P7SpecField.swift */; };
+		4CFCE4C2244CBE1D007E1568 /* P7Spec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD0205A22DF07B60008B36C /* P7Spec.swift */; };
+		4CFCE4C3244CBE1D007E1568 /* P7SpecType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B7244CBBAE007E1568 /* P7SpecType.swift */; };
+		4CFCE4C4244CBE1D007E1568 /* P7SpecField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B8244CBBBC007E1568 /* P7SpecField.swift */; };
+		4CFCE4C5244CBE1D007E1568 /* P7SpecMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BD244CBBD3007E1568 /* P7SpecMessage.swift */; };
+		4CFCE4C6244CBE1D007E1568 /* P7SpecError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BE244CBBE1007E1568 /* P7SpecError.swift */; };
+		4CFCE4C7244CBE1D007E1568 /* P7SpecItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B2244CBB7D007E1568 /* P7SpecItem.swift */; };
+		4CFCE4C8244CBE1E007E1568 /* P7SpecType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B7244CBBAE007E1568 /* P7SpecType.swift */; };
+		4CFCE4C9244CBE1E007E1568 /* P7SpecMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BD244CBBD3007E1568 /* P7SpecMessage.swift */; };
+		4CFCE4CA244CBE1E007E1568 /* P7SpecError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BE244CBBE1007E1568 /* P7SpecError.swift */; };
+		4CFCE4CB244CBE1E007E1568 /* P7SpecType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B7244CBBAE007E1568 /* P7SpecType.swift */; };
+		4CFCE4CC244CBE1E007E1568 /* P7SpecMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BD244CBBD3007E1568 /* P7SpecMessage.swift */; };
+		4CFCE4CD244CBE1E007E1568 /* P7SpecError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BE244CBBE1007E1568 /* P7SpecError.swift */; };
+		4CFCE4CE244CBE1E007E1568 /* P7SpecType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4B7244CBBAE007E1568 /* P7SpecType.swift */; };
+		4CFCE4CF244CBE1E007E1568 /* P7SpecMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BD244CBBD3007E1568 /* P7SpecMessage.swift */; };
+		4CFCE4D0244CBE1E007E1568 /* P7SpecError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CFCE4BE244CBBE1007E1568 /* P7SpecError.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -170,6 +193,12 @@
 		4CFA18D4230C741800E2A2EC /* UserInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInfo.swift; sourceTree = "<group>"; };
 		4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwCrypt.swift; sourceTree = "<group>"; };
 		4CFB161F23FC89A7000EE688 /* KeychainAccess.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = KeychainAccess.framework; path = Carthage/Build/Mac/KeychainAccess.framework; sourceTree = SOURCE_ROOT; };
+		4CFCE4AD244CB59D007E1568 /* RSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSA.swift; sourceTree = "<group>"; };
+		4CFCE4B2244CBB7D007E1568 /* P7SpecItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7SpecItem.swift; sourceTree = "<group>"; };
+		4CFCE4B7244CBBAE007E1568 /* P7SpecType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7SpecType.swift; sourceTree = "<group>"; };
+		4CFCE4B8244CBBBC007E1568 /* P7SpecField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7SpecField.swift; sourceTree = "<group>"; };
+		4CFCE4BD244CBBD3007E1568 /* P7SpecMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7SpecMessage.swift; sourceTree = "<group>"; };
+		4CFCE4BE244CBBE1007E1568 /* P7SpecError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7SpecError.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -332,6 +361,8 @@
 		4CFA18BC230B076A00E2A2EC /* Crypto */ = {
 			isa = PBXGroup;
 			children = (
+				4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */,
+				4CFCE4AD244CB59D007E1568 /* RSA.swift */,
 				4CFA18D7230D3A6F00E2A2EC /* SwCrypt.swift */,
 			);
 			path = Crypto;
@@ -340,10 +371,13 @@
 		4CFA18BD230B077A00E2A2EC /* P7 */ = {
 			isa = PBXGroup;
 			children = (
-				4CED2FCB22E9A7FD000E5B9E /* P7Cipher.swift */,
-				4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */,
 				4C4C3EF022E1154900BC2DD9 /* P7Message.swift */,
 				4CD0205A22DF07B60008B36C /* P7Spec.swift */,
+				4CFCE4B7244CBBAE007E1568 /* P7SpecType.swift */,
+				4CFCE4B8244CBBBC007E1568 /* P7SpecField.swift */,
+				4CFCE4BD244CBBD3007E1568 /* P7SpecMessage.swift */,
+				4CFCE4BE244CBBE1007E1568 /* P7SpecError.swift */,
+				4CFCE4B2244CBB7D007E1568 /* P7SpecItem.swift */,
 			);
 			path = P7;
 			sourceTree = "<group>";
@@ -353,6 +387,7 @@
 			children = (
 				4C4C3EE722E10F6A00BC2DD9 /* Url.swift */,
 				4C4C3EE422E10C3700BC2DD9 /* Connection.swift */,
+				4C4C3EE122E10C0200BC2DD9 /* P7Socket.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -393,7 +428,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				4CD0205122DF04BD0008B36C /* WiredSwift.h in Headers */,
-				4CD0205F22E0FCB10008B36C /* P7Spec.swift in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -616,15 +650,21 @@
 				4C93B315242FEB2200A956C3 /* ServerInfo.swift in Sources */,
 				4C93B316242FEB2200A956C3 /* UserInfo.swift in Sources */,
 				4C93B31D242FEB2200A956C3 /* P7Socket.swift in Sources */,
+				4CFCE4CA244CBE1E007E1568 /* P7SpecError.swift in Sources */,
 				4C93B321242FEB2200A956C3 /* String.swift in Sources */,
 				4C93B31A242FEB2200A956C3 /* Url.swift in Sources */,
 				4C93B31B242FEB2200A956C3 /* Connection.swift in Sources */,
 				4C93B319242FEB2200A956C3 /* WiredError.swift in Sources */,
 				4C93B2FF242FE96200A956C3 /* WiredSwfitTests.swift in Sources */,
+				4CFCE4AF244CB59D007E1568 /* RSA.swift in Sources */,
+				4CFCE4B4244CBB7D007E1568 /* P7SpecItem.swift in Sources */,
 				4C93B31E242FEB2200A956C3 /* P7Message.swift in Sources */,
 				4C93B31F242FEB2200A956C3 /* P7Spec.swift in Sources */,
 				4CFCE4A0244C6240007E1568 /* SwCrypt.swift in Sources */,
+				4CFCE4BC244CBBBC007E1568 /* P7SpecField.swift in Sources */,
 				4C93B317242FEB2200A956C3 /* Logger.swift in Sources */,
+				4CFCE4C9244CBE1E007E1568 /* P7SpecMessage.swift in Sources */,
+				4CFCE4C8244CBE1E007E1568 /* P7SpecType.swift in Sources */,
 				4C93B318242FEB2200A956C3 /* Const.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -633,20 +673,26 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4CFCE4C7244CBE1D007E1568 /* P7SpecItem.swift in Sources */,
+				4CFCE4C2244CBE1D007E1568 /* P7Spec.swift in Sources */,
 				4CFA18C2230B07D100E2A2EC /* String.swift in Sources */,
 				4CED2FCD22E9A7FD000E5B9E /* P7Cipher.swift in Sources */,
 				4C4C3EE322E10C0200BC2DD9 /* P7Socket.swift in Sources */,
 				4C4C3EE622E10C3700BC2DD9 /* Connection.swift in Sources */,
 				4C2000952421530B00A4D77A /* WiredError.swift in Sources */,
 				4CFA18C4230B07E500E2A2EC /* Data.swift in Sources */,
+				4CFCE4C4244CBE1D007E1568 /* P7SpecField.swift in Sources */,
 				4CFCE49F244C623F007E1568 /* SwCrypt.swift in Sources */,
-				4CD0205B22DF07B60008B36C /* P7Spec.swift in Sources */,
 				4CFA18D3230C6ECE00E2A2EC /* ServerInfo.swift in Sources */,
 				4C4C3EE922E10F6A00BC2DD9 /* Url.swift in Sources */,
 				4C4C3EEC22E1131B00BC2DD9 /* Const.swift in Sources */,
 				4C4C3EF222E1154900BC2DD9 /* P7Message.swift in Sources */,
+				4CFCE4C6244CBE1D007E1568 /* P7SpecError.swift in Sources */,
 				4CFA18D6230C741800E2A2EC /* UserInfo.swift in Sources */,
 				4CED2FC022E8EF90000E5B9E /* Logger.swift in Sources */,
+				4CFCE4AE244CB59D007E1568 /* RSA.swift in Sources */,
+				4CFCE4C3244CBE1D007E1568 /* P7SpecType.swift in Sources */,
+				4CFCE4C5244CBE1D007E1568 /* P7SpecMessage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -657,17 +703,23 @@
 				4C75B97B24336D9000BE8857 /* String.swift in Sources */,
 				4C75B96E24336D7300BE8857 /* UserInfo.swift in Sources */,
 				4C75B97424336D9000BE8857 /* Url.swift in Sources */,
+				4CFCE4CB244CBE1E007E1568 /* P7SpecType.swift in Sources */,
 				4C75B97224336D9000BE8857 /* Const.swift in Sources */,
 				4C75B97624336D9000BE8857 /* P7Cipher.swift in Sources */,
+				4CFCE4B5244CBB7D007E1568 /* P7SpecItem.swift in Sources */,
 				4C75B97124336D9000BE8857 /* Logger.swift in Sources */,
 				4CFCE4AA244C7FAF007E1568 /* SwCrypt.swift in Sources */,
 				4C75B97C24336D9000BE8857 /* Data.swift in Sources */,
 				4C75B96D24336D7300BE8857 /* ServerInfo.swift in Sources */,
+				4CFCE4CC244CBE1E007E1568 /* P7SpecMessage.swift in Sources */,
+				4CFCE4CD244CBE1E007E1568 /* P7SpecError.swift in Sources */,
 				4C75B97824336D9000BE8857 /* P7Message.swift in Sources */,
+				4CFCE4BB244CBBBC007E1568 /* P7SpecField.swift in Sources */,
 				4C75B97324336D9000BE8857 /* WiredError.swift in Sources */,
 				4C75B97524336D9000BE8857 /* Connection.swift in Sources */,
 				4C75B97924336D9000BE8857 /* P7Spec.swift in Sources */,
 				4C75B97724336D9000BE8857 /* P7Socket.swift in Sources */,
+				4CFCE4B0244CB59D007E1568 /* RSA.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -680,15 +732,21 @@
 				4C75B96F24336D7500BE8857 /* ServerInfo.swift in Sources */,
 				4C75B97024336D7500BE8857 /* UserInfo.swift in Sources */,
 				4C75B98324336D9000BE8857 /* P7Socket.swift in Sources */,
+				4CFCE4D0244CBE1E007E1568 /* P7SpecError.swift in Sources */,
 				4C75B98724336D9000BE8857 /* String.swift in Sources */,
 				4C75B98024336D9000BE8857 /* Url.swift in Sources */,
 				4C75B98124336D9000BE8857 /* Connection.swift in Sources */,
 				4C75B97F24336D9000BE8857 /* WiredError.swift in Sources */,
 				4CE2AA6924336AF30072E0B3 /* WiredSwift_iOSTests.swift in Sources */,
+				4CFCE4B1244CB59D007E1568 /* RSA.swift in Sources */,
+				4CFCE4B6244CBB7D007E1568 /* P7SpecItem.swift in Sources */,
 				4C75B98424336D9000BE8857 /* P7Message.swift in Sources */,
 				4C75B98524336D9000BE8857 /* P7Spec.swift in Sources */,
 				4CFCE4AB244C7FAF007E1568 /* SwCrypt.swift in Sources */,
+				4CFCE4B9244CBBBC007E1568 /* P7SpecField.swift in Sources */,
 				4C75B97D24336D9000BE8857 /* Logger.swift in Sources */,
+				4CFCE4CF244CBE1E007E1568 /* P7SpecMessage.swift in Sources */,
+				4CFCE4CE244CBE1E007E1568 /* P7SpecType.swift in Sources */,
 				4C75B97E24336D9000BE8857 /* Const.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -916,7 +974,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.WiredSwift";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -954,7 +1012,7 @@
 					"@loader_path/Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.WiredSwift";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -990,7 +1048,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.WiredSwift";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
@@ -1027,7 +1085,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.5;
+				MARKETING_VERSION = 1.0.6;
 				PRODUCT_BUNDLE_IDENTIFIER = "fr.read-write.WiredSwift";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = iphoneos;
