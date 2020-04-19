@@ -30,6 +30,6 @@ final class WiredSwiftTests: XCTestCase {
 
     static var allTests = [
         ("testUrl", testUrl),
-        ("testConnect", testConnect),
+        //("testConnect", testConnect),
     ]
 }
