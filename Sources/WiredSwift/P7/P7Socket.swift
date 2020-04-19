@@ -87,7 +87,8 @@ public class P7Socket: NSObject {
     
     private var socket: Socket!
     //private var publicKey: CryptorRSA.PublicKey!
-    private var publicKey: String!
+    //private var publicKey: String!
+    private var publicKey: Data!
     private var dropped:Data = Data()
     
     private var deflateStream:z_stream = zlib.z_stream()
@@ -585,11 +586,13 @@ public class P7Socket: NSObject {
             return false
         }
         
-        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-            self.publicKey = SwKeyConvert.PublicKey.derToPKCS8PEM(publicRSAKeyData)
-        #elseif os(Linux)
-            self.publicKey = try? CryptorRSA.convertDerToPem(from: publicRSAKeyData, type: CryptorRSA.RSAKey.KeyType.publicType)
-        #endif
+        self.publicKey = publicRSAKeyData
+        
+//        #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+//            self.publicKey = SwKeyConvert.PublicKey.derToPKCS8PEM(publicRSAKeyData)
+//        #elseif os(Linux)
+//            self.publicKey = try? CryptorRSA.convertDerToPem(from: publicRSAKeyData, type: CryptorRSA.RSAKey.KeyType.publicType)
+//        #endif
         
         if self.publicKey == nil {
             Logger.error("Public key cannot be created")
@@ -723,14 +726,26 @@ public class P7Socket: NSObject {
     
     private func encryptData(_ data: Data) -> Data? {
         do {
-            #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-                let dataKey = try SwKeyConvert.PublicKey.pemToPKCS1DER(self.publicKey)
-                return try CC.RSA.encrypt(data, derKey: dataKey, tag: Data(), padding: .oaep, digest: .sha1)
-            #elseif os(Linux)
-                let dataKey = try CryptorRSA.createPrivateKey(withPEM: self.publicKey)
-                let plainTextData = try CryptorRSA.createPlaintext(with: data)
-                return try plainTextData.encrypted(with: self.publicKey, algorithm: .sha1)?.data
-            #endif
+            var encryptedData:Data? = Data()
+            
+            let k = SwKeyConvert.PublicKey.derToPKCS8PEM(self.publicKey)
+            let pk = try SwKeyConvert.PublicKey.pemToPKCS1DER(k)
+            print("SwKeyConvert.PublicKey.pemToPKCS1DER() :")
+            print(k)
+            print("\n\n")
+            
+            encryptedData = try CC.RSA.encrypt(data, derKey: pk, tag: Data(), padding: .oaep, digest: .sha1)
+            print("SwCrypt:")
+            print(encryptedData?.toHex())
+            print("\n\n")
+            
+//            let dataKey = try CryptorRSA.createPublicKey(withPEM: k)
+//            print("CryptorRSA.createPublicKey(withPEM:) : \(dataKey.pemString)")
+//            let plainTextData = try CryptorRSA.createPlaintext(with: data)
+//            encryptedData = try plainTextData.encrypted(with: dataKey, algorithm: .sha1)?.data
+//            print("CryptorRSA: \(encryptedData?.toHex())")
+            
+            return encryptedData
         } catch  {
             Logger.error("RSA Public encrypt failed")
         }
