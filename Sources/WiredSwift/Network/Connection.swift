@@ -44,7 +44,7 @@ public extension ConnectionDelegate {
     func connectionDidSendMessage(connection: Connection, message: P7Message) { }
 }
 
-public extension ConnectionDelegate {
+public extension ClientInfoDelegate {
     // optional delegate methods
     func clientInfoApplicationName(for connection: Connection) -> String? { return nil }
     func clientInfoApplicationVersion(for connection: Connection) -> String? { return nil }
@@ -386,18 +386,19 @@ open class Connection: NSObject {
     private func clientInfo() -> Bool {
         let message = P7Message(withName: "wired.client_info", spec: self.spec)
         message.addParameter(field: "wired.info.application.name", value: "Wired Swift")
+        
         if let value = self.clientInfoDelegate?.clientInfoApplicationName(for: self) {
             message.addParameter(field: "wired.info.application.name", value: value)
         }
         
         message.addParameter(field: "wired.info.application.version", value: "1.0")
         if let value = self.clientInfoDelegate?.clientInfoApplicationVersion(for: self) {
-            message.addParameter(field: "wired.info.application.name", value: value)
+            message.addParameter(field: "wired.info.application.version", value: value)
         }
         
         message.addParameter(field: "wired.info.application.build", value: "1")
         if let value = self.clientInfoDelegate?.clientInfoApplicationBuild(for: self) {
-            message.addParameter(field: "wired.info.application.name", value: value)
+            message.addParameter(field: "wired.info.application.build", value: value)
         }
         
         
