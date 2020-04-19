@@ -2,7 +2,7 @@ import XCTest
 @testable import WiredSwift
 
 final class WiredSwiftTests: XCTestCase {
-    let specURL = URL(string: "httpw://wired.read-write.fr/wired.xml")!
+    let specURL = URL(string: "https://wired.read-write.fr/wired.xml")!
 
     func testUrl() {
         let url = Url(withString: "wired://guest:password@localhost:4871")
