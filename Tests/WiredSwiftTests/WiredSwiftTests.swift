@@ -29,7 +29,7 @@ final class WiredSwiftTests: XCTestCase {
         let connection = Connection(withSpec: spec, delegate: self)
         connection.clientInfoDelegate = self
         
-        XCTAssert(connection.connect(withUrl: url, cipher: .NONE) == true)
+        XCTAssert(connection.connect(withUrl: url) == true)
     }
 
 
