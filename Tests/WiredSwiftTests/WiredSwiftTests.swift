@@ -23,8 +23,8 @@ final class WiredSwiftTests: XCTestCase {
             return
         }
         
-        let url = Url(withString: "wired://wired.read-write.fr")
-        //let url = Url(withString: "wired://localhost")
+        //let url = Url(withString: "wired://wired.read-write.fr")
+        let url = Url(withString: "wired://localhost")
         
         let connection = Connection(withSpec: spec, delegate: self)
         connection.clientInfoDelegate = self

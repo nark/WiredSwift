@@ -234,17 +234,10 @@ public class P7Socket: NSObject {
                                 
                 // checksum
                 if self.checksumEnabled {
-                    do {
-                        var digest = SHA1()
-                        var checksum = try digest.update(withBytes: originalData.bytes)
-                            checksum = try digest.finish()
-                                                
-                        _ = self.write(checksum, maxLength: checksum.count)
-                    } catch {
-                        Logger.error("Write checksum error")
-                    }
+                    let checksum = originalData.sha1()
+                    
+                    _ = self.write(checksum.bytes, maxLength: checksum.count)
                 }
-                
             }
             
         } catch let error {
@@ -338,17 +331,11 @@ public class P7Socket: NSObject {
                             do {
                                 let remoteChecksum = try self.readData(size: self.checksumLength)
                                 
-                                if remoteChecksum.count == 0 {
-                                    return nil
-                                }
-
-                                let checksum = messageData.sha1()
-                                                                
-                                if !checksum.elementsEqual(remoteChecksum) {
+                                if remoteChecksum.count == 0 { return nil }
+                                if !messageData.sha1().elementsEqual(remoteChecksum) {
                                     Logger.fatal("Checksum failed")
                                     return nil
                                 }
-
                             } catch let e {
                                 Logger.error("Checksum error: \(e)")
                             }
@@ -471,6 +458,21 @@ public class P7Socket: NSObject {
                     messageData = inflatedMessageData
                 }
                 
+                // checksum
+                if self.checksumEnabled {
+                    do {
+                        let remoteChecksum = try self.readData(size: self.checksumLength)
+                        
+                        if remoteChecksum.count == 0 { return nil }
+                        if !messageData.sha1().elementsEqual(remoteChecksum) {
+                            Logger.fatal("Checksum failed")
+                            return nil
+                        }
+                    } catch let e {
+                        Logger.error("Checksum error: \(e)")
+                    }
+                }
+                
                 return messageData
             }
         }
@@ -487,6 +489,7 @@ public class P7Socket: NSObject {
         do {
             if self.serialization == .BINARY {
                 var messageData = data
+                let originalData = messageData
                 var lengthData = Data()
                 
                 lengthData.append(uint32: UInt32(messageData.count))
@@ -516,6 +519,13 @@ public class P7Socket: NSObject {
                 
                 _ = try self.socket.write(lengthData.bytes, size: lengthData.count)
                 _ = try self.socket.write(messageData.bytes, size: messageData.count)
+                
+                // checksum
+                if self.checksumEnabled {
+                    let checksum = originalData.sha1()
+                    
+                    _ = self.write(checksum.bytes, maxLength: checksum.count)
+                }
             }
         } catch let error {
             if let socketError = error as? Socket.Error {
