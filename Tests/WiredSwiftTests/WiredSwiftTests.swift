@@ -3,7 +3,9 @@ import XCTest
 
 final class WiredSwiftTests: XCTestCase {
     let specURL = URL(string: "https://wired.read-write.fr/wired.xml")!
-
+    let serverURL = Url(withString: "wired://wired.read-write.fr")
+    //let serverURL = Url(withString: "wired://localhost")
+    
     func testUrl() {
         let url = Url(withString: "wired://guest:password@localhost:4871")
         
@@ -23,19 +25,34 @@ final class WiredSwiftTests: XCTestCase {
             return
         }
         
-        //let url = Url(withString: "wired://wired.read-write.fr")
-        let url = Url(withString: "wired://localhost")
-        
         let connection = Connection(withSpec: spec, delegate: self)
         connection.clientInfoDelegate = self
         
-        XCTAssert(connection.connect(withUrl: url) == true)
+        XCTAssert(connection.connect(withUrl: serverURL) == true)
+    }
+    
+    
+    func testUploadFile() {
+        guard let spec = P7Spec(withUrl: specURL) else {
+            XCTFail()
+            return
+        }
+                
+        let connection = Connection(withSpec: spec, delegate: self)
+        connection.clientInfoDelegate = self
+        connection.interactive = false
+        
+        // create a secondary connection
+        if (connection.connect(withUrl: serverURL) == false) {
+
+        }
     }
 
 
     static var allTests = [
         ("testUrl", testUrl),
         ("testConnect", testConnect),
+        ("testUploadFile", testUploadFile),
     ]
 }
 
