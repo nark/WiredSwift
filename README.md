@@ -70,8 +70,8 @@ While using interactive mode, you have to comply with the `ConnectionDelegate` p
         }
         
         func connectionDidReceiveError(connection: Connection, message: P7Message) {
-            if let specError = spec.error(forMessage: message), let message = specError.name {
-            
+            if let specError = spec.error(forMessage: message), let errorMessage = specError.name {
+                print(errorMessage)
             }
         }
     }

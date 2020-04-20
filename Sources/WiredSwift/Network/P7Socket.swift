@@ -8,9 +8,11 @@
 
 import Foundation
 import SocketSwift
+import CryptoSwift
 import CZlib
 
-
+var md5DigestLength     = 16
+var sha1DigestLength    = 20
 
 public class P7Socket: NSObject {
     public enum Serialization:Int {
@@ -23,10 +25,10 @@ public class P7Socket: NSObject {
         case DEFLATE        = 0
     }
     
-    public enum Checksum:Int {
+    public enum Checksum:UInt32 {
         case NONE           = 999
         case SHA1           = 0
-        case SHA256         = 1
+        // case SHA256         = 1
     }
     
     public enum CipherType:UInt32 {
@@ -54,7 +56,7 @@ public class P7Socket: NSObject {
             }
         }
     }
-    
+
     
     public var hostname: String!
     public var port: Int!
@@ -74,6 +76,7 @@ public class P7Socket: NSObject {
     
     public var encryptionEnabled: Bool = false
     public var checksumEnabled: Bool = false
+    public var checksumLength: Int = sha1DigestLength
     
     public var localCompatibilityCheck: Bool = false
     public var remoteCompatibilityCheck: Bool = false
@@ -85,10 +88,6 @@ public class P7Socket: NSObject {
     
     private var socket: Socket!
     private var rsa:RSA!
-    //private var publicKey: CryptorRSA.PublicKey!
-    //private var publicKey: String!
-    private var publicKey: Data!
-    private var dropped:Data = Data()
     
     private var deflateStream:z_stream = zlib.z_stream()
     private var inflateStream:z_stream = zlib.z_stream()
@@ -189,8 +188,6 @@ public class P7Socket: NSObject {
     
     
     public func write(_ message: P7Message) -> Bool {
-        //usleep(100000)
-        
         do {
             if self.serialization == .XML {
                 let xml = message.xml()
@@ -200,12 +197,14 @@ public class P7Socket: NSObject {
                 }
             }
             else if self.serialization == .BINARY {
-                var messageData = message.bin()
                 var lengthData = Data()
+                var messageData = message.bin()
+                let originalData = messageData
+                
                 lengthData.append(uint32: UInt32(messageData.count))
                 
                 Logger.info("WRITE [\(self.hash)]: \(message.name!)")
-                Logger.debug("\n\(message.xml())\n")
+                //Logger.debug("\n\(message.xml())\n")
                 
                 // deflate
                 if self.compressionEnabled {
@@ -231,7 +230,20 @@ public class P7Socket: NSObject {
                 }
                 
                 _ = self.write(lengthData.bytes, maxLength: lengthData.count)
-                _ = self.write(messageData.bytes, maxLength: messageData.count)
+                _ = self.write(messageData.bytes, maxLength: messageData.bytes.count)
+                                
+                // checksum
+                if self.checksumEnabled {
+                    do {
+                        var digest = SHA1()
+                        var checksum = try digest.update(withBytes: originalData.bytes)
+                            checksum = try digest.finish()
+                                                
+                        _ = self.write(checksum, maxLength: checksum.count)
+                    } catch {
+                        Logger.error("Write checksum error")
+                    }
+                }
                 
             }
             
@@ -255,7 +267,7 @@ public class P7Socket: NSObject {
         
         var lengthBuffer = [Byte](repeating: 0, count: 4)
         let bytesRead = self.read(&lengthBuffer, maxLength: 4)
-                        
+                                
         if bytesRead > 0 {
             if self.serialization == .XML {
                 if let xml = String(bytes: messageData, encoding: .utf8) {
@@ -321,11 +333,32 @@ public class P7Socket: NSObject {
                             messageData = inflatedMessageData
                         }
                         
+                        // checksum
+                        if self.checksumEnabled {
+                            do {
+                                let remoteChecksum = try self.readData(size: self.checksumLength)
+                                
+                                if remoteChecksum.count == 0 {
+                                    return nil
+                                }
+
+                                let checksum = messageData.sha1()
+                                                                
+                                if !checksum.elementsEqual(remoteChecksum) {
+                                    Logger.fatal("Checksum failed")
+                                    return nil
+                                }
+
+                            } catch let e {
+                                Logger.error("Checksum error: \(e)")
+                            }
+                        }
+
                         // init response message
                         let message = P7Message(withData: messageData, spec: self.spec)
                         
                         Logger.info("READ [\(self.hash)]: \(message.name!)")
-                        Logger.debug("\n\(message.xml())\n")
+                        //Logger.debug("\n\(message.xml())\n")
                         
                         return message
                     }
@@ -512,6 +545,10 @@ public class P7Socket: NSObject {
             if self.compression != .NONE {
                 message.addParameter(field: "p7.handshake.compression", value: self.compression.rawValue)
             }
+            
+            if self.checksum != .NONE {
+                message.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
+            }
         }
         
         _ = self.write(message)
@@ -547,9 +584,8 @@ public class P7Socket: NSObject {
             if let cip = response.enumeration(forField: "p7.handshake.encryption") {
                 self.cipherType = P7Socket.CipherType(rawValue: cip)!
             }
-            if let _ = response.enumeration(forField: "p7.handshake.checksum") {
-                // TODO: impl checksums
-                // self.checksum = P7Socket.Checksum(rawValue: chs)!
+            if let chs = response.enumeration(forField: "p7.handshake.checksum") {
+                self.checksum = P7Socket.Checksum(rawValue: chs)!
             }
         }
                 
@@ -663,7 +699,7 @@ public class P7Socket: NSObject {
             //print("serverPasswordData : \(serverPasswordData.toHex())")
             //print("clientPassword2 : \(clientPassword2.toHex())")
             
-            // TODO: write my own passwords comparison method
+            // TODO: write our own passwords comparison method, this is uggly
             if serverPasswordData.toHexString() != clientPassword2.toHexString() {
                 Logger.error("Password mismatch during key exchange")
                 return false
@@ -752,6 +788,10 @@ public class P7Socket: NSObject {
     
     
     private func configureChecksum() {
+        if self.checksum == .SHA1 {
+            self.checksumLength = sha1DigestLength
+        }
+        
         self.checksumEnabled = true
     }
     

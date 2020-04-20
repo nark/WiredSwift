@@ -17,15 +17,19 @@ final class WiredSwiftTests: XCTestCase {
     
     func testConnect() {
         Logger.setMaxLevel(.VERBOSE)
+        
         guard let spec = P7Spec(withUrl: specURL) else {
             XCTFail()
             return
         }
         
         let url = Url(withString: "wired://wired.read-write.fr")
-        let connection = Connection(withSpec: spec)
+        //let url = Url(withString: "wired://localhost")
         
-        XCTAssert(connection.connect(withUrl: url) == true)
+        let connection = Connection(withSpec: spec, delegate: self)
+        connection.clientInfoDelegate = self
+        
+        XCTAssert(connection.connect(withUrl: url, cipher: .NONE) == true)
     }
 
 
@@ -33,4 +37,31 @@ final class WiredSwiftTests: XCTestCase {
         ("testUrl", testUrl),
         ("testConnect", testConnect),
     ]
+}
+
+
+
+extension WiredSwiftTests: ConnectionDelegate {
+    func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
+        
+    }
+    
+    func connectionDidReceiveError(connection: Connection, message: P7Message) {
+        
+    }
+}
+
+
+extension WiredSwiftTests: ClientInfoDelegate {
+    func clientInfoApplicationName(for connection: Connection) -> String? {
+        return "WiredSwiftTests"
+    }
+    
+    func clientInfoApplicationVersion(for connection: Connection) -> String? {
+        return "1.0"
+    }
+    
+    func clientInfoApplicationBuild(for connection: Connection) -> String? {
+        return "1"
+    }
 }

@@ -102,17 +102,18 @@ open class Connection: NSObject {
     }
     
     
-    public func connect(withUrl url: Url) -> Bool {
+    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .RSA_AES_256, compression:P7Socket.Compression = .NONE, checksum:P7Socket.Checksum = .SHA1) -> Bool {
         self.url    = url
         
         self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
         
-        self.socket.username = url.login
-        self.socket.password = url.password
+        self.socket.username    = url.login
+        self.socket.password    = url.password
         
-        self.socket.cipherType  = .RSA_AES_256
-        self.socket.compression = .NONE //
-        
+        self.socket.cipherType  = cipher
+        self.socket.compression = compression // TODO: Gzip deflate still not implemented
+        self.socket.checksum    = checksum
+
         if !self.socket.connect() {
             return false
         }
@@ -364,9 +365,7 @@ open class Connection: NSObject {
         message.addParameter(field: "wired.user.password", value: password)
         
         _ = self.send(message: message)
-        
-        //sleep(1)
-        
+                
         guard let response = self.socket.readMessage() else {
             return false
         }
@@ -423,8 +422,9 @@ open class Connection: NSObject {
         message.addParameter(field: "wired.info.supports_rsrc", value: false)
         
         _ = self.send(message: message)
-        
+                
         guard let response = self.socket.readMessage() else {
+            print("no response ?")
             return false
         }
                 
