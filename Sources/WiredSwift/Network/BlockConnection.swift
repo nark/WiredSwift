@@ -34,8 +34,10 @@ class BlockConnection: Connection {
         }
     }
     
-    
     override func handleMessage(_ message: P7Message) {
+        // lets delegate handled messages transparently
+        super.handleMessage(message)
+        
         guard let transaction = message.uint32(forField: "wired.transaction") else {
             return
         }
