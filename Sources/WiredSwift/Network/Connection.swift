@@ -251,7 +251,7 @@ open class Connection: NSObject {
     
     
     
-    private func handleMessage(_ message:P7Message) {
+    internal func handleMessage(_ message:P7Message) {
         switch message.name {
         case "wired.send_ping":
             self.pingReply()
@@ -274,7 +274,7 @@ open class Connection: NSObject {
     
     
     
-    private func pingReply() {
+    internal func pingReply() {
         _ = self.send(message: P7Message(withName: "wired.ping", spec: self.spec))
         
         self.lastPingDate = Date()
