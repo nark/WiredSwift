@@ -8,7 +8,7 @@
 
 import Foundation
 
-class BlockConnection: Connection {
+public class BlockConnection: Connection {
     private let queue = DispatchQueue(label: "fr.read-write.WiredSwift.BlockConnection", attributes: .concurrent)
     
     var transactionCounter:UInt32 = 0
