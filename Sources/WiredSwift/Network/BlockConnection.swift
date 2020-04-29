@@ -9,6 +9,8 @@
 import Foundation
 
 class BlockConnection: Connection {
+    private let queue = DispatchQueue(label: "fr.read-write.WiredSwift.BlockConnection", attributes: .concurrent)
+    
     var transactionCounter:UInt32 = 0
     var progressBlocks:[UInt32:(P7Message) -> Void] = [:]
     var completionBlocks:[UInt32:(P7Message?) -> Void] = [:]
@@ -23,8 +25,10 @@ class BlockConnection: Connection {
                 completionBlock(nil)
             }
             
-            self.progressBlocks[self.transactionCounter]    = progressBlock
-            self.completionBlocks[self.transactionCounter]  = completionBlock
+            queue.async(flags: .barrier) {
+                self.progressBlocks[self.transactionCounter]    = progressBlock
+                self.completionBlocks[self.transactionCounter]  = completionBlock
+            }
         } else {
             completionBlock(nil)
         }
@@ -41,23 +45,35 @@ class BlockConnection: Connection {
             super.pingReply()
             
         case "wired.error":
-            if let completionBlock = completionBlocks[transaction] {
-                DispatchQueue.main.async {
-                    completionBlock(message)
+            queue.sync {
+                if let completionBlock = completionBlocks[transaction] {
+                    DispatchQueue.main.async {
+                        completionBlock(message)
+                    }
+                    
+                    completionBlocks.removeValue(forKey: transaction)
+                    progressBlocks.removeValue(forKey: transaction)
                 }
             }
                     
         default:
             if message.name == "wired.okay" || message.name.hasSuffix(".done") {
-                if let completionBlock = completionBlocks[transaction] {
-                    DispatchQueue.main.async {
-                        completionBlock(message)
+                queue.sync {
+                    if let completionBlock = completionBlocks[transaction] {
+                        DispatchQueue.main.async {
+                            completionBlock(message)
+                        }
+                        
+                        completionBlocks.removeValue(forKey: transaction)
+                        progressBlocks.removeValue(forKey: transaction)
                     }
                 }
             } else {
-                if let progressBlock = progressBlocks[transaction] {
-                    DispatchQueue.main.async {
-                        progressBlock(message)
+                queue.sync {
+                    if let progressBlock = progressBlocks[transaction] {
+                        DispatchQueue.main.async {
+                            progressBlock(message)
+                        }
                     }
                 }
             }
