@@ -115,6 +115,24 @@ The `Connection` class provides the `ClientInfoDelegate` to return custom values
         }
     }
     
+### BlockConnection
+
+WiredSwift provides a `BlockConnection` class which instead of using delegate, uses Swift completion closure, combined with Wired 2.0 transaction (`wired.transaction`). Each message sent using this class is flagged with an incremental transaction number in the `wired.transaction` field. Each response to this relative message sent by the server will also provide the same transaction number in the `wired.transaction` field. This way, the `BlockConnection` class can idenitify internally match responses with completion closure as callbacks.
+
+    let connection = BlockConnection(withSpec: spec, delegate: self)
+
+    if connection.connect(withUrl: serverURL) {
+        let message = P7Message(withName: "wired.board.get_boards", spec: spec)
+        
+        connection.send(message: message, progressBlock: { (response) in            
+            if response.name == "wired.board.board_list", let board = response.string(forField: "wired.board.board") {
+                print(board)
+            }
+        }) { (response) in
+            print("Board loading done.")
+        }            
+    }
+
 ### Logger
 
 You can configure the `Logger` class of WiredSwift as follow:

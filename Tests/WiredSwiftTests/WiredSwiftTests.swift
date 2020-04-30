@@ -63,7 +63,7 @@ final class WiredSwiftTests: XCTestCase {
                 }
             }) { (response) in
                 if let r = response {
-                    Logger.info("completionBlock: \(r.name!)")
+                    //Logger.info("completionBlock: \(r.name!)")
                 }
             }            
         }
