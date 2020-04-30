@@ -117,7 +117,7 @@ The `Connection` class provides the `ClientInfoDelegate` to return custom values
     
 ### BlockConnection
 
-WiredSwift provides a `BlockConnection` class which instead of using delegate, uses Swift completion closure, combined with Wired 2.0 transaction (`wired.transaction`). Each message sent using this class is flagged with an incremental transaction number in the `wired.transaction` field. Each response to this relative message sent by the server will also provide the same transaction number in the `wired.transaction` field. This way, the `BlockConnection` class can idenitify internally match responses with completion closure as callbacks.
+WiredSwift provides a `BlockConnection` class which instead of using delegate, uses Swift completion closure, combined with Wired 2.0 transaction (`wired.transaction`). Each message sent using this class is flagged with an incremental transaction number in the `wired.transaction` field. Each response to this relative message sent by the server will also provide the same transaction number in the `wired.transaction` field. This way, the `BlockConnection` class can internally match responses with completion closure as callbacks.
 
     let connection = BlockConnection(withSpec: spec, delegate: self)
 
