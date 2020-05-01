@@ -43,12 +43,15 @@ final class WiredSwiftTests: XCTestCase {
         let connection = BlockConnection(withSpec: spec, delegate: self)
         
         if connection.connect(withUrl: serverURL) {
+            var totalBoards = 0
+            var loadedBoardThreads = 0
             let message = P7Message(withName: "wired.board.get_boards", spec: spec)
             
             connection.send(message: message, progressBlock: { (response) in
                 Logger.info("progressBlock: \(response.name!)")
                 
                 if response.name == "wired.board.board_list", let board = response.string(forField: "wired.board.board") {
+                    totalBoards += 1
                     
                     let message2 = P7Message(withName: "wired.board.get_threads", spec: spec)
                     message2.addParameter(field: "wired.board.board", value: board)
@@ -58,7 +61,16 @@ final class WiredSwiftTests: XCTestCase {
                             Logger.info("\(board) > \(subject)")
                         }
                     }) { (response2) in
-                        Logger.info("boards and thread loaded")
+                        if response2?.name == "wired.board.thread_list.done" {
+                            loadedBoardThreads += 1
+                            
+                            Logger.info("totalBoards: \(totalBoards)")
+                            Logger.info("loadedBoardThreads: \(loadedBoardThreads)")
+                            
+                            if loadedBoardThreads == totalBoards {
+                                Logger.info("LOAD FINISHED")
+                            }
+                        }
                     }
                 }
             }) { (response) in

@@ -158,6 +158,44 @@ open class Connection: NSObject {
     }
     
     
+    func reconnect() -> Bool {
+        if !self.socket.connect() {
+            return false
+        }
+        
+        if !self.clientInfo() {
+            return false
+        }
+        
+        if !self.setUser() {
+            return false
+        }
+        
+        if !self.login() {
+            return false
+        }
+        
+        if self.interactive == true {
+            self.listen()
+        }
+        
+        self.pingCheckTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true, block: { (timer) in
+            if let lpd = self.lastPingDate {
+                let interval = Date().timeIntervalSince(lpd)
+                if interval > 65 {
+                    Logger.error("Lost ping, server is probably down, disconnecting...")
+                    
+                    if self.isConnected() {
+                        self.disconnect()
+                    }
+                }
+            }
+        })
+        
+        return true
+    }
+    
+    
     public func disconnect() {
         NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
         
