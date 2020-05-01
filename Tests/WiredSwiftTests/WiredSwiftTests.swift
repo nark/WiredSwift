@@ -32,6 +32,32 @@ final class WiredSwiftTests: XCTestCase {
     }
     
     
+    
+    func testReconnect() {
+        Logger.setMaxLevel(.VERBOSE)
+
+        guard let spec = P7Spec(withUrl: specURL) else {
+            XCTFail()
+            return
+        }
+
+        let connection = Connection(withSpec: spec, delegate: self)
+        connection.clientInfoDelegate = self
+        
+        if connection.connect(withUrl: serverURL) {
+            sleep(1)
+            
+            connection.disconnect()
+            
+            sleep(1)
+            
+            _ = connection.reconnect()
+            
+            XCTAssert(connection.joinChat(chatID: 1) == true)
+        }
+    }
+    
+    
     func testBlockConnect() {
         Logger.setMaxLevel(.VERBOSE)
         

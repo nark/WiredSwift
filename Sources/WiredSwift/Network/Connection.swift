@@ -159,8 +159,21 @@ open class Connection: NSObject {
     
     
     public func reconnect() -> Bool {
+        let cipher      = self.socket.cipherType
+        let compression = self.socket.compression
+        let checksum    = self.socket.checksum
+        
         self.socket.disconnect()
         
+        self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
+        
+        self.socket.username    = self.url.login
+        self.socket.password    = self.url.password
+        
+        self.socket.cipherType  = cipher
+        self.socket.compression = compression // TODO: Gzip deflate still not implemented
+        self.socket.checksum    = checksum
+                
         if !self.socket.connect() {
             return false
         }
