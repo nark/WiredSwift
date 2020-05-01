@@ -159,6 +159,9 @@ open class Connection: NSObject {
     
     
     public func reconnect() -> Bool {
+        self.pingCheckTimer.invalidate()
+        self.pingCheckTimer = nil
+        
         let cipher      = self.socket.cipherType
         let compression = self.socket.compression
         let checksum    = self.socket.checksum
