@@ -158,7 +158,7 @@ open class Connection: NSObject {
     }
     
     
-    func reconnect() -> Bool {
+    public func reconnect() -> Bool {
         if !self.socket.connect() {
             return false
         }
