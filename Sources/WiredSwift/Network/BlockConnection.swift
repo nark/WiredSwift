@@ -15,6 +15,25 @@ public class BlockConnection: Connection {
     var progressBlocks:[UInt32:(P7Message) -> Void] = [:]
     var completionBlocks:[UInt32:(P7Message?) -> Void] = [:]
     
+    public func send(message: P7Message, completionBlock: @escaping (P7Message?) -> Void)  {
+        self.transactionCounter += 1
+        
+        if self.socket.connected {
+            message.addParameter(field: "wired.transaction", value: self.transactionCounter)
+            
+            if !self.socket.write(message) {
+                completionBlock(nil)
+            }
+            
+            queue.async(flags: .barrier) {
+                self.completionBlocks[self.transactionCounter]  = completionBlock
+            }
+        } else {
+            completionBlock(nil)
+        }
+    }
+    
+    
     public func send(message: P7Message, progressBlock: @escaping (P7Message) -> Void, completionBlock: @escaping (P7Message?) -> Void)  {
         self.transactionCounter += 1
         
@@ -72,9 +91,17 @@ public class BlockConnection: Connection {
                 }
             } else {
                 queue.sync {
-                    if let progressBlock = progressBlocks[transaction] {
-                        DispatchQueue.main.async {
-                            progressBlock(message)
+                    if progressBlocks.count > 0 {
+                        if let progressBlock = progressBlocks[transaction] {
+                            DispatchQueue.main.async {
+                                progressBlock(message)
+                            }
+                        }
+                    } else {
+                        if let completionBlock = completionBlocks[transaction] {
+                            DispatchQueue.main.async {
+                                completionBlock(message)
+                            }
                         }
                     }
                 }
