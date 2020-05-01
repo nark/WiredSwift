@@ -183,6 +183,18 @@ public class P7Socket: NSObject {
         self.socket.close()
         
         self.connected = false
+        
+        self.compressionEnabled = false
+        self.compressionConfigured = false
+        
+        self.encryptionEnabled = false
+        self.checksumEnabled = false
+        self.checksumLength = sha1DigestLength
+
+        self.localCompatibilityCheck = false
+        self.remoteCompatibilityCheck = false
+        
+        self.rsa = nil
     }
     
     
