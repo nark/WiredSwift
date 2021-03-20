@@ -6,37 +6,16 @@
 //
 
 import Foundation
+import WiredSwift
 import SocketSwift
 
-let DEFAULT_PORT = 4875
-let RSA_KEY_BITS = 2048
-
-
-public class User {
-    public enum State:UInt32 {
-        case CONNECTED           = 0
-        case DISCONNECTED        = 1
-    }
-    
-    public var userID:UInt32!
-    public var username:String?
-    public var socket:P7Socket?
-    public var state:State = .DISCONNECTED
-    public var ip:String?
-    public var host:String?
-    
-    public init(_ socket:P7Socket, userID: UInt32) {
-        self.socket = socket
-        self.state  = .CONNECTED
-        self.userID = userID
-        //self.ip = self.socket
-    }
-}
 
 public protocol ServerDelegate: class {
-    func userForSocket(socket:P7Socket) -> User?
-    func userConnected(user:User)
+    func newUser(forSocket socket:P7Socket) -> User?
+    func userConnected(user:User) -> Bool
     func userDisconnected(user:User)
+    func receiveMessage(user:User, message:P7Message)
+    func disconnectUser(user:User)
 }
 
 
@@ -44,13 +23,12 @@ public class Server {
     public var port: Int = DEFAULT_PORT
     public var spec: P7Spec!
     public var isRunning:Bool = false
+    public var delegate:ServerDelegate?
+    
     private var socket:Socket!
     private let rsa = RSA(bits: RSA_KEY_BITS)
     private let group = DispatchGroup()
-    public var delegate:ServerDelegate?
     
-    public var users:[User] = []
-
     public init(port: Int, spec: P7Spec) {
        self.port = port
        self.spec = spec
@@ -89,9 +67,7 @@ public class Server {
         do {
             Logger.info("Server listening on port \(self.port)")
             try self.socket.listen()
-            
-            Logger.info("Server accepts new connections...")
-        
+                    
             while self.isRunning {
                 self.acceptThread()
             }
@@ -107,7 +83,6 @@ public class Server {
     
     
     private func acceptThread() {
-        
         do {
             let socket = try self.socket.accept()
             let p7Socket = P7Socket(socket: socket, spec: self.spec)
@@ -119,15 +94,19 @@ public class Server {
                 if let d = self.delegate as? SocketPasswordDelegate {
                     p7Socket.passwordProvider = d
                 }
-                user = self.delegate?.userForSocket(socket: p7Socket)
             }
             
             if p7Socket.accept(compression: P7Socket.Compression.DEFLATE,
-                               cipher:      P7Socket.CipherType.RSA_AES_256_SHA1,
-                               checksum:    P7Socket.Checksum.SHA1) {
-
+                               cipher:      P7Socket.CipherType.RSA_AES_256_SHA256,
+                               checksum:    P7Socket.Checksum.SHA256) {
+                
+                user = self.delegate?.newUser(forSocket: p7Socket)
+                
                 if self.delegate != nil && user != nil {
-                    self.delegate?.userConnected(user: user!)
+                    if self.delegate!.userConnected(user: user!) {
+                        // p7Socket.disconnect() // ?
+                        self.userLoop(user!)
+                    }
                 }
             }
                 
@@ -136,6 +115,32 @@ public class Server {
                 Logger.error(socketError.description)
             } else {
                 Logger.error(error.localizedDescription)
+            }
+        }
+    }
+    
+    
+    private func userLoop(_ user:User) {
+        while true {
+            if let socket = user.socket {
+                if socket.connected == false {
+                    if self.delegate != nil {
+                        self.delegate!.userDisconnected(user: user)
+                    }
+                    
+                    break
+                }
+                
+                if let message = socket.readMessage() {
+                    if self.delegate != nil {
+                        self.delegate!.receiveMessage(user: user, message: message)
+                    }
+                } else {
+                    if self.delegate != nil {
+                        self.delegate!.userDisconnected(user: user)
+                    }
+                    break
+                }
             }
         }
     }

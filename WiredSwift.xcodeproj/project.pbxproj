@@ -49,8 +49,13 @@
 		4C22526526051065002430EF /* system_zlib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Gzip::system-zlib::Product" /* system_zlib.framework */; };
 		4C22526626051065002430EF /* WiredSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "WiredSwift::WiredSwift::Product" /* WiredSwift.framework */; };
 		4C22527326061CCD002430EF /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4C22527226061CCD002430EF /* GRDB */; };
+		4C22527626066173002430EF /* DatabaseController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527526066173002430EF /* DatabaseController.swift */; };
+		4C225279260663A6002430EF /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 4C225278260663A6002430EF /* ArgumentParser */; };
+		4C22527B260663C0002430EF /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527A260663C0002430EF /* App.swift */; };
+		4C22527D26066828002430EF /* ConnectionsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527C26066828002430EF /* ConnectionsController.swift */; };
+		4C22527E26066A0C002430EF /* Server.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* Server.swift */; };
+		4C22528026066A38002430EF /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527F26066A38002430EF /* User.swift */; };
 		4C52C84D2459C6CE00BFB5AE /* BlockConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */; };
-		4C7BCBDE2601164900FDD9B5 /* Server.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* Server.swift */; };
 		OBJ_178 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_156 /* Document.swift */; };
 		OBJ_179 /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_157 /* Element.swift */; };
 		OBJ_180 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_158 /* Error.swift */; };
@@ -325,6 +330,10 @@
 		4C22524826050E09002430EF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4C22525926050FF0002430EF /* Client */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Client; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C22525B26050FF0002430EF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		4C22527526066173002430EF /* DatabaseController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseController.swift; sourceTree = "<group>"; };
+		4C22527A260663C0002430EF /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		4C22527C26066828002430EF /* ConnectionsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionsController.swift; sourceTree = "<group>"; };
+		4C22527F26066A38002430EF /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockConnection.swift; sourceTree = "<group>"; };
 		4C7BCBDD2601164900FDD9B5 /* Server.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Server.swift; sourceTree = "<group>"; };
 		"AEXML::AEXML::Product" /* AEXML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AEXML.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -477,6 +486,7 @@
 				4C22524E26050F1F002430EF /* AEXML.framework in Frameworks */,
 				4C22524F26050F1F002430EF /* CryptorRSA.framework in Frameworks */,
 				4C22525026050F1F002430EF /* CryptoSwift.framework in Frameworks */,
+				4C225279260663A6002430EF /* ArgumentParser in Frameworks */,
 				4C22527326061CCD002430EF /* GRDB in Frameworks */,
 				4C22525126050F1F002430EF /* Gzip.framework in Frameworks */,
 				4C22525226050F1F002430EF /* SocketSwift.framework in Frameworks */,
@@ -575,6 +585,11 @@
 			isa = PBXGroup;
 			children = (
 				4C22524826050E09002430EF /* main.swift */,
+				4C22527A260663C0002430EF /* App.swift */,
+				4C7BCBDD2601164900FDD9B5 /* Server.swift */,
+				4C22527F26066A38002430EF /* User.swift */,
+				4C22527C26066828002430EF /* ConnectionsController.swift */,
+				4C22527526066173002430EF /* DatabaseController.swift */,
 			);
 			path = Server;
 			sourceTree = "<group>";
@@ -703,7 +718,6 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_27 /* Connection.swift */,
-				4C7BCBDD2601164900FDD9B5 /* Server.swift */,
 				4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */,
 				OBJ_28 /* P7Socket.swift */,
 				OBJ_29 /* Url.swift */,
@@ -989,6 +1003,7 @@
 			name = Server;
 			packageProductDependencies = (
 				4C22527226061CCD002430EF /* GRDB */,
+				4C225278260663A6002430EF /* ArgumentParser */,
 			);
 			productName = Server;
 			productReference = 4C22524626050E09002430EF /* Server */;
@@ -1269,6 +1284,7 @@
 			packageReferences = (
 				4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */,
 				4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */,
+				4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
 			productRefGroup = OBJ_162 /* Products */;
 			projectDirPath = "";
@@ -1301,6 +1317,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C22527E26066A0C002430EF /* Server.swift in Sources */,
+				4C22527B260663C0002430EF /* App.swift in Sources */,
+				4C22528026066A38002430EF /* User.swift in Sources */,
+				4C22527D26066828002430EF /* ConnectionsController.swift in Sources */,
+				4C22527626066173002430EF /* DatabaseController.swift in Sources */,
 				4C22524926050E09002430EF /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1495,7 +1516,6 @@
 				OBJ_344 /* Const.swift in Sources */,
 				OBJ_345 /* Logger.swift in Sources */,
 				OBJ_346 /* WiredError.swift in Sources */,
-				4C7BCBDE2601164900FDD9B5 /* Server.swift in Sources */,
 				OBJ_347 /* P7Cipher.swift in Sources */,
 				OBJ_348 /* RSA.swift in Sources */,
 				OBJ_349 /* SwCrypt.swift in Sources */,
@@ -2733,6 +2753,14 @@
 				minimumVersion = 5.6.0;
 			};
 		};
+		4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2745,6 +2773,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */;
 			productName = GRDB;
+		};
+		4C225278260663A6002430EF /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

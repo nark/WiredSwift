@@ -53,7 +53,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
     
     public var fields:          [SpecField]             = []
     public var fieldsByName:    [String:SpecField]      = [:]
-    public var fieldsByID:      [Int:SpecField]         = [:]
+    public var fieldsByID:      [UInt32:SpecField]         = [:]
     
     public var messages:        [SpecMessage]           = []
     public var messagesByName:  [String:SpecMessage]    = [:]
@@ -386,7 +386,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
             return
         }
         
-        guard let strID = attributes["id"], let fieldID = Int(strID) else {
+        guard let strID = attributes["id"], let fieldID = UInt32(strID) else {
             return
         }
         

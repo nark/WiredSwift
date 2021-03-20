@@ -189,6 +189,11 @@ public class P7Message: NSObject {
                     p.value = String(val)
                 }
             }
+            else if spec.fieldsByName[field]?.type == .bool {
+                if let val = value as? UInt32 {
+                    p.value = val == 1 ? "true" : "false"
+                }
+            }
             else if spec.fieldsByName[field]?.type == .int64 ||
                     spec.fieldsByName[field]?.type == .uint64 {
                 if let val = value as? UInt64 {
@@ -256,11 +261,11 @@ public class P7Message: NSObject {
                                 
                             } else if specField.type == .string { // string (x)
                                 if let str = value as? String {
-                                    if let d = str.nullTerminated {
-                                        let l = UInt32(d.count)
+                                    //if let d = str.nullTerminated {
+                                        let l = UInt32(str.count)
                                         data.append(uint32: l, bigEndian: true)
-                                        data.append(d)
-                                    }
+                                        data.append(Data(str.bytes))
+                                    //}
                                 }
                             } else if specField.type == .uuid { // uuid (16)
                                 if let str = value as? String {
@@ -341,7 +346,7 @@ public class P7Message: NSObject {
         let messageIDData = data.subdata(in: 0..<4)
         
         offset += 4
-                
+                        
         if let v = messageIDData.uint32 {
             self.id = String(v)
         } else {
@@ -354,13 +359,13 @@ public class P7Message: NSObject {
             self.specMessage = specMessage
             
             var fieldIDData:Data!
-            var fieldID:Int!
+            var fieldID:UInt32!
             
             while offset < data.count {
                 fieldIDData = data.subdata(in: offset..<offset+4)
                 
                 if let v = fieldIDData.uint32 {
-                    fieldID = Int(v)
+                    fieldID = UInt32(v)
                 } else {
                     Logger.error("ERROR : Cannot read field ID")
                     return
@@ -402,7 +407,7 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData.uint64)
                         }
                         else if specField.type == .uint64 {
-                            self.addParameter(field: specField.name, value: fieldData)
+                            self.addParameter(field: specField.name, value: fieldData.uint64)
                         }
                         else if specField.type == .double {
                             self.addParameter(field: specField.name, value: fieldData.double)
