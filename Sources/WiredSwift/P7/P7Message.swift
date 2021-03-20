@@ -211,7 +211,6 @@ public class P7Message: NSObject {
         }
 
         return "\(message.xml)"
-//        return ""
     }
     
     

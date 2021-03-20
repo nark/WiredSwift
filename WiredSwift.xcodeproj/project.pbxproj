@@ -48,6 +48,7 @@
 		4C22526426051065002430EF /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SocketSwift::SocketSwift::Product" /* SocketSwift.framework */; };
 		4C22526526051065002430EF /* system_zlib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Gzip::system-zlib::Product" /* system_zlib.framework */; };
 		4C22526626051065002430EF /* WiredSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "WiredSwift::WiredSwift::Product" /* WiredSwift.framework */; };
+		4C22527326061CCD002430EF /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4C22527226061CCD002430EF /* GRDB */; };
 		4C52C84D2459C6CE00BFB5AE /* BlockConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */; };
 		4C7BCBDE2601164900FDD9B5 /* Server.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* Server.swift */; };
 		OBJ_178 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_156 /* Document.swift */; };
@@ -476,6 +477,7 @@
 				4C22524E26050F1F002430EF /* AEXML.framework in Frameworks */,
 				4C22524F26050F1F002430EF /* CryptorRSA.framework in Frameworks */,
 				4C22525026050F1F002430EF /* CryptoSwift.framework in Frameworks */,
+				4C22527326061CCD002430EF /* GRDB in Frameworks */,
 				4C22525126050F1F002430EF /* Gzip.framework in Frameworks */,
 				4C22525226050F1F002430EF /* SocketSwift.framework in Frameworks */,
 				4C22525326050F1F002430EF /* system_zlib.framework in Frameworks */,
@@ -985,6 +987,9 @@
 			dependencies = (
 			);
 			name = Server;
+			packageProductDependencies = (
+				4C22527226061CCD002430EF /* GRDB */,
+			);
 			productName = Server;
 			productReference = 4C22524626050E09002430EF /* Server */;
 			productType = "com.apple.product-type.tool";
@@ -1263,6 +1268,7 @@
 			mainGroup = OBJ_5;
 			packageReferences = (
 				4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */,
+				4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */,
 			);
 			productRefGroup = OBJ_162 /* Products */;
 			projectDirPath = "";
@@ -2719,6 +2725,14 @@
 				minimumVersion = 3.6.0;
 			};
 		};
+		4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2726,6 +2740,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */;
 			productName = DataCompression;
+		};
+		4C22527226061CCD002430EF /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */;
+			productName = GRDB;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -433,7 +433,6 @@ open class Connection: NSObject {
         // read account priviledges
         _ = self.socket.readMessage()
 
-                
         return true
     }
     
@@ -483,6 +482,8 @@ open class Connection: NSObject {
             print("no response ?")
             return false
         }
+        
+        print("serverInfo : \(response.xml())")
                 
         self.serverInfo = ServerInfo(message: response)
         

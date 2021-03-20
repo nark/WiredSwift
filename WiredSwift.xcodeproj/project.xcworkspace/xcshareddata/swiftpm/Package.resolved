@@ -9,6 +9,15 @@
           "revision": "6abb8f3cd0e4b2a33b4927a7a92b6764528f2440",
           "version": "3.6.0"
         }
+      },
+      {
+        "package": "GRDB",
+        "repositoryURL": "https://github.com/groue/GRDB.swift",
+        "state": {
+          "branch": null,
+          "revision": "ae3c491661c4dd6771d996beb6fc869f4520701f",
+          "version": "5.6.0"
+        }
       }
     ]
   },
