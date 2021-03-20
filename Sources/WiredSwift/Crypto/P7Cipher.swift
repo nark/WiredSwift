@@ -16,23 +16,23 @@ public class P7Cipher {
     public var cipherKey:String!
     public var cipherIV:[UInt8]!
     
-    private let aesBlockSize = 16
+    private var aesBlockSize = 16
 
     
     
     public init(cipher: P7Socket.CipherType) {
-        self.cipher     = cipher
-        self.cipherKey  = self.randomString(length: self.keySize())
-        
-        var ivBytes = [UInt8](repeating: 0, count: aesBlockSize)
-        guard 0 == SecRandomCopyBytes(kSecRandomDefault, ivBytes.count, &ivBytes) else {
-            Logger.fatal("IV creation failed")
-            return
-        }
-        
-        self.cipherIV  = ivBytes
+        self.cipher         = cipher
+        self.aesBlockSize   = self.keySize()
+        self.cipherKey      = self.randomString(length: self.aesBlockSize)
+        self.cipherIV       = AES.randomIV(16)
     }
     
+    public init(cipher: P7Socket.CipherType, key: Data, iv: Data) {
+        self.cipher         = cipher
+        self.aesBlockSize   = self.keySize()
+        self.cipherKey      = key.stringUTF8!
+        self.cipherIV       = iv.bytes
+    }
     
     public func encrypt(data: Data) -> Data? {
         do {
@@ -72,13 +72,19 @@ public class P7Cipher {
     private func keySize() -> Int {
         var keySizeAES = 0
         
-        if self.cipher == .RSA_AES_128 {
+        if      self.cipher == .RSA_AES_128_SHA1    ||
+                self.cipher == .RSA_AES_192_SHA1    ||
+                self.cipher == .RSA_AES_256_SHA1    {
             keySizeAES = 16
         }
-        else if self.cipher == .RSA_AES_192 {
+        else if self.cipher == .RSA_AES_128_SHA256  ||
+                self.cipher == .RSA_AES_192_SHA256  ||
+                self.cipher == .RSA_AES_256_SHA256  {
             keySizeAES = 24
         }
-        else if self.cipher == .RSA_AES_256 {
+        else if self.cipher == .RSA_AES_128_SHA512  ||
+                self.cipher == .RSA_AES_192_SHA512  ||
+                self.cipher == .RSA_AES_256_SHA512  {
             keySizeAES = 32
         }
         

@@ -3,8 +3,8 @@ import XCTest
 
 final class WiredSwiftTests: XCTestCase {
     let specURL = URL(string: "https://wired.read-write.fr/wired.xml")!
-    let serverURL = Url(withString: "wired://wired.read-write.fr")
-    //let serverURL = Url(withString: "wired://localhost")
+    //let serverURL = Url(withString: "wired://wired.read-write.fr")
+    let serverURL = Url(withString: "wired://127.0.0.1")
     
     func testUrl() {
         let url = Url(withString: "wired://guest:password@localhost:4871")
@@ -14,6 +14,13 @@ final class WiredSwiftTests: XCTestCase {
         XCTAssert(url.password == "password")
         XCTAssert(url.hostname == "localhost")
         XCTAssert(url.port == 4871)
+    }
+    
+    
+    func testChecksum() {
+        print("12345678901".sha1())
+        print("12345678901".sha256())
+        print("12345678901".sha512())
     }
 
 
@@ -28,7 +35,7 @@ final class WiredSwiftTests: XCTestCase {
         let connection = Connection(withSpec: spec, delegate: self)
         connection.clientInfoDelegate = self
 
-        XCTAssert(connection.connect(withUrl: serverURL) == true)
+        XCTAssert(connection.connect(withUrl: serverURL, cipher: .RSA_AES_256_SHA256, checksum: .SHA256) == true)
     }
     
     
@@ -125,8 +132,19 @@ final class WiredSwiftTests: XCTestCase {
 
         // create a secondary connection
         if (connection.connect(withUrl: serverURL) == false) {
-
+            
         }
+    }
+    
+    
+    func testServer() {
+        guard let spec = P7Spec(withUrl: specURL) else {
+            XCTFail()
+            return
+        }
+        
+        let server = Server(port: 4871, spec: spec)
+        server.listen()
     }
 
 
@@ -134,6 +152,7 @@ final class WiredSwiftTests: XCTestCase {
         ("testUrl", testUrl),
         ("testConnect", testConnect),
         ("testUploadFile", testUploadFile),
+        ("testServer", testServer),
     ]
 }
 

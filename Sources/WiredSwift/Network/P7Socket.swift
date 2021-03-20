@@ -9,10 +9,17 @@
 import Foundation
 import SocketSwift
 import CryptoSwift
-import CZlib
+//import CZlib
+import DataCompression
 
-var md5DigestLength     = 16
-var sha1DigestLength    = 20
+var md5DigestLength       = 16
+var sha1DigestLength      = 20
+var sha256DigestLength    = 32
+var sha512DigestLength    = 64
+
+public protocol SocketPasswordDelegate: class {
+    func passwordForUsername(username:String) -> String?
+}
 
 public class P7Socket: NSObject {
     public enum Serialization:Int {
@@ -27,36 +34,65 @@ public class P7Socket: NSObject {
     
     public enum Checksum:UInt32 {
         case NONE           = 999
+        case ALL            = 998
         case SHA1           = 0
-        // case SHA256         = 1
+        case SHA256         = 1
+        case SHA512         = 2
     }
     
     public enum CipherType:UInt32 {
-        case NONE           = 999
-        case RSA_AES_128    = 0
-        case RSA_AES_192    = 1
-        case RSA_AES_256    = 2
-        case RSA_BF_128     = 3
-        case RSA_3DES_192   = 4
+        case NONE                   = 999
+        case ALL                    = 998
+        case RSA_AES_128_SHA1       = 0
+        case RSA_AES_192_SHA1       = 1
+        case RSA_AES_256_SHA1       = 2
+        case RSA_BF_128_SHA1        = 3
+        case RSA_3DES_192_SHA1      = 4
+        case RSA_AES_128_SHA256    = 5
+        case RSA_AES_192_SHA256    = 6
+        case RSA_AES_256_SHA256    = 7
+        case RSA_BF_128_SHA256     = 8
+        case RSA_3DES_192_SHA256   = 9
+        case RSA_AES_128_SHA512    = 10
+        case RSA_AES_192_SHA512    = 11
+        case RSA_AES_256_SHA512    = 12
+        case RSA_BF_128_SHA512     = 13
+        case RSA_3DES_192_SHA512   = 14
         
         public static func pretty(_ type:CipherType) -> String {
             switch type {
             case .NONE:
                 return "None"
-            case .RSA_AES_128:
+            case .RSA_AES_128_SHA1:
                 return "AES/128 bits"
-            case .RSA_AES_192:
+            case .RSA_AES_192_SHA1:
                 return "AES/192 bits"
-            case .RSA_AES_256:
+            case .RSA_AES_256_SHA1:
                 return "AES/256 bits"
-            case .RSA_BF_128:
+            case .RSA_BF_128_SHA1:
+                return "BF/128 bits"
+            case .RSA_AES_128_SHA256:
+                return "AES/128 bits"
+            case .RSA_AES_192_SHA256:
+                return "AES/192 bits"
+            case .RSA_AES_256_SHA256:
+                return "AES/256 bits"
+            case .RSA_BF_128_SHA256:
+                return "BF/128 bits"
+            case .RSA_AES_128_SHA512:
+                return "AES/128 bits"
+            case .RSA_AES_192_SHA512:
+                return "AES/192 bits"
+            case .RSA_AES_256_SHA512:
+                return "AES/256 bits"
+            case .RSA_BF_128_SHA512:
                 return "BF/128 bits"
             default:
                 return "None"
             }
         }
     }
-
+    
     
     public var hostname: String!
     public var port: Int!
@@ -64,8 +100,10 @@ public class P7Socket: NSObject {
     public var username: String = "guest"
     public var password: String!
     public var serialization: Serialization = .BINARY
+    // public var options: SocketOptions = .ALL
+    
     public var compression: Compression = .NONE
-    public var cipherType: CipherType = .RSA_AES_256
+    public var cipherType: CipherType = .RSA_AES_256_SHA1
     public var checksum: Checksum = .NONE
     public var sslCipher: P7Cipher!
     public var timeout: Int = 10
@@ -85,17 +123,27 @@ public class P7Socket: NSObject {
     public var remoteName: String!
     
     public var connected: Bool = false
+    public var passwordProvider:SocketPasswordDelegate?
     
     private var socket: Socket!
-    private var rsa:RSA!
-    
-    private var deflateStream:z_stream = zlib.z_stream()
-    private var inflateStream:z_stream = zlib.z_stream()
+    public var rsa:RSA!
     
     public init(hostname: String, port: Int, spec: P7Spec) {
         self.hostname = hostname
         self.port = port
         self.spec = spec
+    }
+    
+    
+    public init(socket: Socket, spec: P7Spec) {
+        self.socket     = socket
+        self.spec       = spec
+        self.connected  = true
+    }
+    
+    
+    public func getSocket() -> Socket {
+        return self.socket
     }
 
     
@@ -179,6 +227,41 @@ public class P7Socket: NSObject {
     
     
     
+    public func accept(compression:Compression, cipher:CipherType, checksum:Checksum) -> Bool {
+        if !self.acceptHandshake(timeout: timeout, compression: compression, cipher: cipher, checksum: checksum) {
+                return false
+        }
+            
+        if compression != .NONE {
+            self.configureCompression()
+        }
+
+        if checksum != .NONE {
+            self.configureChecksum()
+        }
+        
+        if cipher != .NONE {
+            if !self.acceptKeyExchange(timeout: timeout) {
+                return false
+            }
+        }
+        
+        if self.localCompatibilityCheck {
+            if !self.receiveCompatibilityCheck() {
+                return false
+            }
+        }
+
+        if self.remoteCompatibilityCheck {
+            if !self.sendCompatibilityCheck() {
+                return false
+            }
+        }
+        
+        return true
+    }
+    
+    
     public func disconnect() {
         self.socket.close()
         
@@ -211,12 +294,10 @@ public class P7Socket: NSObject {
             else if self.serialization == .BINARY {
                 var lengthData = Data()
                 var messageData = message.bin()
-                let originalData = messageData
                 
                 lengthData.append(uint32: UInt32(messageData.count))
                 
                 Logger.info("WRITE [\(self.hash)]: \(message.name!)")
-                //Logger.debug("\n\(message.xml())\n")
                 
                 // deflate
                 if self.compressionEnabled {
@@ -226,7 +307,12 @@ public class P7Socket: NSObject {
                         
                     }
                     messageData = deflatedMessageData
+                    
+                    lengthData = Data()
+                    lengthData.append(uint32: UInt32(messageData.count))
                 }
+                
+                // Logger.info("data after comp : \(messageData.toHexString())")
                 
                 // encryption
                 if self.encryptionEnabled {
@@ -240,15 +326,17 @@ public class P7Socket: NSObject {
                     lengthData = Data()
                     lengthData.append(uint32: UInt32(messageData.count))
                 }
-                
+
                 _ = self.write(lengthData.bytes, maxLength: lengthData.count)
                 _ = self.write(messageData.bytes, maxLength: messageData.bytes.count)
                                 
                 // checksum
                 if self.checksumEnabled {
-                    let checksum = originalData.sha1()
-                    
-                    _ = self.write(checksum.bytes, maxLength: checksum.count)
+                    if let c = self.checksumData(messageData) {
+                        _ = self.write(c.bytes, maxLength: self.checksumLength)
+                    } else {
+                        Logger.error("Checksum failed abnormally")
+                    }
                 }
             }
             
@@ -272,6 +360,8 @@ public class P7Socket: NSObject {
         
         var lengthBuffer = [Byte](repeating: 0, count: 4)
         let bytesRead = self.read(&lengthBuffer, maxLength: 4)
+        
+        // print("bytesRead : \(bytesRead)")
                                 
         if bytesRead > 0 {
             if self.serialization == .XML {
@@ -311,6 +401,8 @@ public class P7Socket: NSObject {
                                         
                     // data to message object
                     if messageData.count > 0 {
+                        let originalData = messageData
+                        
                         // decryption
                         if self.encryptionEnabled {
                             guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
@@ -324,6 +416,8 @@ public class P7Socket: NSObject {
                             messageData = decryptedMessageData
                         }
                         
+                        // Logger.info("READ data before decomp : \(messageData.toHexString())")
+                        
                         // inflate
                         if self.compressionEnabled {
                             guard let inflatedMessageData = self.inflate(messageData) else {
@@ -335,19 +429,26 @@ public class P7Socket: NSObject {
                                 return nil
                                 
                             }
+                            
                             messageData = inflatedMessageData
                         }
+                        
+                        // Logger.info("READ data after decomp : \(messageData.toHexString())")
                         
                         // checksum
                         if self.checksumEnabled {
                             do {
                                 let remoteChecksum = try self.readData(size: self.checksumLength)
-                                
                                 if remoteChecksum.count == 0 { return nil }
-                                if !messageData.sha1().elementsEqual(remoteChecksum) {
-                                    Logger.fatal("Checksum failed")
-                                    return nil
-                                }
+
+                                if let c = self.checksumData(originalData) {
+                                    if !c.elementsEqual(remoteChecksum) {
+                                        Logger.fatal("Checksum failed")
+                                        return nil
+                                    }
+                                } else {
+                                   Logger.error("Checksum failed abnormally")
+                               }
                             } catch let e {
                                 Logger.error("Checksum error: \(e)")
                             }
@@ -572,7 +673,7 @@ public class P7Socket: NSObject {
                 message.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
             }
         }
-        
+                
         _ = self.write(message)
         
         guard let response = self.readMessage() else {
@@ -596,7 +697,7 @@ public class P7Socket: NSObject {
         
         self.remoteName = response.string(forField: "p7.handshake.protocol.name")
         self.remoteVersion = response.string(forField: "p7.handshake.protocol.version")
-        
+
         self.localCompatibilityCheck = !spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
         
         if self.serialization == .BINARY {
@@ -610,7 +711,7 @@ public class P7Socket: NSObject {
                 self.checksum = P7Socket.Checksum(rawValue: chs)!
             }
         }
-                
+                        
         if let bool = response.bool(forField: "p7.handshake.compatibility_check") {
             self.remoteCompatibilityCheck = bool
         }
@@ -622,6 +723,112 @@ public class P7Socket: NSObject {
         }
         
         _ = self.write(message)
+        
+        return true
+    }
+    
+    
+    
+    private func acceptHandshake(timeout:Int, compression:Compression, cipher:CipherType, checksum:Checksum) -> Bool {
+        self.compression = compression
+        self.cipherType = cipher
+        self.checksum = checksum
+        
+        // client handshake message
+        guard let response = self.readMessage() else {
+            Logger.error("Handshake Failed: cannot read client handshake")
+            return false
+        }
+        
+        if response.name != "p7.handshake.client_handshake" {
+            Logger.error("Message should be 'p7.handshake.client_handshake', not '\(response.name!)'")
+            return false
+        }
+        
+        // hadshake version
+        guard let version = response.string(forField: "p7.handshake.version") else {
+            Logger.error("Message has no 'p7.handshake.version', field")
+            return false
+        }
+        
+        if version != self.spec.builtinProtocolVersion {
+            Logger.error("Remote P7 protocol \(version) is not compatible")
+
+            return false;
+        }
+        
+        
+        // protocol compatibility check
+        guard let remoteName = response.string(forField: "p7.handshake.protocol.name") else {
+            Logger.error("Message has no 'p7.handshake.protocol.name', field")
+            return false
+        }
+        
+        guard let remoteVersion = response.string(forField: "p7.handshake.protocol.version") else {
+            Logger.error("Message has no 'p7.handshake.protocol.version', field")
+            return false
+        }
+        
+        self.remoteName = remoteName
+        self.remoteVersion = remoteVersion
+        self.localCompatibilityCheck = !self.spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
+        
+        if self.serialization == .BINARY {
+            if let compression = response.enumeration(forField: "p7.handshake.compression") {
+                self.compression = P7Socket.Compression(rawValue: compression)!
+            }
+            
+            if let encryption = response.enumeration(forField: "p7.handshake.encryption") {
+                self.cipherType = P7Socket.CipherType(rawValue: encryption)!
+            }
+            
+            if let checksum = response.enumeration(forField: "p7.handshake.checksum") {
+                self.checksum = P7Socket.Checksum(rawValue: checksum)!
+            }
+        }
+        
+        let message = P7Message(withName: "p7.handshake.server_handshake", spec: self.spec)
+
+        message.addParameter(field: "p7.handshake.version", value: self.spec.builtinProtocolVersion)
+        message.addParameter(field: "p7.handshake.protocol.name", value: self.spec.protocolName)
+        message.addParameter(field: "p7.handshake.protocol.version", value: self.spec.protocolVersion)
+        
+        if self.serialization == .BINARY {
+            if self.compression != .NONE {
+                message.addParameter(field: "p7.handshake.compression", value: self.compression.rawValue)
+            }
+            
+            if self.cipherType != .NONE {
+                message.addParameter(field: "p7.handshake.encryption", value: self.cipherType.rawValue)
+            }
+            
+            if self.checksum != .NONE {
+                message.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
+            }
+        }
+        
+        if self.localCompatibilityCheck {
+            message.addParameter(field: "p7.handshake.compatibility_check", value: true)
+        }
+                        
+        if !self.write(message) {
+            return false
+        }
+        
+        guard let acknowledge = self.readMessage() else {
+            return false
+        }
+                
+        if acknowledge.name != "p7.handshake.acknowledge" {
+            Logger.error("Message should be 'p7.handshake.acknowledge', not '\(response.name!)'")
+            return false
+        }
+        
+        if let remoteCompatibilityCheck = acknowledge.bool(forField: "p7.handshake.compatibility_check") {
+            self.remoteCompatibilityCheck = remoteCompatibilityCheck
+        } else {
+            self.remoteCompatibilityCheck = false
+        }
         
         return true
     }
@@ -661,17 +868,31 @@ public class P7Socket: NSObject {
         } else {
             self.password = self.password.sha1()
         }
-        
+                
         let passwordData = self.password.data(using: .utf8)!
         
         var clientPassword1 = passwordData
         clientPassword1.append(publicRSAKeyData)
-        clientPassword1 = clientPassword1.sha1().toHexString().data(using: .utf8)!
+        
+        if self.checksum == .SHA1 {
+            clientPassword1 = clientPassword1.sha1().toHexString().data(using: .utf8)!
+        } else if self.checksum == .SHA256 {
+            clientPassword1 = clientPassword1.sha256().toHexString().data(using: .utf8)!
+        } else if self.checksum == .SHA512 {
+            clientPassword1 = clientPassword1.sha512().toHexString().data(using: .utf8)!
+        }
         
         var clientPassword2 = publicRSAKeyData
         clientPassword2.append(passwordData)
-        clientPassword2 = clientPassword2.sha1().toHexString().data(using: .utf8)!
         
+        if self.checksum == .SHA1 {
+            clientPassword2 = clientPassword2.sha1().toHexString().data(using: .utf8)!
+        } else if self.checksum == .SHA256 {
+            clientPassword2 = clientPassword2.sha256().toHexString().data(using: .utf8)!
+        } else if self.checksum == .SHA512 {
+            clientPassword2 = clientPassword2.sha512().toHexString().data(using: .utf8)!
+        }
+                
         let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
         
         guard let encryptedCipherKey = self.encryptData(self.sslCipher!.cipherKey.data(using: .utf8)!) else {
@@ -696,9 +917,9 @@ public class P7Socket: NSObject {
         message.addParameter(field: "p7.encryption.client_password", value: encryptedClientPassword1)
         
         _ = self.write(message)
-                
+                        
         guard let response2 = self.readMessage() else {
-            Logger.error("Cannot read p7.encryption.client_key message")
+            Logger.error("Cannot read p7.encryption.acknowledge message")
             return false
         }
                 
@@ -718,14 +939,147 @@ public class P7Socket: NSObject {
         }
         
         if let serverPasswordData = self.sslCipher.decrypt(data: encryptedServerPasswordData) {
-            //print("serverPasswordData : \(serverPasswordData.toHex())")
-            //print("clientPassword2 : \(clientPassword2.toHex())")
-            
             // TODO: write our own passwords comparison method, this is uggly
-            if serverPasswordData.toHexString() != clientPassword2.toHexString() {
+            if serverPasswordData.toHexString() != clientPassword2.stringUTF8! {
                 Logger.error("Password mismatch during key exchange")
                 return false
             }
+        }
+        
+        self.encryptionEnabled = true
+        
+        return true
+    }
+    
+    
+    private func acceptKeyExchange(timeout: Int) -> Bool {
+        let message = P7Message(withName: "p7.encryption.server_key", spec: self.spec)
+        
+        if self.rsa == nil {
+            Logger.error("Missing RSA key")
+            return false
+        }
+        
+        guard let publicKey = self.rsa.publicKey(from: self.rsa.privateKey) else {
+            return false
+        }
+                
+        message.addParameter(field: "p7.encryption.public_key", value: publicKey)
+                
+        if !self.write(message) {
+            return false
+        }
+                
+        guard let response = self.readMessage() else {
+            return false
+        }
+        
+        if response.name != "p7.encryption.client_key" {
+            print(response.xml())
+            Logger.error("Message should be 'p7.encryption.client_key', not '\(response.name!)'")
+            return false
+        }
+        
+        var key = response.data(forField: "p7.encryption.cipher.key")
+        var iv = response.data(forField: "p7.encryption.cipher.iv")
+        
+        if key == nil {
+            Logger.error("Message has no 'p7.encryption.cipher.key' field")
+            return false
+        }
+
+        key = self.rsa.decrypt(data: key!) //wi_rsa_decrypt(self.rsa.privateKey, key);
+        
+        if key == nil {
+            Logger.error("Cannot decrypt 'p7.encryption.cipher.key' key")
+            return false
+        }
+        
+        if iv != nil {
+            iv = self.rsa.decrypt(data: iv!)
+            
+            if iv == nil {
+                Logger.error("Cannot decrypt 'p7.encryption.cipher.iv' vector")
+                return false
+            }
+        }
+        
+        self.sslCipher = P7Cipher(cipher: self.cipherType, key: key!, iv: iv!)
+        
+        if self.sslCipher == nil {
+            Logger.error("Cannot init cipher (\(self.cipherType)")
+            return false
+        }
+        
+        var data = response.data(forField: "p7.encryption.username")
+        
+        data = self.rsa.decrypt(data: data!)
+        
+        guard let username = data?.stringUTF8 else {
+            Logger.error("Message has no 'p7.encryption.username' field")
+            return false
+        }
+        
+        self.username = username
+        
+        data = response.data(forField: "p7.encryption.client_password")
+        
+        data = self.rsa.decrypt(data: data!)
+        
+        guard let client_password = data?.stringUTF8 else {
+            Logger.error("Message has no 'p7.encryption.client_password' field")
+            return false
+        }
+                
+        if self.passwordProvider != nil {
+            // TODO: implement a password provider delegate protocol
+            if let password = self.passwordProvider?.passwordForUsername(username: self.username) {
+                self.password = password
+            }
+        } else {
+            // assume password is empty (guest with empty password access only)
+            self.password = "".sha1()
+        }
+        
+        let passwordData = self.password.data(using: .utf8)!
+        var serverPassword1Data = passwordData
+        serverPassword1Data.append(rsa.publicKey)
+        
+        if self.checksum == .SHA1 {
+            serverPassword1Data = serverPassword1Data.sha1()
+        } else if self.checksum == .SHA256 {
+            serverPassword1Data = serverPassword1Data.sha256()
+        } else if self.checksum == .SHA512 {
+            serverPassword1Data = serverPassword1Data.sha512()
+        }
+        
+        var serverPassword2Data = Data(rsa.publicKey)
+        serverPassword2Data.append(passwordData)
+        
+        if self.checksum == .SHA1 {
+            serverPassword2Data = serverPassword2Data.sha1()
+        } else if self.checksum == .SHA256 {
+            serverPassword2Data = serverPassword2Data.sha256()
+        } else if self.checksum == .SHA512 {
+            serverPassword2Data = serverPassword2Data.sha512()
+        }
+        
+        if client_password != serverPassword1Data.toHexString() {
+            Logger.error("Password mismatch for '\(self.username)' during key exchange")
+            return false
+        }
+        
+        // acknowledge
+        let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
+        
+        guard let d = self.sslCipher.encrypt(data: serverPassword2Data) else {
+            return false
+        }
+        
+        message2.addParameter(field: "p7.encryption.server_password", value: d)
+        
+        if !self.write(message2) {
+            return false
         }
         
         self.encryptionEnabled = true
@@ -780,27 +1134,25 @@ public class P7Socket: NSObject {
         return self.rsa.encrypt(data: data)
     }
     
+    private func checksumData(_ data:Data) -> Data? {
+        var checksum: Data? = nil
+        
+        if self.checksum == .SHA256 {
+            checksum = data.sha256()
+            
+        } else if self.checksum == .SHA512 {
+            checksum = data.sha512()
+            
+        } else {
+            checksum = data.sha1()
+        }
+        
+        return checksum
+    }
+    
     
     private func configureCompression() {
         if self.compression == .DEFLATE {
-            var err = zlib.deflateInit_(&self.deflateStream, Z_DEFAULT_COMPRESSION, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
-            
-            self.deflateStream.data_type = Z_UNKNOWN
-            
-            if err != Z_OK {
-                Logger.error("Cannot init Zlib")
-                
-                return
-            }
-            
-            err = zlib.inflateInit_(&self.inflateStream, ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
-            
-            if err != Z_OK {
-                Logger.error("Cannot init Zlib")
-                
-                return
-            }
-            
             self.compressionEnabled = true
             
         } else {
@@ -812,99 +1164,25 @@ public class P7Socket: NSObject {
     private func configureChecksum() {
         if self.checksum == .SHA1 {
             self.checksumLength = sha1DigestLength
+            
+        } else if self.checksum == .SHA256 {
+            self.checksumLength = sha256DigestLength
+            
+        } else if self.checksum == .SHA512 {
+            self.checksumLength = sha512DigestLength
         }
         
         self.checksumEnabled = true
     }
     
     
-// MARK: -
-private func inflate(_ data: Data) -> Data? {
-//    var outData = Data()
-//    var inData = data
-//
-//
-//    print("inflate")
-//
-//    for var multiple in stride(from: 0, to: 16, by: 2) {
-//        print("multiple: \(multiple)")
-//
-//        let compression_buffer_length = inData.count * (1 << multiple)
-//
-//        print("compression_buffer_length: \(compression_buffer_length)")
-//
-//        var subData = Data(capacity: compression_buffer_length)
-//
-//        inData.withUnsafeBytes { (inputPointer: UnsafeRawBufferPointer) in
-//            self.inflateStream.next_in = UnsafeMutablePointer<Bytef>(mutating: inputPointer.bindMemory(to: Bytef.self).baseAddress!).advanced(by: Int(self.inflateStream.total_in))
-//            self.inflateStream.avail_in = uint(inData.count)
-//        }
-//
-//        subData.withUnsafeMutableBytes { (outputPointer: UnsafeMutableRawBufferPointer) in
-//            self.inflateStream.next_out = outputPointer.bindMemory(to: Bytef.self).baseAddress!.advanced(by: Int(self.inflateStream.total_out))
-//            self.inflateStream.avail_out = uInt(outData.count)
-//        }
-//
-//        let err = zlib.inflate(&self.inflateStream, Z_FINISH)
-//        let enderr = zlib.inflateReset(&self.inflateStream)
-//
-//        outData.append(Data(bytes: self.inflateStream.next_out, count: Int(self.inflateStream.avail_out)))
-//
-//        print("outData: \(outData.toHex())")
-//
-//        if err == Z_STREAM_END && enderr != Z_BUF_ERROR {
-//            break
-//        }
-//    }
-//
-//    return outData
-    return data
-}
-    
-    private func deflate(_ data: Data) -> Data? {
+    // MARK: -
+    private func inflate(_ data: Data) -> Data? {
+        return data.unzip()
+    }
         
-//        var inData = data
-//        let length = (inData.count * 2) + 16
-//        var outData = Data(capacity: length)
-//
-//
-//        var stream = zlib.z_stream()
-//                    
-//        stream.data_type = Z_UNKNOWN
-//        
-//        inData.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<Bytef>) in
-//            stream.next_in = bytes
-//        }
-//        stream.avail_in = UInt32(inData.count)
-//        
-//        outData.withUnsafeMutableBytes { (bytes: UnsafeMutablePointer<Bytef>) in
-//            stream.next_out = bytes
-//        }
-//        stream.avail_out = UInt32(outData.count)
-//        
-//        let err = zlib.deflate(&stream, Z_FINISH)
-//        let enderr = zlib.deflateReset(&stream)
-//        
-//        print("deflate err : \(err)")
-//        print("deflate err : \(err)")
-//        
-//        if (err != Z_STREAM_END) {
-//            if (err == Z_OK) {
-//                print("Deflate Z_BUF_ERROR")
-//            }
-//            
-//            return nil;
-//        }
-//        
-//        if (enderr != Z_OK) {
-//            print("Deflate not Z_OK")
-//            return nil;
-//        }
-//        
-//        print("outData : \(outData.toHex())")
-//
-//        return outData
-        return data
+    private func deflate(_ data: Data) -> Data? {
+        return data.zip()
     }
     
 }

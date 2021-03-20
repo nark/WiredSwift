@@ -18,8 +18,7 @@ var targetDependencies: [Target.Dependency] = []
 dependencies.append(.package(name: "AEXML", url: "https://github.com/tadija/AEXML.git", from: "4.5.0"))
 dependencies.append(.package(name: "CryptoSwift", url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.3.0"))
 dependencies.append(.package(name: "CryptorRSA", url: "https://github.com/IBM-Swift/BlueRSA", from: "1.0.35"))
-dependencies.append(.package(name: "CZlib", url: "https://github.com/IBM-Swift/CZlib.git", from: "0.1.2"))
-dependencies.append(.package(name: "Gzip", url: "https://github.com/1024jp/GzipSwift", from: "5.1.1"))
+dependencies.append(.package(name: "DataCompression", url: "https://github.com/mw99/DataCompression", from: "3.6.0"))
 dependencies.append(.package(name: "SocketSwift", url: "https://github.com/BiAtoms/Socket.swift.git", from: "2.4.0"))
 
 
@@ -27,8 +26,7 @@ dependencies.append(.package(name: "SocketSwift", url: "https://github.com/BiAto
 targetDependencies.append(.byName(name: "AEXML"))
 targetDependencies.append(.byName(name: "CryptoSwift"))
 targetDependencies.append(.byName(name: "CryptorRSA"))
-targetDependencies.append(.byName(name: "CZlib"))
-targetDependencies.append(.byName(name: "Gzip"))
+targetDependencies.append(.byName(name: "DataCompression"))
 targetDependencies.append(.byName(name: "SocketSwift"))
 
 

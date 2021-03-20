@@ -40,7 +40,7 @@ public typealias SpecError      = P7SpecError
      // Initialize a specification based on a XML file
      spec = Spec(withPath: "wired.xml")
  
- @author Rafaël Warnault (mailto:dev@read-write.fr)
+ @author Rafaël Warnault (mailto:rw@read-write.fr)
  */
 public class P7Spec: NSObject, XMLParserDelegate {
     private var parser:XMLParser = XMLParser(data: Data())
@@ -117,6 +117,8 @@ public class P7Spec: NSObject, XMLParserDelegate {
     </p7:field>
     <p7:field name="p7.handshake.checksum" type="enum" id="6">
       <p7:enum name="p7.handshake.checksum.sha1" value="0" />
+      <p7:enum name="p7.handshake.checksum.sha256" value="1" />
+      <p7:enum name="p7.handshake.checksum.sha512" value="2" />
     </p7:field>
     <p7:field name="p7.handshake.compatibility_check" type="bool" id="7" />
 
@@ -310,7 +312,15 @@ public class P7Spec: NSObject, XMLParserDelegate {
      XMLParser parser method
     */
     public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
-        if elementName == "p7:field" {
+        if elementName == "p7:protocol" {
+            if let name = attributeDict["name"] {
+                self.protocolName = name
+            }
+            if let version = attributeDict["version"] {
+                self.protocolVersion = version
+            }
+        }
+        else if elementName == "p7:field" {
             self.loadField(attributeDict)
         }
         else if elementName == "p7:message" {

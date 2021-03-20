@@ -16,7 +16,7 @@ import OpenSSL
 
 open class RSA {
     var publicKey:Data!
-
+    var privateKey:Data!
 
     public init?(publicKey: Data) {
         do {
@@ -32,7 +32,32 @@ open class RSA {
     }
     
     
-    func encrypt(data: Data) -> Data? {
+    public init?(bits: Int = 2048) {
+        do {
+            let (privatek, _) = try CC.RSA.generateKeyPair(bits)
+            self.privateKey = privatek
+        } catch  {
+            Logger.error("RSA Public Key init failed")
+        }
+    }
+    
+    
+    
+    public func publicKey(from privateKey:Data) -> Data? {
+        do {
+            self.publicKey = try CC.RSA.getPublicKeyFromPrivateKey(privateKey)
+            
+            return self.publicKey
+        } catch {
+            Logger.error("Cannot get public key")
+        }
+        
+        return nil
+    }
+    
+    
+    
+    public func encrypt(data: Data) -> Data? {
         do {
             var encryptedData:Data? = nil
             
@@ -51,7 +76,21 @@ open class RSA {
     }
     
     
-    func decrypt(data: Data) -> Data? {
+    public func decrypt(data: Data) -> Data? {
+        do {
+            var decryptedData:Data? = nil
+            
+            #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+                (decryptedData, _) = try CC.RSA.decrypt(data, derKey: self.privateKey, tag: Data(), padding: .oaep, digest: .sha1)
+            #elseif os(Linux)
+                
+            #endif
+            
+            return decryptedData
+        } catch  {
+            Logger.error("RSA Public encrypt failed")
+        }
+
         return nil
     }
 }
