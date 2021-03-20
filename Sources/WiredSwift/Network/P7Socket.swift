@@ -64,29 +64,29 @@ public class P7Socket: NSObject {
             case .NONE:
                 return "None"
             case .RSA_AES_128_SHA1:
-                return "AES/128 bits"
+                return "AES/128 bits - SHA1"
             case .RSA_AES_192_SHA1:
-                return "AES/192 bits"
+                return "AES/192 bits - SHA1"
             case .RSA_AES_256_SHA1:
-                return "AES/256 bits"
+                return "AES/256 bits - SHA1"
             case .RSA_BF_128_SHA1:
-                return "BF/128 bits"
+                return "BF/128 bits - SHA1"
             case .RSA_AES_128_SHA256:
-                return "AES/128 bits"
+                return "AES/128 bits - SHA256"
             case .RSA_AES_192_SHA256:
-                return "AES/192 bits"
+                return "AES/192 bits - SHA256"
             case .RSA_AES_256_SHA256:
-                return "AES/256 bits"
+                return "AES/256 bits - SHA256"
             case .RSA_BF_128_SHA256:
-                return "BF/128 bits"
+                return "BF/128 bits - SHA256"
             case .RSA_AES_128_SHA512:
-                return "AES/128 bits"
+                return "AES/128 bits - SHA512"
             case .RSA_AES_192_SHA512:
-                return "AES/192 bits"
+                return "AES/192 bits - SHA512"
             case .RSA_AES_256_SHA512:
-                return "AES/256 bits"
+                return "AES/256 bits - SHA512"
             case .RSA_BF_128_SHA512:
-                return "BF/128 bits"
+                return "BF/128 bits - SHA512"
             default:
                 return "None"
             }
@@ -100,7 +100,6 @@ public class P7Socket: NSObject {
     public var username: String = "guest"
     public var password: String!
     public var serialization: Serialization = .BINARY
-    // public var options: SocketOptions = .ALL
     
     public var compression: Compression = .NONE
     public var cipherType: CipherType = .RSA_AES_256_SHA1
@@ -864,9 +863,9 @@ public class P7Socket: NSObject {
         }
         
         if self.password == nil || self.password == "" {
-            self.password = "".sha1()
+            self.password = "".sha256()
         } else {
-            self.password = self.password.sha1()
+            self.password = self.password.sha256()
         }
                 
         let passwordData = self.password.data(using: .utf8)!
@@ -1038,7 +1037,7 @@ public class P7Socket: NSObject {
             }
         } else {
             // assume password is empty (guest with empty password access only)
-            self.password = "".sha1()
+            self.password = "".sha256()
         }
         
         let passwordData = self.password.data(using: .utf8)!

@@ -20,6 +20,9 @@ public class User {
     public var state:State = .DISCONNECTED
     public var ip:String?
     public var host:String?
+    public var nick:String?
+    public var status:String?
+    public var icon:Data?
     
     public init(_ socket:P7Socket, userID: UInt32) {
         self.socket = socket

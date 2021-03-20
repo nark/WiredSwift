@@ -9,7 +9,7 @@ import Foundation
 import WiredSwift
 import GRDB
 
-class DatabaseController {
+public class DatabaseController {
     // MARK: -
     var pool:DatabasePool!
     let baseURL: URL
@@ -70,11 +70,11 @@ class DatabaseController {
                 
                 try db.execute(
                     sql: "INSERT INTO users (name, password) VALUES (?, ?)",
-                    arguments: ["guest", "".sha1()])
+                    arguments: ["guest", "".sha256()])
                 
                 try db.execute(
                     sql: "INSERT INTO users (name, password) VALUES (?, ?)",
-                    arguments: ["admin", "admin".sha1()])
+                    arguments: ["admin", "admin".sha256()])
             }
         } catch { }
     }

@@ -14,15 +14,19 @@ struct Wired: ParsableCommand {
     @Flag(help: "Enable debug mode")
     var debugMode = false
 
+    
     @Option(name: .shortAndLong, help: "Server listening port")
     var port: Int = 4871
 
+    
     @Option(help: "Sqlite database file")
     var dbPath: String = "\(FileManager.default.currentDirectoryPath)/wired3.db"
 
+    
     mutating func run() throws {
-        let server = App(dbPath: dbPath, port: port)
-        server.start()
+        let appController = AppController(dbPath: dbPath, port: port)
+        
+        appController.start()
     }
 }
 

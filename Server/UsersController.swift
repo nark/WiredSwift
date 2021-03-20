@@ -8,7 +8,7 @@
 import Foundation
 import WiredSwift
 
-class UsersController {
+public class UsersController {
     var connectedUsers:[UInt32:User] = [:]
     var lastUserID:UInt32 = 0
     
@@ -25,6 +25,12 @@ class UsersController {
         WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
     }
     
-    
+    public func removeUser(user:User) {
+        user.socket?.disconnect()
+        
+        self.connectedUsers[user.userID] = nil
+        
+        WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
+    }
 }
 

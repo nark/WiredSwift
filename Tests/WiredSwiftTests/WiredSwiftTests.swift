@@ -136,65 +136,12 @@ final class WiredSwiftTests: XCTestCase {
         }
     }
     
-    
-    func testServer() {
-        guard let spec = P7Spec(withUrl: specURL) else {
-            XCTFail()
-            return
-        }
-        
-        let server = Server(port: 4871, spec: spec)
-        server.listen()
-    }
-    
-    func testSeverInfo() {
-        guard let spec = P7Spec(withUrl: specURL) else {
-            XCTFail()
-            return
-        }
-        
-        let response = P7Message(withName: "wired.server_info", spec: spec)
-        
-        response.addParameter(field: "wired.info.application.name", value: "Wired 3.0")
-        response.addParameter(field: "wired.info.application.version", value: "0.1")
-        response.addParameter(field: "wired.info.application.build", value: "0")
-        response.addParameter(field: "wired.info.os.name", value: "MacOS")
-        response.addParameter(field: "wired.info.os.version", value: "10.15")
-        response.addParameter(field: "wired.info.arch", value: "x86_64")
-
-        response.addParameter(field: "wired.info.supports_rsrc", value: false)
-        response.addParameter(field: "wired.info.name", value: "Noded Server")
-        response.addParameter(field: "wired.info.description", value: "Welcome to my node")
-        //response.addParameter(field: "wired.info.banner", value: Data())
-
-        response.addParameter(field: "wired.info.downloads", value: UInt32(0))
-        response.addParameter(field: "wired.info.uploads", value: UInt32(0))
-        response.addParameter(field: "wired.info.download_speed", value: UInt32(0))
-        response.addParameter(field: "wired.info.upload_speed", value: UInt32(0))
-        //response.addParameter(field: "wired.info.start_time", value: Date())
-        response.addParameter(field: "wired.info.files.count", value: UInt64(0))
-        response.addParameter(field: "wired.info.files.size", value: UInt64(0))
-          
-        print("\n\n")
-        print("response : \(response.xml())")
-        print("response : \(response.bin().toHexString())")
-        
-        print("\n\n")
-        let response2 = P7Message(withData: response.bin(), spec: spec)
-        
-        print("response2 : \(response2.xml())")
-        print("response2 : \(response2.bin().toHexString())")
-        print("\n\n")
-        
-        //XCTAssert(response.bin() == response2.bin())
-    }
 
 
     static var allTests = [
         ("testUrl", testUrl),
         ("testConnect", testConnect),
         ("testUploadFile", testUploadFile),
-        ("testServer", testServer),
     ]
 }
 

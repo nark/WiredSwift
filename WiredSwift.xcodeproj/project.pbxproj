@@ -51,11 +51,13 @@
 		4C22527326061CCD002430EF /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4C22527226061CCD002430EF /* GRDB */; };
 		4C22527626066173002430EF /* DatabaseController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527526066173002430EF /* DatabaseController.swift */; };
 		4C225279260663A6002430EF /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 4C225278260663A6002430EF /* ArgumentParser */; };
-		4C22527B260663C0002430EF /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527A260663C0002430EF /* App.swift */; };
-		4C22527D26066828002430EF /* ConnectionsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527C26066828002430EF /* ConnectionsController.swift */; };
-		4C22527E26066A0C002430EF /* Server.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* Server.swift */; };
+		4C22527B260663C0002430EF /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527A260663C0002430EF /* AppController.swift */; };
+		4C22527D26066828002430EF /* UsersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527C26066828002430EF /* UsersController.swift */; };
+		4C22527E26066A0C002430EF /* ServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* ServerController.swift */; };
 		4C22528026066A38002430EF /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527F26066A38002430EF /* User.swift */; };
 		4C52C84D2459C6CE00BFB5AE /* BlockConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */; };
+		4CB1F6DD260684DD00017676 /* ChatsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB1F6DC260684DD00017676 /* ChatsController.swift */; };
+		4CB1F6DF2606852300017676 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB1F6DE2606852300017676 /* Chat.swift */; };
 		OBJ_178 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_156 /* Document.swift */; };
 		OBJ_179 /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_157 /* Element.swift */; };
 		OBJ_180 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_158 /* Error.swift */; };
@@ -331,11 +333,13 @@
 		4C22525926050FF0002430EF /* Client */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Client; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C22525B26050FF0002430EF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4C22527526066173002430EF /* DatabaseController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseController.swift; sourceTree = "<group>"; };
-		4C22527A260663C0002430EF /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
-		4C22527C26066828002430EF /* ConnectionsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionsController.swift; sourceTree = "<group>"; };
+		4C22527A260663C0002430EF /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
+		4C22527C26066828002430EF /* UsersController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsersController.swift; sourceTree = "<group>"; };
 		4C22527F26066A38002430EF /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockConnection.swift; sourceTree = "<group>"; };
-		4C7BCBDD2601164900FDD9B5 /* Server.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Server.swift; sourceTree = "<group>"; };
+		4C7BCBDD2601164900FDD9B5 /* ServerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerController.swift; sourceTree = "<group>"; };
+		4CB1F6DC260684DD00017676 /* ChatsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsController.swift; sourceTree = "<group>"; };
+		4CB1F6DE2606852300017676 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
 		"AEXML::AEXML::Product" /* AEXML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AEXML.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"CryptoSwift::CryptoSwift::Product" /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CryptoSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"CryptorRSA::CryptorRSA::Product" /* CryptorRSA.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CryptorRSA.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -585,11 +589,13 @@
 			isa = PBXGroup;
 			children = (
 				4C22524826050E09002430EF /* main.swift */,
-				4C22527A260663C0002430EF /* App.swift */,
-				4C7BCBDD2601164900FDD9B5 /* Server.swift */,
-				4C22527F26066A38002430EF /* User.swift */,
-				4C22527C26066828002430EF /* ConnectionsController.swift */,
+				4C22527A260663C0002430EF /* AppController.swift */,
+				4C7BCBDD2601164900FDD9B5 /* ServerController.swift */,
+				4C22527C26066828002430EF /* UsersController.swift */,
 				4C22527526066173002430EF /* DatabaseController.swift */,
+				4CB1F6DC260684DD00017676 /* ChatsController.swift */,
+				4C22527F26066A38002430EF /* User.swift */,
+				4CB1F6DE2606852300017676 /* Chat.swift */,
 			);
 			path = Server;
 			sourceTree = "<group>";
@@ -1317,10 +1323,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C22527E26066A0C002430EF /* Server.swift in Sources */,
-				4C22527B260663C0002430EF /* App.swift in Sources */,
+				4C22527E26066A0C002430EF /* ServerController.swift in Sources */,
+				4C22527B260663C0002430EF /* AppController.swift in Sources */,
 				4C22528026066A38002430EF /* User.swift in Sources */,
-				4C22527D26066828002430EF /* ConnectionsController.swift in Sources */,
+				4C22527D26066828002430EF /* UsersController.swift in Sources */,
+				4CB1F6DD260684DD00017676 /* ChatsController.swift in Sources */,
+				4CB1F6DF2606852300017676 /* Chat.swift in Sources */,
 				4C22527626066173002430EF /* DatabaseController.swift in Sources */,
 				4C22524926050E09002430EF /* main.swift in Sources */,
 			);

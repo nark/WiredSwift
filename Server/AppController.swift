@@ -13,14 +13,14 @@ public let DEFAULT_PORT = 4875
 public let RSA_KEY_BITS = 2048
 
 
-public class App : ServerDelegate, SocketPasswordDelegate {
+public class AppController : ServerDelegate, SocketPasswordDelegate {
     var port:Int = DEFAULT_PORT
     
-    var server:Server!
+    var serverController:ServerController!
     
     var databaseController:DatabaseController!
-    var connectionsController:ConnectionsController!
-
+    var usersController:UsersController!
+    var chatsController:ChatsController!
     
     
     // MARK: - Public
@@ -30,7 +30,8 @@ public class App : ServerDelegate, SocketPasswordDelegate {
         self.port = port
 
         self.databaseController = DatabaseController(baseURL: url)
-        self.connectionsController = ConnectionsController()
+        self.usersController = UsersController()
+        self.chatsController = ChatsController()
     }
     
 
@@ -42,9 +43,9 @@ public class App : ServerDelegate, SocketPasswordDelegate {
             exit(-111)
         }
 
-        self.server = Server(port: self.port, spec: spec)
-        self.server.delegate = self
-        self.server.listen()
+        self.serverController = ServerController(port: self.port, spec: spec)
+        self.serverController.delegate = self
+        self.serverController.listen()
     }
     
     
@@ -53,7 +54,7 @@ public class App : ServerDelegate, SocketPasswordDelegate {
     
     // MARK: - ServerDelegate
     public func newUser(forSocket socket: P7Socket) -> User? {
-        return User(socket, userID: self.connectionsController.nextUserID())
+        return User(socket, userID: self.usersController.nextUserID())
     }
     
     
@@ -61,9 +62,7 @@ public class App : ServerDelegate, SocketPasswordDelegate {
         if let username = user.socket?.username {
             user.username = username
             
-            self.connectionsController.connectedUsers[user.userID] = user
-            
-            WiredSwift.Logger.info("Connected users: \(self.connectionsController.connectedUsers)")
+            self.usersController.addUser(user: user)
             
             return true
         } else {
@@ -73,23 +72,16 @@ public class App : ServerDelegate, SocketPasswordDelegate {
         return false
     }
     
+    
     public func userDisconnected(user:User) {
-        user.socket?.disconnect()
-        
-        self.connectionsController.connectedUsers[user.userID] = nil
-        
-        WiredSwift.Logger.info("Connected users: \(self.connectionsController.connectedUsers)")
+        self.usersController.removeUser(user: user)
     }
     
+    
     public func disconnectUser(user: User) {
-        if let username = user.socket?.username {
-            user.socket?.disconnect()
-            
-            self.connectionsController.connectedUsers[user.userID] = nil
-            
-            WiredSwift.Logger.info("Connected users: \(self.connectionsController.connectedUsers)")
-        }        
+        self.usersController.removeUser(user: user)
     }
+    
     
     public func receiveMessage(user:User, message:P7Message) {
         if message.name == "wired.client_info" {
@@ -107,9 +99,20 @@ public class App : ServerDelegate, SocketPasswordDelegate {
         else if message.name == "wired.send_login" {
             self.receiveSendLogin(user, message)
         }
-        else if message.name == "wired.chat.send_say" {
-            self.receiveChatSay(user, message)
+            else if message.name == "wired.chat.send_say" {
+                self.receiveChatSay(user, message)
 
+            }
+        else if message.name == "wired.chat.join_chat" {
+            if  let chatID = message.uint32(forField: "wired.chat.id"),
+                let transactionID = message.uint32(forField: "wired.transaction"){
+                self.chatsController.userJoin(chatID: chatID, user: user, transactionID: transactionID)
+            }
+        }
+        else if message.name == "wired.chat.leave_chat" {
+            if let chatID = message.uint32(forField: "wired.chat.id") {
+                self.chatsController.userLeave(chatID: chatID, user: user)
+            }
         }
         else {
             WiredSwift.Logger.warning("Message \(message.name ?? "unknow message") not implemented")
@@ -127,7 +130,7 @@ public class App : ServerDelegate, SocketPasswordDelegate {
     
     // MARK: - Private
     private func receiveClientInfo(_ user:User, _ message:P7Message) {
-        let response = P7Message(withName: "wired.server_info", spec: self.server.spec)
+        let response = P7Message(withName: "wired.server_info", spec: self.serverController.spec)
         
         response.addParameter(field: "wired.info.application.name", value: "Wired 3.0")
         response.addParameter(field: "wired.info.application.version", value: "0.1")
@@ -152,35 +155,53 @@ public class App : ServerDelegate, SocketPasswordDelegate {
         _ = user.socket?.write(response)
     }
     
+    
     private func receiveUserSetNick(_ user:User, _ message:P7Message) {
-        let response = P7Message(withName: "wired.okay", spec: self.server.spec)
+        if let nick = message.string(forField: "wired.user.nick") {
+            user.nick = nick
+        }
+                
+        let response = P7Message(withName: "wired.okay", spec: self.serverController.spec)
+        
         _ = user.socket?.write(response)
     }
+    
     
     private func receiveUserSetStatus(_ user:User, _ message:P7Message) {
-        let response = P7Message(withName: "wired.okay", spec: self.server.spec)
+        if let status = message.string(forField: "wired.user.status") {
+            user.status = status
+        }
+        
+        let response = P7Message(withName: "wired.okay", spec: self.serverController.spec)
         _ = user.socket?.write(response)
     }
+    
     
     private func receiveUserSetIcon(_ user:User, _ message:P7Message) {
-        let response = P7Message(withName: "wired.okay", spec: self.server.spec)
+        if let icon = message.data(forField: "wired.user.icon") {
+            user.icon = icon
+        }
+        
+        let response = P7Message(withName: "wired.okay", spec: self.serverController.spec)
         _ = user.socket?.write(response)
     }
     
+    
     private func receiveSendLogin(_ user:User, _ message:P7Message) {
-        let response = P7Message(withName: "wired.login", spec: self.server.spec)
+        let response = P7Message(withName: "wired.login", spec: self.serverController.spec)
         
         response.addParameter(field: "wired.user.id", value: user.userID)
         
         _ = user.socket?.write(response)
         
-        let response2 = P7Message(withName: "wired.account.privileges", spec: self.server.spec)
+        let response2 = P7Message(withName: "wired.account.privileges", spec: self.serverController.spec)
         
         _ = user.socket?.write(response2)
     }
     
+    
     private func receiveChatSay(_ user:User, _ message:P7Message) {
-        for (userID, u) in self.connectionsController.connectedUsers {
+        for (userID, u) in self.usersController.connectedUsers {
             //if u.userID != user.userID {
                 u.socket?.write(message)
             //}
