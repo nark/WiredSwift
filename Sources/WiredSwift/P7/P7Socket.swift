@@ -9,7 +9,6 @@
 import Foundation
 import SocketSwift
 import CryptoSwift
-//import CZlib
 import DataCompression
 
 var md5DigestLength       = 16

@@ -20,7 +20,7 @@ dependencies.append(.package(name: "CryptorRSA", url: "https://github.com/IBM-Sw
 dependencies.append(.package(name: "DataCompression", url: "https://github.com/mw99/DataCompression", from: "3.6.0"))
 dependencies.append(.package(name: "SocketSwift", url: "https://github.com/BiAtoms/Socket.swift.git", from: "2.4.0"))
 dependencies.append(.package(name: "GRDB", url: "https://github.com/groue/GRDB.swift.git", from: "5.7.0"))
-dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBrancati/Queuer.git", .upToNextMajor(from: "2.0.0"))
+dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBrancati/Queuer.git", from: "2.0.0"))
 
 
 targetDependencies.append(.byName(name: "AEXML"))
