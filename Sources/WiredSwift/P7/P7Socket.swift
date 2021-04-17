@@ -10,6 +10,7 @@ import Foundation
 import SocketSwift
 import CryptoSwift
 import DataCompression
+import SWCompression
 
 var md5DigestLength       = 16
 var sha1DigestLength      = 20
@@ -1216,11 +1217,16 @@ public class P7Socket: NSObject {
     
     // MARK: -
     private func inflate(_ data: Data) -> Data? {
-        return data.inflate()
+        do {
+            return try Deflate.decompress(data: data)
+        } catch let error {
+            Logger.error("Inflate error: \(error)")
+            return nil
+        }
     }
         
     private func deflate(_ data: Data) -> Data? {
-        return data.deflate()
+        return Deflate.compress(data: data)
     }
     
 }

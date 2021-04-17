@@ -31,7 +31,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		4C2252362604EC9B002430EF /* DataCompression in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2252352604EC9B002430EF /* DataCompression */; };
+		4C0F052A262BA27100FA4CFD /* SWCompression in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0F0529262BA27100FA4CFD /* SWCompression */; };
 		4C22524926050E09002430EF /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22524826050E09002430EF /* main.swift */; };
 		4C22524E26050F1F002430EF /* AEXML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "AEXML::AEXML::Product" /* AEXML.framework */; };
 		4C22524F26050F1F002430EF /* CryptorRSA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "CryptorRSA::CryptorRSA::Product" /* CryptorRSA.framework */; };
@@ -595,7 +595,7 @@
 				OBJ_363 /* SocketSwift.framework in Frameworks */,
 				OBJ_366 /* CryptorRSA.framework in Frameworks */,
 				OBJ_367 /* CryptoSwift.framework in Frameworks */,
-				4C2252362604EC9B002430EF /* DataCompression in Frameworks */,
+				4C0F052A262BA27100FA4CFD /* SWCompression in Frameworks */,
 				OBJ_368 /* AEXML.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1286,7 +1286,7 @@
 			);
 			name = WiredSwift;
 			packageProductDependencies = (
-				4C2252352604EC9B002430EF /* DataCompression */,
+				4C0F0529262BA27100FA4CFD /* SWCompression */,
 			);
 			productName = WiredSwift;
 			productReference = "WiredSwift::WiredSwift::Product" /* WiredSwift.framework */;
@@ -1342,10 +1342,10 @@
 			);
 			mainGroup = OBJ_5;
 			packageReferences = (
-				4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */,
 				4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				4C25258E2607CD9200258794 /* XCRemoteSwiftPackageReference "GRDB" */,
 				4CF6A3C026108358005F6476 /* XCRemoteSwiftPackageReference "Queuer" */,
+				4C0F0528262BA27100FA4CFD /* XCRemoteSwiftPackageReference "SWCompression" */,
 			);
 			productRefGroup = OBJ_162 /* Products */;
 			projectDirPath = "";
@@ -2815,12 +2815,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */ = {
+		4C0F0528262BA27100FA4CFD /* XCRemoteSwiftPackageReference "SWCompression" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/mw99/DataCompression";
+			repositoryURL = "https://github.com/tsolomko/SWCompression";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 3.6.0;
+				minimumVersion = 4.5.8;
 			};
 		};
 		4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
@@ -2850,10 +2850,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4C2252352604EC9B002430EF /* DataCompression */ = {
+		4C0F0529262BA27100FA4CFD /* SWCompression */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */;
-			productName = DataCompression;
+			package = 4C0F0528262BA27100FA4CFD /* XCRemoteSwiftPackageReference "SWCompression" */;
+			productName = SWCompression;
 		};
 		4C225278260663A6002430EF /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
