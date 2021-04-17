@@ -59,8 +59,12 @@ public class P7Spec: NSObject, XMLParserDelegate {
     public var messagesByName:  [String:SpecMessage]    = [:]
     public var messagesByID:    [Int:SpecMessage]       = [:]
     
+    private var accountPrivilegesLock:Bool = false
+    public var accountPrivileges:[String]? = nil
+    
     public var errors:          [SpecError]             = []
     public var errorsByID:      [Int:SpecError]         = [:]
+    public var errorsByName:    [String:SpecError]         = [:]
     
     private var currentMessage: SpecMessage?
     
@@ -309,11 +313,15 @@ public class P7Spec: NSObject, XMLParserDelegate {
 
     - Returns: An instance of SpecError
     */
-    public func error(forMessage message: P7Message) -> SpecError?{
+    public func error(forMessage message: P7Message) -> SpecError? {
         if let errorID = message.enumeration(forField: "wired.error") {
             return errorsByID[Int(errorID)]
         }
         return nil
+    }
+    
+    public func error(withName: String) -> SpecError? {
+        return errorsByName[withName]
     }
     
 
@@ -336,6 +344,17 @@ public class P7Spec: NSObject, XMLParserDelegate {
         else if elementName == "p7:message" {
             self.loadMessage(attributeDict)
         }
+        else if elementName == "p7:collection" {
+            if attributeDict["name"] == "wired.account.privileges" {
+                accountPrivileges = []
+                accountPrivilegesLock = true
+            }
+        }
+        else if elementName == "p7:member" {
+            if accountPrivilegesLock {
+                accountPrivileges?.append(attributeDict["field"]!)
+            }
+        }
         else if elementName == "p7:parameter" {
             self.loadParam(attributeDict)
         }
@@ -344,6 +363,15 @@ public class P7Spec: NSObject, XMLParserDelegate {
                 if name.starts(with: "wired.error.") {
                     self.loadError(attributeDict)
                 }
+            }
+        }
+    }
+    
+    
+    public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        if elementName == "p7:collection" {
+            if accountPrivilegesLock {
+                accountPrivilegesLock = false
             }
         }
     }
@@ -360,8 +388,11 @@ public class P7Spec: NSObject, XMLParserDelegate {
         }
         
         let e = SpecError(name: name, spec: self, attributes: attributes)
+        e.id = value
+        
         errors.append(e)
         errorsByID[asInt] = e
+        errorsByName[name] = e
     }
     
     
@@ -378,9 +409,10 @@ public class P7Spec: NSObject, XMLParserDelegate {
             self.xml = try String(contentsOf: url, encoding: .utf8)
             
             self.parser = XMLParser(contentsOf: url)!
-            
             self.parser.delegate = self
             self.parser.parse()
+            
+            Logger.debug("Loaded spec \(self.protocolName!) version \(self.protocolVersion!)")
             
         } catch let e {
             Logger.error("Cannot load spec at URL: \(e.localizedDescription)")

@@ -48,16 +48,31 @@
 		4C22526426051065002430EF /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SocketSwift::SocketSwift::Product" /* SocketSwift.framework */; };
 		4C22526526051065002430EF /* system_zlib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Gzip::system-zlib::Product" /* system_zlib.framework */; };
 		4C22526626051065002430EF /* WiredSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "WiredSwift::WiredSwift::Product" /* WiredSwift.framework */; };
-		4C22527326061CCD002430EF /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4C22527226061CCD002430EF /* GRDB */; };
 		4C22527626066173002430EF /* DatabaseController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527526066173002430EF /* DatabaseController.swift */; };
 		4C225279260663A6002430EF /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 4C225278260663A6002430EF /* ArgumentParser */; };
 		4C22527B260663C0002430EF /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527A260663C0002430EF /* AppController.swift */; };
 		4C22527D26066828002430EF /* UsersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527C26066828002430EF /* UsersController.swift */; };
 		4C22527E26066A0C002430EF /* ServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* ServerController.swift */; };
-		4C22528026066A38002430EF /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527F26066A38002430EF /* User.swift */; };
+		4C2525922607CEC300258794 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2525912607CEC300258794 /* GRDB */; };
 		4C52C84D2459C6CE00BFB5AE /* BlockConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */; };
 		4CB1F6DD260684DD00017676 /* ChatsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB1F6DC260684DD00017676 /* ChatsController.swift */; };
 		4CB1F6DF2606852300017676 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB1F6DE2606852300017676 /* Chat.swift */; };
+		4CC25E8A2613B3EC006AD1FC /* Ints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC25E892613B3EC006AD1FC /* Ints.swift */; };
+		4CC25E8C2613B43D006AD1FC /* FileManager+ResourceFork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC25E8B2613B43D006AD1FC /* FileManager+ResourceFork.swift */; };
+		4CC25E8E26147B51006AD1FC /* ServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* ServerController.swift */; };
+		4CF6A3A4260D09D5005F6476 /* Privilege.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3A3260D09D5005F6476 /* Privilege.swift */; };
+		4CF6A3A6260D34E4005F6476 /* UserPrivilege.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3A5260D34E4005F6476 /* UserPrivilege.swift */; };
+		4CF6A3A8260D34EC005F6476 /* GroupPrivilege.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3A7260D34EC005F6476 /* GroupPrivilege.swift */; };
+		4CF6A3AA260D3765005F6476 /* Group.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3A9260D3765005F6476 /* Group.swift */; };
+		4CF6A3AD260D457C005F6476 /* FilesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3AC260D457C005F6476 /* FilesController.swift */; };
+		4CF6A3B3260D4E12005F6476 /* banner.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4CF6A3B2260D4E07005F6476 /* banner.png */; };
+		4CF6A3B6260E266F005F6476 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527F26066A38002430EF /* User.swift */; };
+		4CF6A3B7260E6770005F6476 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3AE260D4757005F6476 /* File.swift */; };
+		4CF6A3B9260E70FD005F6476 /* Index.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3B8260E70FD005F6476 /* Index.swift */; };
+		4CF6A3BB260E7139005F6476 /* IndexController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3BA260E7139005F6476 /* IndexController.swift */; };
+		4CF6A3BD260E71EC005F6476 /* TableController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3BC260E71EC005F6476 /* TableController.swift */; };
+		4CF6A3BF260E89BC005F6476 /* TransfersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3BE260E89BC005F6476 /* TransfersController.swift */; };
+		4CF6A3C226108358005F6476 /* Queuer in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF6A3C126108358005F6476 /* Queuer */; };
 		OBJ_178 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_156 /* Document.swift */; };
 		OBJ_179 /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_157 /* Element.swift */; };
 		OBJ_180 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_158 /* Error.swift */; };
@@ -325,10 +340,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		4CF6A3B0260D4DBA005F6476 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 16;
+			files = (
+				4CF6A3B3260D4E12005F6476 /* banner.png in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4C22524626050E09002430EF /* Server */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Server; sourceTree = BUILT_PRODUCTS_DIR; };
+		4C22524626050E09002430EF /* wired3 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = wired3; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C22524826050E09002430EF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4C22525926050FF0002430EF /* Client */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Client; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C22525B26050FF0002430EF /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -340,11 +365,24 @@
 		4C7BCBDD2601164900FDD9B5 /* ServerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerController.swift; sourceTree = "<group>"; };
 		4CB1F6DC260684DD00017676 /* ChatsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatsController.swift; sourceTree = "<group>"; };
 		4CB1F6DE2606852300017676 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
+		4CC25E892613B3EC006AD1FC /* Ints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ints.swift; sourceTree = "<group>"; };
+		4CC25E8B2613B43D006AD1FC /* FileManager+ResourceFork.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "FileManager+ResourceFork.swift"; sourceTree = "<group>"; };
+		4CF6A3A3260D09D5005F6476 /* Privilege.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Privilege.swift; sourceTree = "<group>"; };
+		4CF6A3A5260D34E4005F6476 /* UserPrivilege.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPrivilege.swift; sourceTree = "<group>"; };
+		4CF6A3A7260D34EC005F6476 /* GroupPrivilege.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupPrivilege.swift; sourceTree = "<group>"; };
+		4CF6A3A9260D3765005F6476 /* Group.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Group.swift; sourceTree = "<group>"; };
+		4CF6A3AC260D457C005F6476 /* FilesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilesController.swift; sourceTree = "<group>"; };
+		4CF6A3AE260D4757005F6476 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		4CF6A3B2260D4E07005F6476 /* banner.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = banner.png; sourceTree = "<group>"; };
+		4CF6A3B8260E70FD005F6476 /* Index.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Index.swift; sourceTree = "<group>"; };
+		4CF6A3BA260E7139005F6476 /* IndexController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndexController.swift; sourceTree = "<group>"; };
+		4CF6A3BC260E71EC005F6476 /* TableController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableController.swift; sourceTree = "<group>"; };
+		4CF6A3BE260E89BC005F6476 /* TransfersController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersController.swift; sourceTree = "<group>"; };
 		"AEXML::AEXML::Product" /* AEXML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AEXML.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"CryptoSwift::CryptoSwift::Product" /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CryptoSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"CryptorRSA::CryptorRSA::Product" /* CryptorRSA.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CryptorRSA.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"Gzip::Gzip::Product" /* Gzip.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Gzip.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		"Gzip::system-zlib::Product" /* system_zlib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = system_zlib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"Gzip::system-zlib::Product" /* system_zlib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = system_zlib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		OBJ_10 /* wired.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = wired.xml; sourceTree = "<group>"; };
 		OBJ_100 /* CMAC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CMAC.swift; sourceTree = "<group>"; };
 		OBJ_101 /* ChaCha20.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChaCha20.swift; sourceTree = "<group>"; };
@@ -479,7 +517,7 @@
 		OBJ_99 /* CBCMAC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CBCMAC.swift; sourceTree = "<group>"; };
 		"SocketSwift::SocketSwift::Product" /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SocketSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"WiredSwift::WiredSwift::Product" /* WiredSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = WiredSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		"WiredSwift::WiredSwiftTests::Product" /* WiredSwiftTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = file; path = WiredSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		"WiredSwift::WiredSwiftTests::Product" /* WiredSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = WiredSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -487,11 +525,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C2525922607CEC300258794 /* GRDB in Frameworks */,
 				4C22524E26050F1F002430EF /* AEXML.framework in Frameworks */,
 				4C22524F26050F1F002430EF /* CryptorRSA.framework in Frameworks */,
 				4C22525026050F1F002430EF /* CryptoSwift.framework in Frameworks */,
 				4C225279260663A6002430EF /* ArgumentParser in Frameworks */,
-				4C22527326061CCD002430EF /* GRDB in Frameworks */,
+				4CF6A3C226108358005F6476 /* Queuer in Frameworks */,
 				4C22525126050F1F002430EF /* Gzip.framework in Frameworks */,
 				4C22525226050F1F002430EF /* SocketSwift.framework in Frameworks */,
 				4C22525326050F1F002430EF /* system_zlib.framework in Frameworks */,
@@ -585,19 +624,29 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4C22524726050E09002430EF /* Server */ = {
+		4C22524726050E09002430EF /* wired3 */ = {
 			isa = PBXGroup;
 			children = (
+				4CF6A3B2260D4E07005F6476 /* banner.png */,
 				4C22524826050E09002430EF /* main.swift */,
 				4C22527A260663C0002430EF /* AppController.swift */,
 				4C7BCBDD2601164900FDD9B5 /* ServerController.swift */,
+				4CF6A3BC260E71EC005F6476 /* TableController.swift */,
 				4C22527C26066828002430EF /* UsersController.swift */,
-				4C22527526066173002430EF /* DatabaseController.swift */,
 				4CB1F6DC260684DD00017676 /* ChatsController.swift */,
+				4CF6A3AC260D457C005F6476 /* FilesController.swift */,
+				4CF6A3BE260E89BC005F6476 /* TransfersController.swift */,
+				4CF6A3BA260E7139005F6476 /* IndexController.swift */,
+				4C22527526066173002430EF /* DatabaseController.swift */,
 				4C22527F26066A38002430EF /* User.swift */,
+				4CF6A3A9260D3765005F6476 /* Group.swift */,
 				4CB1F6DE2606852300017676 /* Chat.swift */,
+				4CF6A3B8260E70FD005F6476 /* Index.swift */,
+				4CF6A3A3260D09D5005F6476 /* Privilege.swift */,
+				4CF6A3A5260D34E4005F6476 /* UserPrivilege.swift */,
+				4CF6A3A7260D34EC005F6476 /* GroupPrivilege.swift */,
 			);
-			path = Server;
+			path = wired3;
 			sourceTree = "<group>";
 		};
 		4C22524D26050F1F002430EF /* Frameworks */ = {
@@ -636,6 +685,8 @@
 			children = (
 				OBJ_13 /* Data.swift */,
 				OBJ_14 /* String.swift */,
+				4CC25E892613B3EC006AD1FC /* Ints.swift */,
+				4CC25E8B2613B43D006AD1FC /* FileManager+ResourceFork.swift */,
 			);
 			path = Additions;
 			sourceTree = "<group>";
@@ -695,7 +746,7 @@
 				"Gzip::Gzip::Product" /* Gzip.framework */,
 				"CryptoSwift::CryptoSwift::Product" /* CryptoSwift.framework */,
 				"CryptorRSA::CryptorRSA::Product" /* CryptorRSA.framework */,
-				4C22524626050E09002430EF /* Server */,
+				4C22524626050E09002430EF /* wired3 */,
 				4C22525926050FF0002430EF /* Client */,
 			);
 			name = Products;
@@ -714,6 +765,7 @@
 		OBJ_23 /* Data */ = {
 			isa = PBXGroup;
 			children = (
+				4CF6A3AE260D4757005F6476 /* File.swift */,
 				OBJ_24 /* ServerInfo.swift */,
 				OBJ_25 /* UserInfo.swift */,
 			);
@@ -725,7 +777,6 @@
 			children = (
 				OBJ_27 /* Connection.swift */,
 				4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */,
-				OBJ_28 /* P7Socket.swift */,
 				OBJ_29 /* Url.swift */,
 			);
 			path = Network;
@@ -734,6 +785,7 @@
 		OBJ_30 /* P7 */ = {
 			isa = PBXGroup;
 			children = (
+				OBJ_28 /* P7Socket.swift */,
 				OBJ_31 /* P7Message.swift */,
 				OBJ_32 /* P7Spec.swift */,
 				OBJ_33 /* P7SpecError.swift */,
@@ -799,7 +851,7 @@
 				OBJ_7 /* Sources */,
 				OBJ_38 /* Tests */,
 				OBJ_42 /* Dependencies */,
-				4C22524726050E09002430EF /* Server */,
+				4C22524726050E09002430EF /* wired3 */,
 				4C22525A26050FF0002430EF /* Client */,
 				OBJ_162 /* Products */,
 				OBJ_171 /* LICENSE */,
@@ -994,25 +1046,27 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4C22524526050E09002430EF /* Server */ = {
+		4C22524526050E09002430EF /* wired3 */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4C22524A26050E09002430EF /* Build configuration list for PBXNativeTarget "Server" */;
+			buildConfigurationList = 4C22524A26050E09002430EF /* Build configuration list for PBXNativeTarget "wired3" */;
 			buildPhases = (
 				4C22524226050E09002430EF /* Sources */,
 				4C22524326050E09002430EF /* Frameworks */,
 				4C22524426050E09002430EF /* CopyFiles */,
+				4CF6A3B0260D4DBA005F6476 /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = Server;
+			name = wired3;
 			packageProductDependencies = (
-				4C22527226061CCD002430EF /* GRDB */,
 				4C225278260663A6002430EF /* ArgumentParser */,
+				4C2525912607CEC300258794 /* GRDB */,
+				4CF6A3C126108358005F6476 /* Queuer */,
 			);
 			productName = Server;
-			productReference = 4C22524626050E09002430EF /* Server */;
+			productReference = 4C22524626050E09002430EF /* wired3 */;
 			productType = "com.apple.product-type.tool";
 		};
 		4C22525826050FF0002430EF /* Client */ = {
@@ -1289,8 +1343,9 @@
 			mainGroup = OBJ_5;
 			packageReferences = (
 				4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */,
-				4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */,
 				4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				4C25258E2607CD9200258794 /* XCRemoteSwiftPackageReference "GRDB" */,
+				4CF6A3C026108358005F6476 /* XCRemoteSwiftPackageReference "Queuer" */,
 			);
 			productRefGroup = OBJ_162 /* Products */;
 			projectDirPath = "";
@@ -1312,7 +1367,7 @@
 				"WiredSwift::WiredSwiftPackageTests::ProductTarget" /* WiredSwiftPackageTests */,
 				"WiredSwift::WiredSwiftTests" /* WiredSwiftTests */,
 				"Gzip::system-zlib" /* system-zlib */,
-				4C22524526050E09002430EF /* Server */,
+				4C22524526050E09002430EF /* wired3 */,
 				4C22525826050FF0002430EF /* Client */,
 			);
 		};
@@ -1324,13 +1379,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				4C22527E26066A0C002430EF /* ServerController.swift in Sources */,
+				4CF6A3A6260D34E4005F6476 /* UserPrivilege.swift in Sources */,
 				4C22527B260663C0002430EF /* AppController.swift in Sources */,
-				4C22528026066A38002430EF /* User.swift in Sources */,
 				4C22527D26066828002430EF /* UsersController.swift in Sources */,
+				4CF6A3BF260E89BC005F6476 /* TransfersController.swift in Sources */,
+				4CF6A3BB260E7139005F6476 /* IndexController.swift in Sources */,
 				4CB1F6DD260684DD00017676 /* ChatsController.swift in Sources */,
+				4CF6A3A4260D09D5005F6476 /* Privilege.swift in Sources */,
 				4CB1F6DF2606852300017676 /* Chat.swift in Sources */,
+				4CF6A3AA260D3765005F6476 /* Group.swift in Sources */,
+				4CF6A3B6260E266F005F6476 /* User.swift in Sources */,
 				4C22527626066173002430EF /* DatabaseController.swift in Sources */,
 				4C22524926050E09002430EF /* main.swift in Sources */,
+				4CF6A3BD260E71EC005F6476 /* TableController.swift in Sources */,
+				4CF6A3AD260D457C005F6476 /* FilesController.swift in Sources */,
+				4CF6A3B9260E70FD005F6476 /* Index.swift in Sources */,
+				4CF6A3A8260D34EC005F6476 /* GroupPrivilege.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1527,7 +1591,10 @@
 				OBJ_347 /* P7Cipher.swift in Sources */,
 				OBJ_348 /* RSA.swift in Sources */,
 				OBJ_349 /* SwCrypt.swift in Sources */,
+				4CC25E8C2613B43D006AD1FC /* FileManager+ResourceFork.swift in Sources */,
+				4CF6A3B7260E6770005F6476 /* File.swift in Sources */,
 				OBJ_350 /* ServerInfo.swift in Sources */,
+				4CC25E8A2613B3EC006AD1FC /* Ints.swift in Sources */,
 				OBJ_351 /* UserInfo.swift in Sources */,
 				OBJ_352 /* Connection.swift in Sources */,
 				OBJ_353 /* P7Socket.swift in Sources */,
@@ -1556,6 +1623,7 @@
 			files = (
 				OBJ_391 /* WiredSwiftTests.swift in Sources */,
 				OBJ_392 /* XCTestManifests.swift in Sources */,
+				4CC25E8E26147B51006AD1FC /* ServerController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2528,6 +2596,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
+				SWIFT_VERSION = 4.2;
 				TARGET_NAME = "system-zlib";
 				TVOS_DEPLOYMENT_TARGET = 9.0;
 				WATCHOS_DEPLOYMENT_TARGET = 2.0;
@@ -2562,6 +2631,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited)";
+				SWIFT_VERSION = 4.2;
 				TARGET_NAME = "system-zlib";
 				TVOS_DEPLOYMENT_TARGET = 9.0;
 				WATCHOS_DEPLOYMENT_TARGET = 2.0;
@@ -2571,7 +2641,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4C22524A26050E09002430EF /* Build configuration list for PBXNativeTarget "Server" */ = {
+		4C22524A26050E09002430EF /* Build configuration list for PBXNativeTarget "wired3" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4C22524B26050E09002430EF /* Debug */,
@@ -2753,7 +2823,15 @@
 				minimumVersion = 3.6.0;
 			};
 		};
-		4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */ = {
+		4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.1;
+			};
+		};
+		4C25258E2607CD9200258794 /* XCRemoteSwiftPackageReference "GRDB" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
@@ -2761,12 +2839,12 @@
 				minimumVersion = 5.6.0;
 			};
 		};
-		4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+		4CF6A3C026108358005F6476 /* XCRemoteSwiftPackageReference "Queuer" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-argument-parser";
+			repositoryURL = "https://github.com/FabrizioBrancati/Queuer.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.4.1;
+				minimumVersion = 2.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -2777,15 +2855,20 @@
 			package = 4C2252342604EC9B002430EF /* XCRemoteSwiftPackageReference "DataCompression" */;
 			productName = DataCompression;
 		};
-		4C22527226061CCD002430EF /* GRDB */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4C22527126061CCD002430EF /* XCRemoteSwiftPackageReference "GRDB" */;
-			productName = GRDB;
-		};
 		4C225278260663A6002430EF /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
+		};
+		4C2525912607CEC300258794 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C25258E2607CD9200258794 /* XCRemoteSwiftPackageReference "GRDB" */;
+			productName = GRDB;
+		};
+		4CF6A3C126108358005F6476 /* Queuer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CF6A3C026108358005F6476 /* XCRemoteSwiftPackageReference "Queuer" */;
+			productName = Queuer;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

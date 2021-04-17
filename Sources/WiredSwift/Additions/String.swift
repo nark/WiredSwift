@@ -29,6 +29,59 @@ extension String {
     }
 }
 
+extension String {
+  
+    public var lastPathComponent: String {
+         
+        get {
+            return (self as NSString).lastPathComponent
+        }
+    }
+    public var pathExtension: String {
+         
+        get {
+             
+            return (self as NSString).pathExtension
+        }
+    }
+    public var stringByDeletingLastPathComponent: String {
+         
+        get {
+             
+            return (self as NSString).deletingLastPathComponent
+        }
+    }
+    public var stringByDeletingPathExtension: String {
+         
+        get {
+             
+            return (self as NSString).deletingPathExtension
+        }
+    }
+    public var pathComponents: [String] {
+         
+        get {
+             
+            return (self as NSString).pathComponents
+        }
+    }
+  
+    public func stringByAppendingPathComponent(path: String) -> String {
+         
+        let nsSt = self as NSString
+         
+        return nsSt.appendingPathComponent(path)
+    }
+  
+    public func stringByAppendingPathExtension(ext: String) -> String? {
+         
+        let nsSt = self as NSString
+         
+        return nsSt.appendingPathExtension(ext)
+    }
+}
+
+
 extension Optional where Wrapped == String {
   public var isBlank: Bool {
     return self?.isBlank ?? true

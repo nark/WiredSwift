@@ -17,7 +17,7 @@ public class P7Cipher {
     public var cipherIV:[UInt8]!
     
     private var aesBlockSize = 16
-
+    private var aes:AES? = nil
     
     
     public init(cipher: P7Socket.CipherType) {
@@ -25,39 +25,55 @@ public class P7Cipher {
         self.aesBlockSize   = self.keySize()
         self.cipherKey      = self.randomString(length: self.aesBlockSize)
         self.cipherIV       = AES.randomIV(16)
+        
+        self.initAES()
     }
+
     
     public init(cipher: P7Socket.CipherType, key: Data, iv: Data) {
         self.cipher         = cipher
         self.aesBlockSize   = self.keySize()
         self.cipherKey      = key.stringUTF8!
         self.cipherIV       = iv.bytes
+        
+        self.initAES()
     }
     
     public func encrypt(data: Data) -> Data? {
         do {
-            let aes = try AES(key: Array(self.cipherKey.data(using: .utf8)!), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
-            let dataArray = try aes.encrypt(Array(data))
-            return Data(dataArray)
+            if let aes = self.aes {
+                let dataArray = try aes.encrypt(Array(data))
+                return Data(dataArray)
+            }
         } catch {
             Logger.fatal("Encryption error: \(error)")
-            
-            return nil
         }
+        
+        return nil
     }
     
     
     public func decrypt(data: Data) -> Data? {
         do {
-            let aes = try AES(key: Array(self.cipherKey.data(using: .utf8)!), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
-            let dataArray = Array(data)
-            let decryptedData = try aes.decrypt(dataArray)
+            if let aes = self.aes {
+            let decryptedData = try aes.decrypt(Array(data))
             
             return Data(decryptedData)
+            }
         } catch {
             Logger.fatal("Decryption error: \(error) \(data.toHex())")
-            
-            return nil
+        }
+        
+        return nil
+    }
+    
+    
+    
+    private func initAES() {
+        do {
+            self.aes = try AES(key: Array(self.cipherKey.data(using: .utf8)!), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
+        } catch {
+            Logger.fatal("AES init error: \(error)")
         }
     }
 

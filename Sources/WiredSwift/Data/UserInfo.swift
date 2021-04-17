@@ -9,7 +9,7 @@
 import Foundation
 
 
-public class UserInfo {
+public class UserInfo: CustomStringConvertible {
     public var userID: UInt32!
     public var idle: Bool!
     
@@ -19,6 +19,10 @@ public class UserInfo {
     public var color: UInt32!
     
     private var message: P7Message!
+    
+    public var description: String {
+        return "\(self.userID!):\(self.nick!)"
+    }
     
     public init(message: P7Message) {
         self.message = message

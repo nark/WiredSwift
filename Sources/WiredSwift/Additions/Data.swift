@@ -9,6 +9,20 @@
 
 import Foundation
 
+extension Data {
+
+    init<T>(from value: T) {
+        self = Swift.withUnsafeBytes(of: value) { Data($0) }
+    }
+
+    func to<T>(type: T.Type) -> T? where T: ExpressibleByIntegerLiteral {
+        var value: T = 0
+        guard count >= MemoryLayout.size(ofValue: value) else { return nil }
+        _ = Swift.withUnsafeMutableBytes(of: &value, { copyBytes(to: $0)} )
+        return value
+    }
+}
+
 
 extension Data {
     public func toHex() -> String {
@@ -33,7 +47,7 @@ extension Data {
     }
     
     
-    public mutating func append(uint32 data: UInt32, bigEndian: Bool = true) {
+    public mutating func append(uint32 data: UInt32, bigEndian: Bool = true) {        
         var data = bigEndian ? data.bigEndian : data.littleEndian
         self.append(UnsafeBufferPointer(start: &data, count: 1))
     }
@@ -46,8 +60,8 @@ extension Data {
     
     
     public mutating func append(double data: Double, bigEndian: Bool = true) {
-        let d = bigEndian ? data.bitPattern.bigEndian : data.bitPattern.littleEndian
-        self.append(Swift.withUnsafeBytes(of: d) { Data($0) })
+        var data = bigEndian ? data.bitPattern.bigEndian : data.bitPattern.littleEndian
+        self.append(UnsafeBufferPointer(start: &data, count: 1))
     }
     
     

@@ -94,6 +94,11 @@ public class P7Message: NSObject {
                 return String(val)
             }
         }
+        else if spec.fieldsByName[field]?.type == .enum32 {
+            if let val = value as? UInt32 {
+                print("field")
+            }
+        }
         else if spec.fieldsByName[field]?.type == .data {
             if let val = value as? Data {
                 return val.toHex()
@@ -133,8 +138,8 @@ public class P7Message: NSObject {
     
     
     public func date(forField field: String) -> Date? {        
-        if let value = self.parameters[field] as? Double {
-            return Date(timeIntervalSince1970: value)
+        if let value = self.parameters[field] as? Date {
+            return value
         }
         return nil
     }
@@ -156,8 +161,8 @@ public class P7Message: NSObject {
     }
     
     public func uint64(forField field: String) -> UInt64? {        
-        if let value = self.parameters[field] as? Data {
-            return value.uint64
+        if let value = self.parameters[field] as? UInt64 {
+            return value
         }
         return nil
     }
@@ -230,7 +235,6 @@ public class P7Message: NSObject {
             // append fields
             for (field, value) in self.parameters {
                 if let specField = spec.fieldsByName[field] {
-                    
                     if let fieldIDStr = specField.id {
                         // append field ID
                         if let fieldID = UInt32(fieldIDStr) {
@@ -262,7 +266,7 @@ public class P7Message: NSObject {
                             } else if specField.type == .string { // string (x)
                                 if let str = value as? String {
                                     //if let d = str.nullTerminated {
-                                        let l = UInt32(str.count)
+                                        let l = UInt32(str.bytes.count)
                                         data.append(uint32: l, bigEndian: true)
                                         data.append(Data(str.bytes))
                                     //}
@@ -276,7 +280,9 @@ public class P7Message: NSObject {
                                     }
                                 }
                             } else if specField.type == .date { // date (8)
-
+                                if let date = value as? Date {
+                                    data.append(Data(from: date.timeIntervalSince1970))
+                                }
                             } else if specField.type == .data { // data (x)
                                 if let d = value as? Data {
                                     let l = UInt32(d.count)
@@ -395,7 +401,7 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData.uint8.bigEndian)
                         }
                         else if specField.type == .enum32 {
-                            // self.addParameter(field: specField.name, value: fieldData.uint32.bigEndian)
+                            self.addParameter(field: specField.name, value: fieldData.uint32?.bigEndian)
                         }
                         else if specField.type == .int32 {
                             self.addParameter(field: specField.name, value: fieldData.uint32)
@@ -419,7 +425,9 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: NSUUID(uuidBytes: fieldData.bytes).uuidString)
                         }
                         else if specField.type == .date {
-                            self.addParameter(field: specField.name, value: fieldData.double)
+                            if let interval = fieldData.to(type: Double.self) {
+                                self.addParameter(field: specField.name, value: Date(timeIntervalSince1970: interval))
+                            }
                         }
                         else if specField.type == .data {
                             self.addParameter(field: specField.name, value: fieldData)

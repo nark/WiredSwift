@@ -85,20 +85,26 @@ open class Connection: NSObject {
     public init(withSpec spec: P7Spec, delegate: ConnectionDelegate? = nil) {
         self.spec = spec
         
+        super.init()
+        
         if let d = delegate {
-            self.delegates.append(d)
+            self.addDelegate(d)
         }
     }
     
     
     public func addDelegate(_ delegate:ConnectionDelegate) {
-        self.delegates.append(delegate)
+        if delegates.firstIndex(where: { $0 === delegate }) == nil {
+            self.delegates.append(delegate)
+        }
+        print("addDelegate : \(delegate) \(delegates.count)")
     }
     
     public func removeDelegate(_ delegate:ConnectionDelegate) {
         if let index = delegates.firstIndex(where: { $0 === delegate }) {
             delegates.remove(at: index)
         }
+        print("removeDelegate : \(delegate) \(delegates.count)")
     }
     
     
@@ -111,7 +117,7 @@ open class Connection: NSObject {
         self.socket.password    = url.password
         
         self.socket.cipherType  = cipher
-        self.socket.compression = compression // TODO: Gzip deflate still not implemented
+        self.socket.compression = compression
         self.socket.checksum    = checksum
 
         if !self.socket.connect() {
@@ -262,10 +268,10 @@ open class Connection: NSObject {
     
     
     
-    public func joinChat(chatID: Int) -> Bool  {
+    public func joinChat(chatID: UInt32) -> Bool  {
         let message = P7Message(withName: "wired.chat.join_chat", spec: self.spec)
         
-        message.addParameter(field: "wired.chat.id", value: UInt32(chatID))
+        message.addParameter(field: "wired.chat.id", value: chatID)
         
         if !self.send(message: message) {
             return false
@@ -412,10 +418,10 @@ open class Connection: NSObject {
         
         message.addParameter(field: "wired.user.login", value: self.url!.login)
         
-        var password = "".sha1()
+        var password = "".sha256()
         
         if self.url?.password != nil && self.url?.password != "" {
-            password = self.url!.password.sha1()
+            password = self.url!.password.sha256()
         }
                 
         message.addParameter(field: "wired.user.password", value: password)
@@ -439,18 +445,18 @@ open class Connection: NSObject {
     
     private func clientInfo() -> Bool {
         let message = P7Message(withName: "wired.client_info", spec: self.spec)
-        message.addParameter(field: "wired.info.application.name", value: "Wired Swift")
+        message.addParameter(field: "wired.info.application.name", value: "Wired Client")
         
         if let value = self.clientInfoDelegate?.clientInfoApplicationName(for: self) {
             message.addParameter(field: "wired.info.application.name", value: value)
         }
         
-        message.addParameter(field: "wired.info.application.version", value: "1.0")
+        message.addParameter(field: "wired.info.application.version", value: "3.0")
         if let value = self.clientInfoDelegate?.clientInfoApplicationVersion(for: self) {
             message.addParameter(field: "wired.info.application.version", value: value)
         }
         
-        message.addParameter(field: "wired.info.application.build", value: "1")
+        message.addParameter(field: "wired.info.application.build", value: "alpha")
         if let value = self.clientInfoDelegate?.clientInfoApplicationBuild(for: self) {
             message.addParameter(field: "wired.info.application.build", value: value)
         }
@@ -482,9 +488,7 @@ open class Connection: NSObject {
             print("no response ?")
             return false
         }
-        
-        print("serverInfo : \(response.xml())")
-                
+                        
         self.serverInfo = ServerInfo(message: response)
         
         return true

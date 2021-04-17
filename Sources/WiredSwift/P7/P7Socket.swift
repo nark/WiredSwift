@@ -127,6 +127,8 @@ public class P7Socket: NSObject {
     private var socket: Socket!
     public var rsa:RSA!
     
+    private var interactive:Bool = true
+    
     public init(hostname: String, port: Int, spec: P7Spec) {
         self.hostname = hostname
         self.port = port
@@ -144,7 +146,38 @@ public class P7Socket: NSObject {
     public func getSocket() -> Socket {
         return self.socket
     }
+    
+    
+    public func isInteractive() -> Bool {
+        return self.interactive
+    }
+    
+    public func set(interactive:Bool) {
+        var option = interactive ? 1 : 0
+        
+        if(setsockopt(socket.fileDescriptor, IPPROTO_TCP, TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
+            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
+        }
 
+        self.interactive = interactive
+    }
+    
+    
+    public func clientAddress() -> String? {
+        var addr = sockaddr(), len: socklen_t = socklen_t(MemoryLayout.size(ofValue: sockaddr.self))
+        guard getpeername(self.socket.fileDescriptor, &addr, &len) == 0 else {
+            print("getpeername(...) failed.")
+            return nil
+        }
+        var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        guard getnameinfo(&addr, len, &hostBuffer, socklen_t(hostBuffer.count),
+            nil, 0, NI_NUMERICHOST) == 0 else {
+            print("getnameinfo(...) failed.")
+            return nil
+        }
+        
+        return String(cString: hostBuffer)
+    }
     
     public func connect(withHandshake handshake: Bool = true) -> Bool {
         do {
@@ -297,7 +330,8 @@ public class P7Socket: NSObject {
                 lengthData.append(uint32: UInt32(messageData.count))
                 
                 Logger.info("WRITE [\(self.hash)]: \(message.name!)")
-                
+                //Logger.debug("\n\(message.xml())\n")
+
                 // deflate
                 if self.compressionEnabled {
                     guard let deflatedMessageData = self.deflate(messageData) else {
@@ -431,8 +465,8 @@ public class P7Socket: NSObject {
                             
                             messageData = inflatedMessageData
                         }
-                        
-                        // Logger.info("READ data after decomp : \(messageData.toHexString())")
+                    
+                        //Logger.info("READ data after decomp : \(messageData.toHexString())")
                         
                         // checksum
                         if self.checksumEnabled {
@@ -559,27 +593,31 @@ public class P7Socket: NSObject {
                     }
                     messageData = decryptedMessageData
                 }
-                     
+
                 // inflate
                 if self.compressionEnabled {
                     guard let inflatedMessageData = self.inflate(messageData) else {
                         Logger.error("Cannot inflate data")
                         return nil
-                        
+
                     }
                     messageData = inflatedMessageData
                 }
-                
+
                 // checksum
                 if self.checksumEnabled {
                     do {
                         let remoteChecksum = try self.readData(size: self.checksumLength)
-                        
                         if remoteChecksum.count == 0 { return nil }
-                        if !messageData.sha1().elementsEqual(remoteChecksum) {
-                            Logger.fatal("Checksum failed")
-                            return nil
-                        }
+
+                        if let c = self.checksumData(messageData) {
+                            if !c.elementsEqual(remoteChecksum) {
+                                Logger.fatal("Checksum failed")
+                                return nil
+                            }
+                        } else {
+                           Logger.error("Checksum failed abnormally")
+                       }
                     } catch let e {
                         Logger.error("Checksum error: \(e)")
                     }
@@ -611,20 +649,20 @@ public class P7Socket: NSObject {
                     guard let deflatedMessageData = self.deflate(messageData) else {
                         Logger.error("Cannot deflate data")
                         return false
-                        
+
                     }
                     messageData = deflatedMessageData
                 }
-                
+
                 // encryption
                 if self.encryptionEnabled {
                     guard let encryptedMessageData = self.sslCipher.encrypt(data: messageData) else {
                         Logger.error("Cannot encrypt data")
                         return false
                     }
-                    
+
                     messageData = encryptedMessageData
-                    
+
                     lengthData = Data()
                     lengthData.append(uint32: UInt32(messageData.count))
                 }
@@ -634,9 +672,11 @@ public class P7Socket: NSObject {
                 
                 // checksum
                 if self.checksumEnabled {
-                    let checksum = originalData.sha1()
-                    
-                    _ = self.write(checksum.bytes, maxLength: checksum.count)
+                    if let c = self.checksumData(originalData) {
+                        _ = self.write(c.bytes, maxLength: self.checksumLength)
+                    } else {
+                        Logger.error("Checksum failed abnormally")
+                    }
                 }
             }
         } catch let error {
@@ -1039,7 +1079,7 @@ public class P7Socket: NSObject {
             // assume password is empty (guest with empty password access only)
             self.password = "".sha256()
         }
-        
+                
         let passwordData = self.password.data(using: .utf8)!
         var serverPassword1Data = passwordData
         serverPassword1Data.append(rsa.publicKey)
@@ -1177,11 +1217,11 @@ public class P7Socket: NSObject {
     
     // MARK: -
     private func inflate(_ data: Data) -> Data? {
-        return data.unzip()
+        return data.inflate()
     }
         
     private func deflate(_ data: Data) -> Data? {
-        return data.zip()
+        return data.deflate()
     }
     
 }
