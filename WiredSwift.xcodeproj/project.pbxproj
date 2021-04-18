@@ -32,6 +32,8 @@
 
 /* Begin PBXBuildFile section */
 		4C0F052A262BA27100FA4CFD /* SWCompression in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0F0529262BA27100FA4CFD /* SWCompression */; };
+		4C0F0536262C6F0D00FA4CFD /* Fluent in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0F0535262C6F0D00FA4CFD /* Fluent */; };
+		4C0F0552262C8C5500FA4CFD /* FluentSQLiteDriver in Frameworks */ = {isa = PBXBuildFile; productRef = 4C0F0551262C8C5500FA4CFD /* FluentSQLiteDriver */; };
 		4C22524926050E09002430EF /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22524826050E09002430EF /* main.swift */; };
 		4C22524E26050F1F002430EF /* AEXML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "AEXML::AEXML::Product" /* AEXML.framework */; };
 		4C22524F26050F1F002430EF /* CryptorRSA.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "CryptorRSA::CryptorRSA::Product" /* CryptorRSA.framework */; };
@@ -53,7 +55,6 @@
 		4C22527B260663C0002430EF /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527A260663C0002430EF /* AppController.swift */; };
 		4C22527D26066828002430EF /* UsersController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C22527C26066828002430EF /* UsersController.swift */; };
 		4C22527E26066A0C002430EF /* ServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* ServerController.swift */; };
-		4C2525922607CEC300258794 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 4C2525912607CEC300258794 /* GRDB */; };
 		4C52C84D2459C6CE00BFB5AE /* BlockConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C52C84C2459C6CE00BFB5AE /* BlockConnection.swift */; };
 		4CB1F6DD260684DD00017676 /* ChatsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB1F6DC260684DD00017676 /* ChatsController.swift */; };
 		4CB1F6DF2606852300017676 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB1F6DE2606852300017676 /* Chat.swift */; };
@@ -525,7 +526,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4C2525922607CEC300258794 /* GRDB in Frameworks */,
 				4C22524E26050F1F002430EF /* AEXML.framework in Frameworks */,
 				4C22524F26050F1F002430EF /* CryptorRSA.framework in Frameworks */,
 				4C22525026050F1F002430EF /* CryptoSwift.framework in Frameworks */,
@@ -594,9 +594,11 @@
 			files = (
 				OBJ_363 /* SocketSwift.framework in Frameworks */,
 				OBJ_366 /* CryptorRSA.framework in Frameworks */,
+				4C0F0536262C6F0D00FA4CFD /* Fluent in Frameworks */,
 				OBJ_367 /* CryptoSwift.framework in Frameworks */,
 				4C0F052A262BA27100FA4CFD /* SWCompression in Frameworks */,
 				OBJ_368 /* AEXML.framework in Frameworks */,
+				4C0F0552262C8C5500FA4CFD /* FluentSQLiteDriver in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1062,7 +1064,6 @@
 			name = wired3;
 			packageProductDependencies = (
 				4C225278260663A6002430EF /* ArgumentParser */,
-				4C2525912607CEC300258794 /* GRDB */,
 				4CF6A3C126108358005F6476 /* Queuer */,
 			);
 			productName = Server;
@@ -1287,6 +1288,8 @@
 			name = WiredSwift;
 			packageProductDependencies = (
 				4C0F0529262BA27100FA4CFD /* SWCompression */,
+				4C0F0535262C6F0D00FA4CFD /* Fluent */,
+				4C0F0551262C8C5500FA4CFD /* FluentSQLiteDriver */,
 			);
 			productName = WiredSwift;
 			productReference = "WiredSwift::WiredSwift::Product" /* WiredSwift.framework */;
@@ -1343,9 +1346,10 @@
 			mainGroup = OBJ_5;
 			packageReferences = (
 				4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
-				4C25258E2607CD9200258794 /* XCRemoteSwiftPackageReference "GRDB" */,
 				4CF6A3C026108358005F6476 /* XCRemoteSwiftPackageReference "Queuer" */,
 				4C0F0528262BA27100FA4CFD /* XCRemoteSwiftPackageReference "SWCompression" */,
+				4C0F0534262C6F0D00FA4CFD /* XCRemoteSwiftPackageReference "fluent" */,
+				4C0F0550262C8C5500FA4CFD /* XCRemoteSwiftPackageReference "fluent-sqlite-driver" */,
 			);
 			productRefGroup = OBJ_162 /* Products */;
 			projectDirPath = "";
@@ -2823,20 +2827,28 @@
 				minimumVersion = 4.5.8;
 			};
 		};
+		4C0F0534262C6F0D00FA4CFD /* XCRemoteSwiftPackageReference "fluent" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vapor/fluent.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.2.0;
+			};
+		};
+		4C0F0550262C8C5500FA4CFD /* XCRemoteSwiftPackageReference "fluent-sqlite-driver" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vapor/fluent-sqlite-driver.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.1;
+			};
+		};
 		4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-argument-parser";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.4.1;
-			};
-		};
-		4C25258E2607CD9200258794 /* XCRemoteSwiftPackageReference "GRDB" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/groue/GRDB.swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.6.0;
 			};
 		};
 		4CF6A3C026108358005F6476 /* XCRemoteSwiftPackageReference "Queuer" */ = {
@@ -2855,15 +2867,20 @@
 			package = 4C0F0528262BA27100FA4CFD /* XCRemoteSwiftPackageReference "SWCompression" */;
 			productName = SWCompression;
 		};
+		4C0F0535262C6F0D00FA4CFD /* Fluent */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C0F0534262C6F0D00FA4CFD /* XCRemoteSwiftPackageReference "fluent" */;
+			productName = Fluent;
+		};
+		4C0F0551262C8C5500FA4CFD /* FluentSQLiteDriver */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4C0F0550262C8C5500FA4CFD /* XCRemoteSwiftPackageReference "fluent-sqlite-driver" */;
+			productName = FluentSQLiteDriver;
+		};
 		4C225278260663A6002430EF /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4C225277260663A6002430EF /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
-		};
-		4C2525912607CEC300258794 /* GRDB */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4C25258E2607CD9200258794 /* XCRemoteSwiftPackageReference "GRDB" */;
-			productName = GRDB;
 		};
 		4CF6A3C126108358005F6476 /* Queuer */ = {
 			isa = XCSwiftPackageProductDependency;

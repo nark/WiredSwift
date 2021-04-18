@@ -7,52 +7,28 @@
 
 import Foundation
 import WiredSwift
-import GRDB
+import Fluent
+import FluentSQLiteDriver
 
 
-
-public class Group: Record {
-    public var id:Int64?
+public class Group: Model {
+    public static var schema: String = "groups"
+    
+    @ID(key: .id)
+    public var id:UUID?
+    
+    @Field(key: "groupID")
+    public var groupID:UInt32!
+    
+    @Field(key: "name")
     public var name:String?
 
-    static let privileges = hasMany(GroupPrivilege.self)
-    var privileges: QueryInterfaceRequest<GroupPrivilege> {
-        request(for: Group.privileges)
-    }
+    @Children(for: \.$group)
+    public var privileges: [GroupPrivilege]
     
+    public required init() { }
     
     public init(name: String) {
         self.name = name
-        
-        super.init()
-    }
-    
-
-    /// Creates a record from a database row
-    public required init(row: Row) {
-        self.id = row[Columns.id]
-        self.name = row[Columns.name]
-        
-        super.init(row: row)
-    }
-
-
-    /// The table name
-    public override class var databaseTableName: String { "groups" }
-
-    /// The table columns
-    enum Columns: String, ColumnExpression {
-        case id, name
-    }
-
-    /// The values persisted in the database
-    public override func encode(to container: inout PersistenceContainer) {
-        container[Columns.id] = id
-        container[Columns.name] = name
-    }
-
-    // Update auto-incremented id upon successful insertion
-    public override func didInsert(with rowID: Int64, for column: String?) {
-        id = rowID
     }
 }

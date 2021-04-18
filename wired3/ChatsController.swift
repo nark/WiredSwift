@@ -94,20 +94,18 @@ public class ChatsController : TableController {
         }
         
         do {
-            try databaseController.pool.write { db in
-                let newChat = Chat(chatID: self.nextChatID(), name: name, user: user)
-                
-                try newChat.insert(db)
-                
-                self.add(chat: newChat)
-                
-                let reply = P7Message(withName: "wired.chat.public_chat_created", spec: message.spec)
-                reply.addParameter(field: "wired.chat.id", value: newChat.chatID)
-                reply.addParameter(field: "wired.chat.name", value: newChat.name)
-                
-                App.usersController.broadcast(message: reply)
-            }
-        } catch let error { 
+            let newChat = Chat(chatID: self.nextChatID(), name: name, user: user)
+            
+            try newChat.create(on: databaseController.pool).wait()
+            
+            self.add(chat: newChat)
+            
+            let reply = P7Message(withName: "wired.chat.public_chat_created", spec: message.spec)
+            reply.addParameter(field: "wired.chat.id", value: newChat.chatID)
+            reply.addParameter(field: "wired.chat.name", value: newChat.name)
+            
+            App.usersController.broadcast(message: reply)
+        } catch let error {
             Logger.error("Cannot create public chat")
             Logger.error("\(error)")
             
@@ -346,26 +344,24 @@ public class ChatsController : TableController {
         }
         
         do {
-            try self.databaseController.pool.write { db in
-                chat.topic = topic
-                chat.topicNick = user.nick!
-                chat.topicTime = Date()
+            chat.topic = topic
+            chat.topicNick = user.nick!
+            chat.topicTime = Date()
+            
+            try chat.update(on: self.databaseController.pool).wait()
+            
+            // reply okay msg
+            App.usersController.replyOK(user: user, message: message)
+            
+            // broadcast topic update
+            for (_, toUser) in chat.users {
+                let reply = P7Message(withName: "wired.chat.topic", spec: toUser.socket!.spec)
+                reply.addParameter(field: "wired.chat.id", value: chatID)
+                reply.addParameter(field: "wired.user.nick", value: user.nick)
+                reply.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
+                reply.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
                 
-                try chat.update(db)
-                
-                // reply okay msg
-                App.usersController.replyOK(user: user, message: message)
-                
-                // broadcast topic update
-                for (_, toUser) in chat.users {
-                    let reply = P7Message(withName: "wired.chat.topic", spec: toUser.socket!.spec)
-                    reply.addParameter(field: "wired.chat.id", value: chatID)
-                    reply.addParameter(field: "wired.user.nick", value: user.nick)
-                    reply.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
-                    reply.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
-                    
-                    _ = toUser.socket?.write(reply)
-                }
+                _ = toUser.socket?.write(reply)
             }
             
         } catch let error {
@@ -379,26 +375,24 @@ public class ChatsController : TableController {
     
     public override func createTables() {
         do {
-            try self.databaseController.pool.write { db in
-                // create table
-                try db.create(table: "chats") { t in
-                    t.autoIncrementedPrimaryKey("id")
-                    t.column("chat_id",     .integer).notNull()
-                    t.column("name",        .text).notNull().unique()
-                    t.column("topic",       .text).notNull()
-                    t.column("topic_by",    .text).notNull()
-                    t.column("topic_at",    .datetime).notNull()
-                    t.column("created_by",  .text).notNull()
-                    t.column("created_at",  .datetime).notNull()
-                }
-                
-                // init main public chat
-                self.publicChat = Chat(chatID: UInt32(1), name: "Public Chat", user: nil)
-                
-                try self.publicChat.insert(db)
-                
-                self.add(chat: self.publicChat)
-            }
+            try self.databaseController.pool
+                    .schema("chats")
+                    .id()
+                    .field("chatID", .uint32, .required)
+                    .field("name", .string, .required)
+                    .field("topic", .string, .required)
+                    .field("topicNick", .string, .required)
+                    .field("topicTime", .datetime, .required)
+                    .field("creationNick", .string, .required)
+                    .field("creationTime", .datetime, .required)
+                    .create().wait()
+            
+            // init main public chat
+            self.publicChat = Chat(chatID: UInt32(1), name: "Public Chat", user: nil)
+            
+            try self.publicChat.create(on: self.databaseController.pool).wait()
+            
+            self.add(chat: self.publicChat)
             
         } catch let error {
             Logger.error("Cannot create tables")
@@ -410,19 +404,17 @@ public class ChatsController : TableController {
     
     public func loadChats() {
         do {
-            try databaseController.pool.read { db in
-                let chats = try Chat.fetchAll(db)
-                
-                for chat in chats {
-                    self.add(chat: chat)
-                    
-                    // ref the public chat
-                    if chat.chatID == 1 {
-                        self.publicChat = chat
-                    }
-                    
-                    lastChatID = chat.chatID
+            let chats = try Chat.query(on: databaseController.pool).all().wait()
+
+            for chat in chats {
+                self.add(chat: chat)
+
+                // ref the public chat
+                if chat.chatID == 1 {
+                    self.publicChat = chat
                 }
+
+                lastChatID = chat.chatID
             }
         } catch {  }
     }

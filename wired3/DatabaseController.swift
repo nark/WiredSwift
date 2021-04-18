@@ -7,7 +7,8 @@
 
 import Foundation
 import WiredSwift
-import GRDB
+import Fluent
+import FluentSQLiteDriver
 
 public protocol DatabaseControllerDelegate {
     func createTables()
@@ -17,7 +18,11 @@ public class DatabaseController {
     var delegate:DatabaseControllerDelegate?
     
     // MARK: -
-    var pool:DatabasePool!
+    var threadPool: NIOThreadPool!
+    var eventLoopGroup: EventLoopGroup!
+    var dbs: Databases!
+    var pool: Database!
+    
     let baseURL: URL
     let spec:P7Spec
     
@@ -32,13 +37,17 @@ public class DatabaseController {
     
     // MARK: - Private
     public func initDatabase() -> Bool {
+        eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 5)
+        threadPool = .init(numberOfThreads: 5)
+        threadPool.start()
+        
         let exixts = FileManager.default.fileExists(atPath: baseURL.path)
         
-        do {
-            self.pool = try DatabasePool(path: baseURL.path)
-        } catch {
-            Logger.error("Cannot open database file \(error)")
-            return false
+        dbs = Databases(threadPool: threadPool, on: eventLoopGroup)
+        dbs.use(.sqlite(.file(self.baseURL.path)), as: .sqlite)
+        
+        if let p = dbs.database(logger: .init(label: "fr.read-write.fluenttest"), on: dbs.eventLoopGroup.next()) {
+            self.pool = p
         }
                         
         if !exixts {

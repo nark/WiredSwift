@@ -7,11 +7,14 @@
 
 import Foundation
 import WiredSwift
-import GRDB
+import Fluent
+import FluentSQLiteDriver
 
 
 
-public class User: Record {
+public class User: Model {    
+    public static var schema: String = "users"
+    
     public enum State:UInt32 {
         case CONNECTED          = 0
         case GAVE_CLIENT_INFO
@@ -19,10 +22,19 @@ public class User: Record {
         case DISCONNECTED
     }
     
-    public var userID:UInt32!
-    public var id:Int64?
+    @ID(key: .id)
+    public var id:UUID?
+
+    @Field(key: "username")
     public var username:String?
+    
+    @Field(key: "password")
     public var password:String?
+    
+    @Children(for: \.$user)
+    public var privileges: [UserPrivilege]
+    
+    public var userID:UInt32!
     public var socket:P7Socket?
     public var state:State = .DISCONNECTED
     public var ip:String?
@@ -32,32 +44,14 @@ public class User: Record {
     public var group:String?
     public var groups:String?
     public var icon:Data?
-    
     public var transfer:Transfer?
     
-    static let privileges = hasMany(UserPrivilege.self)
-    var privileges: QueryInterfaceRequest<UserPrivilege> {
-        request(for: User.privileges)
-    }
-    
+    required public init() { }
     
     public init(username: String, password: String) {
         self.username = username
         self.password = password
-        
-        super.init()
     }
-    
-
-    /// Creates a record from a database row
-    public required init(row: Row) {
-        self.id = row[Columns.id]
-        self.username = row[Columns.username]
-        self.password = row[Columns.password]
-        
-        super.init(row: row)
-    }
-    
     
     public func hasGroup(string:String) -> Bool {
         if self.group == string {
@@ -79,11 +73,8 @@ public class User: Record {
         var success:Bool? = false
         
         do {
-            try App.databaseController.pool.read { db in
-                let sql = "SELECT * FROM user_privileges WHERE user_id = ? AND name = ? AND value = 1"
-                if let p = try UserPrivilege.fetchOne(db, sql: sql, arguments: [self.id, name]) {
-                    success = p.value
-                }
+            if let up = try $privileges.query(on: App.databaseController.pool).filter(\.$name == name).first().wait() {
+                success = up.value
             }
         } catch {  }
         
@@ -150,27 +141,5 @@ public class User: Record {
          }
         
          return false
-    }
-    
-    
-    // MARK: - Record
-    /// The table name
-    public override class var databaseTableName: String { "users" }
-
-    /// The table columns
-    enum Columns: String, ColumnExpression {
-        case id, username, password
-    }
-
-    /// The values persisted in the database
-    public override func encode(to container: inout PersistenceContainer) {
-        container[Columns.id] = id
-        container[Columns.username] = username
-        container[Columns.password] = password
-    }
-
-    // Update auto-incremented id upon successful insertion
-    public override func didInsert(with rowID: Int64, for column: String?) {
-        id = rowID
     }
 }

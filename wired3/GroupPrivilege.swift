@@ -6,34 +6,34 @@
 //
 
 import Foundation
-import GRDB
+import Fluent
+import FluentSQLiteDriver
 
-class GroupPrivilege: Privilege {
-    /// The table name
-    public override class var databaseTableName: String { "group_privileges" }
+public class GroupPrivilege: Model {
+    public static var schema: String = "group_privileges"
     
-    static let group = belongsTo(Group.self)
-    var group: QueryInterfaceRequest<Group> {
-        request(for: GroupPrivilege.group)
+    @ID(key: .id)
+    public var id:UUID?
+    
+    @Field(key: "name")
+    public var name:String?
+    
+    @Field(key: "value")
+    public var value:Bool?
+    
+    @Parent(key: "group_id")
+    var group: Group
+
+    public required init() { }
+    
+    public init(name: String, value: Bool) {
+        self.name = name
+        self.value = value
     }
     
     public init(name: String, value: Bool, group:Group) {
-        super.init(name: name, value: value)
-
-        self.group_id = group.id
-    }
-    
-    public required init(row: Row) {
-        super.init(row: row)
-        
-        self.group_id = row[Columns.group_id]
-    }
-    
-    /// The values persisted in the database
-    public override func encode(to container: inout PersistenceContainer) {
-        container[Columns.id] = id
-        container[Columns.name] = name
-        container[Columns.value] = value
-        container[Columns.group_id] = group_id
+        self.name       = name
+        self.value      = value
+        self.$group.id  = group.id!
     }
 }
