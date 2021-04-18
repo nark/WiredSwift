@@ -20,8 +20,8 @@ dependencies.append(.package(name: "CryptorRSA", url: "https://github.com/IBM-Sw
 dependencies.append(.package(name: "SocketSwift", url: "https://github.com/BiAtoms/Socket.swift.git", from: "2.4.0"))
 dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBrancati/Queuer.git", from: "2.0.0"))
 dependencies.append(.package(name: "SWCompression", url: "https://github.com/tsolomko/SWCompression.git", from: "4.5.0"))
-dependencies.append(.package(name: "fluent", url: "https://github.com/vapor/fluent.git", from: "4.0.0"))
-dependencies.append(.package(name: "fluent-sqlite-driver", url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"))
+dependencies.append(.package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"))
+dependencies.append(.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"))
 
 
 targetDependencies.append(.byName(name: "AEXML"))
@@ -30,8 +30,8 @@ targetDependencies.append(.byName(name: "CryptorRSA"))
 targetDependencies.append(.byName(name: "SocketSwift"))
 targetDependencies.append(.byName(name: "Queuer"))
 targetDependencies.append(.byName(name: "SWCompression"))
-targetDependencies.append(.byName(name: "fluent"))
-targetDependencies.append(.byName(name: "fluent-sqlite-driver"))
+targetDependencies.append(.product(name: "Fluent", package: "fluent"))
+targetDependencies.append(.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"))
 
 let package = Package(
     name: "WiredSwift",
