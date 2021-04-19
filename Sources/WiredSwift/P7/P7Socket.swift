@@ -39,22 +39,33 @@ public class P7Socket: NSObject {
         case SHA512         = 2
     }
     
-    public enum CipherType:UInt32 {
-        case NONE                   = 999
-        case ALL                    = 998
-        case ECDH_AES_256_SHA256    = 1
+    public struct CipherType: OptionSet {
+        public let rawValue: UInt32
+        
+        public init(rawValue:UInt32 ) {
+            self.rawValue = rawValue
+        }
+        
+        public static let NONE                  = CipherType(rawValue: 0 << 0)
+        public static let ECDH_AES256_SHA256    = CipherType(rawValue: 1 << 0)
+        public static let ECDH_CHACHA20_SHA256  = CipherType(rawValue: 1 << 1)
+        public static let ALL:CipherType        = [.ECDH_AES256_SHA256,
+                                                   .ECDH_CHACHA20_SHA256]
         
         public static func pretty(_ type:CipherType) -> String {
             switch type {
             case .NONE:
                 return "None"
-            case .ECDH_AES_256_SHA256:
-                return "ECDH AES/256 bits - SHA256"
+            case .ECDH_AES256_SHA256:
+                return "ECDH-AES256-SHA256"
+            case .ECDH_CHACHA20_SHA256:
+                return "ECDH-ChaCha20-SHA256"
             default:
                 return "None"
             }
         }
     }
+
     
     
     public var hostname: String!
@@ -65,7 +76,7 @@ public class P7Socket: NSObject {
     public var serialization: Serialization = .BINARY
     
     public var compression: Compression = .NONE
-    public var cipherType: CipherType = .ECDH_AES_256_SHA256
+    public var cipherType: CipherType = .NONE
     public var checksum: Checksum = .NONE
     public var sslCipher: P7Cipher!
     public var timeout: Int = 10
@@ -707,7 +718,7 @@ public class P7Socket: NSObject {
                 self.compression = P7Socket.Compression(rawValue: comp)!
             }
             if let cip = response.enumeration(forField: "p7.handshake.encryption") {
-                self.cipherType = P7Socket.CipherType(rawValue: cip)!
+                self.cipherType = P7Socket.CipherType(rawValue: cip)
             }
             if let chs = response.enumeration(forField: "p7.handshake.checksum") {
                 self.checksum = P7Socket.Checksum(rawValue: chs)!
@@ -781,7 +792,7 @@ public class P7Socket: NSObject {
             }
             
             if let encryption = response.enumeration(forField: "p7.handshake.encryption") {
-                self.cipherType = P7Socket.CipherType(rawValue: encryption)!
+                self.cipherType = P7Socket.CipherType(rawValue: encryption)
             }
             
             if let checksum = response.enumeration(forField: "p7.handshake.checksum") {
@@ -801,7 +812,11 @@ public class P7Socket: NSObject {
             }
             
             if self.cipherType != .NONE {
-                message.addParameter(field: "p7.handshake.encryption", value: self.cipherType.rawValue)
+                if cipher.contains(self.cipherType) {
+                    message.addParameter(field: "p7.handshake.encryption", value: self.cipherType.rawValue)
+                } else {
+                    message.addParameter(field: "p7.handshake.encryption", value: cipher.rawValue)
+                }
             }
             
             if self.checksum != .NONE {
@@ -865,7 +880,7 @@ public class P7Socket: NSObject {
         
         print("serverSharedSecret \(serverSharedSecret)")
         
-        self.sslCipher = P7Cipher(cipher: .ECDH_AES_256_SHA256, key: serverSharedSecret, iv: nil)
+        self.sslCipher = P7Cipher(cipher: self.cipherType, key: serverSharedSecret, iv: nil)
         
         if self.sslCipher == nil {
             Logger.error("Cipher cannot be created")
@@ -905,14 +920,17 @@ public class P7Socket: NSObject {
         let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
 
         guard let clientPublicKey = self.ecdh.publicKeyData() else {
+            Logger.error("Cannot read client public key")
             return false
         }
         
         guard let d = self.username.data(using: .utf8), let encryptedUsername = self.sslCipher.encrypt(data: d)  else {
+            Logger.error("Cannot encrypt username")
             return false
         }
 
         guard let encryptedClientPassword1 = self.sslCipher.encrypt(data: clientPassword1)  else {
+            Logger.error("Cannot read client password")
             return false
         }
         
