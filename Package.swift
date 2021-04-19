@@ -41,6 +41,10 @@ let package = Package(
         .library(
             name: "WiredSwift",
             targets: ["WiredSwift"]),
+        
+        .executable(
+            name: "wired3",
+            targets: ["wired3"])
     ],
     dependencies: dependencies,
     targets: [
@@ -50,5 +54,11 @@ let package = Package(
         .testTarget(
             name: "WiredSwiftTests",
             dependencies: ["WiredSwift"]),
+        .target(
+            name: "wired3",
+            dependencies: [
+                .byName(name: "WiredSwift")
+            ]
+        ),
     ]
 )
