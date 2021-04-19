@@ -1,0 +1,4 @@
+module CURLParser {
+    umbrella "/Users/nark/Development/Me/Swift/WiredSwift/.build/checkouts/vapor/Sources/CURLParser/include"
+    export *
+}

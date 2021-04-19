@@ -1,0 +1,4 @@
+module CBacktrace {
+    umbrella "/Users/nark/Development/Me/Swift/WiredSwift/.build/checkouts/swift-backtrace/Sources/CBacktrace/include"
+    export *
+}
