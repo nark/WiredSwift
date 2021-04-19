@@ -20,7 +20,7 @@ dependencies.append(.package(name: "CryptorRSA", url: "https://github.com/IBM-Sw
 dependencies.append(.package(name: "SocketSwift", url: "https://github.com/BiAtoms/Socket.swift.git", from: "2.4.0"))
 dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBrancati/Queuer.git", from: "2.0.0"))
 dependencies.append(.package(name: "SWCompression", url: "https://github.com/tsolomko/SWCompression.git", from: "4.5.0"))
-dependencies.append(.package(name: "swift-argument-parser", url: "https://github.com/apple/swift-argument-parser", from: "0.4.1"))
+dependencies.append(.package(url: "https://github.com/apple/swift-argument-parser", from: "0.4.0"))
 dependencies.append(.package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"))
 dependencies.append(.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"))
 dependencies.append(.package(url: "https://github.com/apple/swift-crypto.git", from: "1.1.6"))
@@ -59,7 +59,7 @@ let package = Package(
             name: "wired3",
             dependencies: [
                 .byName(name: "WiredSwift"),
-                .byName(name: "swift-argument-parser")
+                .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
     ]
