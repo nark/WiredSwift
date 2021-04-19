@@ -1,6 +1,6 @@
 //
-//  User.swift
-//  Server
+//  Group.swift
+//  wired3
 //
 //  Created by Rafael Warnault on 20/03/2021.
 //

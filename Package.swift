@@ -37,7 +37,7 @@ targetDependencies.append(.product(name: "FluentSQLiteDriver", package: "fluent-
 
 let package = Package(
     name: "WiredSwift",
-    platforms: [.iOS(.v12), .macOS(.v10_13)],
+    platforms: [.iOS(.v12), .macOS(.v10_15)],
     products: [
         .library(
             name: "WiredSwift",

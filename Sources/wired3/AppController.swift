@@ -1,6 +1,6 @@
 //
-//  WiredServer.swift
-//  Server
+//  AppController.swift
+//  wired3
 //
 //  Created by Rafael Warnault on 20/03/2021.
 //
@@ -10,8 +10,6 @@ import WiredSwift
 
 
 public let DEFAULT_PORT = 4875
-public let RSA_KEY_BITS = 2048
-
 
 public class AppController : DatabaseControllerDelegate {
     var rootPath:String

@@ -1,6 +1,6 @@
 //
 //  Chat.swift
-//  Server
+//  wired3
 //
 //  Created by Rafael Warnault on 20/03/2021.
 //

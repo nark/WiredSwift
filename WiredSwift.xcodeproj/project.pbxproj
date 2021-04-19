@@ -62,7 +62,6 @@
 		4CB1F6DF2606852300017676 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CB1F6DE2606852300017676 /* Chat.swift */; };
 		4CC25E8A2613B3EC006AD1FC /* Ints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC25E892613B3EC006AD1FC /* Ints.swift */; };
 		4CC25E8C2613B43D006AD1FC /* FileManager+ResourceFork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CC25E8B2613B43D006AD1FC /* FileManager+ResourceFork.swift */; };
-		4CC25E8E26147B51006AD1FC /* ServerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7BCBDD2601164900FDD9B5 /* ServerController.swift */; };
 		4CF6A3A4260D09D5005F6476 /* Privilege.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3A3260D09D5005F6476 /* Privilege.swift */; };
 		4CF6A3A6260D34E4005F6476 /* UserPrivilege.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3A5260D34E4005F6476 /* UserPrivilege.swift */; };
 		4CF6A3A8260D34EC005F6476 /* GroupPrivilege.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CF6A3A7260D34EC005F6476 /* GroupPrivilege.swift */; };
@@ -1628,7 +1627,6 @@
 			files = (
 				OBJ_391 /* WiredSwiftTests.swift in Sources */,
 				OBJ_392 /* XCTestManifests.swift in Sources */,
-				4CC25E8E26147B51006AD1FC /* ServerController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2218,6 +2216,7 @@
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) SWIFT_PACKAGE DEBUG";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
 				USE_HEADERMAP = NO;
 			};
 			name = Debug;
@@ -2569,6 +2568,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) SWIFT_PACKAGE";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
 				USE_HEADERMAP = NO;
 			};
 			name = Release;

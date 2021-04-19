@@ -1,6 +1,6 @@
 //
-//  Server.swift
-//  WiredSwift
+//  ServerController.swift
+//  wired3
 //
 //  Created by Rafael Warnault on 16/03/2021.
 //

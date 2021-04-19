@@ -1,6 +1,6 @@
 //
-//  Privilege.swift
-//  Server
+//  UserPrivilege.swift
+//  wired3
 //
 //  Created by Rafael Warnault on 25/03/2021.
 //

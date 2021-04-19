@@ -19,7 +19,7 @@ guard let spec  = P7Spec(withUrl: specURL) else {
 
 let connection  = Connection(withSpec: spec, delegate: nil)
 
-let ok = connection.connect(withUrl: serverURL, cipher: .RSA_AES_256_SHA256, checksum: .SHA256)
+let ok = connection.connect(withUrl: serverURL, cipher: .ECDH_AES_256_SHA256, checksum: .SHA256)
 
 print(ok)
 
