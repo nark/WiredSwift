@@ -88,7 +88,7 @@ public class P7Socket: NSObject {
     public var passwordProvider:SocketPasswordDelegate?
     
     private var socket: Socket!
-    private var ecdh:ECDH!
+    public var ecdh:ECDH!
     
     private var interactive:Bool = true
     

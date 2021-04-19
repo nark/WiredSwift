@@ -26,7 +26,7 @@ public class ServerController: ServerDelegate {
     public var delegates:[ServerDelegate] = []
     
     private var socket:Socket!
-    private let rsa = RSA(bits: RSA_KEY_BITS)
+    private let ecdh = ECDH()
     private let group = DispatchGroup()
     
     var startTime:Date? = nil
@@ -487,7 +487,7 @@ public class ServerController: ServerDelegate {
             
             let p7Socket = P7Socket(socket: socket, spec: self.spec)
             
-            p7Socket.rsa = self.rsa
+            p7Socket.ecdh = self.ecdh
             p7Socket.passwordProvider = App.usersController
             
             if p7Socket.accept(compression: P7Socket.Compression.DEFLATE,
