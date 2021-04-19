@@ -96,9 +96,7 @@ public class ServerController: ServerDelegate {
         
         user.socket = socket
         user.userID = App.usersController.nextUserID()
-        
-        print("NEW USER \(user.userID)")
-                
+                        
         App.usersController.addUser(user: user)
         
         return user
@@ -492,7 +490,7 @@ public class ServerController: ServerDelegate {
             
             if p7Socket.accept(compression: P7Socket.Compression.DEFLATE,
                                cipher:      P7Socket.CipherType.ALL,
-                               checksum:    P7Socket.Checksum.SHA256) {
+                               checksum:    P7Socket.Checksum.ALL) {
                 
                 Logger.debug("Accept new connection from \(p7Socket.clientAddress() ?? "unknow")")
                                 

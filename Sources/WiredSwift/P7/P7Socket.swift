@@ -11,10 +11,8 @@ import SocketSwift
 import CryptoSwift
 import SWCompression
 
-var md5DigestLength       = 16
-var sha1DigestLength      = 20
-var sha256DigestLength    = 32
-var sha512DigestLength    = 64
+var sha2_256DigestLength  = 32
+var sha3_256DigestLength  = 32
 
 public protocol SocketPasswordDelegate: class {
     func passwordForUsername(username:String) -> String?
@@ -31,12 +29,32 @@ public class P7Socket: NSObject {
         case DEFLATE        = 0
     }
     
-    public enum Checksum:UInt32 {
-        case NONE           = 999
-        case ALL            = 998
-        case SHA1           = 0
-        case SHA256         = 1
-        case SHA512         = 2
+    public struct Checksum:OptionSet, CustomStringConvertible {
+        public let rawValue: UInt32
+        
+        public init(rawValue:UInt32 ) {
+            self.rawValue = rawValue
+        }
+        
+        public static let NONE           = Checksum([])
+        public static let SHA2_256       = Checksum(rawValue: 1)
+        public static let SHA3_256       = Checksum(rawValue: 2)
+        public static let ALL:Checksum   = [.SHA2_256, .SHA3_256]
+        
+        public var description: String {
+            switch self {
+            case .NONE:
+                return "None"
+            case .SHA2_256:
+                return "SHA2-256"
+            case .SHA3_256:
+                return "SHA3-256"
+            case [.SHA2_256, .SHA3_256]:
+                return "SHA2-256, SHA3-256"
+            default:
+                return "None"
+            }
+        }
     }
     
     public struct CipherType: OptionSet {
@@ -46,9 +64,9 @@ public class P7Socket: NSObject {
             self.rawValue = rawValue
         }
         
-        public static let NONE                  = CipherType(rawValue: 0 << 0)
-        public static let ECDH_AES256_SHA256    = CipherType(rawValue: 1 << 0)
-        public static let ECDH_CHACHA20_SHA256  = CipherType(rawValue: 1 << 1)
+        public static let NONE                  = CipherType([])
+        public static let ECDH_AES256_SHA256    = CipherType(rawValue: 1)
+        public static let ECDH_CHACHA20_SHA256  = CipherType(rawValue: 2)
         public static let ALL:CipherType        = [.ECDH_AES256_SHA256,
                                                    .ECDH_CHACHA20_SHA256]
         
@@ -87,7 +105,7 @@ public class P7Socket: NSObject {
     
     public var encryptionEnabled: Bool = false
     public var checksumEnabled: Bool = false
-    public var checksumLength: Int = sha1DigestLength
+    public var checksumLength: Int = 0
     
     public var localCompatibilityCheck: Bool = false
     public var remoteCompatibilityCheck: Bool = false
@@ -191,10 +209,14 @@ public class P7Socket: NSObject {
                 if self.compression != .NONE {
                     self.configureCompression()
                 }
-
+                
+                Logger.info("Compression enabled for \(self.compression)")
+                
                 if self.checksum != .NONE {
                     self.configureChecksum()
                 }
+                                
+                Logger.info("Checkum enabled for \(self.checksum)")
 
                 if self.cipherType != .NONE {
                     if !self.connectKeyExchange() {
@@ -202,6 +224,8 @@ public class P7Socket: NSObject {
                         return false
                     }
                 }
+                
+                Logger.info("Encryption enabled for \(CipherType.pretty(self.cipherType))")
                 
                 if self.remoteCompatibilityCheck {
                     if !self.sendCompatibilityCheck() {
@@ -241,16 +265,22 @@ public class P7Socket: NSObject {
         if compression != .NONE {
             self.configureCompression()
         }
+        
+        Logger.info("Compression enabled for \(self.compression)")
 
         if checksum != .NONE {
             self.configureChecksum()
         }
+        
+        Logger.info("Checkum enabled for \(self.checksum)")
         
         if cipher != .NONE {
             if !self.acceptKeyExchange(timeout: timeout) {
                 return false
             }
         }
+        
+        Logger.info("Encryption enabled for \(CipherType.pretty(self.cipherType))")
         
         if self.localCompatibilityCheck {
             if !self.receiveCompatibilityCheck() {
@@ -278,7 +308,7 @@ public class P7Socket: NSObject {
         
         self.encryptionEnabled = false
         self.checksumEnabled = false
-        self.checksumLength = sha1DigestLength
+        self.checksumLength = 0
 
         self.localCompatibilityCheck = false
         self.remoteCompatibilityCheck = false
@@ -671,7 +701,7 @@ public class P7Socket: NSObject {
         message.addParameter(field: "p7.handshake.version", value: "1.0")
         message.addParameter(field: "p7.handshake.protocol.name", value: "Wired")
         message.addParameter(field: "p7.handshake.protocol.version", value: "2.0b55")
-        
+                
         // handshake settings
         if self.serialization == .BINARY {
             if self.cipherType != .NONE {
@@ -686,7 +716,7 @@ public class P7Socket: NSObject {
                 message.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
             }
         }
-                
+                        
         _ = self.write(message)
         
         guard let response = self.readMessage() else {
@@ -721,7 +751,7 @@ public class P7Socket: NSObject {
                 self.cipherType = P7Socket.CipherType(rawValue: cip)
             }
             if let chs = response.enumeration(forField: "p7.handshake.checksum") {
-                self.checksum = P7Socket.Checksum(rawValue: chs)!
+                self.checksum = P7Socket.Checksum(rawValue: chs)
             }
         }
                         
@@ -737,12 +767,18 @@ public class P7Socket: NSObject {
         
         _ = self.write(message)
         
+        
+        
         return true
     }
     
     
     
     private func acceptHandshake(timeout:Int, compression:Compression, cipher:CipherType, checksum:Checksum) -> Bool {
+        var clientCipher:P7Socket.CipherType? = nil
+        var clientChecksum:P7Socket.Checksum? = nil
+        var clientCompression:P7Socket.Compression? = nil
+        
         self.compression = compression
         self.cipherType = cipher
         self.checksum = checksum
@@ -788,18 +824,18 @@ public class P7Socket: NSObject {
         
         if self.serialization == .BINARY {
             if let compression = response.enumeration(forField: "p7.handshake.compression") {
-                self.compression = P7Socket.Compression(rawValue: compression)!
+                clientCompression = P7Socket.Compression(rawValue: compression)!
             }
             
             if let encryption = response.enumeration(forField: "p7.handshake.encryption") {
-                self.cipherType = P7Socket.CipherType(rawValue: encryption)
+                clientCipher = P7Socket.CipherType(rawValue: encryption)
             }
             
             if let checksum = response.enumeration(forField: "p7.handshake.checksum") {
-                self.checksum = P7Socket.Checksum(rawValue: checksum)!
+                clientChecksum = P7Socket.Checksum(rawValue: checksum)
             }
         }
-        
+                        
         let message = P7Message(withName: "p7.handshake.server_handshake", spec: self.spec)
 
         message.addParameter(field: "p7.handshake.version", value: self.spec.builtinProtocolVersion)
@@ -807,20 +843,28 @@ public class P7Socket: NSObject {
         message.addParameter(field: "p7.handshake.protocol.version", value: self.spec.protocolVersion)
         
         if self.serialization == .BINARY {
-            if self.compression != .NONE {
+            if self.compression != .NONE && self.compression == clientCompression {
                 message.addParameter(field: "p7.handshake.compression", value: self.compression.rawValue)
             }
             
             if self.cipherType != .NONE {
-                if cipher.contains(self.cipherType) {
-                    message.addParameter(field: "p7.handshake.encryption", value: self.cipherType.rawValue)
+                if let clientCipher = clientCipher, self.cipherType.contains(clientCipher) {
+                    self.cipherType = clientCipher
+                    message.addParameter(field: "p7.handshake.encryption", value: clientCipher.rawValue)
                 } else {
-                    message.addParameter(field: "p7.handshake.encryption", value: cipher.rawValue)
+                    self.cipherType = .ECDH_AES256_SHA256 // fallback to AES256
+                    message.addParameter(field: "p7.handshake.encryption", value: self.cipherType.rawValue)
                 }
             }
             
             if self.checksum != .NONE {
-                message.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
+                if let clientChecksum = clientChecksum, self.checksum.contains(clientChecksum) {
+                    self.checksum = clientChecksum
+                    message.addParameter(field: "p7.handshake.checksum", value: clientChecksum.rawValue)
+                } else {
+                    self.checksum = Checksum.SHA2_256 // fallback to SHA2_256
+                    message.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
+                }
             }
         }
         
@@ -878,7 +922,7 @@ public class P7Socket: NSObject {
             return false
         }
         
-        print("serverSharedSecret \(serverSharedSecret)")
+        Logger.debug("Shared Secret Key: \(serverSharedSecret)")
         
         self.sslCipher = P7Cipher(cipher: self.cipherType, key: serverSharedSecret, iv: nil)
         
@@ -898,24 +942,12 @@ public class P7Socket: NSObject {
         var clientPassword1 = passwordData
         clientPassword1.append(serverPublicKey)
 
-        if self.checksum == .SHA1 {
-            clientPassword1 = clientPassword1.sha1().toHexString().data(using: .utf8)!
-        } else if self.checksum == .SHA256 {
-            clientPassword1 = clientPassword1.sha256().toHexString().data(using: .utf8)!
-        } else if self.checksum == .SHA512 {
-            clientPassword1 = clientPassword1.sha512().toHexString().data(using: .utf8)!
-        }
+        clientPassword1 = clientPassword1.sha256().toHexString().data(using: .utf8)!
 
         var clientPassword2 = serverPublicKey
         clientPassword2.append(passwordData)
 
-        if self.checksum == .SHA1 {
-            clientPassword2 = clientPassword2.sha1().toHexString().data(using: .utf8)!
-        } else if self.checksum == .SHA256 {
-            clientPassword2 = clientPassword2.sha256().toHexString().data(using: .utf8)!
-        } else if self.checksum == .SHA512 {
-            clientPassword2 = clientPassword2.sha512().toHexString().data(using: .utf8)!
-        }
+        clientPassword2 = clientPassword2.sha256().toHexString().data(using: .utf8)!
 
         let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
 
@@ -1019,7 +1051,7 @@ public class P7Socket: NSObject {
             return false
         }
         
-        print("clientSharedSecret : \(clientSharedSecret)")
+        Logger.debug("Shared Secret Key: \(clientSharedSecret)")
                 
         guard let iv = response.data(forField: "p7.encryption.cipher.iv") else {
             Logger.error("Missing IV")
@@ -1028,40 +1060,6 @@ public class P7Socket: NSObject {
 
         self.sslCipher = P7Cipher(cipher: self.cipherType, key: clientSharedSecret, iv: iv)
 
-//        if iv != nil {
-//            iv = self.rsa.decrypt(data: iv!)
-//
-//            if iv == nil {
-//                Logger.error("Cannot decrypt 'p7.encryption.cipher.iv' vector")
-//                return false
-//            }
-//        }
-        
-//        var iv = response.data(forField: "p7.encryption.cipher.iv")
-//
-//        if key == nil {
-//            Logger.error("Message has no 'p7.encryption.cipher.key' field")
-//            return false
-//        }
-//
-//        key = self.rsa.decrypt(data: key!) //wi_rsa_decrypt(self.rsa.privateKey, key);
-//
-//        if key == nil {
-//            Logger.error("Cannot decrypt 'p7.encryption.cipher.key' key")
-//            return false
-//        }
-//
-//        if iv != nil {
-//            iv = self.rsa.decrypt(data: iv!)
-//
-//            if iv == nil {
-//                Logger.error("Cannot decrypt 'p7.encryption.cipher.iv' vector")
-//                return false
-//            }
-//        }
-//
-//        self.sslCipher = P7Cipher(cipher: self.cipherType, key: key!, iv: iv!)
-//
         if self.sslCipher == nil {
             Logger.error("Cannot init cipher (\(self.cipherType)")
             return false
@@ -1100,25 +1098,11 @@ public class P7Socket: NSObject {
         let passwordData = self.password.data(using: .utf8)!
         var serverPassword1Data = passwordData
         serverPassword1Data.append(serverPublicKey)
-
-        if self.checksum == .SHA1 {
-            serverPassword1Data = serverPassword1Data.sha1()
-        } else if self.checksum == .SHA256 {
-            serverPassword1Data = serverPassword1Data.sha256()
-        } else if self.checksum == .SHA512 {
-            serverPassword1Data = serverPassword1Data.sha512()
-        }
+        serverPassword1Data = serverPassword1Data.sha256()
 
         var serverPassword2Data = serverPublicKey
         serverPassword2Data.append(passwordData)
-
-        if self.checksum == .SHA1 {
-            serverPassword2Data = serverPassword2Data.sha1()
-        } else if self.checksum == .SHA256 {
-            serverPassword2Data = serverPassword2Data.sha256()
-        } else if self.checksum == .SHA512 {
-            serverPassword2Data = serverPassword2Data.sha512()
-        }
+        serverPassword2Data = serverPassword2Data.sha256()
 
         if client_password != serverPassword1Data.toHexString() {
             Logger.error("Password mismatch for '\(self.username)' during key exchange")
@@ -1189,14 +1173,15 @@ public class P7Socket: NSObject {
     private func checksumData(_ data:Data) -> Data? {
         var checksum: Data? = nil
         
-        if self.checksum == .SHA256 {
+        if self.checksum == .SHA3_256 {
+            checksum = data.sha3(SHA3.Variant.sha256)
+
+        } else if self.checksum == .SHA2_256 {
             checksum = data.sha256()
-            
-        } else if self.checksum == .SHA512 {
-            checksum = data.sha512()
+
             
         } else {
-            checksum = data.sha1()
+            checksum = data.sha256()
         }
         
         return checksum
@@ -1214,14 +1199,11 @@ public class P7Socket: NSObject {
     
     
     private func configureChecksum() {
-        if self.checksum == .SHA1 {
-            self.checksumLength = sha1DigestLength
+        if self.checksum == .SHA2_256 {
+            self.checksumLength = sha2_256DigestLength
             
-        } else if self.checksum == .SHA256 {
-            self.checksumLength = sha256DigestLength
-            
-        } else if self.checksum == .SHA512 {
-            self.checksumLength = sha512DigestLength
+        } else if self.checksum == .SHA3_256 {
+            self.checksumLength = sha3_256DigestLength
         }
         
         self.checksumEnabled = true

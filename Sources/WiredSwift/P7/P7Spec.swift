@@ -114,11 +114,11 @@ public class P7Spec: NSObject, XMLParserDelegate {
     </p7:field>
     <p7:field name="p7.handshake.encryption" type="enum" id="5">
         <p7:enum name="p7.handshake.encryption.ecdh_aes256_sha256" value="1" />
+        <p7:enum name="p7.handshake.encryption.ecdh_chacha20_sha256" value="2" />
     </p7:field>
     <p7:field name="p7.handshake.checksum" type="enum" id="6">
-      <p7:enum name="p7.handshake.checksum.sha1" value="0" />
-      <p7:enum name="p7.handshake.checksum.sha256" value="1" />
-      <p7:enum name="p7.handshake.checksum.sha512" value="2" />
+      <p7:enum name="p7.handshake.checksum.sha2_256" value="1" />
+      <p7:enum name="p7.handshake.checksum.sha3_256" value="2" />
     </p7:field>
     <p7:field name="p7.handshake.compatibility_check" type="bool" id="7" />
 
