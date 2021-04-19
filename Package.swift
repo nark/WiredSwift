@@ -30,7 +30,7 @@ targetDependencies.append(.byName(name: "CryptorRSA"))
 targetDependencies.append(.byName(name: "SocketSwift"))
 targetDependencies.append(.byName(name: "Queuer"))
 targetDependencies.append(.byName(name: "SWCompression"))
-targetDependencies.append(.byName(name: "Crypto"))
+targetDependencies.append(.product(name: "Crypto", package: "swift-crypto")))
 targetDependencies.append(.product(name: "Fluent", package: "fluent"))
 targetDependencies.append(.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"))
 
