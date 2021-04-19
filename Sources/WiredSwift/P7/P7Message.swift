@@ -9,7 +9,6 @@
 import Foundation
 import AEXML
 
-
 /**
  This class handles messages of the Wired protocol. A message can
  be created empty for specification name, loaded from XML string or

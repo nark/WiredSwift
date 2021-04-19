@@ -42,50 +42,14 @@ public class P7Socket: NSObject {
     public enum CipherType:UInt32 {
         case NONE                   = 999
         case ALL                    = 998
-        case RSA_AES_128_SHA1       = 0
-        case RSA_AES_192_SHA1       = 1
-        case RSA_AES_256_SHA1       = 2
-        case RSA_BF_128_SHA1        = 3
-        case RSA_3DES_192_SHA1      = 4
-        case RSA_AES_128_SHA256    = 5
-        case RSA_AES_192_SHA256    = 6
-        case RSA_AES_256_SHA256    = 7
-        case RSA_BF_128_SHA256     = 8
-        case RSA_3DES_192_SHA256   = 9
-        case RSA_AES_128_SHA512    = 10
-        case RSA_AES_192_SHA512    = 11
-        case RSA_AES_256_SHA512    = 12
-        case RSA_BF_128_SHA512     = 13
-        case RSA_3DES_192_SHA512   = 14
+        case ECDH_AES_256_SHA256    = 1
         
         public static func pretty(_ type:CipherType) -> String {
             switch type {
             case .NONE:
                 return "None"
-            case .RSA_AES_128_SHA1:
-                return "AES/128 bits - SHA1"
-            case .RSA_AES_192_SHA1:
-                return "AES/192 bits - SHA1"
-            case .RSA_AES_256_SHA1:
-                return "AES/256 bits - SHA1"
-            case .RSA_BF_128_SHA1:
-                return "BF/128 bits - SHA1"
-            case .RSA_AES_128_SHA256:
-                return "AES/128 bits - SHA256"
-            case .RSA_AES_192_SHA256:
-                return "AES/192 bits - SHA256"
-            case .RSA_AES_256_SHA256:
-                return "AES/256 bits - SHA256"
-            case .RSA_BF_128_SHA256:
-                return "BF/128 bits - SHA256"
-            case .RSA_AES_128_SHA512:
-                return "AES/128 bits - SHA512"
-            case .RSA_AES_192_SHA512:
-                return "AES/192 bits - SHA512"
-            case .RSA_AES_256_SHA512:
-                return "AES/256 bits - SHA512"
-            case .RSA_BF_128_SHA512:
-                return "BF/128 bits - SHA512"
+            case .ECDH_AES_256_SHA256:
+                return "ECDH AES/256 bits - SHA256"
             default:
                 return "None"
             }
@@ -101,7 +65,7 @@ public class P7Socket: NSObject {
     public var serialization: Serialization = .BINARY
     
     public var compression: Compression = .NONE
-    public var cipherType: CipherType = .RSA_AES_256_SHA1
+    public var cipherType: CipherType = .ECDH_AES_256_SHA256
     public var checksum: Checksum = .NONE
     public var sslCipher: P7Cipher!
     public var timeout: Int = 10
@@ -124,7 +88,7 @@ public class P7Socket: NSObject {
     public var passwordProvider:SocketPasswordDelegate?
     
     private var socket: Socket!
-    public var rsa:RSA!
+    private var ecdh:ECDH!
     
     private var interactive:Bool = true
     
@@ -154,7 +118,7 @@ public class P7Socket: NSObject {
     public func set(interactive:Bool) {
         var option = interactive ? 1 : 0
         
-        if(setsockopt(socket.fileDescriptor, IPPROTO_TCP, TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
+        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
             Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
         }
 
@@ -308,7 +272,7 @@ public class P7Socket: NSObject {
         self.localCompatibilityCheck = false
         self.remoteCompatibilityCheck = false
         
-        self.rsa = nil
+        self.ecdh = nil
     }
     
     
@@ -545,7 +509,7 @@ public class P7Socket: NSObject {
             while readBytes < size && nLength > 0 && self.connected == true {
                 var messageBuffer = [Byte](repeating: 0, count: nLength)
                 
-                readBytes += try ing { recv(socket.fileDescriptor, &messageBuffer, nLength, MSG_WAITALL) }
+                readBytes += try ing { recv(socket.fileDescriptor, &messageBuffer, nLength, Int32(MSG_WAITALL)) }
                 nLength    = size - readBytes
                 
                 //print("readBytes : \(readBytes)")
@@ -873,6 +837,13 @@ public class P7Socket: NSObject {
     
     
     private func connectKeyExchange() -> Bool  {
+        self.ecdh = ECDH()
+        
+        if self.ecdh == nil {
+            Logger.error("ECDH Public key cannot be created")
+            return false
+        }
+        
         guard let response = self.readMessage() else {
             Logger.error("Handshake Failed: cannot read server key")
             return false
@@ -882,36 +853,36 @@ public class P7Socket: NSObject {
             Logger.error("Message should be 'p7.encryption.server_key', not '\(response.name!)'")
         }
         
-        guard let publicRSAKeyData = response.data(forField: "p7.encryption.public_key") else {
+        guard let serverPublicKey = response.data(forField: "p7.encryption.public_key") else {
             Logger.error("Message has no 'p7.encryption.public_key' field")
             return false
         }
         
-        self.rsa = RSA(publicKey: publicRSAKeyData)
-        
-        if self.rsa == nil {
-            Logger.error("Public key cannot be created")
+        guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: serverPublicKey) else {
+            Logger.error("Cannot compute shared secret")
             return false
         }
         
-        self.sslCipher = P7Cipher(cipher: self.cipherType)
+        print("serverSharedSecret \(serverSharedSecret)")
+        
+        self.sslCipher = P7Cipher(cipher: .ECDH_AES_256_SHA256, key: serverSharedSecret, iv: nil)
         
         if self.sslCipher == nil {
             Logger.error("Cipher cannot be created")
             return false
         }
-        
+
         if self.password == nil || self.password == "" {
             self.password = "".sha256()
         } else {
             self.password = self.password.sha256()
         }
-                
+
         let passwordData = self.password.data(using: .utf8)!
-        
+
         var clientPassword1 = passwordData
-        clientPassword1.append(publicRSAKeyData)
-        
+        clientPassword1.append(serverPublicKey)
+
         if self.checksum == .SHA1 {
             clientPassword1 = clientPassword1.sha1().toHexString().data(using: .utf8)!
         } else if self.checksum == .SHA256 {
@@ -919,10 +890,10 @@ public class P7Socket: NSObject {
         } else if self.checksum == .SHA512 {
             clientPassword1 = clientPassword1.sha512().toHexString().data(using: .utf8)!
         }
-        
-        var clientPassword2 = publicRSAKeyData
+
+        var clientPassword2 = serverPublicKey
         clientPassword2.append(passwordData)
-        
+
         if self.checksum == .SHA1 {
             clientPassword2 = clientPassword2.sha1().toHexString().data(using: .utf8)!
         } else if self.checksum == .SHA256 {
@@ -930,52 +901,49 @@ public class P7Socket: NSObject {
         } else if self.checksum == .SHA512 {
             clientPassword2 = clientPassword2.sha512().toHexString().data(using: .utf8)!
         }
-                
+
         let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
-        
-        guard let encryptedCipherKey = self.encryptData(self.sslCipher!.cipherKey.data(using: .utf8)!) else {
+
+        guard let clientPublicKey = self.ecdh.publicKeyData() else {
             return false
         }
         
-        guard let encryptedCipherIV = self.encryptData(Data(self.sslCipher!.cipherIV))  else {
+        guard let d = self.username.data(using: .utf8), let encryptedUsername = self.sslCipher.encrypt(data: d)  else {
+            return false
+        }
+
+        guard let encryptedClientPassword1 = self.sslCipher.encrypt(data: clientPassword1)  else {
             return false
         }
         
-        guard let d = self.username.data(using: .utf8), let encryptedUsername = self.encryptData(d)  else {
-            return false
-        }
-        
-        guard let encryptedClientPassword1 = self.encryptData(clientPassword1)  else {
-            return false
-        }
-        
-        message.addParameter(field: "p7.encryption.cipher.key", value: encryptedCipherKey)
-        message.addParameter(field: "p7.encryption.cipher.iv", value: encryptedCipherIV)
+        message.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey)
+        message.addParameter(field: "p7.encryption.cipher.iv", value: Data(self.sslCipher.cipherIV))
         message.addParameter(field: "p7.encryption.username", value: encryptedUsername)
         message.addParameter(field: "p7.encryption.client_password", value: encryptedClientPassword1)
-        
+
         _ = self.write(message)
-                        
+        
+
         guard let response2 = self.readMessage() else {
             Logger.error("Cannot read p7.encryption.acknowledge message")
             return false
         }
-                
+
         if response2.name == "p7.encryption.authentication_error" {
             Logger.error("Authentification failed for '\(self.username)'")
             return false
         }
-        
+
         if response2.name != "p7.encryption.acknowledge" {
             Logger.error("Message should be 'p7.encryption.acknowledge', not '\(response2.name!)'")
             return false
         }
-    
+
         guard let encryptedServerPasswordData = response2.data(forField: "p7.encryption.server_password") else {
             Logger.error("Message has no 'p7.encryption.server_password' field")
             return false
         }
-        
+
         if let serverPasswordData = self.sslCipher.decrypt(data: encryptedServerPasswordData) {
             // TODO: write our own passwords comparison method, this is uggly
             if serverPasswordData.toHexString() != clientPassword2.stringUTF8! {
@@ -983,92 +951,124 @@ public class P7Socket: NSObject {
                 return false
             }
         }
-        
+
         self.encryptionEnabled = true
-        
+
         return true
     }
     
     
     private func acceptKeyExchange(timeout: Int) -> Bool {
+        // send the server public key
         let message = P7Message(withName: "p7.encryption.server_key", spec: self.spec)
         
-        if self.rsa == nil {
-            Logger.error("Missing RSA key")
+        self.ecdh = ECDH()
+        
+        if self.ecdh == nil {
+            Logger.error("Missing ECDH key")
             return false
         }
         
-        guard let publicKey = self.rsa.publicKey(from: self.rsa.privateKey) else {
+        guard let serverPublicKey = self.ecdh.publicKeyData() else {
             return false
         }
-                
-        message.addParameter(field: "p7.encryption.public_key", value: publicKey)
-                
+        
+
+        message.addParameter(field: "p7.encryption.public_key", value: serverPublicKey)
+
         if !self.write(message) {
             return false
         }
-                
+
+        // read the client public key
         guard let response = self.readMessage() else {
             return false
         }
         
         if response.name != "p7.encryption.client_key" {
-            print(response.xml())
             Logger.error("Message should be 'p7.encryption.client_key', not '\(response.name!)'")
             return false
         }
         
-        var key = response.data(forField: "p7.encryption.cipher.key")
-        var iv = response.data(forField: "p7.encryption.cipher.iv")
         
-        if key == nil {
-            Logger.error("Message has no 'p7.encryption.cipher.key' field")
+        guard let clientPublicKey = response.data(forField: "p7.encryption.cipher.key") else {
+            Logger.error("Client public key not found")
+            return false
+        }
+        
+        guard let clientSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
+            Logger.error("Cannot compute shared secret")
+            return false
+        }
+        
+        print("clientSharedSecret : \(clientSharedSecret)")
+                
+        guard let iv = response.data(forField: "p7.encryption.cipher.iv") else {
+            Logger.error("Missing IV")
             return false
         }
 
-        key = self.rsa.decrypt(data: key!) //wi_rsa_decrypt(self.rsa.privateKey, key);
+        self.sslCipher = P7Cipher(cipher: self.cipherType, key: clientSharedSecret, iv: iv)
+
+//        if iv != nil {
+//            iv = self.rsa.decrypt(data: iv!)
+//
+//            if iv == nil {
+//                Logger.error("Cannot decrypt 'p7.encryption.cipher.iv' vector")
+//                return false
+//            }
+//        }
         
-        if key == nil {
-            Logger.error("Cannot decrypt 'p7.encryption.cipher.key' key")
-            return false
-        }
-        
-        if iv != nil {
-            iv = self.rsa.decrypt(data: iv!)
-            
-            if iv == nil {
-                Logger.error("Cannot decrypt 'p7.encryption.cipher.iv' vector")
-                return false
-            }
-        }
-        
-        self.sslCipher = P7Cipher(cipher: self.cipherType, key: key!, iv: iv!)
-        
+//        var iv = response.data(forField: "p7.encryption.cipher.iv")
+//
+//        if key == nil {
+//            Logger.error("Message has no 'p7.encryption.cipher.key' field")
+//            return false
+//        }
+//
+//        key = self.rsa.decrypt(data: key!) //wi_rsa_decrypt(self.rsa.privateKey, key);
+//
+//        if key == nil {
+//            Logger.error("Cannot decrypt 'p7.encryption.cipher.key' key")
+//            return false
+//        }
+//
+//        if iv != nil {
+//            iv = self.rsa.decrypt(data: iv!)
+//
+//            if iv == nil {
+//                Logger.error("Cannot decrypt 'p7.encryption.cipher.iv' vector")
+//                return false
+//            }
+//        }
+//
+//        self.sslCipher = P7Cipher(cipher: self.cipherType, key: key!, iv: iv!)
+//
         if self.sslCipher == nil {
             Logger.error("Cannot init cipher (\(self.cipherType)")
             return false
         }
-        
+
         var data = response.data(forField: "p7.encryption.username")
-        
-        data = self.rsa.decrypt(data: data!)
-        
+
+        data = self.sslCipher.decrypt(data: data!)
+
         guard let username = data?.stringUTF8 else {
             Logger.error("Message has no 'p7.encryption.username' field")
             return false
         }
-        
+
         self.username = username
-        
+
         data = response.data(forField: "p7.encryption.client_password")
-        
-        data = self.rsa.decrypt(data: data!)
-        
+
+        data = self.sslCipher.decrypt(data: data!)
+
         guard let client_password = data?.stringUTF8 else {
             Logger.error("Message has no 'p7.encryption.client_password' field")
             return false
         }
-                
+
         if self.passwordProvider != nil {
             // TODO: implement a password provider delegate protocol
             if let password = self.passwordProvider?.passwordForUsername(username: self.username) {
@@ -1078,11 +1078,11 @@ public class P7Socket: NSObject {
             // assume password is empty (guest with empty password access only)
             self.password = "".sha256()
         }
-                
+
         let passwordData = self.password.data(using: .utf8)!
         var serverPassword1Data = passwordData
-        serverPassword1Data.append(rsa.publicKey)
-        
+        serverPassword1Data.append(serverPublicKey)
+
         if self.checksum == .SHA1 {
             serverPassword1Data = serverPassword1Data.sha1()
         } else if self.checksum == .SHA256 {
@@ -1090,10 +1090,10 @@ public class P7Socket: NSObject {
         } else if self.checksum == .SHA512 {
             serverPassword1Data = serverPassword1Data.sha512()
         }
-        
-        var serverPassword2Data = Data(rsa.publicKey)
+
+        var serverPassword2Data = serverPublicKey
         serverPassword2Data.append(passwordData)
-        
+
         if self.checksum == .SHA1 {
             serverPassword2Data = serverPassword2Data.sha1()
         } else if self.checksum == .SHA256 {
@@ -1101,27 +1101,27 @@ public class P7Socket: NSObject {
         } else if self.checksum == .SHA512 {
             serverPassword2Data = serverPassword2Data.sha512()
         }
-        
+
         if client_password != serverPassword1Data.toHexString() {
             Logger.error("Password mismatch for '\(self.username)' during key exchange")
             return false
         }
-        
+
         // acknowledge
         let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
-        
+
         guard let d = self.sslCipher.encrypt(data: serverPassword2Data) else {
             return false
         }
-        
+
         message2.addParameter(field: "p7.encryption.server_password", value: d)
-        
+
         if !self.write(message2) {
             return false
         }
-        
+
         self.encryptionEnabled = true
-        
+
         return true
     }
     
@@ -1167,10 +1167,6 @@ public class P7Socket: NSObject {
     
 
     
-    
-    private func encryptData(_ data: Data) -> Data? {
-        return self.rsa.encrypt(data: data)
-    }
     
     private func checksumData(_ data:Data) -> Data? {
         var checksum: Data? = nil

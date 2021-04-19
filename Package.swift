@@ -22,7 +22,7 @@ dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBr
 dependencies.append(.package(name: "SWCompression", url: "https://github.com/tsolomko/SWCompression.git", from: "4.5.0"))
 dependencies.append(.package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"))
 dependencies.append(.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"))
-
+dependencies.append(.package(url: "https://github.com/apple/swift-crypto.git", from: "1.1.6"))
 
 targetDependencies.append(.byName(name: "AEXML"))
 targetDependencies.append(.byName(name: "CryptoSwift"))
@@ -30,6 +30,7 @@ targetDependencies.append(.byName(name: "CryptorRSA"))
 targetDependencies.append(.byName(name: "SocketSwift"))
 targetDependencies.append(.byName(name: "Queuer"))
 targetDependencies.append(.byName(name: "SWCompression"))
+targetDependencies.append(.byName(name: "Crypto"))
 targetDependencies.append(.product(name: "Fluent", package: "fluent"))
 targetDependencies.append(.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"))
 

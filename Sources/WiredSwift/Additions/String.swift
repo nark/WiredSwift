@@ -27,6 +27,42 @@ extension String {
     public var isBlank: Bool {
         return allSatisfy({ $0.isWhitespace })
     }
+    
+    public func dataFromHexadecimalString() -> Data? {
+        let trimmedString = self.trimmingCharacters(
+            in: CharacterSet(charactersIn: "<> ")).replacingOccurrences(
+                of: " ", with: "")
+        
+        // make sure the cleaned up string consists solely of hex digits,
+        // and that we have even number of them
+        
+        let regex = try! NSRegularExpression(pattern: "^[0-9a-f]*$", options: .caseInsensitive)
+        
+        let found = regex.firstMatch(in: trimmedString, options: [],
+                                     range: NSRange(location: 0,
+                                                    length: trimmedString.count))
+        guard found != nil &&
+            found?.range.location != NSNotFound &&
+            trimmedString.count % 2 == 0 else {
+                return nil
+        }
+        
+        // everything ok, so now let's build Data
+        
+        var data = Data(capacity: trimmedString.count / 2)
+        var index: String.Index? = trimmedString.startIndex
+        
+        while let i = index {
+            let byteString = String(trimmedString[i ..< trimmedString.index(i, offsetBy: 2)])
+            let num = UInt8(byteString.withCString { strtoul($0, nil, 16) })
+            data.append([num] as [UInt8], count: 1)
+            
+            index = trimmedString.index(i, offsetBy: 2, limitedBy: trimmedString.endIndex)
+            if index == trimmedString.endIndex { break }
+        }
+        
+        return data
+    }
 }
 
 extension String {

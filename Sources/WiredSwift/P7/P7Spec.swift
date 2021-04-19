@@ -113,21 +113,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
       <p7:enum name="p7.handshake.compression.deflate" value="0" />
     </p7:field>
     <p7:field name="p7.handshake.encryption" type="enum" id="5">
-        <p7:enum name="p7.handshake.encryption.rsa_aes128_sha1" value="0" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes192_sha1" value="1" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes256_sha1" value="2" />
-        <p7:enum name="p7.handshake.encryption.rsa_bf128_sha1" value="3" />
-        <p7:enum name="p7.handshake.encryption.rsa_3des192_sha1" value="4" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes128_sha256" value="5" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes192_sha256" value="6" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes256_sha256" value="7" />
-        <p7:enum name="p7.handshake.encryption.rsa_bf128_sha256" value="8" />
-        <p7:enum name="p7.handshake.encryption.rsa_3des192_sha256" value="9" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes128_sha512" value="10" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes192_sha512" value="11" />
-        <p7:enum name="p7.handshake.encryption.rsa_aes256_sha512" value="12" />
-        <p7:enum name="p7.handshake.encryption.rsa_bf128_sha512" value="13" />
-        <p7:enum name="p7.handshake.encryption.rsa_3des192_sha512" value="14" />
+        <p7:enum name="p7.handshake.encryption.ecdh_aes256_sha256" value="1" />
     </p7:field>
     <p7:field name="p7.handshake.checksum" type="enum" id="6">
       <p7:enum name="p7.handshake.checksum.sha1" value="0" />

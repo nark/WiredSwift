@@ -491,10 +491,10 @@ public class ServerController: ServerDelegate {
             p7Socket.passwordProvider = App.usersController
             
             if p7Socket.accept(compression: P7Socket.Compression.DEFLATE,
-                               cipher:      P7Socket.CipherType.RSA_AES_256_SHA256,
+                               cipher:      P7Socket.CipherType.ECDH_AES_256_SHA256,
                                checksum:    P7Socket.Checksum.SHA256) {
                 
-                Logger.debug("Accept new connection from \(p7Socket.clientAddress() ?? "unknow") with ciper : \(P7Socket.CipherType.RSA_AES_256_SHA256)")
+                Logger.debug("Accept new connection from \(p7Socket.clientAddress() ?? "unknow") with ciper : \(P7Socket.CipherType.ECDH_AES_256_SHA256)")
                                 
                 for delegate in delegates {
                     if let user = delegate.userConnected(withSocket: p7Socket) {

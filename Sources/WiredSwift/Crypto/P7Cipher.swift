@@ -16,26 +16,20 @@ public class P7Cipher {
     public var cipherKey:String!
     public var cipherIV:[UInt8]!
     
-    private var aesBlockSize = 16
     private var aes:AES? = nil
     
     
-    public init(cipher: P7Socket.CipherType) {
-        self.cipher         = cipher
-        self.aesBlockSize   = self.keySize()
-        self.cipherKey      = self.randomString(length: self.aesBlockSize)
-        self.cipherIV       = AES.randomIV(16)
-        
-        self.initAES()
-    }
 
     
-    public init(cipher: P7Socket.CipherType, key: Data, iv: Data) {
+    public init(cipher: P7Socket.CipherType, key: String, iv: Data?) {
         self.cipher         = cipher
-        self.aesBlockSize   = self.keySize()
-        self.cipherKey      = key.stringUTF8!
-        self.cipherIV       = iv.bytes
+        self.cipherKey      = key
         
+        if let i = iv {
+            self.cipherIV = i.bytes
+        } else {
+            self.cipherIV = AES.randomIV(16)
+        }
         self.initAES()
     }
     
@@ -71,39 +65,11 @@ public class P7Cipher {
     
     private func initAES() {
         do {
-            self.aes = try AES(key: Array(self.cipherKey.data(using: .utf8)!), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
+            if let data = self.cipherKey.dataFromHexadecimalString() {
+                self.aes = try AES(key: Array(data), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
+            }
         } catch {
             Logger.fatal("AES init error: \(error)")
         }
-    }
-
-    
-    
-    private func randomString(length: Int) -> String {
-        let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return String((0..<length).map{ _ in letters.randomElement()! })
-    }
-    
-    
-    private func keySize() -> Int {
-        var keySizeAES = 0
-        
-        if      self.cipher == .RSA_AES_128_SHA1    ||
-                self.cipher == .RSA_AES_192_SHA1    ||
-                self.cipher == .RSA_AES_256_SHA1    {
-            keySizeAES = 16
-        }
-        else if self.cipher == .RSA_AES_128_SHA256  ||
-                self.cipher == .RSA_AES_192_SHA256  ||
-                self.cipher == .RSA_AES_256_SHA256  {
-            keySizeAES = 24
-        }
-        else if self.cipher == .RSA_AES_128_SHA512  ||
-                self.cipher == .RSA_AES_192_SHA512  ||
-                self.cipher == .RSA_AES_256_SHA512  {
-            keySizeAES = 32
-        }
-        
-        return keySizeAES
     }
 }

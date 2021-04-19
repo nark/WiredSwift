@@ -59,34 +59,38 @@ extension FileManager {
     
     
     public func finderInfo(atPath path:String) -> Data? {
-        var attrs:attrlist = attrlist()
-        var finderinfo:FileManagerFinderInfo = FileManagerFinderInfo()
-        
-        attrs.bitmapcount   = u_short(ATTR_BIT_MAP_COUNT)
-        attrs.reserved      = 0
-        attrs.commonattr    = attrgroup_t(ATTR_CMN_FNDRINFO)
-        attrs.volattr       = 0
-        attrs.dirattr       = 0
-        attrs.fileattr      = 0
-        attrs.forkattr      = 0
-        
-        let mpath = path
-        let attrOK = mpath.withCString { (cstr) -> Bool in
-            if getattrlist(cstr, &attrs, &finderinfo, MemoryLayout<FileManagerFinderInfo>.size, UInt32(FSOPT_NOFOLLOW)) < 0 {
-                return true
-            }
-            return false
-        }
-        
-        if !attrOK {
+        #if os(Linux)
             return nil
-        }
-        
-        let data = finderinfo.data.withUnsafeBytes { (bytes) -> Data in
-            return Data(bytes)
-        }
-                
-        return data
+        #else
+            var attrs:attrlist = attrlist()
+            var finderinfo:FileManagerFinderInfo = FileManagerFinderInfo()
+            
+            attrs.bitmapcount   = u_short(ATTR_BIT_MAP_COUNT)
+            attrs.reserved      = 0
+            attrs.commonattr    = attrgroup_t(ATTR_CMN_FNDRINFO)
+            attrs.volattr       = 0
+            attrs.dirattr       = 0
+            attrs.fileattr      = 0
+            attrs.forkattr      = 0
+            
+            let mpath = path
+            let attrOK = mpath.withCString { (cstr) -> Bool in
+                if getattrlist(cstr, &attrs, &finderinfo, MemoryLayout<FileManagerFinderInfo>.size, UInt32(FSOPT_NOFOLLOW)) < 0 {
+                    return true
+                }
+                return false
+            }
+            
+            if !attrOK {
+                return nil
+            }
+            
+            let data = finderinfo.data.withUnsafeBytes { (bytes) -> Data in
+                return Data(bytes)
+            }
+                    
+            return data
+        #endif
     }
     
     
