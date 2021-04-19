@@ -648,7 +648,8 @@
 				4CF6A3A5260D34E4005F6476 /* UserPrivilege.swift */,
 				4CF6A3A7260D34EC005F6476 /* GroupPrivilege.swift */,
 			);
-			path = wired3;
+			name = wired3;
+			path = Sources/wired3;
 			sourceTree = "<group>";
 		};
 		4C22524D26050F1F002430EF /* Frameworks */ = {
