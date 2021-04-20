@@ -119,9 +119,9 @@ public class P7Socket: NSObject {
             case .NONE:
                 return "None"
             case .ECDH_AES256_SHA256:
-                return "ECDHE-AES256-SHA256"
+                return "ECDHE-AES256"
             case .ECDH_CHACHA20_SHA256:
-                return "ECDHE-ChaCha20-SHA256"
+                return "ECDHE-ChaCha20"
             case .ALL:
                 return "ALL"
             case .SECURE_ONLY:
