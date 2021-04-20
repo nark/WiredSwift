@@ -22,6 +22,7 @@ public class AppController : DatabaseControllerDelegate {
     
     var databaseURL:URL!
     var databaseController:DatabaseController!
+    var clientsController:ClientsController!
     var usersController:UsersController!
     var chatsController:ChatsController!
     var filesController:FilesController!
@@ -50,6 +51,7 @@ public class AppController : DatabaseControllerDelegate {
         self.databaseController = DatabaseController(baseURL: self.databaseURL, spec: self.spec)
         self.databaseController.delegate = self
         
+        self.clientsController = ClientsController()
         self.filesController = FilesController(rootPath: self.rootPath)
         self.usersController = UsersController(databaseController: self.databaseController)
         self.chatsController = ChatsController(databaseController: self.databaseController)

@@ -97,20 +97,19 @@ open class Connection: NSObject {
         if delegates.firstIndex(where: { $0 === delegate }) == nil {
             self.delegates.append(delegate)
         }
-        print("addDelegate : \(delegate) \(delegates.count)")
+        Logger.debug("Connection \(self) addDelegate : \(delegate) \(delegates.count)")
     }
     
     public func removeDelegate(_ delegate:ConnectionDelegate) {
         if let index = delegates.firstIndex(where: { $0 === delegate }) {
             delegates.remove(at: index)
         }
-        print("removeDelegate : \(delegate) \(delegates.count)")
+        Logger.debug("Connection \(self) removeDelegate : \(delegate) \(delegates.count)")
     }
     
     
-    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .ECDH_CHACHA20_SHA256, compression:P7Socket.Compression = .DEFLATE, checksum:P7Socket.Checksum = .SHA3_256) -> Bool {
+    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .ECDH_CHACHA20_SHA256, compression:P7Socket.Compression = .DEFLATE, checksum:P7Socket.Checksum = .Poly1305) -> Bool {
         self.url    = url
-        
         self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
         
         self.socket.username    = url.login
@@ -180,7 +179,7 @@ open class Connection: NSObject {
         self.socket.password    = self.url.password
         
         self.socket.cipherType  = cipher
-        self.socket.compression = compression // TODO: Gzip deflate still not implemented
+        self.socket.compression = compression
         self.socket.checksum    = checksum
                 
         if !self.socket.connect() {
@@ -425,7 +424,7 @@ open class Connection: NSObject {
         }
                 
         message.addParameter(field: "wired.user.password", value: password)
-        
+                
         _ = self.send(message: message)
                 
         guard let response = self.socket.readMessage() else {

@@ -37,6 +37,7 @@ public class P7Message: NSObject {
         }
     }
     
+    public override var description: String { self.xml() }
     
     public init(withName name: String, spec: P7Spec) {
         if let specMessage = spec.messagesByName[name] {

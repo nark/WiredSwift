@@ -36,7 +36,7 @@ public class Chat: Model {
     @Field(key: "creationTime")
     public var creationTime:Date
     
-    public var users:[UInt32:User] = [:]
+    public var clients:[UInt32:Client] = [:]
     
     public required init() { }
     
@@ -49,7 +49,7 @@ public class Chat: Model {
         self.topicTime      = Date()
     }
     
-    public init(chatID:UInt32, name:String, user:User?) {
+    public init(chatID:UInt32, name:String, client:Client?) {
         self.chatID         = chatID
         self.name           = name
         self.creationTime   = Date()
@@ -58,7 +58,7 @@ public class Chat: Model {
         self.topicNick      = ""
         self.topicTime      = Date()
         
-        if let nick = user?.nick {
+        if let nick = client?.nick {
             self.creationNick = nick
         }
     }
@@ -67,23 +67,23 @@ public class Chat: Model {
 
 
 public class PrivateChat : Chat {
-    private var invitedUsers:[User] = []
+    private var invitedClients:[Client] = []
     
-    public func addInvitation(user:User) {
-        self.invitedUsers.append(user)
+    public func addInvitation(client:Client) {
+        self.invitedClients.append(client)
     }
     
     
-    public func removeInvitation(user:User) {
-        self.invitedUsers.removeAll { (u) -> Bool in
-            u.userID == user.userID
+    public func removeInvitation(client:Client) {
+        self.invitedClients.removeAll { (c) -> Bool in
+            c.userID == client.userID
         }
     }
     
     
-    public func isInvited(user:User) -> Bool {
-        for u in self.invitedUsers {
-            if u.userID == user.userID {
+    public func isInvited(client:Client) -> Bool {
+        for c in self.invitedClients {
+            if c.userID == client.userID {
                 return true
             }
         }

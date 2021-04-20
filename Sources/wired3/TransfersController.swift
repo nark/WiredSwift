@@ -24,7 +24,7 @@ public class Transfer: Equatable {
         case running
     }
     
-    var user:User
+    var client:Client
     var path:String
     
     var key:String!
@@ -54,9 +54,9 @@ public class Transfer: Equatable {
 //    var speed
 //    var finderinfo
     
-    public init(path:String, user:User, message:P7Message, type:TransferType) {
+    public init(path:String, client:Client, message:P7Message, type:TransferType) {
         self.path   = path
-        self.user   = user
+        self.client = client
         self.type   = type
         self.state  = .queued
     }
@@ -83,34 +83,34 @@ public class TransfersController {
     
     
     // MARK: -
-    public func run(transfer: Transfer, user:User, message:P7Message) -> Bool {
+    public func run(transfer: Transfer, client:Client, message:P7Message) -> Bool {
         var result = false
         
-        if self.transfers[user.username!] == nil {
-            self.transfers[user.username!] = []
+        if self.transfers[client.user!.username!] == nil {
+            self.transfers[client.user!.username!] = []
         }
         
-        self.transfers[user.username!]?.append(transfer)
+        self.transfers[client.user!.username!]?.append(transfer)
         
         self.queue.addOperation {
-            if self.wait(untilReady: transfer, user: user, message: message) {
+            if self.wait(untilReady: transfer, client: client, message: message) {
                 transfer.state = .running
 
                 if transfer.type == .donwload {
-                    result = self.runDownload(transfer: transfer, user: user, message: message)
+                    result = self.runDownload(transfer: transfer, client: client, message: message)
                 } else {
-                    result = self.runUpload(transfer: transfer, user: user, message: message)
+                    result = self.runUpload(transfer: transfer, client: client, message: message)
                 }
             }
         }
         
-        self.transfers[user.username!] = nil
+        self.transfers[client.user!.username!] = nil
         
         return result
     }
     
-    public func download(path:String, dataOffset:UInt64, rsrcOffset:UInt64, user:User, message:P7Message) -> Transfer? {
-        let transfer = Transfer(path: path, user: user, message: message, type: .donwload)
+    public func download(path:String, dataOffset:UInt64, rsrcOffset:UInt64, client:Client, message:P7Message) -> Transfer? {
+        let transfer = Transfer(path: path, client: client, message: message, type: .donwload)
                 
         transfer.dataOffset = dataOffset
         transfer.rsrcOffset = rsrcOffset
@@ -135,12 +135,12 @@ public class TransfersController {
         return transfer
     }
     
-    public func upload(path:String, dataSize:UInt64, rsrcSize:UInt64, executable: Bool, user:User, message:P7Message) -> Transfer? {
-        let transfer = Transfer(path: path, user: user, message: message, type: .upload)
+    public func upload(path:String, dataSize:UInt64, rsrcSize:UInt64, executable: Bool, client:Client, message:P7Message) -> Transfer? {
+        let transfer = Transfer(path: path, client: client, message: message, type: .upload)
         var realPath = filesController.real(path: path)
         
         if FileManager.default.fileExists(atPath: realPath) {
-            App.usersController.replyError(user: user, error: "wired.error.file_exists", message: message)
+            App.usersController.replyError(client: client, error: "wired.error.file_exists", message: message)
             
             return nil
         }
@@ -157,13 +157,13 @@ public class TransfersController {
         
         if(fd < 0) {
             Logger.error("Could not open upload \(realPath)")
-            App.usersController.replyError(user: user, error: "wired.error.file_not_found", message: message)
+            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return nil
         }
         
         if lseek(fd, off_t(dataOffset), SEEK_SET) < 0 {
             Logger.error("Could not seek to \(dataOffset) in upload \(realPath)")
-            App.usersController.replyError(user: user, error: "wired.error.file_not_found", message: message)
+            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return nil
         }
         
@@ -195,7 +195,7 @@ public class TransfersController {
     
     
     // MARK: -
-    private func wait(untilReady transfer:Transfer, user:User, message:P7Message) -> Bool {
+    private func wait(untilReady transfer:Transfer, client:Client, message:P7Message) -> Bool {
 //        while true {
 //            let reply = P7Message(withName: "wired.transfer.queue", spec: message.spec)
 //            reply.addParameter(field: "wired.file.path", value: transfer.path)
@@ -213,7 +213,7 @@ public class TransfersController {
         
     }
     
-    private func runDownload(transfer: Transfer, user:User, message:P7Message) -> Bool {
+    private func runDownload(transfer: Transfer, client:Client, message:P7Message) -> Bool {
         var remainingDataSize = Data()
         remainingDataSize.append(uint64: transfer.remainingDataSize.bigEndian)
         
@@ -230,22 +230,22 @@ public class TransfersController {
             reply.addParameter(field: "wired.transaction", value: t)
         }
                 
-        if !(transfer.user.socket?.write(reply))! {
-            Logger.error("Could not write message \(reply.name!) to \(user.username!)")
+        if !transfer.client.socket.write(reply) {
+            Logger.error("Could not write message \(reply.name!) to \(client.user!.username!)")
             return false
         }
         
-        user.socket?.set(interactive: false)
+        client.socket.set(interactive: false)
         
         let result = self.download(transfer: transfer)
         
-        user.socket?.set(interactive: true)
+        client.socket.set(interactive: true)
 
         return result
     }
     
     
-    private func runUpload(transfer: Transfer, user:User, message:P7Message) -> Bool {
+    private func runUpload(transfer: Transfer, client:Client, message:P7Message) -> Bool {
         let reply = P7Message(withName: "wired.transfer.upload_ready", spec: message.spec)
         reply.addParameter(field: "wired.file.path", value: transfer.path)
         reply.addParameter(field: "wired.transfer.data_offset", value: transfer.dataOffset)
@@ -257,29 +257,29 @@ public class TransfersController {
         
         print(reply.xml())
         
-        if !(transfer.user.socket?.write(reply))! {
-            Logger.error("Could not write message \(reply.name!) to \(user.username!)")
+        if !transfer.client.socket.write(reply) {
+            Logger.error("Could not write message \(reply.name!) to \(client.user!.username!)")
             return false
         }
                 
-        guard let reply2 = transfer.user.socket?.readMessage() else {
-            Logger.error("Could not read message from \(user.username!) while waiting for upload \(transfer.path)")
+        guard let reply2 = transfer.client.socket.readMessage() else {
+            Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path)")
             return false
         }
         
         if reply2.name != "wired.transfer.upload" {
-            Logger.error("Could not accept message \(reply2.name!) from \(user.username!): Expected 'wired.transfer.upload'")
-            App.usersController.replyError(user: user, error: "wired.error.invalid_message", message: reply2)
+            Logger.error("Could not accept message \(reply2.name!) from \(client.user!.username!): Expected 'wired.transfer.upload'")
+            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: reply2)
         }
         
         transfer.remainingDataSize = reply2.uint64(forField: "wired.transfer.data")
         transfer.remainingRsrcSize = reply2.uint64(forField: "wired.transfer.rsrc")
         
-        user.socket?.set(interactive: false)
+        client.socket.set(interactive: false)
         
         let result = self.upload(transfer: transfer)
         
-        user.socket?.set(interactive: true)
+        client.socket.set(interactive: true)
         
 //        if transfer.transferred == (transfer.dataSize + transfer.rsrcSize) {
 //            let url = URL(fileURLWithPath: transfer.realDataPath.stringByDeletingPathExtension)
@@ -315,7 +315,7 @@ public class TransfersController {
         var sendbytes:UInt64 = 0
         //let transfers = self.transfers[transfer.user.username!]
         
-        while transfer.user.state == .LOGGED_IN {
+        while transfer.client.state == .LOGGED_IN {
             if data && transfer.remainingDataSize == 0 {
                 data = false
             }
@@ -336,7 +336,7 @@ public class TransfersController {
             
             // TODO: wait timeout ?
             
-            if(transfer.user.state != .LOGGED_IN) {
+            if(transfer.client.state != .LOGGED_IN) {
                 result = false
                 break
             }
@@ -347,9 +347,9 @@ public class TransfersController {
                 sendbytes = (transfer.remainingRsrcSize < readbytes) ? transfer.remainingRsrcSize : readbytes
             }
             
-            if let  write = transfer.user.socket?.writeOOB(data: buffer, timeout: WiredTransferTimeout),
+            if let  write = transfer.client.socket?.writeOOB(data: buffer, timeout: WiredTransferTimeout),
                     write == false {
-                Logger.error("Could not write download to \(transfer.user.username!)")
+                Logger.error("Could not write download to \(transfer.client.user!.username!)")
                 
                 result = false
                 break
@@ -375,7 +375,7 @@ public class TransfersController {
         var data = true
         var result = true
         
-        while transfer.user.state == .LOGGED_IN {
+        while transfer.client.state == .LOGGED_IN {
             if transfer.remainingDataSize == 0 {
                 data = false
             }
@@ -386,12 +386,12 @@ public class TransfersController {
             
             // TODO: wait timeout ?
             
-            if(transfer.user.state != .LOGGED_IN) {
+            if(transfer.client.state != .LOGGED_IN) {
                 result = false
                 break
             }
             
-            guard let buffer = transfer.user.socket?.readOOB(timeout: WiredTransferTimeout) else {
+            guard let buffer = transfer.client.socket.readOOB(timeout: WiredTransferTimeout) else {
                 Logger.error("Could not read upload from \(transfer.realDataPath!)")
 
                 result = false
@@ -403,7 +403,7 @@ public class TransfersController {
 
             if writtenBytes <= 0 {
                 if writtenBytes < 0 {
-                    Logger.error("Could not write upload \(transfer.realDataPath!) to \(transfer.user.username!)")
+                    Logger.error("Could not write upload \(transfer.realDataPath!) to \(transfer.client.user!.username!)")
                 }
                 
                 result = false

@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "WiredSwift::WiredSwift"
-               BuildableName = "WiredSwift.framework"
-               BlueprintName = "WiredSwift"
+               BlueprintIdentifier = "WiredSwift::wired3"
+               BuildableName = "wired3"
+               BlueprintName = "wired3"
                ReferencedContainer = "container:WiredSwift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -28,9 +28,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "WiredSwift::wired3"
-               BuildableName = "wired3"
-               BlueprintName = "wired3"
+               BlueprintIdentifier = "WiredSwift::WiredSwift"
+               BuildableName = "WiredSwift.framework"
+               BlueprintName = "WiredSwift"
                ReferencedContainer = "container:WiredSwift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

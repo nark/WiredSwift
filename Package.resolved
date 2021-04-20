@@ -38,15 +38,6 @@
         }
       },
       {
-        "package": "CryptorRSA",
-        "repositoryURL": "https://github.com/IBM-Swift/BlueRSA",
-        "state": {
-          "branch": null,
-          "revision": "8ea901f2582296837d88f882b0fa5a0601759598",
-          "version": "1.0.35"
-        }
-      },
-      {
         "package": "console-kit",
         "repositoryURL": "https://github.com/vapor/console-kit.git",
         "state": {

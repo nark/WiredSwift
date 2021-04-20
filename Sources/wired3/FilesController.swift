@@ -28,7 +28,7 @@ public class FilesController {
         return "/" + path.deletingPrefix(self.rootPath)
     }
     
-    public func listDirectory(user:User, message:P7Message) {
+    public func listDirectory(client:Client, message:P7Message) {
         var recursive = false
         
         guard let path = message.string(forField: "wired.file.path") else {
@@ -37,20 +37,20 @@ public class FilesController {
         
         // sanitize checks
         if !File.isValid(path: path) {
-            App.usersController.replyError(user: user, error: "wired.error.file_not_found", message: message)
+            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
         
         // file privileges
         if let privilege = FilePrivilege(path: self.real(path: path)) {
-            if !user.hasPermission(toRead: privilege) {
-                App.usersController.replyError(user: user, error: "wired.error.permission_denied", message: message)
+            if !client.user!.hasPermission(toRead: privilege) {
+                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
             // user privileges
-            if !user.hasPrivilege(name: "wired.account.file.list_files") {
-                App.usersController.replyError(user: user, error: "wired.error.permission_denied", message: message)
+            if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
@@ -59,11 +59,60 @@ public class FilesController {
             recursive = r
         }
         
-        self.replyList(path, recursive, user, message)
+        self.replyList(path, recursive, client, message)
     }
     
     
-    private func replyList(_ path:String, _ recursive:Bool, _ user:User, _ message:P7Message) {
+    public func delete(client:Client, message:P7Message) {
+        guard let path = message.string(forField: "wired.file.path") else {
+            return
+        }
+        
+        // sanitize checks
+        if !File.isValid(path: path) {
+            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+        
+        // file privileges
+        if let privilege = FilePrivilege(path: self.real(path: path)) {
+            if !client.user!.hasPermission(toRead: privilege) || !client.user!.hasPermission(toWrite: privilege) {
+                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else {
+            // user privileges
+            if !client.user!.hasPrivilege(name: "wired.account.file.delete_files") {
+                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        }
+        
+        if self.delete(path: path, client: client, message: message) {
+            App.usersController.replyOK(client: client, message: message)
+        }
+    }
+    
+    
+    
+    private func delete(path:String, client:Client, message:P7Message) -> Bool {
+        let realPath = self.real(path: path)
+        
+        do {
+            try FileManager.default.removeItem(atPath: realPath)
+        } catch let error {
+            Logger.error("Cannot delete file \(realPath) \(error)")
+            
+            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            
+            return false
+        }
+        
+        return true
+    }
+    
+    
+    private func replyList(_ path:String, _ recursive:Bool, _ client:Client, _ message:P7Message) {
         var realPath:String = path
         var isDir: ObjCBool = false
         
@@ -76,7 +125,7 @@ public class FilesController {
             }
                                      
             if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir) {
-                App.usersController.replyError(user: user, error: "wired.error.file_not_found", message: message)
+                App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
             
@@ -85,7 +134,7 @@ public class FilesController {
             do {
                 files = try FileManager.default.contentsOfDirectory(atPath: realPath)
             } catch {
-                App.usersController.replyError(user: user, error: "wired.error.file_not_found", message: message)
+                App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
     
@@ -111,8 +160,8 @@ public class FilesController {
 
                 if type == .dropbox {
                     if privileges != nil {
-                        readable = user.hasPermission(toRead: privileges!)
-                        writable = user.hasPermission(toWrite: privileges!)
+                        readable = client.user!.hasPermission(toRead: privileges!)
+                        writable = client.user!.hasPermission(toWrite: privileges!)
                     }
                 }
 
@@ -180,13 +229,13 @@ public class FilesController {
                     reply.addParameter(field: "wired.file.writable", value: writable)
                 }
                 
-                App.usersController.reply(user: user, reply: reply, message: message)
+                App.usersController.reply(client: client, reply: reply, message: message)
             }
             
             let reply = P7Message(withName: "wired.file.file_list.done", spec: message.spec)
             reply.addParameter(field: "wired.file.path", value: path)
             reply.addParameter(field: "wired.file.available", value: UInt64(1))
-            App.usersController.reply(user: user, reply: reply, message: message)
+            App.usersController.reply(client: client, reply: reply, message: message)
         }
     }
     

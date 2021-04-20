@@ -11,7 +11,7 @@ import Fluent
 import FluentSQLiteDriver
 
 public class UsersController: TableController, SocketPasswordDelegate {
-    var connectedUsers:[UInt32:User] = [:]
+    //var connectedUsers:[UInt32:User] = [:]
     var lastUserID:UInt32 = 0
     
     // MARK: - Public
@@ -21,63 +21,57 @@ public class UsersController: TableController, SocketPasswordDelegate {
         return self.lastUserID
     }
     
-    
-    public func addUser(user:User) {
-        self.connectedUsers[user.userID] = user
-        
-        WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
-    }
-    
-    
-    public func removeUser(user:User) {
-        user.socket?.disconnect()
-        
-        self.connectedUsers[user.userID] = nil
-        
-        WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
-    }
-    
-    
-    
-    public func broadcast(message:P7Message) {
-        DispatchQueue.global(qos: .default).async {
-            for (_, user) in self.connectedUsers {
-                _ = user.socket?.write(message)
-            }
-        }
-    }
+//
+//    public func addUser(user:User) {
+//        self.connectedUsers[user.userID] = user
+//
+//        WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
+//    }
+//
+//
+//    public func removeUser(user:User) {
+//        user.socket?.disconnect()
+//
+//        self.connectedUsers[user.userID] = nil
+//
+//        WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
+//    }
+//
+//
+
     
     
     
     
     // MARK: -
-    public func reply(user: User, reply:P7Message, message:P7Message) {
+    public func reply(client: Client, reply:P7Message, message:P7Message) {
         if let t = message.uint32(forField: "wired.transaction") {
             reply.addParameter(field: "wired.transaction", value: t)
         }
-        _ = user.socket?.write(reply)
+        _ = client.socket?.write(reply)
     }
     
     
-    public func replyError(user: User, error:String, message:P7Message) {
-        let reply = P7Message(withName: "wired.error", spec: user.socket!.spec)
+    public func replyError(client: Client, error:String, message:P7Message?) {
+        let reply = P7Message(withName: "wired.error", spec: client.socket!.spec)
         
         reply.addParameter(field: "wired.error.string", value: "Login failed")
-        
-        print("error \(error)")
-        if let errorEnumValue = message.spec.errorsByName[error] {
-            print("errorEnumValue \(errorEnumValue.name)")
-            reply.addParameter(field: "wired.error", value: UInt32(errorEnumValue.id))
+
+        if let message = message {
+            if let errorEnumValue = message.spec.errorsByName[error] {
+                reply.addParameter(field: "wired.error", value: UInt32(errorEnumValue.id))
+            }
+            
+            self.reply(client: client, reply: reply, message: message)
+        } else {
+            _ = client.socket.write(reply)
         }
-        
-        
-        self.reply(user: user, reply: reply, message: message)
     }
     
-    public func replyOK(user: User, message:P7Message) {
-        let reply = P7Message(withName: "wired.okay", spec: user.socket!.spec)
+    public func replyOK(client: Client, message:P7Message) {
+        let reply = P7Message(withName: "wired.okay", spec: client.socket!.spec)
         
-        self.reply(user: user, reply: reply, message: message)
+        self.reply(client: client, reply: reply, message: message)
     }
     
     
@@ -90,6 +84,22 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
         
         return nil
+    }
+    
+    
+    public func user(withUsername username: String, password: String) -> User? {
+        var user:User? = nil
+                
+        do {
+            user = try User.query(on: databaseController.pool)
+                        .filter(\.$username == username)
+                        .filter(\.$password == password)
+                        .first()
+                        .wait()
+            
+        } catch {  }
+        
+        return user
     }
     
     
@@ -151,10 +161,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
             
             // defaults users
             let admin = User(username: "admin", password: "admin".sha256())
-            admin.userID = self.nextUserID()
-            
             let guest = User(username: "guest", password: "".sha256())
-            guest.userID = self.nextUserID()
             
             try admin.create(on: self.databaseController.pool).wait()
             try guest.create(on: self.databaseController.pool).wait()
