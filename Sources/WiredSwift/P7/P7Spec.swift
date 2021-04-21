@@ -110,7 +110,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
     <p7:field name="p7.handshake.protocol.name" type="string" id="2" />
     <p7:field name="p7.handshake.protocol.version" type="string" id="3" />
     <p7:field name="p7.handshake.compression" type="enum" id="4">
-      <p7:enum name="p7.handshake.compression.deflate" value="0" />
+      <p7:enum name="p7.handshake.compression.deflate" value="2" />
     </p7:field>
     <p7:field name="p7.handshake.encryption" type="enum" id="5">
         <p7:enum name="p7.handshake.encryption.ecdh_aes256_sha256" value="2" />

@@ -9,6 +9,7 @@
 import Foundation
 import SocketSwift
 import CryptoSwift
+import Crypto
 import SWCompression
 
 var sha2_256DigestLength  = 32
@@ -119,9 +120,9 @@ public class P7Socket: NSObject {
             case .NONE:
                 return "None"
             case .ECDH_AES256_SHA256:
-                return "ECDHE-AES256"
+                return "ECDHE-ECDSA-AES256"
             case .ECDH_CHACHA20_SHA256:
-                return "ECDHE-ChaCha20"
+                return "ECDHE-ECDSA-ChaCha20"
             case .ALL:
                 return "ALL"
             case .SECURE_ONLY:
@@ -216,18 +217,21 @@ public class P7Socket: NSObject {
     
     
     public func clientAddress() -> String? {
-        var addr = sockaddr(), len: socklen_t = socklen_t(MemoryLayout.size(ofValue: sockaddr.self))
-        guard getpeername(self.socket.fileDescriptor, &addr, &len) == 0 else {
-            print("getpeername(...) failed.")
+        var address = sockaddr_in()
+        var len = socklen_t(MemoryLayout.size(ofValue: address))
+        let ptr = UnsafeMutableRawPointer(&address).assumingMemoryBound(to: sockaddr.self)
+
+        guard getsockname(self.socket.fileDescriptor, ptr, &len) == 0 else {
+            Logger.error("Socket getsockname failed.")
             return nil
         }
+
         var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-        guard getnameinfo(&addr, len, &hostBuffer, socklen_t(hostBuffer.count),
-            nil, 0, NI_NUMERICHOST) == 0 else {
-            print("getnameinfo(...) failed.")
+        guard getnameinfo(ptr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) == 0 else {
+            Logger.error("Socket getnameinfo failed.")
             return nil
         }
-        
+
         return String(cString: hostBuffer)
     }
     
@@ -926,19 +930,12 @@ public class P7Socket: NSObject {
         }
                                 
         let message = P7Message(withName: "p7.handshake.server_handshake", spec: self.spec)
-
         message.addParameter(field: "p7.handshake.version", value: self.spec.builtinProtocolVersion)
         message.addParameter(field: "p7.handshake.protocol.name", value: self.spec.protocolName)
         message.addParameter(field: "p7.handshake.protocol.version", value: self.spec.protocolVersion)
         
         if self.serialization == .BINARY {
-            if self.compression != .NONE && self.compression == clientCompression {
-                message.addParameter(field: "p7.handshake.compression", value: self.compression.rawValue)
-            } else {
-                self.compression = .NONE
-            }
-            
-            
+            // compression
             if self.compression.contains(clientCompression) {
                 self.compression = clientCompression
             } else {
@@ -950,10 +947,7 @@ public class P7Socket: NSObject {
             if self.compression != .NONE {
                 message.addParameter(field: "p7.handshake.compression", value: self.compression.rawValue)
             }
-            
-            
-            
-            
+                    
             //cipher
             if self.cipherType.contains(clientCipher) {
                 self.cipherType = clientCipher
@@ -1033,14 +1027,22 @@ public class P7Socket: NSObject {
             Logger.error("Cannot compute shared secret")
             return false
         }
-        
-        Logger.debug("Shared Secret Key: \(serverSharedSecret)")
-        
-        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: serverSharedSecret, iv: nil)
-        self.digest     = Digest(key: serverSharedSecret, type: self.checksum)
+                
+        guard let saltData = serverSharedSecret.data(using: .utf8), let derivedKey = self.ecdh.deviredSymmetricKey(withSalt: saltData) else {
+            Logger.error("Cannot derive key from shared secret")
+            return false
+        }
+                
+        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey, iv: nil)
+        self.digest     = Digest(key: derivedKey, type: self.checksum)
         
         if self.sslCipher == nil {
             Logger.error("Cipher cannot be created")
+            return false
+        }
+        
+        if self.digest == nil {
+            Logger.error("Digest cannot be created")
             return false
         }
 
@@ -1062,7 +1064,7 @@ public class P7Socket: NSObject {
 
         let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
 
-        guard let clientPublicKey = self.ecdh.publicKeyData() else {
+        guard var clientPublicKey = self.ecdh.publicKeyData() else {
             Logger.error("Cannot read client public key")
             return false
         }
@@ -1072,16 +1074,24 @@ public class P7Socket: NSObject {
             return false
         }
 
-        guard let encryptedClientPassword1 = self.sslCipher.encrypt(data: clientPassword1)  else {
+        guard let dkd = derivedKey.dataFromHexadecimalString(), let privateSigningKey = try? P256.Signing.PrivateKey(rawRepresentation: dkd) else {
+            Logger.error("Cannot create private signing key")
+            return false
+        }
+        
+        let publicSigningKey = privateSigningKey.publicKey
+        guard let passwordSignature = try? privateSigningKey.signature(for: clientPassword1) else {
             Logger.error("Cannot read client password")
             return false
         }
         
-        message.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey)
+        clientPublicKey.append(publicSigningKey.rawRepresentation)
+                    
+        message.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey.base64EncodedData())
         message.addParameter(field: "p7.encryption.cipher.iv", value: Data(self.sslCipher.cipherIV))
         message.addParameter(field: "p7.encryption.username", value: encryptedUsername)
-        message.addParameter(field: "p7.encryption.client_password", value: encryptedClientPassword1)
-
+        message.addParameter(field: "p7.encryption.client_password", value: passwordSignature.rawRepresentation)
+        
         _ = self.write(message)
 
         guard let response2 = self.readMessage() else {
@@ -1104,12 +1114,32 @@ public class P7Socket: NSObject {
             return false
         }
 
-        if let serverPasswordData = self.sslCipher.decrypt(data: encryptedServerPasswordData) {
-            // TODO: write our own passwords comparison method, this is uggly
-            if serverPasswordData.toHexString() != clientPassword2.stringUTF8! {
-                Logger.error("Password mismatch during key exchange")
-                return false
-            }
+        guard let signature = try? P256.Signing.ECDSASignature(rawRepresentation: encryptedServerPasswordData) else {
+            Logger.error("Cannot read server password ECDSA Signature")
+            return false
+        }
+        
+        if !publicSigningKey.isValidSignature(signature, for: clientPassword2) {
+            Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
+            return false
+        }
+                
+        guard let derivedKey2 = self.ecdh.deviredSymmetricKey(withSalt: clientPassword2) else {
+            Logger.error("Cannot derive key from server password")
+            return false
+        }
+
+        self.digest     = Digest(key: derivedKey2, type: self.checksum)
+        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey2, iv: Data(self.sslCipher.cipherIV))
+        
+        if self.digest == nil {
+            Logger.error("Digest cannot be created")
+            return false
+        }
+
+        if self.sslCipher == nil {
+            Logger.error("Cipher cannot be created")
+            return false
         }
 
         self.checksumEnabled = true
@@ -1151,26 +1181,32 @@ public class P7Socket: NSObject {
             return false
         }
         
-        
-        guard let clientPublicKey = response.data(forField: "p7.encryption.cipher.key") else {
+        guard   let combinedBase64Keys = response.data(forField: "p7.encryption.cipher.key"),
+                let combinedKeys = Data(base64Encoded: combinedBase64Keys) else {
             Logger.error("Client public key not found")
             return false
         }
         
-        guard let clientSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
+        let clientPublicKey     = combinedKeys.dropLast(64)
+        let publicSigningKey    = combinedKeys.dropFirst(132)
+
+        guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
             Logger.error("Cannot compute shared secret")
             return false
         }
-        
-        Logger.debug("Shared Secret Key: \(clientSharedSecret)")
                 
+        guard let saltData = serverSharedSecret.data(using: .utf8), let derivedKey = self.ecdh.deviredSymmetricKey(withSalt: saltData) else {
+            Logger.error("Cannot derive key from shared secret")
+            return false
+        }
+                        
         guard let iv = response.data(forField: "p7.encryption.cipher.iv") else {
             Logger.error("Missing IV")
             return false
         }
 
-        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: clientSharedSecret, iv: iv)
-        self.digest     = Digest(key: clientSharedSecret, type: self.checksum)
+        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey, iv: iv)
+        self.digest     = Digest(key: derivedKey, type: self.checksum)
         
         if self.sslCipher == nil {
             Logger.error("Cannot init cipher (\(self.cipherType)")
@@ -1178,9 +1214,8 @@ public class P7Socket: NSObject {
         }
 
         var data = response.data(forField: "p7.encryption.username")
-
         data = self.sslCipher.decrypt(data: data!)
-
+        
         guard let username = data?.stringUTF8 else {
             Logger.error("Message has no 'p7.encryption.username' field")
             return false
@@ -1190,9 +1225,7 @@ public class P7Socket: NSObject {
 
         data = response.data(forField: "p7.encryption.client_password")
 
-        data = self.sslCipher.decrypt(data: data!)
-
-        guard let client_password = data?.stringUTF8 else {
+        guard let client_password = data else {
             Logger.error("Message has no 'p7.encryption.client_password' field")
             return false
         }
@@ -1210,27 +1243,61 @@ public class P7Socket: NSObject {
         let passwordData = self.password.data(using: .utf8)!
         var serverPassword1Data = passwordData
         serverPassword1Data.append(serverPublicKey)
-        serverPassword1Data = serverPassword1Data.sha256()
+        serverPassword1Data = serverPassword1Data.sha256().toHexString().data(using: .utf8)!
 
         var serverPassword2Data = serverPublicKey
         serverPassword2Data.append(passwordData)
-        serverPassword2Data = serverPassword2Data.sha256()
+        serverPassword2Data = serverPassword2Data.sha256().toHexString().data(using: .utf8)!
 
-        if client_password != serverPassword1Data.toHexString() {
-            Logger.error("Password mismatch for '\(self.username)' during key exchange")
+        guard let signingPublicKey = try? P256.Signing.PublicKey(rawRepresentation: publicSigningKey) else {
+            Logger.error("Cannot read public signing key")
+            return false
+        }
+                
+        guard let signature = try? P256.Signing.ECDSASignature(rawRepresentation: client_password) else {
+            Logger.error("Cannot read password ECDSA Signature")
+            return false
+        }
+        
+        if !signingPublicKey.isValidSignature(signature, for: serverPassword1Data) {
+            Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
             return false
         }
 
         // acknowledge
         let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
 
-        guard let d = self.sslCipher.encrypt(data: serverPassword2Data) else {
+        guard let dkd = derivedKey.dataFromHexadecimalString(), let privateSigningKey = try? P256.Signing.PrivateKey(rawRepresentation: dkd) else {
+            Logger.error("Cannot create private signing key")
+            return false
+        }
+        
+        guard let passwordSignature = try? privateSigningKey.signature(for: serverPassword2Data) else {
+            Logger.error("Cannot sign server password")
             return false
         }
 
-        message2.addParameter(field: "p7.encryption.server_password", value: d)
+        message2.addParameter(field: "p7.encryption.server_password", value: passwordSignature.rawRepresentation)
 
         if !self.write(message2) {
+            return false
+        }
+                
+        guard let derivedKey2 = self.ecdh.deviredSymmetricKey(withSalt: serverPassword2Data) else {
+            Logger.error("Cannot derive key from server password")
+            return false
+        }
+
+        self.digest     = Digest(key: derivedKey2, type: self.checksum)
+        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey2, iv: iv)
+
+        if self.digest == nil {
+            Logger.error("Digest cannot be created")
+            return false
+        }
+        
+        if self.sslCipher == nil {
+            Logger.error("Cipher cannot be created")
             return false
         }
 

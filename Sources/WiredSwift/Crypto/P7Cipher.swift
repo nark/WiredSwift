@@ -139,7 +139,8 @@ public class P7Cipher {
     private func initAES() {
         do {
             if let data = self.cipherKey.dataFromHexadecimalString() {
-                self.aes = try AES(key: Array(data), blockMode: CBC(iv: self.cipherIV!), padding: .pkcs7)
+                let gcm = GCM(iv: self.cipherIV!, mode: .combined)
+                self.aes = try AES(key: Array(data), blockMode: gcm, padding: .pkcs7)
             }
         } catch {
             Logger.fatal("AES init error: \(error)")
