@@ -41,38 +41,37 @@ extension Data {
     }
     
     public mutating func append(byte data: Int8, count:Int = 1) {
-        var data = data
-        self.append(UnsafeBufferPointer(start: &data, count: count))
+        self.append(Data(from: data))
     }
     
     
     public mutating func append(uint8 data: UInt8, bigEndian: Bool = true) {
-        var data = bigEndian ? data.bigEndian : data.littleEndian
-        self.append(UnsafeBufferPointer(start: &data, count: 1))
+        let value = bigEndian ? data.bigEndian : data.littleEndian
+        self.append(Data(from: value))
     }
     
     
     public mutating func append(uint16 data: UInt16, bigEndian: Bool = true) {
-        var data = bigEndian ? data.bigEndian : data.littleEndian
-        self.append(UnsafeBufferPointer(start: &data, count: 1))
+        let value = bigEndian ? data.bigEndian : data.littleEndian
+        self.append(Data(from: value))
     }
     
     
     public mutating func append(uint32 data: UInt32, bigEndian: Bool = true) {        
-        var data = bigEndian ? data.bigEndian : data.littleEndian
-        self.append(UnsafeBufferPointer(start: &data, count: 1))
+        let value = bigEndian ? data.bigEndian : data.littleEndian
+        self.append(Data(from: value))
     }
     
     
     public mutating func append(uint64 data: UInt64, bigEndian: Bool = true) {
-        var data = bigEndian ? data.bigEndian : data.littleEndian
-        self.append(UnsafeBufferPointer(start: &data, count: 1))
+        let value = bigEndian ? data.bigEndian : data.littleEndian
+        self.append(Data(from: value))
     }
     
     
     public mutating func append(double data: Double, bigEndian: Bool = true) {
-        var data = bigEndian ? data.bitPattern.bigEndian : data.bitPattern.littleEndian
-        self.append(UnsafeBufferPointer(start: &data, count: 1))
+        let value = bigEndian ? data.bitPattern.bigEndian : data.bitPattern.littleEndian
+        self.append(Data(from: value))
     }
     
     

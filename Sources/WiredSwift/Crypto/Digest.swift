@@ -17,7 +17,6 @@ public class Digest {
     private var poly:Poly1305?  = nil
     
     
-    
     public init(key: String, type:P7Socket.Checksum) {
         self.key    = key
         self.type   = type

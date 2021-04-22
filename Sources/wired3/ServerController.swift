@@ -518,7 +518,7 @@ public class ServerController: ServerDelegate {
                                cipher:      SERVER_CIPHER,
                                checksum:    SERVER_CHECKSUM) {
                                 
-                Logger.info("Accept new connection from \(p7Socket.clientAddress() ?? "unknow")")
+                Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")
 
                 App.clientsController.addClient(client: client)
                 

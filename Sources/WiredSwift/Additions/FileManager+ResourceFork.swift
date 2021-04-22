@@ -22,7 +22,7 @@ extension FileManager {
         do {
             try FileManager.default.setAttributes(attributes, ofItemAtPath: path)
         }catch let error {
-            Logger.error("Permissions error: \(error)")
+            Logger.error("Cannot set mode to file \(path) error: \(error)")
             return false
         }
         
@@ -36,7 +36,7 @@ extension FileManager {
             return attributes[.size] as? UInt64
             
         } catch let error as NSError {
-            // print("FileManager error: \(error)")
+            Logger.error("Cannot read size of file \(path) error: \(error)")
         }
         
         return nil

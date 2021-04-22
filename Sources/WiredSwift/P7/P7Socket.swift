@@ -153,7 +153,7 @@ public class P7Socket: NSObject {
     public var cipherTypeFallback: CipherType = .ECDH_AES256_SHA256
     public var checksumFallback: Checksum = .SHA2_256
     
-    public var sslCipher: P7Cipher!
+    public var sslCipher: Cipher!
     public var timeout: Int = 10
     public var errors: [WiredError] = []
     
@@ -169,6 +169,7 @@ public class P7Socket: NSObject {
     
     public var remoteVersion: String!
     public var remoteName: String!
+    public var remoteAddress:String?
     
     public var connected: Bool = false
     public var passwordProvider:SocketPasswordDelegate?
@@ -196,7 +197,7 @@ public class P7Socket: NSObject {
     }
     
     
-    public func getSocket() -> Socket {
+    public func getNativeSocket() -> Socket {
         return self.socket
     }
     
@@ -206,35 +207,18 @@ public class P7Socket: NSObject {
     }
     
     public func set(interactive:Bool) {
-//        var option = interactive ? 1 : 0
-//        
-//        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
-//            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
-//        }
+        var option = interactive ? 1 : 0
+        
+        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
+            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
+        }
 
         self.interactive = interactive
     }
+
     
     
-    public func clientAddress() -> String? {
-        var address = sockaddr_in()
-        var len = socklen_t(MemoryLayout.size(ofValue: address))
-        let ptr = UnsafeMutableRawPointer(&address).assumingMemoryBound(to: sockaddr.self)
-
-        guard getsockname(self.socket.fileDescriptor, ptr, &len) == 0 else {
-            Logger.error("Socket getsockname failed.")
-            return nil
-        }
-
-        var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-        guard getnameinfo(ptr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) == 0 else {
-            Logger.error("Socket getnameinfo failed.")
-            return nil
-        }
-
-        return String(cString: hostBuffer)
-    }
-    
+    // MARK: - CONNECTION
     public func connect(withHandshake handshake: Bool = true) -> Bool {
         do {
             self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
@@ -325,6 +309,8 @@ public class P7Socket: NSObject {
     
     
     public func accept(compression:Compression, cipher:CipherType, checksum:Checksum) -> Bool {
+        self.remoteAddress = self.clientAddress()
+        
         if !self.acceptHandshake(timeout: timeout, compression: compression, cipher: cipher, checksum: checksum) {
                 return false
         }
@@ -386,7 +372,33 @@ public class P7Socket: NSObject {
     }
     
     
+    public func clientAddress() -> String? {
+        var addresString:String? = nil
+        var address = sockaddr_in()
+        var len = socklen_t(MemoryLayout.size(ofValue: address))
+        //let ptr = UnsafeMutableRawPointer(&address).assumingMemoryBound(to: sockaddr.self)
+        
+         withUnsafeMutablePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { ptr in
+                if getsockname(self.socket.fileDescriptor, ptr, &len) == 0 {
+                    var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                    
+                    if getnameinfo(ptr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) == 0 {
+                        addresString = String(cString: hostBuffer)
+                    }
+                }
+            }
+        }
+        
+        return addresString
+    }
     
+    
+    
+    
+    
+    
+    // MARK: - MESSAGE READ/WRITE
     public func write(_ message: P7Message) -> Bool {
         do {
             if self.serialization == .XML {
@@ -580,6 +592,8 @@ public class P7Socket: NSObject {
     
     
     
+    
+    // MARK: - PRIVATE READ/WRITE
     private func write(_ buffer: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
         while let available = try? socket.wait(for: .write, timeout: timeout), self.connected == true {
             guard available else { continue } // timeout happend, try again
@@ -642,7 +656,7 @@ public class P7Socket: NSObject {
     }
     
     
-    
+    // MARK: - OOB DATA
     public func readOOB(timeout:TimeInterval = 1.0) -> Data? {
         var messageData = Data()
         var lengthBuffer = [Byte](repeating: 0, count: 4)
@@ -765,6 +779,7 @@ public class P7Socket: NSObject {
     }
     
     
+    // MARK: - Handshake
     private func connectHandshake() -> Bool {
         var serverCipher:P7Socket.CipherType?       = nil
         var serverChecksum:P7Socket.Checksum?       = nil
@@ -797,7 +812,7 @@ public class P7Socket: NSObject {
             return false
         }
                 
-        if response.name != "p7.handshake.c" {
+        if response.name != "p7.handshake.server_handshake" {
             Logger.error("Handshake Failed: Unexpected message \(response.name!) instead of p7.handshake.server_handshake")
         }
         
@@ -1001,6 +1016,7 @@ public class P7Socket: NSObject {
     }
     
     
+    // MARK: - KEY EXCHANGE
     private func connectKeyExchange() -> Bool  {
         self.ecdh = ECDH()
         
@@ -1033,7 +1049,7 @@ public class P7Socket: NSObject {
             return false
         }
                 
-        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey, iv: nil)
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey, iv: nil)
         self.digest     = Digest(key: derivedKey, type: self.checksum)
         
         if self.sslCipher == nil {
@@ -1129,7 +1145,7 @@ public class P7Socket: NSObject {
         }
 
         self.digest     = Digest(key: derivedKey2, type: self.checksum)
-        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey2, iv: Data(self.sslCipher.cipherIV))
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2, iv: Data(self.sslCipher.cipherIV))
         
         if self.digest == nil {
             Logger.error("Digest cannot be created")
@@ -1214,7 +1230,7 @@ public class P7Socket: NSObject {
             return false
         }
 
-        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey, iv: iv)
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey, iv: iv)
         self.digest     = Digest(key: derivedKey, type: self.checksum)
         
         if self.sslCipher == nil {
@@ -1301,7 +1317,7 @@ public class P7Socket: NSObject {
         }
 
         self.digest     = Digest(key: derivedKey2, type: self.checksum)
-        self.sslCipher  = P7Cipher(cipher: self.cipherType, key: derivedKey2, iv: iv)
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2, iv: iv)
 
         if self.digest == nil {
             Logger.error("Digest cannot be created")
@@ -1313,14 +1329,16 @@ public class P7Socket: NSObject {
             return false
         }
 
-        self.checksumEnabled = true
-        self.encryptionEnabled = true
+        self.checksumEnabled    = true
+        self.encryptionEnabled  = true
 
         return true
     }
 
     
     
+    
+    // MARK: - COMPATIBILITY CHECK
     private func sendCompatibilityCheck() -> Bool {
         let message = P7Message(withName: "p7.compatibility_check.specification", spec: self.spec)
         
@@ -1350,6 +1368,7 @@ public class P7Socket: NSObject {
     
     
     private func receiveCompatibilityCheck() -> Bool {
+        // TODO: implement this ?
         return false
     }
     
@@ -1357,22 +1376,14 @@ public class P7Socket: NSObject {
 
     
     
+    // MARK: - CHECKSUM
     private func checksumData(_ data:Data) -> Data? {
         if self.digest != nil  {
             return self.digest.authenticate(data: data)
         }
         return nil
     }
-    
-    
-    private func configureCompression() {
-        if self.compression == .DEFLATE {
-            self.compressionEnabled = true
-            
-        } else {
-            self.compressionEnabled = false
-        }
-    }
+
     
     
     private func configureChecksum() {
@@ -1393,7 +1404,16 @@ public class P7Socket: NSObject {
     }
     
     
-    // MARK: -
+    // MARK: - COMPRESSION
+    private func configureCompression() {
+        if self.compression == .DEFLATE {
+            self.compressionEnabled = true
+            
+        } else {
+            self.compressionEnabled = false
+        }
+    }
+    
     private func inflate(_ data: Data) -> Data? {
         do {
             return try Deflate.decompress(data: data)

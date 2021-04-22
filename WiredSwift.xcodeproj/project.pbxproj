@@ -2303,7 +2303,7 @@
 		OBJ_5388 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_19 /* Logger.swift */; };
 		OBJ_5389 /* WiredError.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_20 /* WiredError.swift */; };
 		OBJ_5390 /* ECDH.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_22 /* ECDH.swift */; };
-		OBJ_5391 /* P7Cipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* P7Cipher.swift */; };
+		OBJ_5391 /* Cipher.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* Cipher.swift */; };
 		OBJ_5392 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* File.swift */; };
 		OBJ_5393 /* ServerInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* ServerInfo.swift */; };
 		OBJ_5394 /* UserInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_27 /* UserInfo.swift */; };
@@ -6782,7 +6782,7 @@
 		OBJ_2296 /* GzipHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GzipHeader.swift; sourceTree = "<group>"; };
 		OBJ_2298 /* LZMA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LZMA.swift; sourceTree = "<group>"; };
 		OBJ_2299 /* LZMABitTreeDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LZMABitTreeDecoder.swift; sourceTree = "<group>"; };
-		OBJ_23 /* P7Cipher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Cipher.swift; sourceTree = "<group>"; };
+		OBJ_23 /* Cipher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cipher.swift; sourceTree = "<group>"; };
 		OBJ_230 /* SQLRawBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLRawBuilder.swift; sourceTree = "<group>"; };
 		OBJ_2300 /* LZMAConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LZMAConstants.swift; sourceTree = "<group>"; };
 		OBJ_2301 /* LZMADecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LZMADecoder.swift; sourceTree = "<group>"; };
@@ -10883,7 +10883,7 @@
 			children = (
 				OBJ_22 /* ECDH.swift */,
 				4C830A7F263145F00017DB77 /* ECDSA.swift */,
-				OBJ_23 /* P7Cipher.swift */,
+				OBJ_23 /* Cipher.swift */,
 				4CD55631262F5032004DC4A5 /* Digest.swift */,
 			);
 			path = Crypto;
@@ -17984,7 +17984,7 @@
 				OBJ_5388 /* Logger.swift in Sources */,
 				OBJ_5389 /* WiredError.swift in Sources */,
 				OBJ_5390 /* ECDH.swift in Sources */,
-				OBJ_5391 /* P7Cipher.swift in Sources */,
+				OBJ_5391 /* Cipher.swift in Sources */,
 				OBJ_5392 /* File.swift in Sources */,
 				OBJ_5393 /* ServerInfo.swift in Sources */,
 				OBJ_5394 /* UserInfo.swift in Sources */,

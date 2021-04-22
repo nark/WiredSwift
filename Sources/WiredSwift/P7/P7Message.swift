@@ -95,8 +95,8 @@ public class P7Message: NSObject {
             }
         }
         else if spec.fieldsByName[field]?.type == .enum32 {
-            if let val = value as? UInt32 {
-                print("field")
+            if let _ = value as? UInt32 {
+                //print("field")
             }
         }
         else if spec.fieldsByName[field]?.type == .data {

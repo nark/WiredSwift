@@ -9,13 +9,14 @@
 import Foundation
 import CryptoSwift
 
-public class P7Cipher {
+public class Cipher {
     public var cipher: P7Socket.CipherType = .ECDH_AES256_SHA256
     public var cipherKey:String!
     public var cipherIV:[UInt8]!
     
     private var aes:AES? = nil
     private var chacha:ChaCha20? = nil
+    
     
     
     // MARK: -
