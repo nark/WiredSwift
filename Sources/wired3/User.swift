@@ -70,15 +70,15 @@ public class User: Model {
 
     
     public func hasPrivilege(name:String) -> Bool {
-        var success:Bool? = false
+        var success:Bool = false
         
         do {
             if let up = try $privileges.query(on: App.databaseController.pool).filter(\.$name == name).first().wait() {
-                success = up.value
+                success = up.value == true ? true : false
             }
         } catch {  }
-        
-        return success ?? false
+
+        return success
     }
     
     
@@ -108,7 +108,7 @@ public class User: Model {
                 }
             }
         }
-       
+               
         return false
     }
 

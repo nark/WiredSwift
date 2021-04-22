@@ -81,7 +81,7 @@ public class ChatsController : TableController {
     
     
     public func createPublicChat(message:P7Message, client:Client) {
-        if client.user!.hasPrivilege(name: "wired.account.chat.create_public_chats") {
+        if !client.user!.hasPrivilege(name: "wired.account.chat.create_public_chats") {
             App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 
             return
@@ -115,7 +115,7 @@ public class ChatsController : TableController {
     
     
     public func createPrivateChat(message:P7Message, client:Client) {
-        if client.user!.hasPrivilege(name: "wired.account.chat.create_chats") {
+        if !client.user!.hasPrivilege(name: "wired.account.chat.create_chats") {
             App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
         
             return
@@ -318,7 +318,7 @@ public class ChatsController : TableController {
     
     
     public func setTopic(message: P7Message, client:Client) {
-        if client.user!.hasPrivilege(name: "wired.account.chat.set_topic") {
+        if !client.user!.hasPrivilege(name: "wired.account.chat.set_topic") {
             App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }

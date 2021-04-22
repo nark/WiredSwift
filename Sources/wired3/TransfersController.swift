@@ -254,9 +254,7 @@ public class TransfersController {
         if let t = message.uint32(forField: "wired.transaction") {
             reply.addParameter(field: "wired.transaction", value: t)
         }
-        
-        print(reply.xml())
-        
+                
         if !transfer.client.socket.write(reply) {
             Logger.error("Could not write message \(reply.name!) to \(client.user!.username!)")
             return false

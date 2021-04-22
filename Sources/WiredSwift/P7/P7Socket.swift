@@ -120,9 +120,9 @@ public class P7Socket: NSObject {
             case .NONE:
                 return "None"
             case .ECDH_AES256_SHA256:
-                return "ECDHE-ECDSA-AES256"
+                return "ECDHE-ECDSA-AES256-SHA256"
             case .ECDH_CHACHA20_SHA256:
-                return "ECDHE-ECDSA-ChaCha20"
+                return "ECDHE-ECDSA-ChaCha20-SHA256"
             case .ALL:
                 return "ALL"
             case .SECURE_ONLY:
@@ -206,11 +206,11 @@ public class P7Socket: NSObject {
     }
     
     public func set(interactive:Bool) {
-        var option = interactive ? 1 : 0
-        
-        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
-            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
-        }
+//        var option = interactive ? 1 : 0
+//        
+//        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
+//            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
+//        }
 
         self.interactive = interactive
     }
@@ -1074,23 +1074,27 @@ public class P7Socket: NSObject {
             return false
         }
 
-        guard let dkd = derivedKey.dataFromHexadecimalString(), let privateSigningKey = try? P256.Signing.PrivateKey(rawRepresentation: dkd) else {
+        guard let privateSigningKeyData = derivedKey.dataFromHexadecimalString() else {
             Logger.error("Cannot create private signing key")
             return false
         }
         
-        let publicSigningKey = privateSigningKey.publicKey
-        guard let passwordSignature = try? privateSigningKey.signature(for: clientPassword1) else {
+        guard let ecdsa = ECDSA(privateKey: privateSigningKeyData) else {
+            Logger.error("Cannot ini ECDSA")
+            return false
+        }
+        
+        guard let passwordSignature = ecdsa.sign(data: clientPassword1) else {
             Logger.error("Cannot read client password")
             return false
         }
         
-        clientPublicKey.append(publicSigningKey.rawRepresentation)
+        clientPublicKey.append(ecdsa.publicKey.rawRepresentation)
                     
         message.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey.base64EncodedData())
         message.addParameter(field: "p7.encryption.cipher.iv", value: Data(self.sslCipher.cipherIV))
         message.addParameter(field: "p7.encryption.username", value: encryptedUsername)
-        message.addParameter(field: "p7.encryption.client_password", value: passwordSignature.rawRepresentation)
+        message.addParameter(field: "p7.encryption.client_password", value: passwordSignature)
         
         _ = self.write(message)
 
@@ -1113,13 +1117,8 @@ public class P7Socket: NSObject {
             Logger.error("Message has no 'p7.encryption.server_password' field")
             return false
         }
-
-        guard let signature = try? P256.Signing.ECDSASignature(rawRepresentation: encryptedServerPasswordData) else {
-            Logger.error("Cannot read server password ECDSA Signature")
-            return false
-        }
         
-        if !publicSigningKey.isValidSignature(signature, for: clientPassword2) {
+        if !ecdsa.verify(data: clientPassword2, withSignature: encryptedServerPasswordData) {
             Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
             return false
         }
@@ -1189,7 +1188,17 @@ public class P7Socket: NSObject {
         
         let clientPublicKey     = combinedKeys.dropLast(64)
         let publicSigningKey    = combinedKeys.dropFirst(132)
+        
+        if clientPublicKey.count != 132 {
+            Logger.error("Invalid public key")
+            return false
+        }
 
+        if publicSigningKey.count != 64 {
+            Logger.error("Invalid signing key")
+            return false
+        }
+        
         guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
             Logger.error("Cannot compute shared secret")
             return false
@@ -1213,28 +1222,31 @@ public class P7Socket: NSObject {
             return false
         }
 
-        var data = response.data(forField: "p7.encryption.username")
-        data = self.sslCipher.decrypt(data: data!)
+        guard   let dd = response.data(forField: "p7.encryption.username"),
+                let data = self.sslCipher.decrypt(data: dd) else {
+            Logger.error("Message has no 'p7.encryption.username' field")
+            return false
+        }
         
-        guard let username = data?.stringUTF8 else {
+        guard let username = data.stringUTF8 else {
             Logger.error("Message has no 'p7.encryption.username' field")
             return false
         }
 
         self.username = username
 
-        data = response.data(forField: "p7.encryption.client_password")
-
-        guard let client_password = data else {
+        guard let client_password = response.data(forField: "p7.encryption.client_password") else {
             Logger.error("Message has no 'p7.encryption.client_password' field")
             return false
         }
 
         if self.passwordProvider != nil {
-            // TODO: implement a password provider delegate protocol
-            if let password = self.passwordProvider?.passwordForUsername(username: self.username) {
-                self.password = password
+            guard let password = self.passwordProvider?.passwordForUsername(username: self.username) else {
+                Logger.error("No user found with username '\(self.username)', abort")
+                return false
             }
+            
+            self.password = password
         } else {
             // assume password is empty (guest with empty password access only)
             self.password = "".sha256()
@@ -1248,18 +1260,13 @@ public class P7Socket: NSObject {
         var serverPassword2Data = serverPublicKey
         serverPassword2Data.append(passwordData)
         serverPassword2Data = serverPassword2Data.sha256().toHexString().data(using: .utf8)!
-
-        guard let signingPublicKey = try? P256.Signing.PublicKey(rawRepresentation: publicSigningKey) else {
-            Logger.error("Cannot read public signing key")
-            return false
-        }
-                
-        guard let signature = try? P256.Signing.ECDSASignature(rawRepresentation: client_password) else {
-            Logger.error("Cannot read password ECDSA Signature")
+        
+        guard let ecdsa = ECDSA(publicKey: publicSigningKey) else {
+            Logger.error("Cannot init ECDSA with public signing key")
             return false
         }
         
-        if !signingPublicKey.isValidSignature(signature, for: serverPassword1Data) {
+        if !ecdsa.verify(data: serverPassword1Data, withSignature: client_password) {
             Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
             return false
         }
@@ -1267,17 +1274,22 @@ public class P7Socket: NSObject {
         // acknowledge
         let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
 
-        guard let dkd = derivedKey.dataFromHexadecimalString(), let privateSigningKey = try? P256.Signing.PrivateKey(rawRepresentation: dkd) else {
+        guard let privateSigningKey = derivedKey.dataFromHexadecimalString() else {
             Logger.error("Cannot create private signing key")
             return false
         }
         
-        guard let passwordSignature = try? privateSigningKey.signature(for: serverPassword2Data) else {
+        guard let ecdsa2 = ECDSA(privateKey: privateSigningKey) else {
+            Logger.error("Cannot init ECDSA with private signing key")
+            return false
+        }
+        
+        guard let passwordSignature = ecdsa2.sign(data: serverPassword2Data) else {
             Logger.error("Cannot sign server password")
             return false
         }
 
-        message2.addParameter(field: "p7.encryption.server_password", value: passwordSignature.rawRepresentation)
+        message2.addParameter(field: "p7.encryption.server_password", value: passwordSignature)
 
         if !self.write(message2) {
             return false
@@ -1306,12 +1318,7 @@ public class P7Socket: NSObject {
 
         return true
     }
-    
-    
-    private func checkPassword(password1: String, password2: String) -> Bool {
-        return true
-    }
-    
+
     
     
     private func sendCompatibilityCheck() -> Bool {

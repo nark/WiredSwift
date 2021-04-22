@@ -359,7 +359,7 @@ public class P7Message: NSObject {
             Logger.error("ERROR : Cannot read message ID")
             return
         }
-        
+
         if let specMessage = spec.messagesByID[Int(messageIDData.uint32!)] {
             self.name = specMessage.name!
             self.specMessage = specMessage

@@ -74,6 +74,7 @@
 		4C551153262E140A001F65BE /* SWCompression.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SWCompression::SWCompression::Product" /* SWCompression.framework */; };
 		4C551155262E140B001F65BE /* Vapor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::Vapor::Product" /* Vapor.framework */; };
 		4C551157262E140B001F65BE /* WebSocketKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "websocket-kit::WebSocketKit::Product" /* WebSocketKit.framework */; };
+		4C830A80263145F00017DB77 /* ECDSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A7F263145F00017DB77 /* ECDSA.swift */; };
 		4CD5562D262ED0E6004DC4A5 /* ClientsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */; };
 		4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */; };
 		4CD55632262F5032004DC4A5 /* Digest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD55631262F5032004DC4A5 /* Digest.swift */; };
@@ -5534,6 +5535,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4C830A7F263145F00017DB77 /* ECDSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECDSA.swift; sourceTree = "<group>"; };
 		4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientsController.swift; sourceTree = "<group>"; };
 		4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionSet+Collection.swift"; sourceTree = "<group>"; };
 		4CD55631262F5032004DC4A5 /* Digest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Digest.swift; sourceTree = "<group>"; };
@@ -10880,6 +10882,7 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_22 /* ECDH.swift */,
+				4C830A7F263145F00017DB77 /* ECDSA.swift */,
 				OBJ_23 /* P7Cipher.swift */,
 				4CD55631262F5032004DC4A5 /* Digest.swift */,
 			);
@@ -17989,6 +17992,7 @@
 				OBJ_5396 /* Connection.swift in Sources */,
 				OBJ_5397 /* Url.swift in Sources */,
 				OBJ_5398 /* P7Message.swift in Sources */,
+				4C830A80263145F00017DB77 /* ECDSA.swift in Sources */,
 				OBJ_5399 /* P7Socket.swift in Sources */,
 				4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */,
 				OBJ_5400 /* P7Spec.swift in Sources */,

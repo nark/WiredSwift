@@ -11,8 +11,8 @@ import SocketSwift
 
 
 let SERVER_COMPRESSION  = P7Socket.Compression.ALL
-let SERVER_CIPHER       = P7Socket.CipherType.SECURE_ONLY
-let SERVER_CHECKSUM     = P7Socket.Checksum.SECURE_ONLY
+let SERVER_CIPHER       = P7Socket.CipherType.ALL
+let SERVER_CHECKSUM     = P7Socket.Checksum.ALL
     
 
 public protocol ServerDelegate: class {
@@ -352,13 +352,13 @@ public class ServerController: ServerDelegate {
         App.usersController.reply(client: client, reply: response, message: message)
         
         let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
-        
+                
         for field in spec.accountPrivileges! {
             if user.hasPrivilege(name: field) {
                 response2.addParameter(field: field, value: UInt32(1))
             }
         }
-        
+                
         App.usersController.reply(client: client, reply: response2, message: message)
         
         return true
@@ -367,7 +367,7 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveDownloadFile(_ client:Client, _ message:P7Message) {
-        if client.user!.hasPrivilege(name: "wired.account.transfer.download_files") {
+        if !client.user!.hasPrivilege(name: "wired.account.transfer.download_files") {
             App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             
             return
@@ -385,7 +385,7 @@ public class ServerController: ServerDelegate {
         
         // file privileges
         if let privilege = FilePrivilege(path: App.filesController.real(path: path)) {
-            if client.user!.hasPermission(toRead: privilege) {
+            if !client.user!.hasPermission(toRead: privilege) {
                 App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -410,7 +410,7 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveUploadFile(_ client:Client, _ message:P7Message) {
-        if client.user!.hasPrivilege(name: "wired.account.transfer.upload_files") {
+        if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_files") {
             App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             
             return
@@ -431,7 +431,7 @@ public class ServerController: ServerDelegate {
         
         // file privileges
         if let privilege = FilePrivilege(path: realPath) {
-            if client.user!.hasPermission(toWrite: privilege) {
+            if !client.user!.hasPermission(toWrite: privilege) {
                 App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -518,7 +518,7 @@ public class ServerController: ServerDelegate {
                                cipher:      SERVER_CIPHER,
                                checksum:    SERVER_CHECKSUM) {
                                 
-                Logger.debug("Accept new connection from \(p7Socket.clientAddress() ?? "unknow")")
+                Logger.info("Accept new connection from \(p7Socket.clientAddress() ?? "unknow")")
 
                 App.clientsController.addClient(client: client)
                 
@@ -528,6 +528,9 @@ public class ServerController: ServerDelegate {
                     self.clientLoop(client)
                 }
             }
+            else {
+                p7Socket.disconnect()
+            }            
                 
         } catch let error {
             if let socketError = error as? Socket.Error {
