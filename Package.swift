@@ -23,7 +23,6 @@ dependencies.append(.package(url: "https://github.com/apple/swift-argument-parse
 dependencies.append(.package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"))
 dependencies.append(.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"))
 dependencies.append(.package(url: "https://github.com/apple/swift-crypto.git", from: "1.1.6"))
-dependencies.append(.package(url: "https://github.com/ainame/Swift-Daemon.git", from: "0.0.3"))
 
 targetDependencies.append(.byName(name: "AEXML"))
 targetDependencies.append(.byName(name: "CryptoSwift"))
@@ -58,8 +57,7 @@ let package = Package(
             name: "wired3",
             dependencies: [
                 .byName(name: "WiredSwift"),
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "Daemon", package: "Swift-Daemon")
+                .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
     ]
