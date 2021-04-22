@@ -10,7 +10,7 @@ import Fluent
 import FluentSQLiteDriver
 
 class Index: Model {
-    public static var schema: String = "chats"
+    public static var schema: String = "index"
     
     @ID(key: .id)
     public var id:UUID?

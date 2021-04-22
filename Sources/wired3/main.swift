@@ -26,7 +26,7 @@ struct Wired: ParsableCommand {
     
     @Option(help: "Server banner path")
     var banner: String = "\(FileManager.default.currentDirectoryPath)/banner.png"
-
+    
     @Argument(help: "Path to XML specification file")
     var spec: String
     
