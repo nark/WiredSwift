@@ -19,6 +19,17 @@ jobs:
       image: swift:5.2
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
+      - name: Install dependencies
+        run: |
+          apt install make
+          apt-get install sqlite3 libsqlite3-dev
+          wget http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.1.6.tar.gz
+          tar -xzvf libressl-2.1.6.tar.gz
+          cd libressl-2.1.6
+          ./configure
+          make
+          make install
+          ldconfig
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build
