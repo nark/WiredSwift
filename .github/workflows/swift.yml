@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt install make wget -y
+          apt install build-essential make wget -y
           apt install zlib1g-dev -y
           apt install sqlite3 -y
           apt install libsqlite3-dev -y
