@@ -9,8 +9,8 @@ jobs:
   macos:
     runs-on: macOS-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@wired3
+      # - name: Checkout
+      #   uses: actions/checkout@wired3
       - name: Resolve swift packages
         run: swift package init --type executable
       - name: Build
