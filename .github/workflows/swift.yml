@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Resolve swift packages
-        run: swift package init --type executable
       - name: Build
         run: swift build -v
   # linux:
