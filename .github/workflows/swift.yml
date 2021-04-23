@@ -22,9 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt install make 
-          apt install zlib1g-dev
-          apt install sqlite3 
-          apt install libsqlite3-dev          
+  
           wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.3.2.tar.gz
           tar -xzvf libressl-3.3.2.tar.gz
           cd libressl-3.3.2

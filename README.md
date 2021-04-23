@@ -142,6 +142,30 @@ You can configure the `Logger` class of WiredSwift as follow:
     
     // completely remove STDOUT console output
     Logger.removeDestination(.Stdout)
+    
+## Install Wired3 server on Ubuntu 20.x
+    
+    # insatll Swift 5
+    https://gist.github.com/Jswizzy/408af5829970f9eb18f9b45f891910bb
+    # install deps
+    apt install make 
+    apt install zlib1g-dev
+    apt install sqlite3 
+    apt install libsqlite3-dev      
+    # install libressl
+    wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.3.2.tar.gz
+    tar -xzvf libressl-3.3.2.tar.gz
+    cd libressl-3.3.2
+    ./configure
+    make
+    make install
+    ldconfig
+    # clone
+    git clone https://github.com/nark/WiredSwift.git
+    cd WiredSwift/
+    swift build
+    # run server
+    .build/debug/wired3 Sources/WiredSwift/wired.xml
 
 ## Development
 
