@@ -1175,7 +1175,6 @@ public class P7Socket: NSObject {
         guard let serverPublicKey = self.ecdh.publicKeyData() else {
             return false
         }
-        
 
         message.addParameter(field: "p7.encryption.public_key", value: serverPublicKey)
 
@@ -1199,13 +1198,14 @@ public class P7Socket: NSObject {
             return false
         }
         
-        let clientPublicKey     = combinedKeys.dropLast(64)
-        let publicSigningKey    = combinedKeys.dropFirst(132)
+        let clientPublicKey = combinedKeys.dropLast(64)
         
         if clientPublicKey.count != 132 {
             Logger.error("Invalid public key")
             return false
         }
+        
+        let publicSigningKey = combinedKeys.dropFirst(132)
 
         if publicSigningKey.count != 64 {
             Logger.error("Invalid signing key")
