@@ -1,13 +1,14 @@
 name: Swift
 
-on: [push]
+on:
+  push:
+    branches:
+      - wired3
 
 jobs:
   macos:
     runs-on: macOS-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@wired3
       - name: Build
         run: swift build
   linux:
@@ -16,7 +17,5 @@ jobs:
       image: swift:5.2
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
-      - name: Checkout
-        uses: actions/checkout@wired3
       - name: Build
         run: swift build
