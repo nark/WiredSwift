@@ -16,12 +16,15 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     container:
-      image: swift:5.3.3
+      image: swift:5.3.3-focal
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       - name: Install dependencies
         run: |
-          apt install make # apt-get install sqlite3 libsqlite3-dev
+          apt install make 
+          apt install zlib1g-dev
+          apt install sqlite3 
+          apt install libsqlite3-dev          
           wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.3.2.tar.gz
           tar -xzvf libressl-3.3.2.tar.gz
           cd libressl-3.3.2
