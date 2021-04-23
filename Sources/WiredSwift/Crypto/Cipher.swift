@@ -170,4 +170,15 @@ public class Cipher {
         }
         return nil
     }
+    
+    
+    
+    public static func IVlength(forCipher cipher:P7Socket.CipherType) -> Int {
+        if cipher == .ECDH_AES256_SHA256 {
+            return 16
+        } else if cipher == .ECDH_CHACHA20_SHA256 {
+            return 12
+        }
+        return 0
+    }
 }

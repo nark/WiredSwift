@@ -452,7 +452,7 @@ public class P7Message: NSObject {
             }
         
         } else {
-            Logger.error("ERROR : Unknow message ID")
+            Logger.error("ERROR : Unknow message ID \(String(describing: self.id))")
             return
         }
     }

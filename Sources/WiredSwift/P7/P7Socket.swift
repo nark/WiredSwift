@@ -1044,13 +1044,14 @@ public class P7Socket: NSObject {
             return false
         }
                 
-        guard let saltData = serverSharedSecret.data(using: .utf8), let derivedKey = self.ecdh.deviredSymmetricKey(withSalt: saltData) else {
+        guard   let saltData = serverSharedSecret.data(using: .utf8),
+                let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData, andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
             Logger.error("Cannot derive key from shared secret")
             return false
         }
                 
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey, iv: nil)
-        self.digest     = Digest(key: derivedKey, type: self.checksum)
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey.hexEncodedString(), iv: derivedIV)
+        self.digest     = Digest(key: derivedKey.hexEncodedString(), type: self.checksum)
         
         if self.sslCipher == nil {
             Logger.error("Cipher cannot be created")
@@ -1090,12 +1091,7 @@ public class P7Socket: NSObject {
             return false
         }
 
-        guard let privateSigningKeyData = derivedKey.dataFromHexadecimalString() else {
-            Logger.error("Cannot create private signing key")
-            return false
-        }
-        
-        guard let ecdsa = ECDSA(privateKey: privateSigningKeyData) else {
+        guard let ecdsa = ECDSA(privateKey: derivedKey) else {
             Logger.error("Cannot ini ECDSA")
             return false
         }
@@ -1108,7 +1104,6 @@ public class P7Socket: NSObject {
         clientPublicKey.append(ecdsa.publicKey.rawRepresentation)
                     
         message.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey.base64EncodedData())
-        message.addParameter(field: "p7.encryption.cipher.iv", value: Data(self.sslCipher.cipherIV))
         message.addParameter(field: "p7.encryption.username", value: encryptedUsername)
         message.addParameter(field: "p7.encryption.client_password", value: passwordSignature)
         
@@ -1138,14 +1133,16 @@ public class P7Socket: NSObject {
             Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
             return false
         }
-                
-        guard let derivedKey2 = self.ecdh.deviredSymmetricKey(withSalt: clientPassword2) else {
+
+        guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: clientPassword2,
+                                                                        andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
             Logger.error("Cannot derive key from server password")
             return false
+                                                                            
         }
 
-        self.digest     = Digest(key: derivedKey2, type: self.checksum)
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2, iv: Data(self.sslCipher.cipherIV))
+        self.digest     = Digest(key: derivedKey2.hexEncodedString(), type: self.checksum)
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2.hexEncodedString(), iv: derivedIV2)
         
         if self.digest == nil {
             Logger.error("Digest cannot be created")
@@ -1220,18 +1217,15 @@ public class P7Socket: NSObject {
             return false
         }
                 
-        guard let saltData = serverSharedSecret.data(using: .utf8), let derivedKey = self.ecdh.deviredSymmetricKey(withSalt: saltData) else {
+        guard   let saltData = serverSharedSecret.data(using: .utf8),
+                let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData,
+                                                                   andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
             Logger.error("Cannot derive key from shared secret")
             return false
         }
-                        
-        guard let iv = response.data(forField: "p7.encryption.cipher.iv") else {
-            Logger.error("Missing IV")
-            return false
-        }
-
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey, iv: iv)
-        self.digest     = Digest(key: derivedKey, type: self.checksum)
+        
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey.hexEncodedString(), iv: derivedIV)
+        self.digest     = Digest(key: derivedKey.hexEncodedString(), type: self.checksum)
         
         if self.sslCipher == nil {
             Logger.error("Cannot init cipher (\(self.cipherType)")
@@ -1289,13 +1283,8 @@ public class P7Socket: NSObject {
 
         // acknowledge
         let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
-
-        guard let privateSigningKey = derivedKey.dataFromHexadecimalString() else {
-            Logger.error("Cannot create private signing key")
-            return false
-        }
         
-        guard let ecdsa2 = ECDSA(privateKey: privateSigningKey) else {
+        guard let ecdsa2 = ECDSA(privateKey: derivedKey) else {
             Logger.error("Cannot init ECDSA with private signing key")
             return false
         }
@@ -1311,13 +1300,14 @@ public class P7Socket: NSObject {
             return false
         }
                 
-        guard let derivedKey2 = self.ecdh.deviredSymmetricKey(withSalt: serverPassword2Data) else {
+        guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: serverPassword2Data,
+                                                                        andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
             Logger.error("Cannot derive key from server password")
             return false
         }
 
-        self.digest     = Digest(key: derivedKey2, type: self.checksum)
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2, iv: iv)
+        self.digest     = Digest(key: derivedKey2.hexEncodedString(), type: self.checksum)
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2.hexEncodedString(), iv: derivedIV2)
 
         if self.digest == nil {
             Logger.error("Digest cannot be created")

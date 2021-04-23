@@ -126,7 +126,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
 
     <p7:field name="p7.encryption.public_key" id="9" type="data" />
     <p7:field name="p7.encryption.cipher.key" id="10" type="data" />
-    <p7:field name="p7.encryption.cipher.iv" id="11" type="data" />
     <p7:field name="p7.encryption.username" id="12" type="data" />
     <p7:field name="p7.encryption.client_password" id="13" type="data" />
     <p7:field name="p7.encryption.server_password" id="14" type="data" />
@@ -165,7 +164,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
 
     <p7:message name="p7.encryption.client_key" id="5">
       <p7:parameter field="p7.encryption.cipher.key" use="required" />
-      <p7:parameter field="p7.encryption.cipher.iv" />
       <p7:parameter field="p7.encryption.username" use="required" />
       <p7:parameter field="p7.encryption.client_password" use="required" />
     </p7:message>

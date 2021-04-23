@@ -1086,12 +1086,12 @@
                 Position in the server queue of a transfer.
             </p7:documentation>
         </p7:field>
-        <p7:field name="wired.transfer.data" type="data" id="9007" version="2.0">
+        <p7:field name="wired.transfer.data" type="uint64" id="9007" version="2.0">
             <p7:documentation>
                 Data of a transfer.
             </p7:documentation>
         </p7:field>
-        <p7:field name="wired.transfer.rsrc" type="data" id="9008" version="2.0">
+        <p7:field name="wired.transfer.rsrc" type="uint64" id="9008" version="2.0">
             <p7:documentation>
                 TBD
             </p7:documentation>

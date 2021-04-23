@@ -35,9 +35,7 @@ extension FileManager {
         
             return attributes[.size] as? UInt64
             
-        } catch let error as NSError {
-            Logger.error("Cannot read size of file \(path) error: \(error)")
-        }
+        } catch { }
         
         return nil
     }

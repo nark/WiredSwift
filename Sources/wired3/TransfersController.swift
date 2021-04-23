@@ -254,16 +254,21 @@ public class TransfersController {
         if let t = message.uint32(forField: "wired.transaction") {
             reply.addParameter(field: "wired.transaction", value: t)
         }
+        
+        print("before write ready")
                 
         if !transfer.client.socket.write(reply) {
             Logger.error("Could not write message \(reply.name!) to \(client.user!.username!)")
             return false
         }
                 
+        print("before read")
+        
         guard let reply2 = transfer.client.socket.readMessage() else {
             Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path)")
             return false
         }
+        print("after read \(reply2)")
         
         if reply2.name != "wired.transfer.upload" {
             Logger.error("Could not accept message \(reply2.name!) from \(client.user!.username!): Expected 'wired.transfer.upload'")
@@ -272,7 +277,7 @@ public class TransfersController {
         
         transfer.remainingDataSize = reply2.uint64(forField: "wired.transfer.data")
         transfer.remainingRsrcSize = reply2.uint64(forField: "wired.transfer.rsrc")
-        
+                
         client.socket.set(interactive: false)
         
         let result = self.upload(transfer: transfer)

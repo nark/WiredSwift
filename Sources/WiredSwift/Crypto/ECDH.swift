@@ -56,7 +56,7 @@ open class ECDH {
     }
     
     
-    public func deviredSymmetricKey(withSalt salt:Data) -> String? {
+    public func derivedSymmetricKey(withSalt salt:Data) -> String? {
         let deviredKey = self.sharedSecret.hkdfDerivedSymmetricKey(
                             using: SHA512.self,
                             salt: salt,
@@ -66,5 +66,23 @@ open class ECDH {
         return deviredKey.withUnsafeBytes { body in
             Data(body).hexEncodedString()
         }
+    }
+    
+    public func derivedKey(withSalt salt:Data, andIVofLength ivLength:Int) -> (Data, Data)? {
+        let deviredKey = self.sharedSecret.hkdfDerivedSymmetricKey(
+                            using: SHA512.self,
+                            salt: salt,
+                            sharedInfo: Data(),
+                            outputByteCount: 32 + ivLength)
+        
+        let combined = deviredKey.withUnsafeBytes { body in
+            Data(body)
+        }
+        
+        if combined.count == 0 {
+            return nil
+        }
+        
+        return (combined.dropLast(ivLength), combined.dropFirst(32))
     }
 }
