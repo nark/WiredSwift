@@ -40,13 +40,13 @@ private extension ChatsController {
                 reply.addParameter(field: "wired.chat.id", value: chatID)
                 reply.addParameter(field: "wired.user.id", value: client.userID)
                 reply.addParameter(field: messageName, value: string)
-                _ = toClient.socket.write(reply)
+                App.serverController.reply(client: toClient, reply: reply, message: message)
             }
         } else {
             let reply = P7Message(withName: "wired.error", spec: client.socket.spec)
             reply.addParameter(field: "wired.error.string", value: "Chat not found")
             reply.addParameter(field: "wired.error", value: 8)
-            _ = client.socket?.write(reply)
+            App.serverController.reply(client: client, reply: reply, message: message)
         }
     }
 }
@@ -67,28 +67,29 @@ public class ChatsController : TableController {
     }
 
     
-    public func getChats(client:Client) {
+    public func getChats(message:P7Message, client:Client) {
         for (chat) in self.publicChats {
             let response = P7Message(withName: "wired.chat.chat_list", spec: client.socket.spec)
             response.addParameter(field: "wired.chat.id", value: chat.chatID)
             response.addParameter(field: "wired.chat.name", value: chat.name)
-            _ = client.socket.write(response)
+            App.serverController.reply(client: client, reply: response, message: message)
+            
         }
             
         let response = P7Message(withName: "wired.chat.chat_list.done", spec: client.socket.spec)
-        _ = client.socket.write(response)
+        App.serverController.reply(client: client, reply: response, message: message)
     }
     
     
     public func createPublicChat(message:P7Message, client:Client) {
         if !client.user!.hasPrivilege(name: "wired.account.chat.create_public_chats") {
-            App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 
             return
         }
         
         guard let name = message.string(forField: "wired.chat.name") else {
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
                 
             return
         }
@@ -109,14 +110,14 @@ public class ChatsController : TableController {
             Logger.error("Cannot create public chat")
             Logger.error("\(error)")
             
-            App.usersController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
     }
     
     
     public func createPrivateChat(message:P7Message, client:Client) {
         if !client.user!.hasPrivilege(name: "wired.account.chat.create_chats") {
-            App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
         
             return
         }
@@ -129,41 +130,41 @@ public class ChatsController : TableController {
         
         let reply = P7Message(withName: "wired.chat.chat_created", spec: message.spec)
         reply.addParameter(field: "wired.chat.id", value: newPrivateChat.chatID!)
-        App.usersController.reply(client: client, reply: reply, message: message)
+        App.serverController.reply(client: client, reply: reply, message: message)
     }
     
     
     public func inviteUser(message:P7Message, client:Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
         guard let userID = message.uint32(forField: "wired.user.id") else {
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
         guard let privateChat = self.chats[chatID] as? PrivateChat else {
-            App.usersController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
                 
         guard let peer = App.clientsController.connectedClients[userID] else {
-            App.usersController.replyError(client: client, error: "wired.error.user_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.user_not_found", message: message)
             return
         }
         
         // TODO: make it work
 //        guard privateChat.users[user.userID] == nil else {
-//            App.usersController.replyError(user: user, error: "wired.error.not_on_chat", message: message)
+//            App.serverController.replyError(user: user, error: "wired.error.not_on_chat", message: message)
 //            return
 //        }
 //
 //        print("wired.error.not_on_chat OK")
 //
 //        guard privateChat.users[peer.userID] != nil else {
-//            App.usersController.replyError(user: user, error: "wired.error.already_on_chat", message: message)
+//            App.serverController.replyError(user: user, error: "wired.error.already_on_chat", message: message)
 //            return
 //        }
 //
@@ -174,31 +175,31 @@ public class ChatsController : TableController {
         let reply = P7Message(withName: "wired.chat.invitation", spec: message.spec)
         reply.addParameter(field: "wired.user.id", value: client.userID)
         reply.addParameter(field: "wired.chat.id", value: chatID)
-        _ = peer.socket?.write(reply)
+        App.serverController.reply(client: peer, reply: reply, message: message)
         
-        App.usersController.replyOK(client: client, message: message)
+        App.serverController.replyOK(client: client, message: message)
     }
     
     
     public func userJoin(message: P7Message, client:Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
         guard let chat = chats[chatID] else {
-            App.usersController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
         
         if chat.clients[client.userID] != nil {
-            App.usersController.replyError(client: client, error: "wired.error.already_on_chat", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.already_on_chat", message: message)
             return
         }
         
         if let privateChat = chat as? PrivateChat {
             if !privateChat.isInvited(client: client) {
-                App.usersController.replyError(client: client, error: "wired.error.not_invited_to_chat", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.not_invited_to_chat", message: message)
                 return
             }
         }
@@ -220,13 +221,13 @@ public class ChatsController : TableController {
             response.addParameter(field: "wired.user.icon", value: chatClient.icon)
             response.addParameter(field: "wired.account.color", value: UInt32(0))
             
-            _ = client.socket?.write(response)
+            App.serverController.reply(client: client, reply: response, message: message)
         }
         
         let response = P7Message(withName: "wired.chat.user_list.done", spec: client.socket.spec)
         response.addParameter(field: "wired.chat.id", value: chatID)
         
-        _ = client.socket.write(response)
+        App.serverController.reply(client: client, reply: response, message: message)
         
         // reply topic
         let topicMessage = P7Message(withName: "wired.chat.topic", spec: client.socket.spec)
@@ -235,7 +236,7 @@ public class ChatsController : TableController {
         topicMessage.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
         topicMessage.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
         
-        _ = client.socket.write(topicMessage)
+        App.serverController.reply(client: client, reply: topicMessage, message: message)
         
         // broadcast to joined users
         for (userID, chatClient) in chat.clients {
@@ -249,7 +250,7 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.user.icon", value: client.user!.icon)
                 reply.addParameter(field: "wired.account.color", value: UInt32(0))
                 
-                _ = chatClient.socket?.write(reply)
+                App.serverController.reply(client: chatClient, reply: reply, message: message)
             }
         }
     }
@@ -267,17 +268,17 @@ public class ChatsController : TableController {
     
     public func userLeave(message:P7Message, client:Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
         guard let chat = chats[chatID] else {
-            App.usersController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
         
         if chat.clients[client.userID] == nil {
-            App.usersController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
             return
         }
         
@@ -293,7 +294,7 @@ public class ChatsController : TableController {
                 let reply = P7Message(withName: "wired.chat.user_leave", spec: client.socket.spec)
                 reply.addParameter(field: "wired.chat.id", value: chatID)
                 reply.addParameter(field: "wired.user.id", value: client.userID)
-                _ = chat_user.socket?.write(reply)
+                App.serverController.send(message: reply, client: chat_user)
             }
         }
     }
@@ -319,27 +320,27 @@ public class ChatsController : TableController {
     
     public func setTopic(message: P7Message, client:Client) {
         if !client.user!.hasPrivilege(name: "wired.account.chat.set_topic") {
-            App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
         
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
         guard let topic = message.string(forField: "wired.chat.topic.topic") else {
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
         guard let chat = chats[chatID] else {
-            App.usersController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
         
         if chat.clients[client.userID] == nil {
-            App.usersController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
             return
         }
         
@@ -351,7 +352,7 @@ public class ChatsController : TableController {
             try chat.update(on: self.databaseController.pool).wait()
             
             // reply okay msg
-            App.usersController.replyOK(client: client, message: message)
+            App.serverController.replyOK(client: client, message: message)
             
             // broadcast topic update
             for (_, toClient) in chat.clients {
@@ -361,12 +362,12 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
                 reply.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
                 
-                _ = toClient.socket?.write(reply)
+                App.serverController.reply(client: toClient, reply: reply, message: message)
             }
             
         } catch let error {
             Logger.error("Database error: \(error)")
-            App.usersController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             
             return
         }

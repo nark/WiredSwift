@@ -44,7 +44,6 @@ public class User: Model {
     public var group:String?
     public var groups:String?
     public var icon:Data?
-    public var transfer:Transfer?
     
     required public init() { }
     

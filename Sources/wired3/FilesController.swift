@@ -37,20 +37,20 @@ public class FilesController {
         
         // sanitize checks
         if !File.isValid(path: path) {
-            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
         
         // file privileges
         if let privilege = FilePrivilege(path: self.real(path: path)) {
             if !client.user!.hasPermission(toRead: privilege) {
-                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
             // user privileges
             if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
-                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
@@ -70,26 +70,26 @@ public class FilesController {
         
         // sanitize checks
         if !File.isValid(path: path) {
-            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
         
         // file privileges
         if let privilege = FilePrivilege(path: self.real(path: path)) {
             if !client.user!.hasPermission(toRead: privilege) || !client.user!.hasPermission(toWrite: privilege) {
-                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
             // user privileges
             if !client.user!.hasPrivilege(name: "wired.account.file.delete_files") {
-                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
         
         if self.delete(path: path, client: client, message: message) {
-            App.usersController.replyOK(client: client, message: message)
+            App.serverController.replyOK(client: client, message: message)
         }
     }
     
@@ -103,7 +103,7 @@ public class FilesController {
         } catch let error {
             Logger.error("Cannot delete file \(realPath) \(error)")
             
-            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             
             return false
         }
@@ -125,7 +125,7 @@ public class FilesController {
             }
                                      
             if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir) {
-                App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
             
@@ -134,7 +134,7 @@ public class FilesController {
             do {
                 files = try FileManager.default.contentsOfDirectory(atPath: realPath)
             } catch {
-                App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
     
@@ -229,13 +229,13 @@ public class FilesController {
                     reply.addParameter(field: "wired.file.writable", value: writable)
                 }
                 
-                App.usersController.reply(client: client, reply: reply, message: message)
+                App.serverController.reply(client: client, reply: reply, message: message)
             }
             
             let reply = P7Message(withName: "wired.file.file_list.done", spec: message.spec)
             reply.addParameter(field: "wired.file.path", value: path)
             reply.addParameter(field: "wired.file.available", value: UInt64(1))
-            App.usersController.reply(client: client, reply: reply, message: message)
+            App.serverController.reply(client: client, reply: reply, message: message)
         }
     }
     

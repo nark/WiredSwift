@@ -92,7 +92,7 @@ public class TransfersController {
         
         self.transfers[client.user!.username!]?.append(transfer)
         
-        self.queue.addOperation {
+        //self.queue.addOperation {
             if self.wait(untilReady: transfer, client: client, message: message) {
                 transfer.state = .running
 
@@ -102,7 +102,7 @@ public class TransfersController {
                     result = self.runUpload(transfer: transfer, client: client, message: message)
                 }
             }
-        }
+        //}
         
         self.transfers[client.user!.username!] = nil
         
@@ -115,7 +115,14 @@ public class TransfersController {
         transfer.dataOffset = dataOffset
         transfer.rsrcOffset = rsrcOffset
         transfer.realDataPath = filesController.real(path: path)
-        transfer.dataFd = FileHandle(forReadingAtPath: transfer.realDataPath)
+        
+        do {
+            transfer.dataFd = try FileHandle(forReadingFrom: URL(fileURLWithPath: transfer.realDataPath))
+        } catch let error {
+            Logger.error("Error while reading file \(error)")
+            return nil
+        }
+
         transfer.rsrcFd = nil // not implemented
         transfer.dataSize = File.size(path: transfer.realDataPath)
         transfer.rsrcSize = UInt64(0)
@@ -140,7 +147,7 @@ public class TransfersController {
         var realPath = filesController.real(path: path)
         
         if FileManager.default.fileExists(atPath: realPath) {
-            App.usersController.replyError(client: client, error: "wired.error.file_exists", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
             
             return nil
         }
@@ -153,17 +160,17 @@ public class TransfersController {
         
         let dataOffset = FileManager.sizeOfFile(atPath: realPath) ?? UInt64(0)
         
-        let fd = open(realPath, O_WRONLY | O_APPEND | O_CREAT, 0666);
+        let fd = open(realPath, O_WRONLY | O_APPEND | O_CREAT, S_IWUSR | S_IRUSR);
         
         if(fd < 0) {
             Logger.error("Could not open upload \(realPath)")
-            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return nil
         }
         
         if lseek(fd, off_t(dataOffset), SEEK_SET) < 0 {
             Logger.error("Could not seek to \(dataOffset) in upload \(realPath)")
-            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return nil
         }
         
@@ -189,6 +196,7 @@ public class TransfersController {
         transfer.executable = false
         transfer.remainingDataSize = dataSize - dataOffset
         transfer.remainingRsrcSize = rsrcSize - rsrcOffset
+        transfer.actualTransferred = UInt64(0)
         
         return transfer
     }
@@ -214,16 +222,16 @@ public class TransfersController {
     }
     
     private func runDownload(transfer: Transfer, client:Client, message:P7Message) -> Bool {
-        var remainingDataSize = Data()
-        remainingDataSize.append(uint64: transfer.remainingDataSize.bigEndian)
-        
-        var remainingRsrcSize = Data()
-        remainingRsrcSize.append(uint64: transfer.remainingRsrcSize.bigEndian)
+//        var remainingDataSize = Data()
+//        remainingDataSize.append(uint64: transfer.remainingDataSize.bigEndian)
+//
+//        var remainingRsrcSize = Data()
+//        remainingRsrcSize.append(uint64: transfer.remainingRsrcSize.bigEndian)
         
         let reply = P7Message(withName: "wired.transfer.download", spec: message.spec)
         reply.addParameter(field: "wired.file.path", value: transfer.path)
-        reply.addParameter(field: "wired.transfer.data", value: remainingDataSize)
-        reply.addParameter(field: "wired.transfer.rsrc", value: remainingRsrcSize)
+        reply.addParameter(field: "wired.transfer.data", value: transfer.remainingDataSize)
+        reply.addParameter(field: "wired.transfer.rsrc", value: transfer.remainingRsrcSize)
         reply.addParameter(field: "wired.transfer.finderinfo", value: FileManager.default.finderInfo(atPath: transfer.realDataPath))
         
         if let t = message.uint32(forField: "wired.transaction") {
@@ -261,53 +269,55 @@ public class TransfersController {
             Logger.error("Could not write message \(reply.name!) to \(client.user!.username!)")
             return false
         }
-                
-        print("before read")
         
+        
+                        
+        print("before read \(client.state)")
+
         guard let reply2 = transfer.client.socket.readMessage() else {
             Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path)")
             return false
         }
         print("after read \(reply2)")
-        
+
         if reply2.name != "wired.transfer.upload" {
             Logger.error("Could not accept message \(reply2.name!) from \(client.user!.username!): Expected 'wired.transfer.upload'")
-            App.usersController.replyError(client: client, error: "wired.error.invalid_message", message: reply2)
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: reply2)
         }
-        
+
         transfer.remainingDataSize = reply2.uint64(forField: "wired.transfer.data")
         transfer.remainingRsrcSize = reply2.uint64(forField: "wired.transfer.rsrc")
-                
+
         client.socket.set(interactive: false)
-        
+
         let result = self.upload(transfer: transfer)
-        
+
         client.socket.set(interactive: true)
         
-//        if transfer.transferred == (transfer.dataSize + transfer.rsrcSize) {
-//            let url = URL(fileURLWithPath: transfer.realDataPath.stringByDeletingPathExtension)
+        if transfer.transferred == (transfer.dataSize + transfer.rsrcSize) {
+            let url = URL(fileURLWithPath: transfer.realDataPath.stringByDeletingPathExtension)
+
+            do {
+                try FileManager.default.moveItem(at: URL(fileURLWithPath: transfer.realDataPath), to: url)
+
+                if transfer.executable {
+                    if !FileManager.set(mode: 0o777, toPath: url.path) {
+                        Logger.error("Could not set mode for executable \(url.path)")
+                    }
+
+//                    wd_files_move_comment(transfer->realdatapath, path, NULL, NULL);
+//                    wd_files_move_label(transfer->realdatapath, path, NULL, NULL);
 //
-//            do {
-//                try FileManager.default.moveItem(at: URL(fileURLWithPath: transfer.realDataPath), to: url)
-//
-//                if transfer.executable {
-//                    if !FileManager.set(mode: 0o777, toPath: url.path) {
-//                        Logger.error("Could not set mode for executable \(url.path)")
-//                    }
-//
-////                    wd_files_move_comment(transfer->realdatapath, path, NULL, NULL);
-////                    wd_files_move_label(transfer->realdatapath, path, NULL, NULL);
-////
-////                    if(wi_data_length(transfer->finderinfo) > 0)
-////                        wi_fs_set_finder_info_for_path(transfer->finderinfo, path);
-//
-//                    App.indexController.add(path: url.path)
-//                }
-//            } catch let error {
-//                Logger.error("Could not move \(transfer.realDataPath!) to \(url.path): \(error)")
-//            }
-//        }
-        
+//                    if(wi_data_length(transfer->finderinfo) > 0)
+//                        wi_fs_set_finder_info_for_path(transfer->finderinfo, path);
+
+                    App.indexController.add(path: url.path)
+                }
+            } catch let error {
+                Logger.error("Could not move \(transfer.realDataPath!) to \(url.path): \(error)")
+            }
+        }
+
         return result
     }
     
@@ -378,7 +388,12 @@ public class TransfersController {
         var data = true
         var result = true
         
+        print("upload : \(transfer.client.state)")
+        
         while transfer.client.state == .LOGGED_IN {
+            
+            print("while loop ok")
+            
             if transfer.remainingDataSize == 0 {
                 data = false
             }

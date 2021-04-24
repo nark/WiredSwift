@@ -33,7 +33,7 @@ public class ClientsController {
     public func broadcast(message:P7Message) {
         DispatchQueue.global(qos: .default).async {
             for (_, client) in self.connectedClients {
-                _ = client.socket.write(message)
+                _ = App.serverController.send(message: message, client: client)
             }
         }
     }

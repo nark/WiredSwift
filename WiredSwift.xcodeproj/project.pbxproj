@@ -75,6 +75,8 @@
 		4C551155262E140B001F65BE /* Vapor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::Vapor::Product" /* Vapor.framework */; };
 		4C551157262E140B001F65BE /* WebSocketKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "websocket-kit::WebSocketKit::Product" /* WebSocketKit.framework */; };
 		4C830A80263145F00017DB77 /* ECDSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A7F263145F00017DB77 /* ECDSA.swift */; };
+		4C830A87263451E00017DB77 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A85263451A90017DB77 /* Client.swift */; };
+		4C830A892634696D0017DB77 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A882634696D0017DB77 /* Thread.swift */; };
 		4CD5562D262ED0E6004DC4A5 /* ClientsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */; };
 		4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */; };
 		4CD55632262F5032004DC4A5 /* Digest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD55631262F5032004DC4A5 /* Digest.swift */; };
@@ -5536,6 +5538,8 @@
 
 /* Begin PBXFileReference section */
 		4C830A7F263145F00017DB77 /* ECDSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECDSA.swift; sourceTree = "<group>"; };
+		4C830A85263451A90017DB77 /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
+		4C830A882634696D0017DB77 /* Thread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thread.swift; sourceTree = "<group>"; };
 		4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientsController.swift; sourceTree = "<group>"; };
 		4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionSet+Collection.swift"; sourceTree = "<group>"; };
 		4CD55631262F5032004DC4A5 /* Digest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Digest.swift; sourceTree = "<group>"; };
@@ -8986,6 +8990,7 @@
 				OBJ_15 /* Ints.swift */,
 				OBJ_16 /* String.swift */,
 				4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */,
+				4C830A882634696D0017DB77 /* Thread.swift */,
 			);
 			path = Additions;
 			sourceTree = "<group>";
@@ -12161,10 +12166,11 @@
 				OBJ_55 /* TransfersController.swift */,
 				4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */,
 				OBJ_58 /* UsersController.swift */,
-				OBJ_48 /* Group.swift */,
-				OBJ_50 /* Index.swift */,
-				OBJ_44 /* Chat.swift */,
+				4C830A85263451A90017DB77 /* Client.swift */,
 				OBJ_56 /* User.swift */,
+				OBJ_48 /* Group.swift */,
+				OBJ_44 /* Chat.swift */,
+				OBJ_50 /* Index.swift */,
 				OBJ_52 /* Privilege.swift */,
 				OBJ_57 /* UserPrivilege.swift */,
 				OBJ_49 /* GroupPrivilege.swift */,
@@ -17993,6 +17999,7 @@
 				OBJ_5396 /* Connection.swift in Sources */,
 				OBJ_5397 /* Url.swift in Sources */,
 				OBJ_5398 /* P7Message.swift in Sources */,
+				4C830A892634696D0017DB77 /* Thread.swift in Sources */,
 				4C830A80263145F00017DB77 /* ECDSA.swift in Sources */,
 				OBJ_5399 /* P7Socket.swift in Sources */,
 				4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */,
@@ -18227,6 +18234,7 @@
 				OBJ_5795 /* TransfersController.swift in Sources */,
 				OBJ_5796 /* User.swift in Sources */,
 				OBJ_5797 /* UserPrivilege.swift in Sources */,
+				4C830A87263451E00017DB77 /* Client.swift in Sources */,
 				OBJ_5798 /* UsersController.swift in Sources */,
 				OBJ_5799 /* main.swift in Sources */,
 			);

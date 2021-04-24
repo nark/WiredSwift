@@ -120,6 +120,13 @@ open class Connection: NSObject {
         self.socket.checksum    = checksum
 
         if !self.socket.connect() {
+            for d in self.delegates {
+                DispatchQueue.main.async {
+                    if let error = self.socket.errors.first {
+                        d.connectionDidFailToConnect(connection: self, error: error)
+                    }
+                }
+            }
             return false
         }
         

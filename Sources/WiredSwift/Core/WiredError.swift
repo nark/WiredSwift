@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class WiredError: NSObject {
+public class WiredError: NSObject, Error {
     public var specError:SpecError?
 
     private var errorTitle:String!

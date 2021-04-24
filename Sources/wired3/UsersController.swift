@@ -42,37 +42,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
     
     
     
-    
-    // MARK: -
-    public func reply(client: Client, reply:P7Message, message:P7Message) {
-        if let t = message.uint32(forField: "wired.transaction") {
-            reply.addParameter(field: "wired.transaction", value: t)
-        }
-        _ = client.socket?.write(reply)
-    }
-    
-    
-    public func replyError(client: Client, error:String, message:P7Message?) {
-        let reply = P7Message(withName: "wired.error", spec: client.socket!.spec)
-        
-        reply.addParameter(field: "wired.error.string", value: "Login failed")
 
-        if let message = message {
-            if let errorEnumValue = message.spec.errorsByName[error] {
-                reply.addParameter(field: "wired.error", value: UInt32(errorEnumValue.id))
-            }
-            
-            self.reply(client: client, reply: reply, message: message)
-        } else {
-            _ = client.socket.write(reply)
-        }
-    }
-    
-    public func replyOK(client: Client, message:P7Message) {
-        let reply = P7Message(withName: "wired.okay", spec: client.socket!.spec)
-        
-        self.reply(client: client, reply: reply, message: message)
-    }
     
     
     

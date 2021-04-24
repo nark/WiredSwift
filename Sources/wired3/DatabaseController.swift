@@ -46,7 +46,7 @@ public class DatabaseController {
         dbs = Databases(threadPool: threadPool, on: eventLoopGroup)
         dbs.use(.sqlite(.file(self.baseURL.path)), as: .sqlite)
         
-        if let p = dbs.database(logger: .init(label: "fr.read-write.fluenttest"), on: dbs.eventLoopGroup.next()) {
+        if let p = dbs.database(logger: .init(label: "fr.read-write.wired3"), on: dbs.eventLoopGroup.next()) {
             self.pool = p
         }
                         

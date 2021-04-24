@@ -165,7 +165,7 @@ You can configure the `Logger` class of WiredSwift as follow:
     cd WiredSwift/
     swift build
     # run server
-    .build/debug/wired3 Sources/WiredSwift/wired.xml
+    ..build/debug/wired3 Sources/WiredSwift/wired.xml
 
 ## Development
 

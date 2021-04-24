@@ -272,6 +272,9 @@ public class P7Socket: NSObject {
                 if self.cipherType != .NONE {
                     if !self.connectKeyExchange() {
                         Logger.error("Key Exchange failed")
+                        
+                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Authentication failed"))
+                        
                         return false
                     }
                     
@@ -281,6 +284,9 @@ public class P7Socket: NSObject {
                 if self.remoteCompatibilityCheck {
                     if !self.sendCompatibilityCheck() {
                         Logger.error("Remote Compatibility Check failed")
+                        
+                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Remote Compatibility Check failed"))
+                        
                         return false
                     }
                 }
@@ -288,6 +294,9 @@ public class P7Socket: NSObject {
                 if self.localCompatibilityCheck {
                     if !self.receiveCompatibilityCheck() {
                         Logger.error("Local Compatibility Check failed")
+                        
+                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Local Compatibility Check failed"))
+                        
                         return false
                     }
                 }
@@ -414,7 +423,7 @@ public class P7Socket: NSObject {
                 
                 lengthData.append(uint32: UInt32(messageData.count))
                 
-                Logger.info("WRITE [\(self.hash)]: \(message.name!)")
+                Logger.info("WRITE [\(self.hash)]: \(message.name!) \(messageData.count)")
                 //Logger.debug("\n\(message.xml())\n")
                 
                 // deflate
@@ -445,6 +454,8 @@ public class P7Socket: NSObject {
                     lengthData.append(uint32: UInt32(messageData.count))
                 }
 
+                //print("write data : \(messageData.toHexString())")
+                
                 _ = self.write(lengthData.bytes, maxLength: lengthData.count)
                 _ = self.write(messageData.bytes, maxLength: messageData.bytes.count)
                                 
@@ -469,17 +480,17 @@ public class P7Socket: NSObject {
         return true
     }
     
-
     
     
     public func readMessage() -> P7Message? {
+        //print("readMessage")
         var messageData = Data()
         var error:WiredError? = nil
         
         var lengthBuffer = [Byte](repeating: 0, count: 4)
         let bytesRead = self.read(&lengthBuffer, maxLength: 4)
         
-        // print("bytesRead : \(bytesRead)")
+        //print("bytesRead : \(bytesRead) \(Thread.current.threadName)")
                                 
         if bytesRead > 0 {
             if self.serialization == .XML {
@@ -499,6 +510,8 @@ public class P7Socket: NSObject {
                         
                         return nil
                     }
+                    
+                    //print("messageLength : \(messageLength)")
                     
                     do {
                         messageData = try self.readData(size: Int(messageLength))
@@ -573,6 +586,7 @@ public class P7Socket: NSObject {
                         }
 
                         // init response message
+                        //print("read data : \(messageData.toHexString())")
                         let message = P7Message(withData: messageData, spec: self.spec)
                         
                         Logger.info("READ [\(self.hash)]: \(message.name!)")

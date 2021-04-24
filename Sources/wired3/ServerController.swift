@@ -15,37 +15,13 @@ let SERVER_CIPHER       = P7Socket.CipherType.ALL
 let SERVER_CHECKSUM     = P7Socket.Checksum.ALL
     
 
+
+
 public protocol ServerDelegate: class {
     func clientDisconnected(client:Client)
     func disconnectClient(client:Client)
     
     func receiveMessage(client:Client, message:P7Message)
-}
-
-
-public class Client {
-    public enum State:UInt32 {
-        case CONNECTED          = 0
-        case GAVE_CLIENT_INFO
-        case LOGGED_IN
-        case DISCONNECTED
-    }
-    
-    public var ip:String?
-    public var host:String?
-    public var nick:String?
-    public var status:String?
-    public var icon:Data?
-    public var state:State = .DISCONNECTED
-    
-    public var userID:UInt32
-    public var user:User?
-    public var socket:P7Socket!
-    
-    public init(userID:UInt32, socket: P7Socket) {
-        self.userID = userID
-        self.socket = socket
-    }
 }
 
 
@@ -133,7 +109,7 @@ public class ServerController: ServerDelegate {
         if client.state == .CONNECTED {
             if message.name != "wired.client_info" {
                 Logger.error("Could not process message \(message.name!): Out of sequence")
-                App.usersController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
                 return
             }
         } else if client.state == .GAVE_CLIENT_INFO {
@@ -143,7 +119,7 @@ public class ServerController: ServerDelegate {
                 message.name != "wired.send_login" &&
                 message.name != "wired.send_ping" {
                 Logger.error("Could not process message \(message.name!): Out of sequence")
-                App.usersController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
                 return
             }
         }
@@ -153,6 +129,55 @@ public class ServerController: ServerDelegate {
         // TODO: manage user idle time here
     }
     
+    
+    
+    // MARK: -
+    public func read(message:P7Message, client: Client) -> P7Message? {
+        return client.socket?.readMessage()
+    }
+    
+    @discardableResult
+    public func send(message:P7Message, client: Client) -> Bool {
+        if client.transfer == nil {
+            return client.socket?.write(message) ?? false
+        }
+        
+        return false
+    }
+    
+    
+    
+    // MARK: -
+    public func reply(client: Client, reply:P7Message, message:P7Message) {
+        if let t = message.uint32(forField: "wired.transaction") {
+            reply.addParameter(field: "wired.transaction", value: t)
+        }
+        
+        _ = self.send(message: reply, client: client)
+    }
+    
+    
+    public func replyError(client: Client, error:String, message:P7Message?) {
+        let reply = P7Message(withName: "wired.error", spec: client.socket!.spec)
+        
+        reply.addParameter(field: "wired.error.string", value: "Login failed")
+
+        if let message = message {
+            if let errorEnumValue = message.spec.errorsByName[error] {
+                reply.addParameter(field: "wired.error", value: UInt32(errorEnumValue.id))
+            }
+            
+            self.reply(client: client, reply: reply, message: message)
+        } else {
+            _ = self.send(message: reply, client: client)
+        }
+    }
+    
+    public func replyOK(client: Client, message:P7Message) {
+        let reply = P7Message(withName: "wired.okay", spec: client.socket!.spec)
+        
+        self.reply(client: client, reply: reply, message: message)
+    }
     
 
     
@@ -177,7 +202,7 @@ public class ServerController: ServerDelegate {
             }
         }
         else if message.name == "wired.chat.get_chats" {
-            App.chatsController.getChats(client: client)
+            App.chatsController.getChats(message: message, client: client)
         }
         else if message.name == "wired.chat.create_public_chat" {
             App.chatsController.createPublicChat(message: message, client: client)
@@ -269,7 +294,7 @@ public class ServerController: ServerDelegate {
         response.addParameter(field: "wired.info.files.count", value: App.indexController.totalFilesCount)
         response.addParameter(field: "wired.info.files.size", value: App.indexController.totalFilesSize)
                 
-        App.usersController.reply(client: client, reply: response, message: message)
+        App.serverController.reply(client: client, reply: response, message: message)
         
         
     }
@@ -282,7 +307,7 @@ public class ServerController: ServerDelegate {
                 
         let response = P7Message(withName: "wired.okay", spec: self.spec)
         
-        App.usersController.reply(client: client, reply: response, message: message)
+        App.serverController.reply(client: client, reply: response, message: message)
         
         // broadcast if already logged in
         if client.state == .LOGGED_IN && client.user != nil {
@@ -297,7 +322,7 @@ public class ServerController: ServerDelegate {
         }
         
         let response = P7Message(withName: "wired.okay", spec: self.spec)
-        _ = client.socket?.write(response)
+        _ = self.send(message: response, client: client)
         
         // broadcast if already logged in
         if client.state == .LOGGED_IN && client.user != nil {
@@ -312,7 +337,7 @@ public class ServerController: ServerDelegate {
         }
         
         let response = P7Message(withName: "wired.okay", spec: self.spec)
-        _ = client.socket?.write(response)
+        _ = self.send(message: response, client: client)
         
         // broadcast if already logged in
         if client.state == .LOGGED_IN {
@@ -335,7 +360,7 @@ public class ServerController: ServerDelegate {
             reply.addParameter(field: "wired.error.string", value: "Login failed")
             reply.addParameter(field: "wired.error", value: UInt32(4
             ))
-            App.usersController.reply(client: client, reply: reply, message: message)
+            App.serverController.reply(client: client, reply: reply, message: message)
             
             Logger.error("Login failed for user '\(login)'")
             
@@ -349,7 +374,7 @@ public class ServerController: ServerDelegate {
         
         response.addParameter(field: "wired.user.id", value: client.userID)
         
-        App.usersController.reply(client: client, reply: response, message: message)
+        App.serverController.reply(client: client, reply: response, message: message)
         
         let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
                 
@@ -359,7 +384,7 @@ public class ServerController: ServerDelegate {
             }
         }
                 
-        App.usersController.reply(client: client, reply: response2, message: message)
+        App.serverController.reply(client: client, reply: response2, message: message)
         
         return true
     }
@@ -368,7 +393,7 @@ public class ServerController: ServerDelegate {
     
     private func receiveDownloadFile(_ client:Client, _ message:P7Message) {
         if !client.user!.hasPrivilege(name: "wired.account.transfer.download_files") {
-            App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             
             return
         }
@@ -379,14 +404,14 @@ public class ServerController: ServerDelegate {
         
         // sanitize checks
         if !File.isValid(path: path) {
-            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
         
         // file privileges
         if let privilege = FilePrivilege(path: App.filesController.real(path: path)) {
             if !client.user!.hasPermission(toRead: privilege) {
-                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
@@ -398,11 +423,13 @@ public class ServerController: ServerDelegate {
                                                            dataOffset: dataOffset!,
                                                            rsrcOffset: rsrcOffset!,
                                                            client: client, message: message) {
-            client.user!.transfer = transfer
+            client.transfer = transfer
             
             if(App.transfersController.run(transfer: transfer, client: client, message: message)) {
                 client.state = .DISCONNECTED
             }
+            
+            client.transfer = nil
         }
     }
     
@@ -411,7 +438,7 @@ public class ServerController: ServerDelegate {
     
     private func receiveUploadFile(_ client:Client, _ message:P7Message) {
         if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_files") {
-            App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             
             return
         }
@@ -422,7 +449,7 @@ public class ServerController: ServerDelegate {
         
         // sanitize checks
         if !File.isValid(path: path) {
-            App.usersController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
         
@@ -432,7 +459,7 @@ public class ServerController: ServerDelegate {
         // file privileges
         if let privilege = FilePrivilege(path: realPath) {
             if !client.user!.hasPermission(toWrite: privilege) {
-                App.usersController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
@@ -454,11 +481,17 @@ public class ServerController: ServerDelegate {
                                                          rsrcSize: rsrcSize,
                                                          executable: false,
                                                          client: client, message: message) {
-            client.user!.transfer = transfer
+            client.transfer = transfer
+            
+            client.socket.set(interactive: false)
+            
+            print("client.state : \(client.state)")
             
             if(!App.transfersController.run(transfer: transfer, client: client, message: message)) {
                 client.state = .DISCONNECTED
             }
+            
+            client.transfer = nil
         }
     }
     
@@ -553,17 +586,21 @@ public class ServerController: ServerDelegate {
                 break
             }
             
-            if client.socket.isInteractive() {
-                if let message = client.socket.readMessage() {
-                    for delegate in delegates {
-                        delegate.receiveMessage(client: client, message: message)
-                    }
-                } else {
-                    for delegate in delegates {
-                        delegate.clientDisconnected(client: client)
-                    }
-                    break
+            if !client.socket.isInteractive() {
+                break
+            }
+            
+            print("clientLoop readMessage \(client.socket.isInteractive())")
+            if let message = client.socket.readMessage() {
+                for delegate in delegates {
+                    delegate.receiveMessage(client: client, message: message)
                 }
+            }
+            else {
+                for delegate in delegates {
+                    delegate.clientDisconnected(client: client)
+                }
+                break
             }
         }
     }
