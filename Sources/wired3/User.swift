@@ -33,17 +33,9 @@ public class User: Model {
     
     @Children(for: \.$user)
     public var privileges: [UserPrivilege]
-    
-//    public var userID:UInt32!
-//    public var socket:P7Socket?
 
-    public var ip:String?
-//    public var host:String?
-//    public var nick:String?
-//    public var status:String?
     public var group:String?
     public var groups:String?
-    public var icon:Data?
     
     required public init() { }
     

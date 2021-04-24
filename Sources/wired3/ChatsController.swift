@@ -247,7 +247,7 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.user.id", value: client.userID)
                 reply.addParameter(field: "wired.user.nick", value: client.nick)
                 reply.addParameter(field: "wired.user.status", value: client.status)
-                reply.addParameter(field: "wired.user.icon", value: client.user!.icon)
+                reply.addParameter(field: "wired.user.icon", value: client.icon)
                 reply.addParameter(field: "wired.account.color", value: UInt32(0))
                 
                 App.serverController.reply(client: chatClient, reply: reply, message: message)

@@ -7,74 +7,22 @@
 
 import Foundation
 import WiredSwift
-import Queuer
+
 
 let WiredTransferBufferSize = 16384
 let WiredTransferTimeout = 30.0
 let WiredTransferPartialExtension = "WiredTransfer"
-
-public class Transfer: Equatable {
-    public enum TransferType : UInt32 {
-        case donwload = 0
-        case upload
-    }
-    
-    public enum TransferState : UInt32 {
-        case queued = 0
-        case running
-    }
-    
-    var client:Client
-    var path:String
-    
-    var key:String!
-    var realDataPath:String!
-    var realRsrcPath:String!
-    
-    var dataFd:FileHandle!
-    var rsrcFd:FileHandle!
-
-    var state:TransferState
-    var type:TransferType
-    var executable:Bool = false
-    
-//    var queue_lock
-//    var queue
-//    var queue_time
-    
-    var dataOffset:UInt64!
-    var rsrcOffset:UInt64!
-    var dataSize:UInt64!
-    var rsrcSize:UInt64!
-    var remainingDataSize:UInt64!
-    var remainingRsrcSize:UInt64!
-    var transferred:UInt64!
-    var actualTransferred:UInt64!
-    
-//    var speed
-//    var finderinfo
-    
-    public init(path:String, client:Client, message:P7Message, type:TransferType) {
-        self.path   = path
-        self.client = client
-        self.type   = type
-        self.state  = .queued
-    }
-    
-    public static func == (lhs: Transfer, rhs: Transfer) -> Bool {
-        lhs === rhs
-    }
-}
-
 
 
 
 public class TransfersController {
     let filesController:FilesController
     
-    var transfers:[String:[Transfer]] = [:]
-    //let transfersQueue = DispatchQueue(label: "TransfersQueue", attributes: .concurrent)
-    let queue = Queuer(name: "TransfersQueue", maxConcurrentOperationCount: 10, qualityOfService: .default)
+    var transfers:[Transfer] = []
+    var usersDownloadTransfers:[String:[Transfer]] = [:]
+    var usersUploadTransfers:[String:[Transfer]] = [:]
+    
+    let transfersLock = DispatchSemaphore(value: 1)
     
     
     public init(filesController: FilesController) {
@@ -82,35 +30,70 @@ public class TransfersController {
     }
     
     
+    
+    // MARK: -
+    private func add(transfer:Transfer, user: User) {
+        self.transfersLock.wait()
+        
+        var dictionary = transfer.type == .download ? self.usersDownloadTransfers : self.usersUploadTransfers
+        
+        if dictionary[user.username!] == nil {
+            dictionary[user.username!] = []
+        }
+        
+        self.transfers.append(transfer)
+        dictionary[user.username!]?.append(transfer)
+        
+        if transfer.type == .download {
+            self.usersDownloadTransfers = dictionary
+        } else {
+            self.usersUploadTransfers   = dictionary
+        }
+        
+        self.transfersLock.signal()
+    }
+    
+    private func remove(transfer:Transfer, user: User) {
+        self.transfersLock.wait()
+        
+        if let index = self.transfers.firstIndex(of: transfer) {
+            self.transfers.remove(at: index)
+            
+            if transfer.type == .download {
+                self.usersDownloadTransfers[user.username!] = nil
+            } else {
+                self.usersUploadTransfers[user.username!] = nil
+            }
+        }
+        
+        self.transfersLock.signal()
+    }
+    
+    
+    
     // MARK: -
     public func run(transfer: Transfer, client:Client, message:P7Message) -> Bool {
         var result = false
         
-        if self.transfers[client.user!.username!] == nil {
-            self.transfers[client.user!.username!] = []
-        }
+        self.add(transfer: transfer, user: client.user!)
         
-        self.transfers[client.user!.username!]?.append(transfer)
-        
-        //self.queue.addOperation {
-            if self.wait(untilReady: transfer, client: client, message: message) {
-                transfer.state = .running
+        if self.wait(untilReady: transfer, client: client, message: message) {
+            transfer.state = .running
 
-                if transfer.type == .donwload {
-                    result = self.runDownload(transfer: transfer, client: client, message: message)
-                } else {
-                    result = self.runUpload(transfer: transfer, client: client, message: message)
-                }
+            if transfer.type == .download {
+                result = self.runDownload(transfer: transfer, client: client, message: message)
+            } else {
+                result = self.runUpload(transfer: transfer, client: client, message: message)
             }
-        //}
-        
-        self.transfers[client.user!.username!] = nil
+        }
+                
+        self.remove(transfer: transfer, user: client.user!)
         
         return result
     }
     
     public func download(path:String, dataOffset:UInt64, rsrcOffset:UInt64, client:Client, message:P7Message) -> Transfer? {
-        let transfer = Transfer(path: path, client: client, message: message, type: .donwload)
+        let transfer = Transfer(path: path, client: client, message: message, type: .download)
                 
         transfer.dataOffset = dataOffset
         transfer.rsrcOffset = rsrcOffset

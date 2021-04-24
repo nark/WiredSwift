@@ -77,6 +77,7 @@
 		4C830A80263145F00017DB77 /* ECDSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A7F263145F00017DB77 /* ECDSA.swift */; };
 		4C830A87263451E00017DB77 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A85263451A90017DB77 /* Client.swift */; };
 		4C830A892634696D0017DB77 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A882634696D0017DB77 /* Thread.swift */; };
+		4C830A8B2634A9130017DB77 /* Transfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A8A2634A9130017DB77 /* Transfer.swift */; };
 		4CD5562D262ED0E6004DC4A5 /* ClientsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */; };
 		4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */; };
 		4CD55632262F5032004DC4A5 /* Digest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD55631262F5032004DC4A5 /* Digest.swift */; };
@@ -5540,6 +5541,7 @@
 		4C830A7F263145F00017DB77 /* ECDSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECDSA.swift; sourceTree = "<group>"; };
 		4C830A85263451A90017DB77 /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
 		4C830A882634696D0017DB77 /* Thread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thread.swift; sourceTree = "<group>"; };
+		4C830A8A2634A9130017DB77 /* Transfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transfer.swift; sourceTree = "<group>"; };
 		4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientsController.swift; sourceTree = "<group>"; };
 		4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionSet+Collection.swift"; sourceTree = "<group>"; };
 		4CD55631262F5032004DC4A5 /* Digest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Digest.swift; sourceTree = "<group>"; };
@@ -12167,6 +12169,7 @@
 				4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */,
 				OBJ_58 /* UsersController.swift */,
 				4C830A85263451A90017DB77 /* Client.swift */,
+				4C830A8A2634A9130017DB77 /* Transfer.swift */,
 				OBJ_56 /* User.swift */,
 				OBJ_48 /* Group.swift */,
 				OBJ_44 /* Chat.swift */,
@@ -18224,6 +18227,7 @@
 				OBJ_5786 /* DatabaseController.swift in Sources */,
 				OBJ_5787 /* FilesController.swift in Sources */,
 				OBJ_5788 /* Group.swift in Sources */,
+				4C830A8B2634A9130017DB77 /* Transfer.swift in Sources */,
 				OBJ_5789 /* GroupPrivilege.swift in Sources */,
 				OBJ_5790 /* Index.swift in Sources */,
 				OBJ_5791 /* IndexController.swift in Sources */,
