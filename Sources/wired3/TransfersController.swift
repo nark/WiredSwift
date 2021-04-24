@@ -256,24 +256,17 @@ public class TransfersController {
         if let t = message.uint32(forField: "wired.transaction") {
             reply.addParameter(field: "wired.transaction", value: t)
         }
-        
-        print("before write ready")
-                
+                        
         if !transfer.client.socket.write(reply) {
             Logger.error("Could not write message \(reply.name!) to \(client.user!.username!)")
             return false
         }
-        
-        
                         
-        print("before read \(client.state)")
-
         guard let reply2 = transfer.client.socket.readMessage() else {
             Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path)")
             return false
         }
-        print("after read \(reply2)")
-
+        
         if reply2.name != "wired.transfer.upload" {
             Logger.error("Could not accept message \(reply2.name!) from \(client.user!.username!): Expected 'wired.transfer.upload'")
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: reply2)
@@ -381,13 +374,8 @@ public class TransfersController {
     private func upload(transfer: Transfer) -> Bool {
         var data = true
         var result = true
-        
-        print("upload : \(transfer.client.state)")
-        
+                
         while transfer.client.state == .LOGGED_IN {
-            
-            print("while loop ok")
-            
             if transfer.remainingDataSize == 0 {
                 data = false
             }
