@@ -7,6 +7,7 @@
 
 import Foundation
 import WiredSwift
+import Queuer
 
 
 let WiredTransferBufferSize = 16384
@@ -23,6 +24,8 @@ public class TransfersController {
     var usersUploadTransfers:[String:[Transfer]] = [:]
     
     let transfersLock = DispatchSemaphore(value: 1)
+    let queue = Queuer(name: "WiredTransfersQueue", maxConcurrentOperationCount: 10, qualityOfService: .default)
+    
     
     
     public init(filesController: FilesController) {
@@ -77,15 +80,23 @@ public class TransfersController {
         
         self.add(transfer: transfer, user: client.user!)
         
-        if self.wait(untilReady: transfer, client: client, message: message) {
-            transfer.state = .running
+        let runLock = Semaphore()
+        let synchronousOperation = ConcurrentOperation { _ in
+            if self.wait(untilReady: transfer, client: client, message: message) {
+                transfer.state = .running
 
-            if transfer.type == .download {
-                result = self.runDownload(transfer: transfer, client: client, message: message)
-            } else {
-                result = self.runUpload(transfer: transfer, client: client, message: message)
+                if transfer.type == .download {
+                    result = self.runDownload(transfer: transfer, client: client, message: message)
+                } else {
+                    result = self.runUpload(transfer: transfer, client: client, message: message)
+                }
             }
+            
+            runLock.continue()
         }
+        
+        self.queue.addOperation(synchronousOperation)
+        runLock.wait()
                 
         self.remove(transfer: transfer, user: client.user!)
         
