@@ -298,7 +298,7 @@ public class TransfersController {
 //                    if(wi_data_length(transfer->finderinfo) > 0)
 //                        wi_fs_set_finder_info_for_path(transfer->finderinfo, path);
 
-                    App.indexController.add(path: url.path)
+                    App.indexController.addIndex(forPath: url.path)
                 }
             } catch let error {
                 Logger.error("Could not move \(transfer.realDataPath!) to \(url.path): \(error)")

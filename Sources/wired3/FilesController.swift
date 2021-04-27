@@ -100,6 +100,8 @@ public class FilesController {
         
         do {
             try FileManager.default.removeItem(atPath: realPath)
+            
+            App.indexController.removeIndex(forPath: realPath)
         } catch let error {
             Logger.error("Cannot delete file \(realPath) \(error)")
             

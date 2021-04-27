@@ -46,13 +46,33 @@ class IndexController: TableController {
     
     
     
-    public func add(path: String) {
-        self.indexPath(path: path, db: self.databaseController.pool)
+    public func addIndex(forPath realPath: String) {
+        self.indexPath(path: realPath, db: self.databaseController.pool)
     }
     
     
-    public func remove(path: String) {
-        // TODO: implement
+    public func removeIndex(forPath realPath: String) {
+        var isDir:ObjCBool = false
+        
+        do {
+            if let index = try Index.query(on: self.databaseController.pool)
+                                    .filter(\.$real_path == realPath)
+                                    .first()
+                                    .wait()
+            {
+                let fileExist = FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir)
+
+                self.totalFilesSize -= WiredSwift.File.size(path: realPath)
+
+                if isDir.boolValue {
+                    self.totalDisrectoriesCount -= 1
+                } else if fileExist {
+                    self.totalFilesCount -= 1
+                }
+            }
+        } catch let error {
+            WiredSwift.Logger.error("Cannot remove index for file at \(realPath): \(error)")
+        }
     }
     
     
@@ -72,13 +92,13 @@ class IndexController: TableController {
         do {
             try Index(name: filename, virtual_path: virtualPath, real_path: path, alias: false).create(on: db).wait()
 
-            FileManager.default.fileExists(atPath: path, isDirectory: &isDir)
+            let fileExist = FileManager.default.fileExists(atPath: path, isDirectory: &isDir)
 
             self.totalFilesSize += WiredSwift.File.size(path: path)
 
             if isDir.boolValue {
                 self.totalDisrectoriesCount += 1
-            } else {
+            } else if fileExist {
                 self.totalFilesCount += 1
             }
         } catch let error {

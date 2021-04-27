@@ -78,9 +78,14 @@
 		4C830A87263451E00017DB77 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A85263451A90017DB77 /* Client.swift */; };
 		4C830A892634696D0017DB77 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A882634696D0017DB77 /* Thread.swift */; };
 		4C830A8B2634A9130017DB77 /* Transfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A8A2634A9130017DB77 /* Transfer.swift */; };
+		4C8F5C3C26357C1C00BF8764 /* SpeedCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F5C3B26357C1C00BF8764 /* SpeedCalculator.swift */; };
+		4C8F5C422635A14700BF8764 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F5C412635A14700BF8764 /* Array.swift */; };
+		4C8F5C442635AB5300BF8764 /* Double.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F5C432635AB5300BF8764 /* Double.swift */; };
+		4C8F5C462635BAF900BF8764 /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F5C452635BAF900BF8764 /* TimeInterval.swift */; };
 		4CD5562D262ED0E6004DC4A5 /* ClientsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */; };
 		4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */; };
 		4CD55632262F5032004DC4A5 /* Digest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD55631262F5032004DC4A5 /* Digest.swift */; };
+		4CEDA2B826383DEA005EEACC /* Lock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEDA2B726383DEA005EEACC /* Lock.swift */; };
 		OBJ_2530 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2458 /* Document.swift */; };
 		OBJ_2531 /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2459 /* Element.swift */; };
 		OBJ_2532 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2460 /* Error.swift */; };
@@ -2300,7 +2305,6 @@
 		OBJ_5362 /* CNIOLinux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOLinux::Product" /* CNIOLinux.framework */; };
 		OBJ_5383 /* Data.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* Data.swift */; };
 		OBJ_5384 /* FileManager+ResourceFork.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* FileManager+ResourceFork.swift */; };
-		OBJ_5385 /* Ints.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* Ints.swift */; };
 		OBJ_5386 /* String.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* String.swift */; };
 		OBJ_5387 /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_18 /* Const.swift */; };
 		OBJ_5388 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_19 /* Logger.swift */; };
@@ -5542,9 +5546,14 @@
 		4C830A85263451A90017DB77 /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
 		4C830A882634696D0017DB77 /* Thread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thread.swift; sourceTree = "<group>"; };
 		4C830A8A2634A9130017DB77 /* Transfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Transfer.swift; sourceTree = "<group>"; };
+		4C8F5C3B26357C1C00BF8764 /* SpeedCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedCalculator.swift; sourceTree = "<group>"; };
+		4C8F5C412635A14700BF8764 /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
+		4C8F5C432635AB5300BF8764 /* Double.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Double.swift; sourceTree = "<group>"; };
+		4C8F5C452635BAF900BF8764 /* TimeInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeInterval.swift; sourceTree = "<group>"; };
 		4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientsController.swift; sourceTree = "<group>"; };
 		4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionSet+Collection.swift"; sourceTree = "<group>"; };
 		4CD55631262F5032004DC4A5 /* Digest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Digest.swift; sourceTree = "<group>"; };
+		4CEDA2B726383DEA005EEACC /* Lock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lock.swift; sourceTree = "<group>"; };
 		"AEXML::AEXML::Product" /* AEXML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AEXML.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"BitByteData::BitByteData::Product" /* BitByteData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = BitByteData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"CryptoSwift::CryptoSwift::Product" /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CryptoSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -6031,7 +6040,6 @@
 		OBJ_1494 /* backtrace.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = backtrace.h; sourceTree = "<group>"; };
 		OBJ_1495 /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; name = module.modulemap; path = /Users/nark/Development/Me/Swift/WiredSwift/WiredSwift.xcodeproj/GeneratedModuleMap/CBacktrace/module.modulemap; sourceTree = "<group>"; };
 		OBJ_1496 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/nark/Development/Me/Swift/WiredSwift/.build/checkouts/swift-backtrace/Package.swift"; sourceTree = "<group>"; };
-		OBJ_15 /* Ints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ints.swift; sourceTree = "<group>"; };
 		OBJ_150 /* FieldOperators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldOperators.swift; sourceTree = "<group>"; };
 		OBJ_1501 /* a_bitstr.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = a_bitstr.c; sourceTree = "<group>"; };
 		OBJ_1502 /* a_bool.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = a_bool.c; sourceTree = "<group>"; };
@@ -8988,11 +8996,13 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_13 /* Data.swift */,
-				OBJ_14 /* FileManager+ResourceFork.swift */,
-				OBJ_15 /* Ints.swift */,
+				4C8F5C412635A14700BF8764 /* Array.swift */,
 				OBJ_16 /* String.swift */,
-				4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */,
 				4C830A882634696D0017DB77 /* Thread.swift */,
+				4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */,
+				OBJ_14 /* FileManager+ResourceFork.swift */,
+				4C8F5C432635AB5300BF8764 /* Double.swift */,
+				4C8F5C452635BAF900BF8764 /* TimeInterval.swift */,
 			);
 			path = Additions;
 			sourceTree = "<group>";
@@ -10130,6 +10140,7 @@
 				OBJ_18 /* Const.swift */,
 				OBJ_19 /* Logger.swift */,
 				OBJ_20 /* WiredError.swift */,
+				4CEDA2B726383DEA005EEACC /* Lock.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -11805,9 +11816,10 @@
 		OBJ_28 /* Network */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_29 /* BlockConnection.swift */,
-				OBJ_30 /* Connection.swift */,
 				OBJ_31 /* Url.swift */,
+				OBJ_30 /* Connection.swift */,
+				OBJ_29 /* BlockConnection.swift */,
+				4C8F5C3B26357C1C00BF8764 /* SpeedCalculator.swift */,
 			);
 			path = Network;
 			sourceTree = "<group>";
@@ -17987,8 +17999,8 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_5383 /* Data.swift in Sources */,
+				4C8F5C462635BAF900BF8764 /* TimeInterval.swift in Sources */,
 				OBJ_5384 /* FileManager+ResourceFork.swift in Sources */,
-				OBJ_5385 /* Ints.swift in Sources */,
 				OBJ_5386 /* String.swift in Sources */,
 				OBJ_5387 /* Const.swift in Sources */,
 				OBJ_5388 /* Logger.swift in Sources */,
@@ -17997,6 +18009,7 @@
 				OBJ_5391 /* Cipher.swift in Sources */,
 				OBJ_5392 /* File.swift in Sources */,
 				OBJ_5393 /* ServerInfo.swift in Sources */,
+				4C8F5C3C26357C1C00BF8764 /* SpeedCalculator.swift in Sources */,
 				OBJ_5394 /* UserInfo.swift in Sources */,
 				OBJ_5395 /* BlockConnection.swift in Sources */,
 				OBJ_5396 /* Connection.swift in Sources */,
@@ -18012,7 +18025,10 @@
 				4CD55632262F5032004DC4A5 /* Digest.swift in Sources */,
 				OBJ_5403 /* P7SpecItem.swift in Sources */,
 				OBJ_5404 /* P7SpecMessage.swift in Sources */,
+				4C8F5C422635A14700BF8764 /* Array.swift in Sources */,
+				4C8F5C442635AB5300BF8764 /* Double.swift in Sources */,
 				OBJ_5405 /* P7SpecType.swift in Sources */,
+				4CEDA2B826383DEA005EEACC /* Lock.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

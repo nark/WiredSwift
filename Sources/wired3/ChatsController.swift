@@ -22,6 +22,22 @@ private extension ChatsController {
     }
     
     
+    
+    private func remove(chat:Chat) {
+        self.chats[chat.chatID] = nil
+        
+        if let privateChat = chat as? PrivateChat {
+            if let i = self.privateChats.firstIndex(where: { (inchat) -> Bool in privateChat.chatID == inchat.chatID }) {
+                self.privateChats.remove(at: i)
+            }
+        } else {
+            if let i = self.publicChats.firstIndex(where: { (inchat) -> Bool in chat.chatID == inchat.chatID }) {
+               self.publicChats.remove(at: i)
+           }
+        }
+    }
+    
+    
     private func nextChatID() -> UInt32 {
         lastChatID += 1
         return lastChatID
@@ -109,6 +125,49 @@ public class ChatsController : TableController {
         } catch let error {
             Logger.error("Cannot create public chat")
             Logger.error("\(error)")
+            
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+    
+    
+    
+    public func deletePublicChat(message:P7Message, client:Client) {
+        if !client.user!.hasPrivilege(name: "wired.account.chat.delete_public_chats") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                
+            return
+        }
+        
+        guard let chatID = message.uint32(forField: "wired.chat.id") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+        
+        guard let publicChat = self.chats[chatID] else {
+            App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
+            return
+        }
+        
+        if chatID == 1 {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            Logger.error("Cannot delete public chat with ID '1'")
+            return
+        }
+              
+        do {
+            let reply = P7Message(withName: "wired.chat.public_chat_deleted", spec: message.spec)
+            
+            reply.addParameter(field: "wired.chat.id", value: publicChat.chatID)
+            
+            App.clientsController.broadcast(message: reply)
+            
+            self.remove(chat: publicChat)
+            
+            try publicChat.delete(on: databaseController.pool).wait()
+
+        } catch let error {
+            Logger.error("Cannot delete public chat: \(error)")
             
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
@@ -258,9 +317,11 @@ public class ChatsController : TableController {
     
     public func userLeave(client:Client) {
         for (chatID, chat) in chats {
-            for (userID, _) in chat.clients {
-                if userID == client.userID {
-                    userLeave(chatID: chatID, client: client)
+            chat.clientsLock.concurrentlyRead {
+                for (userID, _) in chat.clients {
+                    if userID == client.userID {
+                        userLeave(chatID: chatID, client: client)
+                    }
                 }
             }
         }

@@ -64,6 +64,7 @@ open class Connection: NSObject {
     
     public var userID: UInt32!
     public var userInfo: UserInfo?
+    public var privileges:[String] = []
     
     public var nick: String     = "Swift Wired"
     public var status: String   = ""
@@ -248,6 +249,12 @@ open class Connection: NSObject {
     }
     
     
+    public func hasPrivilege(key:String) -> Bool {
+        return self.privileges.firstIndex(of: key) != nil ? true : false
+    }
+    
+    
+    @discardableResult
     public func send(message:P7Message) -> Bool {
         if self.socket.connected {
             let r = self.socket.write(message)
@@ -443,8 +450,12 @@ open class Connection: NSObject {
         }
         
         // read account priviledges
-        _ = self.socket.readMessage()
-
+        let privilegesMessage = self.socket.readMessage()
+        
+        privilegesMessage?.parameterKeys.forEach({ (key) in
+            self.privileges.append(key)
+        })
+        
         return true
     }
     

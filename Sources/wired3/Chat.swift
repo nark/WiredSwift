@@ -8,6 +8,7 @@
 import Foundation
 import Fluent
 import FluentSQLiteDriver
+import WiredSwift
 
 public class Chat: Model {
     public static var schema: String = "chats"
@@ -37,6 +38,7 @@ public class Chat: Model {
     public var creationTime:Date
     
     public var clients:[UInt32:Client] = [:]
+    public var clientsLock:Lock = Lock()
     
     public required init() { }
     

@@ -207,6 +207,9 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.chat.create_public_chat" {
             App.chatsController.createPublicChat(message: message, client: client)
         }
+        else if message.name == "wired.chat.delete_public_chat" {
+            App.chatsController.deletePublicChat(message: message, client: client)
+        }
         else if message.name == "wired.chat.create_chat" {
             App.chatsController.createPrivateChat(message: message, client: client)
         }
@@ -484,9 +487,7 @@ public class ServerController: ServerDelegate {
             client.transfer = transfer
             
             client.socket.set(interactive: false)
-            
-            print("client.state : \(client.state)")
-            
+                        
             if(!App.transfersController.run(transfer: transfer, client: client, message: message)) {
                 client.state = .DISCONNECTED
             }
@@ -590,7 +591,8 @@ public class ServerController: ServerDelegate {
                 break
             }
             
-            print("clientLoop readMessage \(client.socket.isInteractive())")
+            Logger.debug("ClientLoop \(client.userID) before readMessage() interactive: \(client.socket.isInteractive())")
+            
             if let message = client.socket.readMessage() {
                 for delegate in delegates {
                     delegate.receiveMessage(client: client, message: message)

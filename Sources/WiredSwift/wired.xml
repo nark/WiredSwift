@@ -1877,6 +1877,21 @@
             <p7:parameter field="wired.chat.name" use="required" version="3.0" />
         </p7:message>
         
+        <p7:message name="wired.chat.public_chat_deleted" id="4029" version="3.0">
+            <p7:documentation>
+                Delete public chat reply.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+            <p7:parameter field="wired.chat.id" use="required" version="2.0" />
+        </p7:message>
+        
+        <p7:message name="wired.chat.delete_public_chat" id="4030" version="3.0">
+            <p7:documentation>
+                Delete public chat message.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+            <p7:parameter field="wired.chat.id" use="required" version="3.0" />
+        </p7:message>
 
         <p7:message name="wired.message.send_message" id="5000" version="2.0">
             <p7:documentation>
@@ -3619,6 +3634,16 @@
             </p7:or>
         </p7:transaction>
 
+        <p7:transaction message="wired.chat.delete_public_chat" originator="client" version="3.0">
+            <p7:documentation>
+
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.chat.public_chat_deleted" count="1" use="required" version="3.0" />
+                <p7:reply message="wired.error" count="1" use="required" version="2.0" />
+            </p7:or>
+        </p7:transaction>
+        
         <p7:transaction message="wired.chat.invite_user" originator="client" version="2.0">
             <p7:documentation>
                 [message:wired.error] should be replied with [enum:wired.error.chat_not_found]
@@ -5087,6 +5112,12 @@
             </p7:documentation>
         </p7:broadcast>
 
+        <p7:broadcast message="wired.chat.public_chat_deleted" version="3.0">
+            <p7:documentation>
+                TBD
+            </p7:documentation>
+        </p7:broadcast>
+        
         <p7:broadcast message="wired.message.message" version="2.0">
             <p7:documentation>
                 May be sent at any time from any other user.
