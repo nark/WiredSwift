@@ -16,6 +16,7 @@ class IndexController: TableController {
     public var totalFilesSize:UInt64            = 0
     public var totalFilesCount:UInt64           = 0
     public var totalDisrectoriesCount:UInt64    = 0
+    public var lock:Lock                        = Lock()
     
     public init(databaseController: DatabaseController, filesController: FilesController) {
         self.filesController = filesController
@@ -62,12 +63,14 @@ class IndexController: TableController {
             {
                 let fileExist = FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir)
 
-                self.totalFilesSize -= WiredSwift.File.size(path: realPath)
+                self.lock.exclusivelyWrite {
+                    self.totalFilesSize -= WiredSwift.File.size(path: realPath)
 
-                if isDir.boolValue {
-                    self.totalDisrectoriesCount -= 1
-                } else if fileExist {
-                    self.totalFilesCount -= 1
+                    if isDir.boolValue {
+                        self.totalDisrectoriesCount -= 1
+                    } else if fileExist {
+                        self.totalFilesCount -= 1
+                    }
                 }
             }
         } catch let error {
@@ -93,13 +96,15 @@ class IndexController: TableController {
             try Index(name: filename, virtual_path: virtualPath, real_path: path, alias: false).create(on: db).wait()
 
             let fileExist = FileManager.default.fileExists(atPath: path, isDirectory: &isDir)
+                
+            self.lock.exclusivelyWrite {
+                self.totalFilesSize += WiredSwift.File.size(path: path)
 
-            self.totalFilesSize += WiredSwift.File.size(path: path)
-
-            if isDir.boolValue {
-                self.totalDisrectoriesCount += 1
-            } else if fileExist {
-                self.totalFilesCount += 1
+                if isDir.boolValue {
+                    self.totalDisrectoriesCount += 1
+                } else if fileExist {
+                    self.totalFilesCount += 1
+                }
             }
         } catch let error {
             WiredSwift.Logger.error("Cannot index file at \(path): \(error)")

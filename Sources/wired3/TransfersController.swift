@@ -23,7 +23,7 @@ public class TransfersController {
     var usersDownloadTransfers:[String:[Transfer]] = [:]
     var usersUploadTransfers:[String:[Transfer]] = [:]
     
-    let transfersLock = DispatchSemaphore(value: 1)
+    let transfersLock = Lock()
     let queue = Queuer(name: "WiredTransfersQueue", maxConcurrentOperationCount: 10, qualityOfService: .default)
     
     
@@ -36,40 +36,37 @@ public class TransfersController {
     
     // MARK: -
     private func add(transfer:Transfer, user: User) {
-        self.transfersLock.wait()
-        
-        var dictionary = transfer.type == .download ? self.usersDownloadTransfers : self.usersUploadTransfers
-        
-        if dictionary[user.username!] == nil {
-            dictionary[user.username!] = []
+        self.transfersLock.exclusivelyWrite {
+            var dictionary = transfer.type == .download ? self.usersDownloadTransfers : self.usersUploadTransfers
+            
+            if dictionary[user.username!] == nil {
+                dictionary[user.username!] = []
+            }
+            
+            self.transfers.append(transfer)
+            dictionary[user.username!]?.append(transfer)
+            
+            if transfer.type == .download {
+                self.usersDownloadTransfers = dictionary
+            } else {
+                self.usersUploadTransfers   = dictionary
+            }
+            
         }
-        
-        self.transfers.append(transfer)
-        dictionary[user.username!]?.append(transfer)
-        
-        if transfer.type == .download {
-            self.usersDownloadTransfers = dictionary
-        } else {
-            self.usersUploadTransfers   = dictionary
-        }
-        
-        self.transfersLock.signal()
     }
     
     private func remove(transfer:Transfer, user: User) {
-        self.transfersLock.wait()
-        
-        if let index = self.transfers.firstIndex(of: transfer) {
-            self.transfers.remove(at: index)
-            
-            if transfer.type == .download {
-                self.usersDownloadTransfers[user.username!] = nil
-            } else {
-                self.usersUploadTransfers[user.username!] = nil
+        self.transfersLock.exclusivelyWrite {
+            if let index = self.transfers.firstIndex(of: transfer) {
+                self.transfers.remove(at: index)
+                
+                if transfer.type == .download {
+                    self.usersDownloadTransfers[user.username!] = nil
+                } else {
+                    self.usersUploadTransfers[user.username!] = nil
+                }
             }
         }
-        
-        self.transfersLock.signal()
     }
     
     

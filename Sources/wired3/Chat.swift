@@ -64,6 +64,13 @@ public class Chat: Model {
             self.creationNick = nick
         }
     }
+    
+    
+    public func client(withID userID:UInt32) -> Client? {
+        return self.clientsLock.concurrentlyRead {
+            self.clients[userID]
+        }
+    }
 }
 
 

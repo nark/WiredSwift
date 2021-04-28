@@ -36,6 +36,12 @@ public protocol ClientInfoDelegate: class {
     func clientInfoApplicationBuild(for connection: Connection) -> String?
 }
 
+
+public protocol ServerInfoDelegate: class {
+    func serverInfoDidChange(for connection: Connection)
+}
+
+
 public extension ConnectionDelegate {
     // optional delegate methods
     func connectionDidConnect(connection: Connection) { }
@@ -51,7 +57,10 @@ public extension ClientInfoDelegate {
     func clientInfoApplicationBuild(for connection: Connection) -> String? { return nil }
 }
 
-
+public extension ServerInfoDelegate {
+    // optional delegate methods
+    func serverInfoDidChange(for connection: Connection) {  }
+}
 
 
 open class Connection: NSObject {
@@ -60,6 +69,7 @@ open class Connection: NSObject {
     public var socket:      P7Socket!
     public var delegates:   [ConnectionDelegate] = []
     public var clientInfoDelegate:ClientInfoDelegate?
+    public var serverInfoDelegate:ServerInfoDelegate?
     public var interactive: Bool = true
     
     public var userID: UInt32!
@@ -254,6 +264,16 @@ open class Connection: NSObject {
     }
     
     
+    public func hasAdministrationPrivileges() -> Bool {
+        return  self.hasPrivilege(key: "wired.account.settings.get_settings")   ||
+                self.hasPrivilege(key: "wired.account.settings.set_settings")   ||
+                self.hasPrivilege(key: "wired.account.user.get_users")          ||
+                self.hasPrivilege(key: "wired.account.log.view_log")            ||
+                self.hasPrivilege(key: "wired.account.banlist.get_bans")        ||
+                self.hasPrivilege(key: "wired.account.events.view_events")
+    }
+    
+    
     @discardableResult
     public func send(message:P7Message) -> Bool {
         if self.socket.connected {
@@ -339,6 +359,16 @@ open class Connection: NSObject {
             }
                     
         default:
+            if message.name == "wired.server_info" {
+                self.serverInfo = ServerInfo(message: message)
+                
+                DispatchQueue.main.async {
+                    if let d = self.serverInfoDelegate {
+                        d.serverInfoDidChange(for: self)
+                    }
+                }
+            }
+            
             for d in self.delegates {
                 DispatchQueue.main.async {
                     d.connectionDidReceiveMessage(connection: self, message: message)

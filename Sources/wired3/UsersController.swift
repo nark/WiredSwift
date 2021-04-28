@@ -13,6 +13,7 @@ import FluentSQLiteDriver
 public class UsersController: TableController, SocketPasswordDelegate {
     //var connectedUsers:[UInt32:User] = [:]
     var lastUserID:UInt32 = 0
+    var lastUserIDLock:Lock = Lock()
     
     // MARK: - Public
     public func nextUserID() -> UInt32 {
@@ -21,30 +22,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
         return self.lastUserID
     }
     
-//
-//    public func addUser(user:User) {
-//        self.connectedUsers[user.userID] = user
-//
-//        WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
-//    }
-//
-//
-//    public func removeUser(user:User) {
-//        user.socket?.disconnect()
-//
-//        self.connectedUsers[user.userID] = nil
-//
-//        WiredSwift.Logger.info("Connected users: \(self.connectedUsers)")
-//    }
-//
-//
-
-    
-    
-    
-
-    
-    
+        
     
     
     // MARK: - Database

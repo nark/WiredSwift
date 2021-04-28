@@ -86,6 +86,7 @@
 		4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */; };
 		4CD55632262F5032004DC4A5 /* Digest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD55631262F5032004DC4A5 /* Digest.swift */; };
 		4CEDA2B826383DEA005EEACC /* Lock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEDA2B726383DEA005EEACC /* Lock.swift */; };
+		4CEDA2BE263889C0005EEACC /* banner.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = OBJ_42 /* banner.png */; };
 		OBJ_2530 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2458 /* Document.swift */; };
 		OBJ_2531 /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2459 /* Element.swift */; };
 		OBJ_2532 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2460 /* Error.swift */; };
@@ -5540,6 +5541,19 @@
 			remoteInfo = WiredSwiftTests;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4CEDA2BD263889B5005EEACC /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 16;
+			files = (
+				4CEDA2BE263889C0005EEACC /* banner.png in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4C830A7F263145F00017DB77 /* ECDSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECDSA.swift; sourceTree = "<group>"; };
@@ -14168,6 +14182,7 @@
 			buildPhases = (
 				OBJ_5782 /* Sources */,
 				OBJ_5800 /* Frameworks */,
+				4CEDA2BD263889B5005EEACC /* CopyFiles */,
 			);
 			buildRules = (
 			);

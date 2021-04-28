@@ -31,6 +31,13 @@ public class ServerController: ServerDelegate {
     public var isRunning:Bool = false
     public var delegates:[ServerDelegate] = []
     
+    public var serverName:String = "Wired Server 3.0"
+    public var serverDescription:String = "Welcome to this new Wired server"
+    public var downloads:UInt32 = 0
+    public var uploads:UInt32 = 0
+    public var downloadSpeed:UInt32 = 0
+    public var uploadSpeed:UInt32 = 0
+    
     private var socket:Socket!
     private let ecdh = ECDH()
     private let group = DispatchGroup()
@@ -246,6 +253,12 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.transfer.upload_file" {
             self.receiveUploadFile(client, message)
         }
+        else if message.name == "wired.settings.get_settings" {
+            self.receiveGetSettings(client: client, message: message)
+        }
+            else if message.name == "wired.settings.set_settings" {
+                self.receiveSetSettings(client: client, message: message)
+            }
         else {
             WiredSwift.Logger.warning("Message \(message.name ?? "unknow message") not implemented")
         }
@@ -255,51 +268,10 @@ public class ServerController: ServerDelegate {
     
     private func receiveClientInfo(_ client:Client, _ message:P7Message) {
         client.state = .GAVE_CLIENT_INFO
-        
-        let response = P7Message(withName: "wired.server_info", spec: self.spec)
-        
-        response.addParameter(field: "wired.info.application.name", value: "Wired Server")
-        response.addParameter(field: "wired.info.application.version", value: "3.0")
-        response.addParameter(field: "wired.info.application.build", value: "alpha")
-        
-        #if os(iOS)
-        response.addParameter(field: "wired.info.os.name", value: "iOS")
-        #elseif os(macOS)
-        response.addParameter(field: "wired.info.os.name", value: "macOS")
-        #else
-        response.addParameter(field: "wired.info.os.name", value: "Linux")
-        #endif
-        
-        response.addParameter(field: "wired.info.os.version", value: ProcessInfo.processInfo.operatingSystemVersionString)
-        
-        #if os(iOS)
-        response.addParameter(field: "wired.info.arch", value: "armv7")
-        #elseif os(macOS)
-        response.addParameter(field: "wired.info.arch", value: "x86_64")
-        #else
-        response.addParameter(field: "wired.info.arch", value: "x86_64")
-        #endif
-        
-        
-        response.addParameter(field: "wired.info.supports_rsrc", value: false)
-        response.addParameter(field: "wired.info.name", value: "Wired Server 3.0")
-        response.addParameter(field: "wired.info.description", value: "Welcome to my Wired Server")
-        
-        if let data = try? Data(contentsOf: URL.init(fileURLWithPath: App.bannerPath)) {
-            response.addParameter(field: "wired.info.banner", value: data)
-        }
-        
-        response.addParameter(field: "wired.info.downloads", value: UInt32(0))
-        response.addParameter(field: "wired.info.uploads", value: UInt32(0))
-        response.addParameter(field: "wired.info.download_speed", value: UInt32(0))
-        response.addParameter(field: "wired.info.upload_speed", value: UInt32(0))
-        response.addParameter(field: "wired.info.start_time", value: self.startTime)
-        response.addParameter(field: "wired.info.files.count", value: App.indexController.totalFilesCount)
-        response.addParameter(field: "wired.info.files.size", value: App.indexController.totalFilesSize)
                 
-        App.serverController.reply(client: client, reply: response, message: message)
-        
-        
+        App.serverController.reply(client: client,
+                                   reply: self.serverInfoMessage(),
+                                   message: message)
     }
     
     
@@ -497,6 +469,72 @@ public class ServerController: ServerDelegate {
     }
     
     
+    
+    
+    // MARK: -
+    
+    private func receiveGetSettings(client:Client, message:P7Message) {
+        if !client.user!.hasPrivilege(name: "wired.account.settings.get_settings") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            
+            return
+        }
+        
+        let response = P7Message(withName: "wired.settings.settings", spec: message.spec)
+        response.addParameter(field: "wired.info.name", value: self.serverName)
+        response.addParameter(field: "wired.info.description", value: self.serverDescription)
+        
+        if let data = try? Data(contentsOf: URL.init(fileURLWithPath: App.bannerPath)) {
+            response.addParameter(field: "wired.info.banner", value: data)
+        }
+        
+        response.addParameter(field: "wired.info.downloads", value: self.downloads)
+        response.addParameter(field: "wired.info.uploads", value: self.uploads)
+        response.addParameter(field: "wired.info.download_speed", value: self.downloadSpeed)
+        response.addParameter(field: "wired.info.upload_speed", value: self.uploadSpeed)
+        
+        // TODO: add tracker here
+        
+        self.reply(client: client, reply: response, message: message)
+    }
+    
+    
+    private func receiveSetSettings(client:Client, message:P7Message) {
+        var changed = false
+        
+        if !client.user!.hasPrivilege(name: "wired.account.settings.set_settings") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            
+            return
+        }
+        
+        if let serverName = message.string(forField: "wired.info.name") {
+            if self.serverName != serverName {
+                self.serverName = serverName
+                changed = true
+            }
+        }
+        
+        if let serverDescription = message.string(forField: "wired.info.description") {
+            if self.serverDescription != serverDescription {
+                self.serverDescription = serverDescription
+                changed = true
+            }
+        }
+        
+        if let bannerData = message.data(forField: "wired.info.banner") {
+            try? bannerData.write(to: URL(fileURLWithPath: App.bannerPath))
+            changed = true
+        }
+        
+        if changed {
+            App.clientsController.broadcast(message: self.serverInfoMessage())
+        }
+    }
+    
+    
+    
+    
     // MARK: -
     
     private func sendUserStatus(forClient client:Client) {
@@ -511,6 +549,51 @@ public class ServerController: ServerDelegate {
         broadcast.addParameter(field: "wired.account.color", value: UInt32(0))
         
         App.clientsController.broadcast(message: broadcast)
+    }
+    
+    
+    private func serverInfoMessage() -> P7Message {
+        let message = P7Message(withName: "wired.server_info", spec: self.spec)
+        
+        message.addParameter(field: "wired.info.application.name", value: "Wired Server")
+        message.addParameter(field: "wired.info.application.version", value: "3.0")
+        message.addParameter(field: "wired.info.application.build", value: "alpha")
+        
+        #if os(iOS)
+        message.addParameter(field: "wired.info.os.name", value: "iOS")
+        #elseif os(macOS)
+        message.addParameter(field: "wired.info.os.name", value: "macOS")
+        #else
+        message.addParameter(field: "wired.info.os.name", value: "Linux")
+        #endif
+        
+        message.addParameter(field: "wired.info.os.version", value: ProcessInfo.processInfo.operatingSystemVersionString)
+        
+        #if os(iOS)
+        message.addParameter(field: "wired.info.arch", value: "armv7")
+        #elseif os(macOS)
+        message.addParameter(field: "wired.info.arch", value: "x86_64")
+        #else
+        message.addParameter(field: "wired.info.arch", value: "x86_64")
+        #endif
+        
+        message.addParameter(field: "wired.info.supports_rsrc", value: false)
+        message.addParameter(field: "wired.info.name", value: self.serverName)
+        message.addParameter(field: "wired.info.description", value: self.serverDescription)
+        
+        if let data = try? Data(contentsOf: URL.init(fileURLWithPath: App.bannerPath)) {
+            message.addParameter(field: "wired.info.banner", value: data)
+        }
+        
+        message.addParameter(field: "wired.info.downloads", value: self.downloads)
+        message.addParameter(field: "wired.info.uploads", value: self.uploads)
+        message.addParameter(field: "wired.info.download_speed", value: self.downloadSpeed)
+        message.addParameter(field: "wired.info.upload_speed", value: self.uploadSpeed)
+        message.addParameter(field: "wired.info.start_time", value: self.startTime)
+        message.addParameter(field: "wired.info.files.count", value: App.indexController.totalFilesCount)
+        message.addParameter(field: "wired.info.files.size", value: App.indexController.totalFilesSize)
+        
+        return message
     }
     
     
