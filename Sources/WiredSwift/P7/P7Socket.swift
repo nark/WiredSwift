@@ -589,7 +589,7 @@ public class P7Socket: NSObject {
                         //print("read data : \(messageData.toHexString())")
                         let message = P7Message(withData: messageData, spec: self.spec)
                         
-                        Logger.info("READ [\(self.hash)]: \(message.name!)")
+                        Logger.info("READ [\(self.hash)]: \(message.name)")
                         //Logger.debug("\n\(message.xml())\n")
                         
                         return message

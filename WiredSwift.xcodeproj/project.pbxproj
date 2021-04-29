@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -21,59 +21,59 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		4C5510EF262E13FF001F65BE /* AEXML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "AEXML::AEXML::Product" /* AEXML.framework */; };
-		4C5510F1262E13FF001F65BE /* AsyncHTTPClient.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "async-http-client::AsyncHTTPClient::Product" /* AsyncHTTPClient.framework */; };
-		4C5510F3262E13FF001F65BE /* AsyncKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "async-kit::AsyncKit::Product" /* AsyncKit.framework */; };
-		4C5510F5262E13FF001F65BE /* Backtrace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-backtrace::Backtrace::Product" /* Backtrace.framework */; };
-		4C5510F7262E1400001F65BE /* BitByteData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "BitByteData::BitByteData::Product" /* BitByteData.framework */; };
-		4C5510F9262E1400001F65BE /* CBacktrace.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-backtrace::CBacktrace::Product" /* CBacktrace.framework */; };
-		4C5510FB262E1400001F65BE /* CBase32.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::CBase32::Product" /* CBase32.framework */; };
-		4C5510FD262E1400001F65BE /* CBcrypt.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::CBcrypt::Product" /* CBcrypt.framework */; };
-		4C5510FF262E1401001F65BE /* CCryptoBoringSSL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-crypto::CCryptoBoringSSL::Product" /* CCryptoBoringSSL.framework */; };
-		4C551101262E1401001F65BE /* CCryptoBoringSSLShims.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-crypto::CCryptoBoringSSLShims::Product" /* CCryptoBoringSSLShims.framework */; };
-		4C551103262E1401001F65BE /* CNIOAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOAtomics::Product" /* CNIOAtomics.framework */; };
-		4C551105262E1401001F65BE /* CNIOBoringSSL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-ssl::CNIOBoringSSL::Product" /* CNIOBoringSSL.framework */; };
-		4C551107262E1402001F65BE /* CNIOBoringSSLShims.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-ssl::CNIOBoringSSLShims::Product" /* CNIOBoringSSLShims.framework */; };
-		4C551109262E1402001F65BE /* CNIODarwin.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIODarwin::Product" /* CNIODarwin.framework */; };
-		4C55110B262E1402001F65BE /* CNIOExtrasZlib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-extras::CNIOExtrasZlib::Product" /* CNIOExtrasZlib.framework */; };
-		4C55110D262E1402001F65BE /* CNIOHTTPParser.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOHTTPParser::Product" /* CNIOHTTPParser.framework */; };
-		4C55110F262E1403001F65BE /* CNIOLinux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOLinux::Product" /* CNIOLinux.framework */; };
-		4C551111262E1403001F65BE /* CNIOSHA1.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOSHA1::Product" /* CNIOSHA1.framework */; };
-		4C551113262E1403001F65BE /* CNIOWindows.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOWindows::Product" /* CNIOWindows.framework */; };
-		4C551115262E1403001F65BE /* ConsoleKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "console-kit::ConsoleKit::Product" /* ConsoleKit.framework */; };
-		4C551117262E1403001F65BE /* COperatingSystem.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::COperatingSystem::Product" /* COperatingSystem.framework */; };
-		4C551119262E1404001F65BE /* CoreMetrics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-metrics::CoreMetrics::Product" /* CoreMetrics.framework */; };
-		4C55111B262E1404001F65BE /* Crypto.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-crypto::Crypto::Product" /* Crypto.framework */; };
-		4C55111D262E1404001F65BE /* CryptoSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "CryptoSwift::CryptoSwift::Product" /* CryptoSwift.framework */; };
-		4C55111F262E1404001F65BE /* CURLParser.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::CURLParser::Product" /* CURLParser.framework */; };
-		4C551121262E1405001F65BE /* Fluent.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "fluent::Fluent::Product" /* Fluent.framework */; };
-		4C551123262E1405001F65BE /* FluentKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "fluent-kit::FluentKit::Product" /* FluentKit.framework */; };
-		4C551125262E1405001F65BE /* FluentSQL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "fluent-kit::FluentSQL::Product" /* FluentSQL.framework */; };
-		4C551127262E1405001F65BE /* FluentSQLiteDriver.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "fluent-sqlite-driver::FluentSQLiteDriver::Product" /* FluentSQLiteDriver.framework */; };
-		4C551129262E1406001F65BE /* Logging.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-log::Logging::Product" /* Logging.framework */; };
-		4C55112B262E1406001F65BE /* Metrics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-metrics::Metrics::Product" /* Metrics.framework */; };
-		4C55112D262E1406001F65BE /* MultipartKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "multipart-kit::MultipartKit::Product" /* MultipartKit.framework */; };
-		4C55112F262E1406001F65BE /* NIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIO::Product" /* NIO.framework */; };
-		4C551131262E1406001F65BE /* NIOConcurrencyHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOConcurrencyHelpers::Product" /* NIOConcurrencyHelpers.framework */; };
-		4C551133262E1407001F65BE /* NIOExtras.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-extras::NIOExtras::Product" /* NIOExtras.framework */; };
-		4C551135262E1407001F65BE /* NIOFoundationCompat.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOFoundationCompat::Product" /* NIOFoundationCompat.framework */; };
-		4C551137262E1407001F65BE /* NIOHPACK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-http2::NIOHPACK::Product" /* NIOHPACK.framework */; };
-		4C551139262E1407001F65BE /* NIOHTTP1.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOHTTP1::Product" /* NIOHTTP1.framework */; };
-		4C55113B262E1408001F65BE /* NIOHTTP2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-http2::NIOHTTP2::Product" /* NIOHTTP2.framework */; };
-		4C55113D262E1408001F65BE /* NIOHTTPCompression.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-extras::NIOHTTPCompression::Product" /* NIOHTTPCompression.framework */; };
-		4C55113F262E1408001F65BE /* NIOSSL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-ssl::NIOSSL::Product" /* NIOSSL.framework */; };
-		4C551141262E1408001F65BE /* NIOTLS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOTLS::Product" /* NIOTLS.framework */; };
-		4C551143262E1409001F65BE /* NIOTransportServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio-transport-services::NIOTransportServices::Product" /* NIOTransportServices.framework */; };
-		4C551145262E1409001F65BE /* NIOWebSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOWebSocket::Product" /* NIOWebSocket.framework */; };
-		4C551147262E1409001F65BE /* Queuer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Queuer::Queuer::Product" /* Queuer.framework */; };
-		4C551149262E1409001F65BE /* RoutingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "routing-kit::RoutingKit::Product" /* RoutingKit.framework */; };
-		4C55114B262E1409001F65BE /* SocketSwift.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SocketSwift::SocketSwift::Product" /* SocketSwift.framework */; };
-		4C55114D262E140A001F65BE /* SQLiteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "sqlite-kit::SQLiteKit::Product" /* SQLiteKit.framework */; };
-		4C55114F262E140A001F65BE /* SQLiteNIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "sqlite-nio::SQLiteNIO::Product" /* SQLiteNIO.framework */; };
-		4C551151262E140A001F65BE /* SQLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "sql-kit::SQLKit::Product" /* SQLKit.framework */; };
-		4C551153262E140A001F65BE /* SWCompression.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SWCompression::SWCompression::Product" /* SWCompression.framework */; };
-		4C551155262E140B001F65BE /* Vapor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::Vapor::Product" /* Vapor.framework */; };
-		4C551157262E140B001F65BE /* WebSocketKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "websocket-kit::WebSocketKit::Product" /* WebSocketKit.framework */; };
+		4C5510EF262E13FF001F65BE /* AEXML.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "AEXML::AEXML::Product" /* AEXML.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510F1262E13FF001F65BE /* AsyncHTTPClient.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "async-http-client::AsyncHTTPClient::Product" /* AsyncHTTPClient.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510F3262E13FF001F65BE /* AsyncKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "async-kit::AsyncKit::Product" /* AsyncKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510F5262E13FF001F65BE /* Backtrace.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-backtrace::Backtrace::Product" /* Backtrace.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510F7262E1400001F65BE /* BitByteData.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "BitByteData::BitByteData::Product" /* BitByteData.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510F9262E1400001F65BE /* CBacktrace.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-backtrace::CBacktrace::Product" /* CBacktrace.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510FB262E1400001F65BE /* CBase32.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "vapor::CBase32::Product" /* CBase32.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510FD262E1400001F65BE /* CBcrypt.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "vapor::CBcrypt::Product" /* CBcrypt.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C5510FF262E1401001F65BE /* CCryptoBoringSSL.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-crypto::CCryptoBoringSSL::Product" /* CCryptoBoringSSL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551101262E1401001F65BE /* CCryptoBoringSSLShims.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-crypto::CCryptoBoringSSLShims::Product" /* CCryptoBoringSSLShims.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551103262E1401001F65BE /* CNIOAtomics.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOAtomics::Product" /* CNIOAtomics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551105262E1401001F65BE /* CNIOBoringSSL.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-ssl::CNIOBoringSSL::Product" /* CNIOBoringSSL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551107262E1402001F65BE /* CNIOBoringSSLShims.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-ssl::CNIOBoringSSLShims::Product" /* CNIOBoringSSLShims.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551109262E1402001F65BE /* CNIODarwin.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIODarwin::Product" /* CNIODarwin.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55110B262E1402001F65BE /* CNIOExtrasZlib.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-extras::CNIOExtrasZlib::Product" /* CNIOExtrasZlib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55110D262E1402001F65BE /* CNIOHTTPParser.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOHTTPParser::Product" /* CNIOHTTPParser.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55110F262E1403001F65BE /* CNIOLinux.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOLinux::Product" /* CNIOLinux.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551111262E1403001F65BE /* CNIOSHA1.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOSHA1::Product" /* CNIOSHA1.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551113262E1403001F65BE /* CNIOWindows.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOWindows::Product" /* CNIOWindows.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551115262E1403001F65BE /* ConsoleKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "console-kit::ConsoleKit::Product" /* ConsoleKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551117262E1403001F65BE /* COperatingSystem.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "vapor::COperatingSystem::Product" /* COperatingSystem.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551119262E1404001F65BE /* CoreMetrics.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-metrics::CoreMetrics::Product" /* CoreMetrics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55111B262E1404001F65BE /* Crypto.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-crypto::Crypto::Product" /* Crypto.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55111D262E1404001F65BE /* CryptoSwift.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "CryptoSwift::CryptoSwift::Product" /* CryptoSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55111F262E1404001F65BE /* CURLParser.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "vapor::CURLParser::Product" /* CURLParser.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551121262E1405001F65BE /* Fluent.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "fluent::Fluent::Product" /* Fluent.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551123262E1405001F65BE /* FluentKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "fluent-kit::FluentKit::Product" /* FluentKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551125262E1405001F65BE /* FluentSQL.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "fluent-kit::FluentSQL::Product" /* FluentSQL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551127262E1405001F65BE /* FluentSQLiteDriver.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "fluent-sqlite-driver::FluentSQLiteDriver::Product" /* FluentSQLiteDriver.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551129262E1406001F65BE /* Logging.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-log::Logging::Product" /* Logging.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55112B262E1406001F65BE /* Metrics.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-metrics::Metrics::Product" /* Metrics.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55112D262E1406001F65BE /* MultipartKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "multipart-kit::MultipartKit::Product" /* MultipartKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55112F262E1406001F65BE /* NIO.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIO::Product" /* NIO.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551131262E1406001F65BE /* NIOConcurrencyHelpers.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOConcurrencyHelpers::Product" /* NIOConcurrencyHelpers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551133262E1407001F65BE /* NIOExtras.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-extras::NIOExtras::Product" /* NIOExtras.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551135262E1407001F65BE /* NIOFoundationCompat.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOFoundationCompat::Product" /* NIOFoundationCompat.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551137262E1407001F65BE /* NIOHPACK.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-http2::NIOHPACK::Product" /* NIOHPACK.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551139262E1407001F65BE /* NIOHTTP1.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOHTTP1::Product" /* NIOHTTP1.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55113B262E1408001F65BE /* NIOHTTP2.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-http2::NIOHTTP2::Product" /* NIOHTTP2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55113D262E1408001F65BE /* NIOHTTPCompression.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-extras::NIOHTTPCompression::Product" /* NIOHTTPCompression.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55113F262E1408001F65BE /* NIOSSL.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-ssl::NIOSSL::Product" /* NIOSSL.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551141262E1408001F65BE /* NIOTLS.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOTLS::Product" /* NIOTLS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551143262E1409001F65BE /* NIOTransportServices.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio-transport-services::NIOTransportServices::Product" /* NIOTransportServices.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551145262E1409001F65BE /* NIOWebSocket.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOWebSocket::Product" /* NIOWebSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551147262E1409001F65BE /* Queuer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "Queuer::Queuer::Product" /* Queuer.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551149262E1409001F65BE /* RoutingKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "routing-kit::RoutingKit::Product" /* RoutingKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55114B262E1409001F65BE /* SocketSwift.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "SocketSwift::SocketSwift::Product" /* SocketSwift.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55114D262E140A001F65BE /* SQLiteKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "sqlite-kit::SQLiteKit::Product" /* SQLiteKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C55114F262E140A001F65BE /* SQLiteNIO.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "sqlite-nio::SQLiteNIO::Product" /* SQLiteNIO.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551151262E140A001F65BE /* SQLKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "sql-kit::SQLKit::Product" /* SQLKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551153262E140A001F65BE /* SWCompression.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "SWCompression::SWCompression::Product" /* SWCompression.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551155262E140B001F65BE /* Vapor.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "vapor::Vapor::Product" /* Vapor.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C551157262E140B001F65BE /* WebSocketKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "websocket-kit::WebSocketKit::Product" /* WebSocketKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C830A80263145F00017DB77 /* ECDSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A7F263145F00017DB77 /* ECDSA.swift */; };
 		4C830A87263451E00017DB77 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A85263451A90017DB77 /* Client.swift */; };
 		4C830A892634696D0017DB77 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A882634696D0017DB77 /* Thread.swift */; };
@@ -87,6 +87,9 @@
 		4CD55632262F5032004DC4A5 /* Digest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD55631262F5032004DC4A5 /* Digest.swift */; };
 		4CEDA2B826383DEA005EEACC /* Lock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEDA2B726383DEA005EEACC /* Lock.swift */; };
 		4CEDA2BE263889C0005EEACC /* banner.png in CopyFiles */ = {isa = PBXBuildFile; fileRef = OBJ_42 /* banner.png */; };
+		4CEDA2C52639C5F3005EEACC /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 4CEDA2C42639C5F3005EEACC /* Configuration */; };
+		4CEDA2C72639C756005EEACC /* config.ini in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4CEDA2C62639C6CC005EEACC /* config.ini */; };
+		4CEDA2C92639D493005EEACC /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CEDA2C82639D493005EEACC /* Config.swift */; };
 		OBJ_2530 /* Document.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2458 /* Document.swift */; };
 		OBJ_2531 /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2459 /* Element.swift */; };
 		OBJ_2532 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_2460 /* Error.swift */; };
@@ -5550,6 +5553,69 @@
 			dstSubfolderSpec = 16;
 			files = (
 				4CEDA2BE263889C0005EEACC /* banner.png in CopyFiles */,
+				4CEDA2C72639C756005EEACC /* config.ini in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4CEDA2C22639B771005EEACC /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4C551133262E1407001F65BE /* NIOExtras.framework in CopyFiles */,
+				4C551105262E1401001F65BE /* CNIOBoringSSL.framework in CopyFiles */,
+				4C551113262E1403001F65BE /* CNIOWindows.framework in CopyFiles */,
+				4C551131262E1406001F65BE /* NIOConcurrencyHelpers.framework in CopyFiles */,
+				4C551129262E1406001F65BE /* Logging.framework in CopyFiles */,
+				4C551121262E1405001F65BE /* Fluent.framework in CopyFiles */,
+				4C551137262E1407001F65BE /* NIOHPACK.framework in CopyFiles */,
+				4C5510EF262E13FF001F65BE /* AEXML.framework in CopyFiles */,
+				4C5510F3262E13FF001F65BE /* AsyncKit.framework in CopyFiles */,
+				4C55110D262E1402001F65BE /* CNIOHTTPParser.framework in CopyFiles */,
+				4C551141262E1408001F65BE /* NIOTLS.framework in CopyFiles */,
+				4C55110F262E1403001F65BE /* CNIOLinux.framework in CopyFiles */,
+				4C551149262E1409001F65BE /* RoutingKit.framework in CopyFiles */,
+				4C55111F262E1404001F65BE /* CURLParser.framework in CopyFiles */,
+				4C551135262E1407001F65BE /* NIOFoundationCompat.framework in CopyFiles */,
+				4C55114F262E140A001F65BE /* SQLiteNIO.framework in CopyFiles */,
+				4C551117262E1403001F65BE /* COperatingSystem.framework in CopyFiles */,
+				4C551109262E1402001F65BE /* CNIODarwin.framework in CopyFiles */,
+				4C55111D262E1404001F65BE /* CryptoSwift.framework in CopyFiles */,
+				4C55112B262E1406001F65BE /* Metrics.framework in CopyFiles */,
+				4C55111B262E1404001F65BE /* Crypto.framework in CopyFiles */,
+				4C55113B262E1408001F65BE /* NIOHTTP2.framework in CopyFiles */,
+				4C5510F9262E1400001F65BE /* CBacktrace.framework in CopyFiles */,
+				4C55112F262E1406001F65BE /* NIO.framework in CopyFiles */,
+				4C551143262E1409001F65BE /* NIOTransportServices.framework in CopyFiles */,
+				4C5510F5262E13FF001F65BE /* Backtrace.framework in CopyFiles */,
+				4C5510FB262E1400001F65BE /* CBase32.framework in CopyFiles */,
+				4C5510FF262E1401001F65BE /* CCryptoBoringSSL.framework in CopyFiles */,
+				4C551125262E1405001F65BE /* FluentSQL.framework in CopyFiles */,
+				4C5510F1262E13FF001F65BE /* AsyncHTTPClient.framework in CopyFiles */,
+				4C5510FD262E1400001F65BE /* CBcrypt.framework in CopyFiles */,
+				4C551115262E1403001F65BE /* ConsoleKit.framework in CopyFiles */,
+				4C55110B262E1402001F65BE /* CNIOExtrasZlib.framework in CopyFiles */,
+				4C55112D262E1406001F65BE /* MultipartKit.framework in CopyFiles */,
+				4C55114B262E1409001F65BE /* SocketSwift.framework in CopyFiles */,
+				4C551151262E140A001F65BE /* SQLKit.framework in CopyFiles */,
+				4C551153262E140A001F65BE /* SWCompression.framework in CopyFiles */,
+				4C55113F262E1408001F65BE /* NIOSSL.framework in CopyFiles */,
+				4C551101262E1401001F65BE /* CCryptoBoringSSLShims.framework in CopyFiles */,
+				4C551127262E1405001F65BE /* FluentSQLiteDriver.framework in CopyFiles */,
+				4C551147262E1409001F65BE /* Queuer.framework in CopyFiles */,
+				4C55114D262E140A001F65BE /* SQLiteKit.framework in CopyFiles */,
+				4C551103262E1401001F65BE /* CNIOAtomics.framework in CopyFiles */,
+				4C551107262E1402001F65BE /* CNIOBoringSSLShims.framework in CopyFiles */,
+				4C551123262E1405001F65BE /* FluentKit.framework in CopyFiles */,
+				4C551139262E1407001F65BE /* NIOHTTP1.framework in CopyFiles */,
+				4C55113D262E1408001F65BE /* NIOHTTPCompression.framework in CopyFiles */,
+				4C551145262E1409001F65BE /* NIOWebSocket.framework in CopyFiles */,
+				4C5510F7262E1400001F65BE /* BitByteData.framework in CopyFiles */,
+				4C551155262E140B001F65BE /* Vapor.framework in CopyFiles */,
+				4C551119262E1404001F65BE /* CoreMetrics.framework in CopyFiles */,
+				4C551157262E140B001F65BE /* WebSocketKit.framework in CopyFiles */,
+				4C551111262E1403001F65BE /* CNIOSHA1.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5568,6 +5634,8 @@
 		4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionSet+Collection.swift"; sourceTree = "<group>"; };
 		4CD55631262F5032004DC4A5 /* Digest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Digest.swift; sourceTree = "<group>"; };
 		4CEDA2B726383DEA005EEACC /* Lock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lock.swift; sourceTree = "<group>"; };
+		4CEDA2C62639C6CC005EEACC /* config.ini */ = {isa = PBXFileReference; lastKnownFileType = text; path = config.ini; sourceTree = "<group>"; };
+		4CEDA2C82639D493005EEACC /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		"AEXML::AEXML::Product" /* AEXML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AEXML.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"BitByteData::BitByteData::Product" /* BitByteData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = BitByteData.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"CryptoSwift::CryptoSwift::Product" /* CryptoSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CryptoSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -8386,59 +8454,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
-				4C551133262E1407001F65BE /* NIOExtras.framework in Frameworks */,
-				4C551105262E1401001F65BE /* CNIOBoringSSL.framework in Frameworks */,
-				4C551113262E1403001F65BE /* CNIOWindows.framework in Frameworks */,
-				4C551131262E1406001F65BE /* NIOConcurrencyHelpers.framework in Frameworks */,
-				4C551129262E1406001F65BE /* Logging.framework in Frameworks */,
-				4C551121262E1405001F65BE /* Fluent.framework in Frameworks */,
-				4C551137262E1407001F65BE /* NIOHPACK.framework in Frameworks */,
-				4C5510EF262E13FF001F65BE /* AEXML.framework in Frameworks */,
-				4C5510F3262E13FF001F65BE /* AsyncKit.framework in Frameworks */,
-				4C55110D262E1402001F65BE /* CNIOHTTPParser.framework in Frameworks */,
-				4C551141262E1408001F65BE /* NIOTLS.framework in Frameworks */,
-				4C55110F262E1403001F65BE /* CNIOLinux.framework in Frameworks */,
-				4C551149262E1409001F65BE /* RoutingKit.framework in Frameworks */,
-				4C55111F262E1404001F65BE /* CURLParser.framework in Frameworks */,
-				4C551135262E1407001F65BE /* NIOFoundationCompat.framework in Frameworks */,
-				4C55114F262E140A001F65BE /* SQLiteNIO.framework in Frameworks */,
-				4C551117262E1403001F65BE /* COperatingSystem.framework in Frameworks */,
-				4C551109262E1402001F65BE /* CNIODarwin.framework in Frameworks */,
-				4C55111D262E1404001F65BE /* CryptoSwift.framework in Frameworks */,
-				4C55112B262E1406001F65BE /* Metrics.framework in Frameworks */,
-				4C55111B262E1404001F65BE /* Crypto.framework in Frameworks */,
-				4C55113B262E1408001F65BE /* NIOHTTP2.framework in Frameworks */,
-				4C5510F9262E1400001F65BE /* CBacktrace.framework in Frameworks */,
-				4C55112F262E1406001F65BE /* NIO.framework in Frameworks */,
-				4C551143262E1409001F65BE /* NIOTransportServices.framework in Frameworks */,
-				4C5510F5262E13FF001F65BE /* Backtrace.framework in Frameworks */,
-				4C5510FB262E1400001F65BE /* CBase32.framework in Frameworks */,
-				4C5510FF262E1401001F65BE /* CCryptoBoringSSL.framework in Frameworks */,
-				4C551125262E1405001F65BE /* FluentSQL.framework in Frameworks */,
-				4C5510F1262E13FF001F65BE /* AsyncHTTPClient.framework in Frameworks */,
-				4C5510FD262E1400001F65BE /* CBcrypt.framework in Frameworks */,
-				4C551115262E1403001F65BE /* ConsoleKit.framework in Frameworks */,
-				4C55110B262E1402001F65BE /* CNIOExtrasZlib.framework in Frameworks */,
-				4C55112D262E1406001F65BE /* MultipartKit.framework in Frameworks */,
-				4C55114B262E1409001F65BE /* SocketSwift.framework in Frameworks */,
-				4C551151262E140A001F65BE /* SQLKit.framework in Frameworks */,
-				4C551153262E140A001F65BE /* SWCompression.framework in Frameworks */,
-				4C55113F262E1408001F65BE /* NIOSSL.framework in Frameworks */,
-				4C551101262E1401001F65BE /* CCryptoBoringSSLShims.framework in Frameworks */,
-				4C551127262E1405001F65BE /* FluentSQLiteDriver.framework in Frameworks */,
-				4C551147262E1409001F65BE /* Queuer.framework in Frameworks */,
-				4C55114D262E140A001F65BE /* SQLiteKit.framework in Frameworks */,
-				4C551103262E1401001F65BE /* CNIOAtomics.framework in Frameworks */,
-				4C551107262E1402001F65BE /* CNIOBoringSSLShims.framework in Frameworks */,
-				4C551123262E1405001F65BE /* FluentKit.framework in Frameworks */,
-				4C551139262E1407001F65BE /* NIOHTTP1.framework in Frameworks */,
-				4C55113D262E1408001F65BE /* NIOHTTPCompression.framework in Frameworks */,
-				4C551145262E1409001F65BE /* NIOWebSocket.framework in Frameworks */,
-				4C5510F7262E1400001F65BE /* BitByteData.framework in Frameworks */,
-				4C551155262E140B001F65BE /* Vapor.framework in Frameworks */,
-				4C551119262E1404001F65BE /* CoreMetrics.framework in Frameworks */,
-				4C551157262E140B001F65BE /* WebSocketKit.framework in Frameworks */,
-				4C551111262E1403001F65BE /* CNIOSHA1.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8536,6 +8551,7 @@
 				OBJ_5827 /* CNIOExtrasZlib.framework in Frameworks */,
 				OBJ_5828 /* NIOSSL.framework in Frameworks */,
 				OBJ_5829 /* NIOTLS.framework in Frameworks */,
+				4CEDA2C52639C5F3005EEACC /* Configuration in Frameworks */,
 				OBJ_5830 /* CNIOBoringSSLShims.framework in Frameworks */,
 				OBJ_5831 /* CNIOBoringSSL.framework in Frameworks */,
 				OBJ_5832 /* NIOHTTP1.framework in Frameworks */,
@@ -10155,6 +10171,7 @@
 				OBJ_19 /* Logger.swift */,
 				OBJ_20 /* WiredError.swift */,
 				4CEDA2B726383DEA005EEACC /* Lock.swift */,
+				4CEDA2C82639D493005EEACC /* Config.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -12183,6 +12200,7 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_42 /* banner.png */,
+				4CEDA2C62639C6CC005EEACC /* config.ini */,
 				OBJ_59 /* main.swift */,
 				OBJ_43 /* AppController.swift */,
 				OBJ_53 /* ServerController.swift */,
@@ -14043,6 +14061,7 @@
 			buildPhases = (
 				OBJ_5382 /* Sources */,
 				OBJ_5406 /* Frameworks */,
+				4CEDA2C22639B771005EEACC /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -14102,6 +14121,8 @@
 				OBJ_5512 /* PBXTargetDependency */,
 			);
 			name = WiredSwift;
+			packageProductDependencies = (
+			);
 			productName = WiredSwift;
 			productReference = "WiredSwift::WiredSwift::Product" /* WiredSwift.framework */;
 			productType = "com.apple.product-type.framework";
@@ -14244,6 +14265,9 @@
 				OBJ_5910 /* PBXTargetDependency */,
 			);
 			name = wired3;
+			packageProductDependencies = (
+				4CEDA2C42639C5F3005EEACC /* Configuration */,
+			);
 			productName = wired3;
 			productReference = "WiredSwift::wired3::Product" /* wired3 */;
 			productType = "com.apple.product-type.tool";
@@ -15637,6 +15661,9 @@
 				Base,
 			);
 			mainGroup = OBJ_5;
+			packageReferences = (
+				4CEDA2C32639C5F3005EEACC /* XCRemoteSwiftPackageReference "Configuration" */,
+			);
 			productRefGroup = OBJ_2464 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -18042,6 +18069,7 @@
 				OBJ_5404 /* P7SpecMessage.swift in Sources */,
 				4C8F5C422635A14700BF8764 /* Array.swift in Sources */,
 				4C8F5C442635AB5300BF8764 /* Double.swift in Sources */,
+				4CEDA2C92639D493005EEACC /* Config.swift in Sources */,
 				OBJ_5405 /* P7SpecType.swift in Sources */,
 				4CEDA2B826383DEA005EEACC /* Lock.swift in Sources */,
 			);
@@ -20477,7 +20505,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/AEXML_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20505,7 +20536,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/AEXML_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20551,7 +20585,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/ArgumentParser_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20579,7 +20616,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/ArgumentParser_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20617,7 +20657,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/AsyncHTTPClient_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20655,7 +20698,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/AsyncHTTPClient_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20689,7 +20735,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/AsyncKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20723,7 +20772,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/AsyncKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20755,7 +20807,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Backtrace_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20787,7 +20842,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Backtrace_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20815,7 +20873,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/BitByteData_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20843,7 +20904,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/BitByteData_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20893,7 +20957,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CBacktrace_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20924,7 +20991,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CBacktrace_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20955,7 +21025,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CBase32_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -20986,7 +21059,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CBase32_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21017,7 +21093,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CBcrypt_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21048,7 +21127,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CBcrypt_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21081,7 +21163,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CCryptoBoringSSL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21114,7 +21199,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CCryptoBoringSSL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21200,7 +21288,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CCryptoBoringSSLShims_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21233,7 +21324,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CCryptoBoringSSLShims_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21265,7 +21359,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOAtomics_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21297,7 +21394,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOAtomics_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21330,7 +21430,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOBoringSSL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21363,7 +21466,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOBoringSSL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21397,7 +21503,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOBoringSSLShims_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21431,7 +21540,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOBoringSSLShims_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21463,7 +21575,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIODarwin_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21495,7 +21610,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIODarwin_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21527,7 +21645,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOExtrasZlib_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = (
@@ -21562,7 +21683,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOExtrasZlib_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = (
@@ -21597,7 +21721,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOHTTPParser_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21629,7 +21756,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOHTTPParser_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21661,7 +21791,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOLinux_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21693,7 +21826,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOLinux_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21725,7 +21861,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOSHA1_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21757,7 +21896,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOSHA1_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21788,7 +21930,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOWindows_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21819,7 +21964,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CNIOWindows_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21846,7 +21994,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/COperatingSystem_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21874,7 +22025,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/COperatingSystem_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21906,7 +22060,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CURLParser_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21937,7 +22094,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CURLParser_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21964,7 +22124,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/ConsoleKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -21992,7 +22155,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/ConsoleKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22019,7 +22185,10 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CoreMetrics_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
@@ -22043,7 +22212,10 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CoreMetrics_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
@@ -22072,7 +22244,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Crypto_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22104,7 +22279,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Crypto_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22132,7 +22310,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CryptoSwift_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22160,7 +22341,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/CryptoSwift_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22225,7 +22409,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Fluent_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22272,7 +22459,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Fluent_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22333,7 +22523,8 @@
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) SWIFT_PACKAGE";
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				USE_HEADERMAP = NO;
 			};
 			name = Release;
@@ -22355,7 +22546,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/FluentKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22389,7 +22583,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/FluentKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22423,7 +22620,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/FluentSQL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22457,7 +22657,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/FluentSQL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22492,7 +22695,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/FluentSQLiteDriver_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22527,7 +22733,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/FluentSQLiteDriver_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22555,7 +22764,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Logging_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22583,7 +22795,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Logging_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22610,7 +22825,10 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Metrics_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
@@ -22634,7 +22852,10 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Metrics_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
@@ -22666,7 +22887,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/MultipartKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22701,7 +22925,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/MultipartKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22735,7 +22962,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIO_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22769,7 +22999,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIO_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22800,7 +23033,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOConcurrencyHelpers_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22831,7 +23067,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOConcurrencyHelpers_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22865,7 +23104,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOExtras_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22899,7 +23141,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOExtras_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22933,7 +23178,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOFoundationCompat_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -22967,7 +23215,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOFoundationCompat_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23002,7 +23253,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHPACK_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23037,7 +23291,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHPACK_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23072,7 +23329,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHTTP1_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23107,7 +23367,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHTTP1_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23142,7 +23405,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHTTP2_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23177,7 +23443,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHTTP2_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23213,7 +23482,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHTTPCompression_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23249,7 +23521,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOHTTPCompression_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23285,7 +23560,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOSSL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23321,7 +23599,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOSSL_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23355,7 +23636,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOTLS_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23389,7 +23673,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOTLS_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23423,7 +23710,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOTransportServices_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23457,7 +23747,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOTransportServices_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23493,7 +23786,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOWebSocket_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23529,7 +23825,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/NIOWebSocket_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23557,7 +23856,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Queuer_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23585,7 +23887,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Queuer_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23631,7 +23936,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/RoutingKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23659,7 +23967,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/RoutingKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23693,7 +24004,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SQLKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23727,7 +24041,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SQLKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23762,7 +24079,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SQLiteKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23797,7 +24117,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SQLiteKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23832,7 +24155,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SQLiteNIO_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23867,7 +24193,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SQLiteNIO_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23895,7 +24224,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SWCompression_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23923,7 +24255,10 @@
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SWCompression_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -23968,7 +24303,10 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SocketSwift_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
@@ -23992,7 +24330,10 @@
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = WiredSwift.xcodeproj/SocketSwift_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
@@ -24054,7 +24395,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Vapor_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24101,7 +24445,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/Vapor_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24139,7 +24486,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/WebSocketKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24177,7 +24527,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/WebSocketKit_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24225,7 +24578,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/WiredSwift_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24273,7 +24629,10 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/WiredSwift_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24352,7 +24711,11 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/WiredSwiftTests_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @loader_path/../Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24397,7 +24760,11 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/WiredSwiftTests_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @loader_path/../Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24854,7 +25221,11 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/wired3_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+					"@executable_path",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -24899,7 +25270,11 @@
 				);
 				INFOPLIST_FILE = WiredSwift.xcodeproj/wired3_Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) $(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(TOOLCHAIN_DIR)/usr/lib/swift/macosx",
+					"@executable_path",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_LDFLAGS = "$(inherited)";
@@ -25719,6 +26094,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4CEDA2C32639C5F3005EEACC /* XCRemoteSwiftPackageReference "Configuration" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Kitura/Configuration.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.200;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4CEDA2C42639C5F3005EEACC /* Configuration */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CEDA2C32639C5F3005EEACC /* XCRemoteSwiftPackageReference "Configuration" */;
+			productName = Configuration;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = OBJ_1 /* Project object */;
 }

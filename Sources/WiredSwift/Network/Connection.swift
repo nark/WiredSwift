@@ -119,7 +119,7 @@ open class Connection: NSObject {
     }
     
     
-    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .ECDH_CHACHA20_SHA256, compression:P7Socket.Compression = .DEFLATE, checksum:P7Socket.Checksum = .Poly1305) -> Bool {
+    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .NONE, compression:P7Socket.Compression = .NONE, checksum:P7Socket.Checksum = .NONE) -> Bool {
         self.url    = url
         self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
         

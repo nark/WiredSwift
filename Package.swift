@@ -23,7 +23,7 @@ dependencies.append(.package(url: "https://github.com/apple/swift-argument-parse
 dependencies.append(.package(url: "https://github.com/vapor/fluent.git", from: "4.0.0"))
 dependencies.append(.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.0.0"))
 dependencies.append(.package(url: "https://github.com/apple/swift-crypto.git", from: "1.1.6"))
-dependencies.append(.package(url: "https://github.com/Kitura/Configuration.git", from: "3.0.4"))
+dependencies.append(.package(url: "https://github.com/Kitura/Configuration.git", from: "3.0.200"))
 
 targetDependencies.append(.byName(name: "AEXML"))
 targetDependencies.append(.byName(name: "CryptoSwift"))

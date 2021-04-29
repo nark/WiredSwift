@@ -10,6 +10,7 @@ import WiredSwift
 import SocketSwift
 
 
+
 let SERVER_COMPRESSION  = P7Socket.Compression.ALL
 let SERVER_CIPHER       = P7Socket.CipherType.ALL
 let SERVER_CHECKSUM     = P7Socket.Checksum.ALL
@@ -47,9 +48,33 @@ public class ServerController: ServerDelegate {
     
     
     public init(port: Int, spec: P7Spec) {
-       self.port = port
-       self.spec = spec
+        self.port = port
+        self.spec = spec
         
+        if let string = App.config["server", "name"] as? String {
+            self.serverName = string
+        }
+        
+        if let string = App.config["server", "description"] as? String {
+            self.serverDescription = string
+        }
+        
+        if let number = App.config["transfers", "downloads"] as? UInt32 {
+            self.downloads = number
+        }
+        
+        if let number = App.config["transfers", "uploads"] as? UInt32 {
+            self.uploads = number
+        }
+        
+        if let number = App.config["transfers", "downloadSpeed"] as? UInt32 {
+            self.uploadSpeed = number
+        }
+        
+        if let number = App.config["transfers", "uploadSpeed"] as? UInt32 {
+            self.uploadSpeed = number
+        }
+            
         self.addDelegate(self)
     }
     
@@ -484,8 +509,10 @@ public class ServerController: ServerDelegate {
         response.addParameter(field: "wired.info.name", value: self.serverName)
         response.addParameter(field: "wired.info.description", value: self.serverDescription)
         
-        if let data = try? Data(contentsOf: URL.init(fileURLWithPath: App.bannerPath)) {
-            response.addParameter(field: "wired.info.banner", value: data)
+        if let bannerPath = App.config["server", "banner"] as? String {
+            if let data = try? Data(contentsOf: URL.init(fileURLWithPath: bannerPath)) {
+                response.addParameter(field: "wired.info.banner", value: data)
+            }
         }
         
         response.addParameter(field: "wired.info.downloads", value: self.downloads)
@@ -511,6 +538,7 @@ public class ServerController: ServerDelegate {
         if let serverName = message.string(forField: "wired.info.name") {
             if self.serverName != serverName {
                 self.serverName = serverName
+                App.config["server", "name"] = serverName
                 changed = true
             }
         }
@@ -518,13 +546,16 @@ public class ServerController: ServerDelegate {
         if let serverDescription = message.string(forField: "wired.info.description") {
             if self.serverDescription != serverDescription {
                 self.serverDescription = serverDescription
+                App.config["server", "description"] = serverDescription
                 changed = true
             }
         }
         
-        if let bannerData = message.data(forField: "wired.info.banner") {
-            try? bannerData.write(to: URL(fileURLWithPath: App.bannerPath))
-            changed = true
+        if let bannerPath = App.config["server", "banner"] as? String {
+            if let bannerData = message.data(forField: "wired.info.banner") {
+                try? bannerData.write(to: URL(fileURLWithPath: bannerPath))
+                changed = true
+            }
         }
         
         if changed {
@@ -581,8 +612,10 @@ public class ServerController: ServerDelegate {
         message.addParameter(field: "wired.info.name", value: self.serverName)
         message.addParameter(field: "wired.info.description", value: self.serverDescription)
         
-        if let data = try? Data(contentsOf: URL.init(fileURLWithPath: App.bannerPath)) {
-            message.addParameter(field: "wired.info.banner", value: data)
+        if let bannerPath = App.config["server", "banner"] as? String {
+            if let data = try? Data(contentsOf: URL.init(fileURLWithPath: bannerPath)) {
+                message.addParameter(field: "wired.info.banner", value: data)
+            }
         }
         
         message.addParameter(field: "wired.info.downloads", value: self.downloads)
@@ -623,37 +656,37 @@ public class ServerController: ServerDelegate {
         do {
             let socket = try self.socket.accept()
             
-            let p7Socket = P7Socket(socket: socket, spec: self.spec)
-            
-            p7Socket.ecdh = self.ecdh
-            p7Socket.passwordProvider = App.usersController
-            
-            let userID = App.usersController.nextUserID()
-            let client = Client(userID: userID, socket: p7Socket)
-            
-            if p7Socket.accept(compression: SERVER_COMPRESSION,
-                               cipher:      SERVER_CIPHER,
-                               checksum:    SERVER_CHECKSUM) {
-                                
-                Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")
+            DispatchQueue.global(qos: .default).async {
+                let p7Socket = P7Socket(socket: socket, spec: self.spec)
+                
+                p7Socket.ecdh = self.ecdh
+                p7Socket.passwordProvider = App.usersController
+                
+                let userID = App.usersController.nextUserID()
+                let client = Client(userID: userID, socket: p7Socket)
+                
+                if p7Socket.accept(compression: SERVER_COMPRESSION,
+                                   cipher:      SERVER_CIPHER,
+                                   checksum:    SERVER_CHECKSUM) {
+                                    
+                    Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")
 
-                App.clientsController.addClient(client: client)
-                
-                client.state = .CONNECTED
-                
-                DispatchQueue.global(qos: .default).async {
+                    App.clientsController.addClient(client: client)
+                    
+                    client.state = .CONNECTED
+                    
                     self.clientLoop(client)
                 }
+                else {
+                    p7Socket.disconnect()
+                }
             }
-            else {
-                p7Socket.disconnect()
-            }            
                 
         } catch let error {
             if let socketError = error as? Socket.Error {
                 Logger.error(socketError.description)
             } else {
-                Logger.error(error.localizedDescription)
+                Logger.error("Socket accept error: \(error.localizedDescription)")
             }
         }
     }

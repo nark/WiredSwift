@@ -6,15 +6,19 @@
 //
 
 import Foundation
+import Configuration
 import WiredSwift
 
 
-public let DEFAULT_PORT = 4875
+public let DEFAULT_PORT = 4871
+
+
+
+
 
 public class AppController : DatabaseControllerDelegate {
     var rootPath:String
-    var port:Int = DEFAULT_PORT
-    var bannerPath:String
+    var configPath:String
     
     var spec:P7Spec!
     
@@ -29,16 +33,21 @@ public class AppController : DatabaseControllerDelegate {
     var indexController:IndexController!
     var transfersController:TransfersController!
     
-    
+    var config:Config
     
     // MARK: - Public
-    public init(specPath:String, dbPath:String, rootPath:String, bannerPath: String, port:Int = DEFAULT_PORT) {
+    public init(specPath:String, dbPath:String, rootPath:String, configPath: String) {
         let specUrl = URL(fileURLWithPath: specPath)
-        
+
         self.rootPath = rootPath
-        self.port = port
-        self.bannerPath = bannerPath
+        self.configPath = configPath
         self.databaseURL = URL(fileURLWithPath: dbPath)
+        self.config = Config(withPath: configPath)
+
+        if !self.config.load() {
+            Logger.fatal("Cannot load config file at path \(configPath)")
+            exit(-1)
+        }
         
         if let spec = P7Spec(withUrl: specUrl) {
             self.spec = spec
@@ -67,7 +76,9 @@ public class AppController : DatabaseControllerDelegate {
         self.chatsController.loadChats()
         self.indexController.indexFiles()
         
-        self.serverController = ServerController(port: self.port, spec: self.spec)
+        let port = self.config["server", "port"] as? Int
+        
+        self.serverController = ServerController(port: port ?? DEFAULT_PORT, spec: self.spec)
         self.serverController.listen()
     }
     
