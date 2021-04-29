@@ -7,7 +7,7 @@
 
 import Foundation
 import WiredSwift
-import SocketSwift
+import NIO
 
 
 
@@ -15,6 +15,8 @@ let SERVER_COMPRESSION  = P7Socket.Compression.ALL
 let SERVER_CIPHER       = P7Socket.CipherType.ALL
 let SERVER_CHECKSUM     = P7Socket.Checksum.ALL
     
+
+
 
 
 
@@ -39,9 +41,16 @@ public class ServerController: ServerDelegate {
     public var downloadSpeed:UInt32 = 0
     public var uploadSpeed:UInt32 = 0
     
-    private var socket:Socket!
-    private let ecdh = ECDH()
-    private let group = DispatchGroup()
+    struct Configuration {
+        var host           : String?         = nil // will use localhost IP 0.0.0.0
+        var port           : Int             = DEFAULT_PORT // Daytime is TCP/UDP 13, which is protected
+        var backlog        : Int             = 256
+        var eventLoopGroup : EventLoopGroup? = nil
+    }
+    
+    let configuration  : Configuration
+    let eventLoopGroup : EventLoopGroup
+    var serverChannel  : Channel?
     
     var startTime:Date? = nil
     
@@ -74,38 +83,109 @@ public class ServerController: ServerDelegate {
         if let number = App.config["transfers", "uploadSpeed"] as? UInt32 {
             self.uploadSpeed = number
         }
+        
+        self.configuration  = Configuration(host: nil, port: port, backlog: 256, eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount))
+        self.eventLoopGroup = configuration.eventLoopGroup
+               ?? MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
             
         self.addDelegate(self)
     }
     
+    
     public func listen() {
         self.startTime = Date()
 
-        group.enter()
+        self.listenChannels()
         
-        do {
-            self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
-            try self.socket.set(option: .reuseAddress, true) // set SO_REUSEADDR to 1
-            try self.socket.bind(port: Port(self.port), address: nil) // bind 'localhost:8090' address to the socket
-            
-            DispatchQueue.global(qos: .default).async {
-                self.isRunning = true
-                
-                self.listenThread()
-                
-                self.group.leave()
-            }
-        } catch let error {
-            if let socketError = error as? Socket.Error {
-                Logger.error(socketError.description)
-            } else {
-                Logger.error(error.localizedDescription)
-            }
-            
-        }
+        do    { try serverChannel?.closeFuture.wait() }
+        catch { print("[!] ERROR: Failed to wait on server:", error) }
         
-        group.wait()
+//        do {
+//            self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
+//            try self.socket.set(option: .reuseAddress, true) // set SO_REUSEADDR to 1
+//            try self.socket.bind(port: Port(self.port), address: nil) // bind 'localhost:8090' address to the socket
+//
+//            DispatchQueue.global(qos: .default).async {
+//                self.isRunning = true
+//
+//                self.listenThread()
+//            }
+//        } catch let error {
+//            if let socketError = error as? Socket.Error {
+//                Logger.error(socketError.description)
+//            } else {
+//                Logger.error(error.localizedDescription)
+//            }
+//
+//        }
+        
     }
+    
+    
+    
+    
+    // MARK : -
+    
+    func listenChannels() {
+        let bootstrap = makeBootstrap()
+        do {
+            let address : SocketAddress
+        
+            if let host = configuration.host {
+                address = try SocketAddress.init(ipAddress: host, port: configuration.port)
+            }
+            else {
+                var addr = sockaddr_in()
+                addr.sin_port = in_port_t(configuration.port).bigEndian
+                address = SocketAddress(addr, host: "*")
+            }
+        
+            serverChannel = try bootstrap.bind(to: address).wait()
+        
+            if let addr = serverChannel?.localAddress {
+                print("[+] Server running on:", addr)
+            }
+            else {
+                print("[!] ERROR: server reported no local address?")
+            }
+        }
+        catch let error as NIO.IOError {
+            print("[!] ERROR: failed to start server, errno:",
+                  error.errnoCode, "\n",
+                  error.localizedDescription)
+        }
+        catch {
+            print("[!] ERROR: failed to start server:", type(of:error), error)
+        }
+    }
+    
+    
+    func makeBootstrap() -> ServerBootstrap {
+        let reuseAddrOpt = ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET),
+                                                 SO_REUSEADDR)
+        let bootstrap = ServerBootstrap(group: eventLoopGroup)
+            // Specify backlog and enable SO_REUSEADDR for the server itself
+            .serverChannelOption(ChannelOptions.backlog,
+                                 value: Int32(configuration.backlog))
+            .serverChannelOption(reuseAddrOpt, value: 1)
+        
+            // Set the handlers that are applied to the accepted Channels
+            .childChannelInitializer { channel in
+                channel.pipeline.addHandler(ClientHandler(self.spec))
+            }
+        
+            // Enable TCP_NODELAY and SO_REUSEADDR for the accepted Channels
+            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY),
+                                value: 1)
+            .childChannelOption(reuseAddrOpt, value: 1)
+            .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
+    
+        return bootstrap
+    }
+    
+    
+    
+    // MARK: -
     
     
     public func addDelegate(_ delegate:ServerDelegate) {
@@ -633,93 +713,209 @@ public class ServerController: ServerDelegate {
     
     
     // MARK: -
-    private func listenThread() {
-        do {
-            Logger.info("Server listening on port \(self.port)...")
-            try self.socket.listen()
-                    
-            while self.isRunning {
-                self.acceptThread()
-            }
-    
-        } catch let error {
-            if let socketError = error as? Socket.Error {
-                Logger.error(socketError.description)
-            } else {
-                Logger.error(error.localizedDescription)
-            }
-        }
-    }
-    
-    
-    private func acceptThread() {
-        do {
-            let socket = try self.socket.accept()
-            
-            DispatchQueue.global(qos: .default).async {
-                let p7Socket = P7Socket(socket: socket, spec: self.spec)
-                
-                p7Socket.ecdh = self.ecdh
-                p7Socket.passwordProvider = App.usersController
-                
-                let userID = App.usersController.nextUserID()
-                let client = Client(userID: userID, socket: p7Socket)
-                
-                if p7Socket.accept(compression: SERVER_COMPRESSION,
-                                   cipher:      SERVER_CIPHER,
-                                   checksum:    SERVER_CHECKSUM) {
-                                    
-                    Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")
+//    private func listenThread() {
+//        do {
+//            Logger.info("Server listening on port \(self.port)...")
+//            try self.socket.listen()
+//
+//            while self.isRunning {
+//                self.acceptThread()
+//            }
+//
+//        } catch let error {
+//            if let socketError = error as? Socket.Error {
+//                Logger.error(socketError.description)
+//            } else {
+//                Logger.error(error.localizedDescription)
+//            }
+//        }
+//    }
+//
+//
+//    private func acceptThread() {
+//        do {
+//            let socket = try self.socket.accept()
+//
+//            DispatchQueue.global(qos: .default).async {
+//                let p7Socket = P7Socket(socket: socket, spec: self.spec)
+//
+//                p7Socket.ecdh = self.ecdh
+//                p7Socket.passwordProvider = App.usersController
+//
+//                let userID = App.usersController.nextUserID()
+//                let client = Client(userID: userID, socket: p7Socket)
+//
+//                if p7Socket.accept(compression: SERVER_COMPRESSION,
+//                                   cipher:      SERVER_CIPHER,
+//                                   checksum:    SERVER_CHECKSUM) {
+//
+//                    Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")
+//
+//                    App.clientsController.addClient(client: client)
+//
+//                    client.state = .CONNECTED
+//
+//                    self.clientLoop(client)
+//                }
+//                else {
+//                    p7Socket.disconnect()
+//                }
+//            }
+//
+//        } catch let error {
+//            if let socketError = error as? Socket.Error {
+//                Logger.error(socketError.description)
+//            } else {
+//                Logger.error("Socket accept error: \(error.localizedDescription)")
+//            }
+//        }
+//    }
+//
+//
+//    private func clientLoop(_ client:Client) {
+//        while self.isRunning {
+//            if client.socket.connected == false {
+//                client.state = .DISCONNECTED
+//
+//                for delegate in delegates {
+//                    delegate.clientDisconnected(client: client)
+//                }
+//                break
+//            }
+//
+//            if !client.socket.isInteractive() {
+//                break
+//            }
+//
+//            Logger.debug("ClientLoop \(client.userID) before readMessage() interactive: \(client.socket.isInteractive())")
+//
+//            if let message = client.socket.readMessage() {
+//                for delegate in delegates {
+//                    delegate.receiveMessage(client: client, message: message)
+//                }
+//            }
+//            else {
+//                for delegate in delegates {
+//                    delegate.clientDisconnected(client: client)
+//                }
+//                break
+//            }
+//        }
+//    }
+}
 
-                    App.clientsController.addClient(client: client)
-                    
-                    client.state = .CONNECTED
-                    
-                    self.clientLoop(client)
-                }
-                else {
-                    p7Socket.disconnect()
-                }
-            }
-                
-        } catch let error {
-            if let socketError = error as? Socket.Error {
-                Logger.error(socketError.description)
-            } else {
-                Logger.error("Socket accept error: \(error.localizedDescription)")
+
+
+final class ClientHandler: ChannelInboundHandler {
+    public typealias InboundIn = ByteBuffer
+    public typealias OutboundOut = ByteBuffer
+
+    // All access to channels is guarded by channelsSyncQueue.
+    private let channelsSyncQueue = DispatchQueue(label: "channelsQueue")
+    private var channels: [ObjectIdentifier: Channel] = [:]
+    private var spec: P7Spec!
+    private let ecdh = ECDH()
+    
+    private var socket:P7Socket!
+    
+    init(_ spec:P7Spec) {
+        self.spec = spec
+    }
+    
+    public func channelActive(context: ChannelHandlerContext) {
+        let remoteAddress = context.remoteAddress!
+        let channel = context.channel
+
+        print("remoteAddress \(remoteAddress)")
+        
+//        socket = P7Socket(channel: channel, context: context, spec: self.spec)
+//
+//        socket.ecdh = self.ecdh
+//        socket.passwordProvider = App.usersController
+//
+//        let userID = App.usersController.nextUserID()
+//        let client = Client(userID: userID, socket: socket)
+//
+//        if socket.accept(compression: SERVER_COMPRESSION,
+//                           cipher:      SERVER_CIPHER,
+//                           checksum:    SERVER_CHECKSUM) {
+//
+//            Logger.info("Accept new connection from \(socket.remoteAddress ?? "unknow")")
+//
+//            App.clientsController.addClient(client: client)
+//
+//            client.state = .CONNECTED
+//
+//            //self.clientLoop(client)
+//        }
+//        else {
+//            socket.disconnect()
+//        }
+        
+//        self.channelsSyncQueue.async {
+//            // broadcast the message to all the connected clients except the one that just became active.
+//            self.writeToAll(channels: self.channels, allocator: channel.allocator, message: "(ChatServer) - New client connected with address: \(remoteAddress)\n")
+//
+//            self.channels[ObjectIdentifier(channel)] = channel
+//        }
+//
+//        var buffer = channel.allocator.buffer(capacity: 64)
+//        buffer.writeString("(ChatServer) - Welcome to: \(context.localAddress!)\n")
+//        context.writeAndFlush(self.wrapOutboundOut(buffer), promise: nil)
+    }
+    
+    public func channelInactive(context: ChannelHandlerContext) {
+        let channel = context.channel
+        self.channelsSyncQueue.async {
+            if self.channels.removeValue(forKey: ObjectIdentifier(channel)) != nil {
+                // Broadcast the message to all the connected clients except the one that just was disconnected.
+                self.writeToAll(channels: self.channels, allocator: channel.allocator, message: "(ChatServer) - Client disconnected\n")
             }
         }
     }
-    
-    
-    private func clientLoop(_ client:Client) {
-        while self.isRunning {
-            if client.socket.connected == false {
-                client.state = .DISCONNECTED
-                
-                for delegate in delegates {
-                    delegate.clientDisconnected(client: client)
-                }
-                break
-            }
+
+    public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        let id = ObjectIdentifier(context.channel)
+        var read = self.unwrapInboundIn(data)
+        
+        self.channelsSyncQueue.sync {
+            var data = Data(buffer: read)
+            data = data.dropFirst(4)
             
-            if !client.socket.isInteractive() {
-                break
-            }
             
-            Logger.debug("ClientLoop \(client.userID) before readMessage() interactive: \(client.socket.isInteractive())")
+            print(data.toHex())
             
-            if let message = client.socket.readMessage() {
-                for delegate in delegates {
-                    delegate.receiveMessage(client: client, message: message)
-                }
-            }
-            else {
-                for delegate in delegates {
-                    delegate.clientDisconnected(client: client)
-                }
-                break
-            }
+            
+            let message = P7Message(withData: data, spec: self.spec)
+            
+            print("message : \(message)")
         }
+
+        // 64 should be good enough for the ipaddress
+//        var buffer = context.channel.allocator.buffer(capacity: read.readableBytes + 64)
+//        buffer.writeString("(\(context.remoteAddress!)) - ")
+//        buffer.writeBuffer(&read)
+//        self.channelsSyncQueue.async {
+//            // broadcast the message to all the connected clients except the one that wrote it.
+//            self.writeToAll(channels: self.channels.filter { id != $0.key }, buffer: buffer)
+//        }
+    }
+
+    public func errorCaught(context: ChannelHandlerContext, error: Error) {
+        print("error: ", error)
+
+        // As we are not really interested getting notified on success or failure we just pass nil as promise to
+        // reduce allocations.
+        context.close(promise: nil)
+    }
+
+    private func writeToAll(channels: [ObjectIdentifier: Channel], allocator: ByteBufferAllocator, message: String) {
+        let buffer =  allocator.buffer(string: message)
+        self.writeToAll(channels: channels, buffer: buffer)
+    }
+
+    private func writeToAll(channels: [ObjectIdentifier: Channel], buffer: ByteBuffer) {
+        channels.forEach { $0.value.writeAndFlush(buffer, promise: nil) }
     }
 }
+

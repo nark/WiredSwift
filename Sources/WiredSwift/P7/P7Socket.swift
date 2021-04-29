@@ -11,6 +11,7 @@ import SocketSwift
 import CryptoSwift
 import Crypto
 import SWCompression
+import NIO
 
 var sha2_256DigestLength  = 32
 var sha3_256DigestLength  = 32
@@ -174,7 +175,9 @@ public class P7Socket: NSObject {
     public var connected: Bool = false
     public var passwordProvider:SocketPasswordDelegate?
     
-    private var socket: Socket!
+    private var channel: Channel!
+    private var context:ChannelHandlerContext!
+    
     public  var ecdh:ECDH!
     private var digest:Digest!
     
@@ -184,21 +187,22 @@ public class P7Socket: NSObject {
     
     
     public init(hostname: String, port: Int, spec: P7Spec) {
-        self.hostname = hostname
-        self.port = port
-        self.spec = spec
+        self.hostname   = hostname
+        self.port       = port
+        self.spec       = spec
     }
     
     
-    public init(socket: Socket, spec: P7Spec) {
-        self.socket     = socket
+    public init(channel: Channel, context:ChannelHandlerContext, spec: P7Spec) {
+        self.channel    = channel
+        self.context    = context
         self.spec       = spec
         self.connected  = true
     }
     
     
-    public func getNativeSocket() -> Socket {
-        return self.socket
+    public func getChannel() -> Channel {
+        return self.channel
     }
     
     
@@ -207,11 +211,11 @@ public class P7Socket: NSObject {
     }
     
     public func set(interactive:Bool) {
-        var option = interactive ? 1 : 0
-        
-        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
-            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
-        }
+//        var option = interactive ? 1 : 0
+//
+//        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
+//            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
+//        }
 
         self.interactive = interactive
     }
@@ -221,30 +225,30 @@ public class P7Socket: NSObject {
     // MARK: - CONNECTION
     public func connect(withHandshake handshake: Bool = true) -> Bool {
         do {
-            self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
-            
-            try socket.set(option: .receiveTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
-            try socket.set(option: .sendTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
-            try socket.set(option: .receiveBufferSize, 327680)
-            try socket.set(option: .sendBufferSize, 327680)
-            
-            var addr:SocketAddress!
-            
-            do {
-                addr = try socket.addresses(for: self.hostname, port: Port(self.port)).first!
-            } catch let e {
-                if let socketError = e as? Socket.Error {
-                    self.errors.append(WiredError(withTitle: "Socket Error", message: socketError.description))
-                    Logger.error(socketError.description)
-                } else {
-                    self.errors.append(WiredError(withTitle: "Socket Error", message: e.localizedDescription))
-                    Logger.error(e.localizedDescription)
-                }
-                return false
-            }
-            
-            
-            try self.socket.connect(address: addr)
+//            self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
+//
+//            try socket.set(option: .receiveTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
+//            try socket.set(option: .sendTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
+//            try socket.set(option: .receiveBufferSize, 327680)
+//            try socket.set(option: .sendBufferSize, 327680)
+//
+//            var addr:SocketAddress!
+//
+//            do {
+//                addr = try socket.addresses(for: self.hostname, port: Port(self.port)).first!
+//            } catch let e {
+//                if let socketError = e as? Socket.Error {
+//                    self.errors.append(WiredError(withTitle: "Socket Error", message: socketError.description))
+//                    Logger.error(socketError.description)
+//                } else {
+//                    self.errors.append(WiredError(withTitle: "Socket Error", message: e.localizedDescription))
+//                    Logger.error(e.localizedDescription)
+//                }
+//                return false
+//            }
+//
+//
+//            try self.socket.connect(address: addr)
 
             self.connected = true
 
@@ -363,7 +367,8 @@ public class P7Socket: NSObject {
     
     
     public func disconnect() {
-        self.socket.close()
+        //self.socket.close()
+        self.channel.close()
         
         self.connected = false
         
@@ -382,24 +387,25 @@ public class P7Socket: NSObject {
     
     
     public func clientAddress() -> String? {
-        var addresString:String? = nil
-        var address = sockaddr_in()
-        var len = socklen_t(MemoryLayout.size(ofValue: address))
-        //let ptr = UnsafeMutableRawPointer(&address).assumingMemoryBound(to: sockaddr.self)
-        
-         withUnsafeMutablePointer(to: &address) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { ptr in
-                if getsockname(self.socket.fileDescriptor, ptr, &len) == 0 {
-                    var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    
-                    if getnameinfo(ptr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) == 0 {
-                        addresString = String(cString: hostBuffer)
-                    }
-                }
-            }
-        }
-        
-        return addresString
+//        var addresString:String? = nil
+//        var address = sockaddr_in()
+//        var len = socklen_t(MemoryLayout.size(ofValue: address))
+//        //let ptr = UnsafeMutableRawPointer(&address).assumingMemoryBound(to: sockaddr.self)
+//
+//         withUnsafeMutablePointer(to: &address) {
+//            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { ptr in
+//                if getsockname(self.socket.fileDescriptor, ptr, &len) == 0 {
+//                    var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+//
+//                    if getnameinfo(ptr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) == 0 {
+//                        addresString = String(cString: hostBuffer)
+//                    }
+//                }
+//            }
+//        }
+//
+//        return addresString
+        return context?.remoteAddress?.description
     }
     
     
@@ -411,11 +417,11 @@ public class P7Socket: NSObject {
     public func write(_ message: P7Message) -> Bool {
         do {
             if self.serialization == .XML {
-                let xml = message.xml()
-                
-                if let xmlData = xml.data(using: .utf8) {
-                    try self.socket.write(xmlData.bytes)
-                }
+//                let xml = message.xml()
+//
+//                if let xmlData = xml.data(using: .utf8) {
+//                    try self.socket.write(xmlData.bytes)
+//                }
             }
             else if self.serialization == .BINARY {
                 var lengthData = Data()
@@ -589,7 +595,7 @@ public class P7Socket: NSObject {
                         //print("read data : \(messageData.toHexString())")
                         let message = P7Message(withData: messageData, spec: self.spec)
                         
-                        Logger.info("READ [\(self.hash)]: \(message.name)")
+                        Logger.info("READ [\(self.hash)]: \(String(describing: message.name))")
                         //Logger.debug("\n\(message.xml())\n")
                         
                         return message
@@ -608,28 +614,35 @@ public class P7Socket: NSObject {
     
     
     // MARK: - PRIVATE READ/WRITE
-    private func write(_ buffer: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
-        while let available = try? socket.wait(for: .write, timeout: timeout), self.connected == true {
-            guard available else { continue } // timeout happend, try again
+    private func write(_ data: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
+        var buffer = channel.allocator.buffer(capacity: len)
+        //buffer.writeBuffer(&buffer)
             
-            let n = try? socket.write(buffer, size: len)
-            
-            return n ?? 0
-        }
+        return buffer.writeBytes(data)
         
-        return 0
+//        while let available = try? socket.wait(for: .write, timeout: timeout), self.connected == true {
+//            guard available else { continue } // timeout happend, try again
+//
+//            let n = try? socket.write(buffer, size: len)
+//
+//            return n ?? 0
+//        }
+//
+//        return 0
     }
     
     
     
     private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
-        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
-            guard available else { continue } // timeout happend, try again
-
-            let n = try? socket.read(buffer, size: len)
-
-            return n ?? 0
-        }
+//        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
+//            guard available else { continue } // timeout happend, try again
+//
+//            let n = try? socket.read(buffer, size: len)
+//
+//            return n ?? 0
+//        }
+//
+//        return 0
         
         return 0
     }
@@ -637,35 +650,38 @@ public class P7Socket: NSObject {
     
     // I have pretty much had to rewrite my own read() function here
     private func readData(size: Int, timeout:TimeInterval = 1.0) throws -> Data {
-        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
-            guard available else { continue } // timeout happend, try again
-                
-            var data = Data()
-            var readBytes = 0
-            var nLength = size
-
-            while readBytes < size && nLength > 0 && self.connected == true {
-                var messageBuffer = [Byte](repeating: 0, count: nLength)
-                
-                readBytes += try ing { recv(socket.fileDescriptor, &messageBuffer, nLength, Int32(MSG_WAITALL)) }
-                nLength    = size - readBytes
-                
-                //print("readBytes : \(readBytes)")
-                //print("nLength : \(nLength)")
-                
-                let subdata = Data(bytes: messageBuffer, count: readBytes)
-                if subdata.count > nLength {
-                    _ = subdata.dropLast(nLength)
-                }
-            
-                //print("subdata : \(subdata.toHex())")
-                
-                data.append(subdata)
-            }
-            
-            return data
-        }
-            
+//        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
+//            guard available else { continue } // timeout happend, try again
+//
+//            var data = Data()
+//            var readBytes = 0
+//            var nLength = size
+//
+//            while readBytes < size && nLength > 0 && self.connected == true {
+//                var messageBuffer = [Byte](repeating: 0, count: nLength)
+//
+//                readBytes += try ing { recv(socket.fileDescriptor, &messageBuffer, nLength, Int32(MSG_WAITALL)) }
+//                nLength    = size - readBytes
+//
+//                //print("readBytes : \(readBytes)")
+//                //print("nLength : \(nLength)")
+//
+//                let subdata = Data(bytes: messageBuffer, count: readBytes)
+//                if subdata.count > nLength {
+//                    _ = subdata.dropLast(nLength)
+//                }
+//
+//                //print("subdata : \(subdata.toHex())")
+//
+//                data.append(subdata)
+//            }
+//
+//            return data
+//        }
+//
+//        return Data()
+        self.channel.read()
+        
         return Data()
     }
     
@@ -768,8 +784,8 @@ public class P7Socket: NSObject {
                     lengthData.append(uint32: UInt32(messageData.count))
                 }
                 
-                _ = try self.socket.write(lengthData.bytes, size: lengthData.count)
-                _ = try self.socket.write(messageData.bytes, size: messageData.count)
+//                _ = try self.socket.write(lengthData.bytes, size: lengthData.count)
+//                _ = try self.socket.write(messageData.bytes, size: messageData.count)
                 
                 // checksum
                 if self.checksumEnabled {
