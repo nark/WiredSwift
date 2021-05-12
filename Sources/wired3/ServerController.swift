@@ -11,9 +11,9 @@ import NIO
 
 
 
-let SERVER_COMPRESSION  = P7Socket.Compression.ALL
-let SERVER_CIPHER       = P7Socket.CipherType.ALL
-let SERVER_CHECKSUM     = P7Socket.Checksum.ALL
+let SERVER_COMPRESSION  = Compression.ALL
+let SERVER_CIPHER       = CipherType.ALL
+let SERVER_CHECKSUM     = Checksum.ALL
     
 
 
@@ -28,7 +28,7 @@ public protocol ServerDelegate: class {
 }
 
 
-public class ServerController: ServerDelegate {
+public class ServerController: SocketChannelDelegate, ServerDelegate {
     public var port: Int = DEFAULT_PORT
     public var spec: P7Spec!
     public var isRunning:Bool = false
@@ -41,22 +41,20 @@ public class ServerController: ServerDelegate {
     public var downloadSpeed:UInt32 = 0
     public var uploadSpeed:UInt32 = 0
     
-    struct Configuration {
-        var host           : String?         = nil // will use localhost IP 0.0.0.0
-        var port           : Int             = DEFAULT_PORT // Daytime is TCP/UDP 13, which is protected
-        var backlog        : Int             = 256
-        var eventLoopGroup : EventLoopGroup? = nil
-    }
-    
-    let configuration  : Configuration
     let eventLoopGroup : EventLoopGroup
     var serverChannel  : Channel?
+    
+    var channels:[ObjectIdentifier:Client] = [:]
+    var channelsLock:Lock = Lock()
+    
     
     var startTime:Date? = nil
     
     
     
-    public init(port: Int, spec: P7Spec) {
+    public init(port: Int, spec: P7Spec, eventLoopGroup: EventLoopGroup) {
+        self.eventLoopGroup = eventLoopGroup
+        
         self.port = port
         self.spec = spec
         
@@ -83,13 +81,10 @@ public class ServerController: ServerDelegate {
         if let number = App.config["transfers", "uploadSpeed"] as? UInt32 {
             self.uploadSpeed = number
         }
-        
-        self.configuration  = Configuration(host: nil, port: port, backlog: 256, eventLoopGroup: MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount))
-        self.eventLoopGroup = configuration.eventLoopGroup
-               ?? MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
             
         self.addDelegate(self)
     }
+    
     
     
     public func listen() {
@@ -98,27 +93,7 @@ public class ServerController: ServerDelegate {
         self.listenChannels()
         
         do    { try serverChannel?.closeFuture.wait() }
-        catch { print("[!] ERROR: Failed to wait on server:", error) }
-        
-//        do {
-//            self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
-//            try self.socket.set(option: .reuseAddress, true) // set SO_REUSEADDR to 1
-//            try self.socket.bind(port: Port(self.port), address: nil) // bind 'localhost:8090' address to the socket
-//
-//            DispatchQueue.global(qos: .default).async {
-//                self.isRunning = true
-//
-//                self.listenThread()
-//            }
-//        } catch let error {
-//            if let socketError = error as? Socket.Error {
-//                Logger.error(socketError.description)
-//            } else {
-//                Logger.error(error.localizedDescription)
-//            }
-//
-//        }
-        
+        catch { Logger.fatal("Failed to wait on server: \(error)") }
     }
     
     
@@ -131,58 +106,99 @@ public class ServerController: ServerDelegate {
         do {
             let address : SocketAddress
         
-            if let host = configuration.host {
-                address = try SocketAddress.init(ipAddress: host, port: configuration.port)
-            }
-            else {
-                var addr = sockaddr_in()
-                addr.sin_port = in_port_t(configuration.port).bigEndian
-                address = SocketAddress(addr, host: "*")
-            }
+            var addr = sockaddr_in()
+            addr.sin_port = in_port_t(self.port).bigEndian
+            address = SocketAddress(addr, host: "*")
         
             serverChannel = try bootstrap.bind(to: address).wait()
-        
+            
             if let addr = serverChannel?.localAddress {
-                print("[+] Server running on:", addr)
-            }
-            else {
-                print("[!] ERROR: server reported no local address?")
+                Logger.info("Server running on: \(addr)")
             }
         }
         catch let error as NIO.IOError {
-            print("[!] ERROR: failed to start server, errno:",
-                  error.errnoCode, "\n",
-                  error.localizedDescription)
+            Logger.error("Failed to start server, errno: \(error.errnoCode) \(error.localizedDescription)")
         }
         catch {
-            print("[!] ERROR: failed to start server:", type(of:error), error)
+            Logger.error("Failed to start server, errno: \(type(of:error)) \(error)")
         }
     }
     
     
     func makeBootstrap() -> ServerBootstrap {
+        let config = SocketConfiguration(
+            spec:               self.spec,
+            originator:         Originator.Server,
+            cipher:             SERVER_CIPHER,
+            compression:        SERVER_COMPRESSION,
+            checksum:           SERVER_CHECKSUM,
+            passwordProvider:   App.usersController,
+            channelDelegate:     self
+        )
+        
         let reuseAddrOpt = ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET),
                                                  SO_REUSEADDR)
         let bootstrap = ServerBootstrap(group: eventLoopGroup)
             // Specify backlog and enable SO_REUSEADDR for the server itself
-            .serverChannelOption(ChannelOptions.backlog,
-                                 value: Int32(configuration.backlog))
+            .serverChannelOption(ChannelOptions.backlog, value: Int32(256))
             .serverChannelOption(reuseAddrOpt, value: 1)
         
             // Set the handlers that are applied to the accepted Channels
             .childChannelInitializer { channel in
-                channel.pipeline.addHandler(ClientHandler(self.spec))
+                let socket = P7Socket(config)
+                return channel.pipeline.addHandlers([ByteToMessageHandler(P7MessageDecoder(withSocket: socket)), socket])
             }
         
             // Enable TCP_NODELAY and SO_REUSEADDR for the accepted Channels
-            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY),
-                                value: 1)
+            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
             .childChannelOption(reuseAddrOpt, value: 1)
             .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
     
         return bootstrap
     }
     
+    
+    
+    // MARK: -
+    
+    public func channelConnected(socket: P7Socket, channel: Channel) {
+        print("channelConnected")
+
+    }
+    
+    public func channelDisconnected(socket: P7Socket, channel: Channel) {
+        print("channelDisconnected")
+
+        self.channelsLock.exclusivelyWrite {
+            if let client = self.channels.removeValue(forKey: ObjectIdentifier(channel)) {
+                self.clientDisconnected(client: client)
+            }
+        }
+    }
+    
+    public func channelAuthenticated(socket: P7Socket, channel: Channel) {
+        print("channelAuthenticated")
+        
+        let client = Client(userID: App.usersController.nextUserID(), socket: socket)
+
+        self.channelsLock.exclusivelyWrite {
+            self.channels[ObjectIdentifier(channel)] = client
+        }
+        
+        App.clientsController.addClient(client: client)
+        
+        client.state = .CONNECTED
+    }
+    
+    public func channelAuthenticationFailed(socket: P7Socket, channel: Channel) {
+        print("channelAuthenticationFailed")
+    }
+    
+    public func channelReceiveMessage(message: P7Message, socket: P7Socket, channel: Channel) {
+        if let client = self.channels[ObjectIdentifier(channel)] {
+            self.receiveMessage(client: client, message: message)
+        }
+    }
     
     
     // MARK: -
@@ -372,11 +388,12 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveClientInfo(_ client:Client, _ message:P7Message) {
+        print("receiveClientInfo")
         client.state = .GAVE_CLIENT_INFO
-                
+      
         App.serverController.reply(client: client,
-                                   reply: self.serverInfoMessage(),
-                                   message: message)
+                reply: self.serverInfoMessage(),
+                message: message)
     }
     
     
@@ -427,44 +444,46 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveSendLogin(_ client:Client, _ message:P7Message) -> Bool {
-        guard let login = message.string(forField: "wired.user.login") else {
-            return false
-        }
-        
-        guard let password = message.string(forField: "wired.user.password") else {
-            return false
-        }
-        
-        guard let user = App.usersController.user(withUsername: login, password: password) else {
-            let reply = P7Message(withName: "wired.error", spec: message.spec)
-            reply.addParameter(field: "wired.error.string", value: "Login failed")
-            reply.addParameter(field: "wired.error", value: UInt32(4
-            ))
-            App.serverController.reply(client: client, reply: reply, message: message)
-            
-            Logger.error("Login failed for user '\(login)'")
-            
-            return false
-        }
-        
-        client.user     = user
-        client.state    = .LOGGED_IN
-        
-        let response = P7Message(withName: "wired.login", spec: self.spec)
-        
-        response.addParameter(field: "wired.user.id", value: client.userID)
-        
-        App.serverController.reply(client: client, reply: response, message: message)
-        
-        let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
-                
-        for field in spec.accountPrivileges! {
-            if user.hasPrivilege(name: field) {
-                response2.addParameter(field: field, value: UInt32(1))
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let login = message.string(forField: "wired.user.login") else {
+                return
             }
-        }
+            
+            guard let password = message.string(forField: "wired.user.password") else {
+                return
+            }
+            
+            guard let user = App.usersController.user(withUsername: login, password: password) else {
+                let reply = P7Message(withName: "wired.error", spec: message.spec)
+                reply.addParameter(field: "wired.error.string", value: "Login failed")
+                reply.addParameter(field: "wired.error", value: UInt32(4
+                ))
+                App.serverController.reply(client: client, reply: reply, message: message)
                 
-        App.serverController.reply(client: client, reply: response2, message: message)
+                Logger.error("Login failed for user '\(login)'")
+                
+                return
+            }
+            
+            client.user     = user
+            client.state    = .LOGGED_IN
+            
+            let response = P7Message(withName: "wired.login", spec: self.spec)
+            
+            response.addParameter(field: "wired.user.id", value: client.userID)
+            
+            App.serverController.reply(client: client, reply: response, message: message)
+            
+            let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
+                    
+            for field in self.spec.accountPrivileges! {
+                if user.hasPrivilege(name: field) {
+                    response2.addParameter(field: field, value: UInt32(1))
+                }
+            }
+                    
+            App.serverController.reply(client: client, reply: response2, message: message)
+        }
         
         return true
     }
@@ -802,120 +821,5 @@ public class ServerController: ServerDelegate {
 //            }
 //        }
 //    }
-}
-
-
-
-final class ClientHandler: ChannelInboundHandler {
-    public typealias InboundIn = ByteBuffer
-    public typealias OutboundOut = ByteBuffer
-
-    // All access to channels is guarded by channelsSyncQueue.
-    private let channelsSyncQueue = DispatchQueue(label: "channelsQueue")
-    private var channels: [ObjectIdentifier: Channel] = [:]
-    private var spec: P7Spec!
-    private let ecdh = ECDH()
-    
-    private var socket:P7Socket!
-    
-    init(_ spec:P7Spec) {
-        self.spec = spec
-    }
-    
-    public func channelActive(context: ChannelHandlerContext) {
-        let remoteAddress = context.remoteAddress!
-        let channel = context.channel
-
-        print("remoteAddress \(remoteAddress)")
-        
-//        socket = P7Socket(channel: channel, context: context, spec: self.spec)
-//
-//        socket.ecdh = self.ecdh
-//        socket.passwordProvider = App.usersController
-//
-//        let userID = App.usersController.nextUserID()
-//        let client = Client(userID: userID, socket: socket)
-//
-//        if socket.accept(compression: SERVER_COMPRESSION,
-//                           cipher:      SERVER_CIPHER,
-//                           checksum:    SERVER_CHECKSUM) {
-//
-//            Logger.info("Accept new connection from \(socket.remoteAddress ?? "unknow")")
-//
-//            App.clientsController.addClient(client: client)
-//
-//            client.state = .CONNECTED
-//
-//            //self.clientLoop(client)
-//        }
-//        else {
-//            socket.disconnect()
-//        }
-        
-//        self.channelsSyncQueue.async {
-//            // broadcast the message to all the connected clients except the one that just became active.
-//            self.writeToAll(channels: self.channels, allocator: channel.allocator, message: "(ChatServer) - New client connected with address: \(remoteAddress)\n")
-//
-//            self.channels[ObjectIdentifier(channel)] = channel
-//        }
-//
-//        var buffer = channel.allocator.buffer(capacity: 64)
-//        buffer.writeString("(ChatServer) - Welcome to: \(context.localAddress!)\n")
-//        context.writeAndFlush(self.wrapOutboundOut(buffer), promise: nil)
-    }
-    
-    public func channelInactive(context: ChannelHandlerContext) {
-        let channel = context.channel
-        self.channelsSyncQueue.async {
-            if self.channels.removeValue(forKey: ObjectIdentifier(channel)) != nil {
-                // Broadcast the message to all the connected clients except the one that just was disconnected.
-                self.writeToAll(channels: self.channels, allocator: channel.allocator, message: "(ChatServer) - Client disconnected\n")
-            }
-        }
-    }
-
-    public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        let id = ObjectIdentifier(context.channel)
-        var read = self.unwrapInboundIn(data)
-        
-        self.channelsSyncQueue.sync {
-            var data = Data(buffer: read)
-            data = data.dropFirst(4)
-            
-            
-            print(data.toHex())
-            
-            
-            let message = P7Message(withData: data, spec: self.spec)
-            
-            print("message : \(message)")
-        }
-
-        // 64 should be good enough for the ipaddress
-//        var buffer = context.channel.allocator.buffer(capacity: read.readableBytes + 64)
-//        buffer.writeString("(\(context.remoteAddress!)) - ")
-//        buffer.writeBuffer(&read)
-//        self.channelsSyncQueue.async {
-//            // broadcast the message to all the connected clients except the one that wrote it.
-//            self.writeToAll(channels: self.channels.filter { id != $0.key }, buffer: buffer)
-//        }
-    }
-
-    public func errorCaught(context: ChannelHandlerContext, error: Error) {
-        print("error: ", error)
-
-        // As we are not really interested getting notified on success or failure we just pass nil as promise to
-        // reduce allocations.
-        context.close(promise: nil)
-    }
-
-    private func writeToAll(channels: [ObjectIdentifier: Channel], allocator: ByteBufferAllocator, message: String) {
-        let buffer =  allocator.buffer(string: message)
-        self.writeToAll(channels: channels, buffer: buffer)
-    }
-
-    private func writeToAll(channels: [ObjectIdentifier: Channel], buffer: ByteBuffer) {
-        channels.forEach { $0.value.writeAndFlush(buffer, promise: nil) }
-    }
 }
 

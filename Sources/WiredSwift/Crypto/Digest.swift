@@ -10,14 +10,14 @@ import CryptoSwift
 
 
 public class Digest {
-    public var type:P7Socket.Checksum!
+    public var type:Checksum!
     public var key:String!
     
     private var hmac:HMAC?      = nil
     private var poly:Poly1305?  = nil
     
     
-    public init(key: String, type:P7Socket.Checksum) {
+    public init(key: String, type:Checksum) {
         self.key    = key
         self.type   = type
         
@@ -32,16 +32,16 @@ public class Digest {
     
     public func authenticate(data:Data) -> Data? {
         switch self.type {
-        case P7Socket.Checksum.SHA2_256:
+        case Checksum.SHA2_256:
             return data.sha256()
             
-        case P7Socket.Checksum.SHA3_256:
+        case Checksum.SHA3_256:
             return data.sha3(SHA3.Variant.sha256)
             
-        case P7Socket.Checksum.HMAC_256:
+        case Checksum.HMAC_256:
             return HMAC256_authenticate(data: data)
             
-        case P7Socket.Checksum.Poly1305:
+        case Checksum.Poly1305:
             return Poly1305_authenticate(data: data)
             
         default:

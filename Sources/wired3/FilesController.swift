@@ -29,37 +29,39 @@ public class FilesController {
     }
     
     public func listDirectory(client:Client, message:P7Message) {
-        var recursive = false
-        
-        guard let path = message.string(forField: "wired.file.path") else {
-            return
-        }
-        
-        // sanitize checks
-        if !File.isValid(path: path) {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return
-        }
-        
-        // file privileges
-        if let privilege = FilePrivilege(path: self.real(path: path)) {
-            if !client.user!.hasPermission(toRead: privilege) {
-                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+        DispatchQueue.global(qos: .userInitiated).async {
+            var recursive = false
+            
+            guard let path = message.string(forField: "wired.file.path") else {
                 return
             }
-        } else {
-            // user privileges
-            if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
-                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            
+            // sanitize checks
+            if !File.isValid(path: path) {
+                App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
+            
+            // file privileges
+            if let privilege = FilePrivilege(path: self.real(path: path)) {
+                if !client.user!.hasPermission(toRead: privilege) {
+                    App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                    return
+                }
+            } else {
+                // user privileges
+                if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+                    App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                    return
+                }
+            }
+            
+            if let r = message.bool(forField: "wired.file.recursive") {
+                recursive = r
+            }
+            
+            self.replyList(path, recursive, client, message)
         }
-        
-        if let r = message.bool(forField: "wired.file.recursive") {
-            recursive = r
-        }
-        
-        self.replyList(path, recursive, client, message)
     }
     
     

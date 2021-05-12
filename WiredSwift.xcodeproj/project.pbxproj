@@ -2465,7 +2465,6 @@
 		OBJ_5837 /* CBase32.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "vapor::CBase32::Product" /* CBase32.framework */; };
 		OBJ_5838 /* FluentKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "fluent-kit::FluentKit::Product" /* FluentKit.framework */; };
 		OBJ_5839 /* AsyncKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "async-kit::AsyncKit::Product" /* AsyncKit.framework */; };
-		OBJ_5840 /* Logging.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-log::Logging::Product" /* Logging.framework */; };
 		OBJ_5841 /* NIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIO::Product" /* NIO.framework */; };
 		OBJ_5842 /* NIOConcurrencyHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::NIOConcurrencyHelpers::Product" /* NIOConcurrencyHelpers.framework */; };
 		OBJ_5843 /* CNIOAtomics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "swift-nio::CNIOAtomics::Product" /* CNIOAtomics.framework */; };
@@ -5045,13 +5044,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = "async-kit::AsyncKit";
 			remoteInfo = AsyncKit;
-		};
-		4C5510A8262E13DF001F65BE /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = OBJ_1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = "swift-log::Logging";
-			remoteInfo = Logging;
 		};
 		4C5510A9262E13DF001F65BE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -7746,7 +7738,7 @@
 		"SocketSwift::SocketSwift::Product" /* SocketSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = SocketSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"WiredSwift::WiredSwift::Product" /* WiredSwift.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = WiredSwift.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"WiredSwift::WiredSwiftTests::Product" /* WiredSwiftTests.xctest */ = {isa = PBXFileReference; lastKnownFileType = file; path = WiredSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		"WiredSwift::wired3::Product" /* wired3 */ = {isa = PBXFileReference; lastKnownFileType = text; path = wired3; sourceTree = BUILT_PRODUCTS_DIR; };
+		"WiredSwift::wired3::Product" /* wired3 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = wired3; sourceTree = BUILT_PRODUCTS_DIR; };
 		"async-http-client::AsyncHTTPClient::Product" /* AsyncHTTPClient.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AsyncHTTPClient.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"async-kit::AsyncKit::Product" /* AsyncKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AsyncKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"console-kit::ConsoleKit::Product" /* ConsoleKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ConsoleKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -8562,7 +8554,6 @@
 				OBJ_5837 /* CBase32.framework in Frameworks */,
 				OBJ_5838 /* FluentKit.framework in Frameworks */,
 				OBJ_5839 /* AsyncKit.framework in Frameworks */,
-				OBJ_5840 /* Logging.framework in Frameworks */,
 				OBJ_5841 /* NIO.framework in Frameworks */,
 				OBJ_5842 /* NIOConcurrencyHelpers.framework in Frameworks */,
 				OBJ_5843 /* CNIOAtomics.framework in Frameworks */,
@@ -14247,7 +14238,6 @@
 				OBJ_5892 /* PBXTargetDependency */,
 				OBJ_5893 /* PBXTargetDependency */,
 				OBJ_5894 /* PBXTargetDependency */,
-				OBJ_5895 /* PBXTargetDependency */,
 				OBJ_5896 /* PBXTargetDependency */,
 				OBJ_5897 /* PBXTargetDependency */,
 				OBJ_5898 /* PBXTargetDependency */,
@@ -20410,11 +20400,6 @@
 			isa = PBXTargetDependency;
 			target = "async-kit::AsyncKit" /* AsyncKit */;
 			targetProxy = 4C5510A7262E13DF001F65BE /* PBXContainerItemProxy */;
-		};
-		OBJ_5895 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = "swift-log::Logging" /* Logging */;
-			targetProxy = 4C5510A8262E13DF001F65BE /* PBXContainerItemProxy */;
 		};
 		OBJ_5896 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

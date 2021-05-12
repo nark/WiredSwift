@@ -8,6 +8,7 @@
 import Foundation
 import Configuration
 import WiredSwift
+import NIO
 
 
 public let DEFAULT_PORT = 4871
@@ -57,7 +58,9 @@ public class AppController : DatabaseControllerDelegate {
 
     
     public func start() {
-        self.databaseController = DatabaseController(baseURL: self.databaseURL, spec: self.spec)
+        let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        
+        self.databaseController = DatabaseController(baseURL: self.databaseURL, spec: self.spec, eventLoopGroup: eventLoopGroup)
         self.databaseController.delegate = self
         
         self.clientsController = ClientsController()
@@ -78,7 +81,7 @@ public class AppController : DatabaseControllerDelegate {
         
         let port = self.config["server", "port"] as? Int
         
-        self.serverController = ServerController(port: port ?? DEFAULT_PORT, spec: self.spec)
+        self.serverController = ServerController(port: port ?? DEFAULT_PORT, spec: self.spec, eventLoopGroup: eventLoopGroup)
         self.serverController.listen()
     }
     

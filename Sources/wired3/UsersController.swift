@@ -26,18 +26,47 @@ public class UsersController: TableController, SocketPasswordDelegate {
     
     
     // MARK: - Database
-    public func passwordForUsername(username: String) -> String? {
-        if let user = self.user(withUsername: username) {
-            return user.password
+    public func passwordForUsername(username:String, promise: EventLoopPromise<String?>) -> EventLoopFuture<String?> {
+        guard let database = App.databaseController.dbs.database(logger: .init(label: "fr.read-write.wired3"), on: promise.futureResult.eventLoop) else {
+            promise.fail(WiredError(withTitle: "Password Provider Failed", message: "Cannot connect database"))
+            return promise.futureResult
+        }        
+        
+        User.query(on: database)
+         .filter(\.$username == username)
+         .first().whenSuccess { (user) in
+             return promise.succeed(user?.password)
         }
         
-        return nil
+        return promise.futureResult
+    }
+    
+    
+    // MARK: -
+    public func fuser(withUsername username: String, password: String, promise: EventLoopPromise<User>) -> EventLoopFuture<User> {
+        guard let database = App.databaseController.dbs.database(logger: .init(label: "fr.read-write.wired3"), on: promise.futureResult.eventLoop) else {
+            promise.fail(WiredError(withTitle: "Password Provider Failed", message: "Cannot connect database"))
+            return promise.futureResult
+        }
+        
+        User.query(on: database)
+         .filter(\.$username == username)
+         .filter(\.$password == password)
+         .first().whenSuccess { (user) in
+            if let u = user {
+                return promise.succeed(u)
+            } else {
+                return promise.fail(WiredError(withTitle: "Wrong credential", message: "Wrong login or password, user not found"))
+            }
+        }
+        
+        return promise.futureResult
     }
     
     
     public func user(withUsername username: String, password: String) -> User? {
         var user:User? = nil
-                
+                    
         do {
             user = try User.query(on: databaseController.pool)
                         .filter(\.$username == username)
@@ -49,6 +78,9 @@ public class UsersController: TableController, SocketPasswordDelegate {
         
         return user
     }
+    
+    
+    
     
     
     public func user(withUsername username: String) -> User? {
@@ -64,6 +96,8 @@ public class UsersController: TableController, SocketPasswordDelegate {
         
         return user
     }
+
+    
     
     
     // MARK: -

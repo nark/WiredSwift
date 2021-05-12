@@ -73,6 +73,23 @@ public class User: Model {
     }
     
     
+    public func hasPrivilege(name:String, promise: EventLoopPromise<Bool>) -> EventLoopFuture<Bool> {
+        let up = $privileges.query(on: App.databaseController.pool).filter(\.$name == name).first()
+        
+        up.whenFailure { (e) in
+            promise.fail(e)
+        }
+        
+        up.whenSuccess { (up) in
+            if let value = up?.value {
+                promise.succeed(value == true ? true : false)
+            }
+        }
+
+        return promise.futureResult
+    }
+    
+    
     public func hasPermission(toRead privilege:FilePrivilege) -> Bool {
         // user can read all dropboxes (bypass)
         if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") {

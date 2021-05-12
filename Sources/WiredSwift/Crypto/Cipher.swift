@@ -10,7 +10,7 @@ import Foundation
 import CryptoSwift
 
 public class Cipher {
-    public var cipher: P7Socket.CipherType = .ECDH_AES256_SHA256
+    public var cipher: CipherType = .ECDH_AES256_SHA256
     public var cipherKey:String!
     public var cipherIV:[UInt8]!
     
@@ -20,7 +20,7 @@ public class Cipher {
     
     
     // MARK: -
-    public init(cipher: P7Socket.CipherType, key: String, iv: Data?) {
+    public init(cipher: CipherType, key: String, iv: Data?) {
         self.cipher         = cipher
         self.cipherKey      = key
         
@@ -162,7 +162,7 @@ public class Cipher {
     
     // MARK: -
     
-    private func randomIV(forCipher cipher:P7Socket.CipherType) -> Array<UInt8>? {
+    private func randomIV(forCipher cipher:CipherType) -> Array<UInt8>? {
         if cipher == .ECDH_AES256_SHA256 {
             return AES.randomIV(16)
         } else if cipher == .ECDH_CHACHA20_SHA256 {
@@ -173,7 +173,7 @@ public class Cipher {
     
     
     
-    public static func IVlength(forCipher cipher:P7Socket.CipherType) -> Int {
+    public static func IVlength(forCipher cipher:CipherType) -> Int {
         if cipher == .ECDH_AES256_SHA256 {
             return 16
         } else if cipher == .ECDH_CHACHA20_SHA256 {

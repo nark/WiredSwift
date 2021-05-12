@@ -28,7 +28,8 @@ public class DatabaseController {
     
     
     // MARK: - Initialization
-    public init?(baseURL: URL, spec: P7Spec) {
+    public init?(baseURL: URL, spec: P7Spec, eventLoopGroup:EventLoopGroup) {
+        self.eventLoopGroup = eventLoopGroup
         self.baseURL = baseURL
         self.spec = spec
     }
@@ -37,7 +38,6 @@ public class DatabaseController {
     
     // MARK: - Private
     public func initDatabase() -> Bool {
-        eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 5)
         threadPool = .init(numberOfThreads: 5)
         threadPool.start()
         
