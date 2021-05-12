@@ -200,14 +200,17 @@ open class Connection: NSObject, SocketChannelDelegate {
     
     public func reconnect() -> Bool {
         // disconnect/clean
-        self.pingCheckTimer.invalidate()
-        self.pingCheckTimer = nil
+        if self.pingCheckTimer != nil {
+            self.pingCheckTimer.invalidate()
+            self.pingCheckTimer = nil
+        }
 
         let cipher      = self.socket.cipherType
         let compression = self.socket.compression
         let checksum    = self.socket.checksum
 
         self.socket.disconnect()
+        self.state = .clientInfo
         
         // connect
         self.socket = P7Socket(spec: self.spec, originator: Originator.Client)
@@ -223,7 +226,6 @@ open class Connection: NSObject, SocketChannelDelegate {
         group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         bootstrap = ClientBootstrap(group: group)
             .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
-            .channelOption(ChannelOptions.recvAllocator, value: AdaptiveRecvByteBufferAllocator(minimum: 1024, initial: 1024, maximum: 65536))
             .channelInitializer { channel in
                 channel.pipeline.addHandlers([
                     ByteToMessageHandler(P7MessageDecoder(withSocket: self.socket)),
@@ -253,14 +255,14 @@ open class Connection: NSObject, SocketChannelDelegate {
         })
                 
         try! channel.closeFuture.wait()
-        
-        return true
-        
+                
         return true
     }
     
     
     public func disconnect() {
+        self.socket.disconnect()
+        
         NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
         
         defer {
@@ -404,40 +406,49 @@ open class Connection: NSObject, SocketChannelDelegate {
     
     internal func handleMessage(_ message:P7Message) {
         if self.state < .clientPrivileges {
-            if message.name == "wired.server_info" && self.state == .clientInfo {
-                self.serverInfo = ServerInfo(message: message)
-                self.state = .clientUser
-                
-                _ = self.setUser()
-                
-            } else if message.name == "wired.okay" && self.state == .clientUser {
-                self.userInfoCounter += 1
-                
-                if self.userInfoCounter == 3 {
-                    self.state = .clientLogin
+            switch self.state {
+            case .clientInfo:
+                if message.name == "wired.server_info" {
+                    self.serverInfo = ServerInfo(message: message)
+                    self.state = .clientUser
                     
-                    _ = self.login()
+                    _ = self.setUser()
                 }
-                
-            } else if message.name == "wired.login" && self.state == .clientLogin {
-                if let uid = message.uint32(forField: "wired.user.id") {
-                    self.userID = uid
-                    self.state  = .clientLoggedIn
+            case .clientUser:
+                if message.name == "wired.okay" {
+                    self.userInfoCounter += 1
+                    
+                    if self.userInfoCounter == 3 {
+                        self.state = .clientLogin
+                        
+                        _ = self.login()
+                        
+                        self.userInfoCounter = 0
+                    }
                 }
-                
-            } else if message.name == "wired.account.privileges" && self.state == .clientLoggedIn {
-                message.parameterKeys.forEach({ (key) in
-                    self.privileges.append(key)
-                })
-                
-                self.state = .clientPrivileges
-                
-                for d in self.delegates {
-                    DispatchQueue.main.async {
-                        d.connectionDidConnect(connection: self)
+            case .clientLogin:
+                if message.name == "wired.login" {
+                    if let uid = message.uint32(forField: "wired.user.id") {
+                        self.userID = uid
+                        self.state  = .clientLoggedIn
+                    }
+                }
+            default:
+                if message.name == "wired.account.privileges" && self.state == .clientLoggedIn {
+                    message.parameterKeys.forEach({ (key) in
+                        self.privileges.append(key)
+                    })
+                    
+                    self.state = .clientPrivileges
+                    
+                    for d in self.delegates {
+                        DispatchQueue.main.async {
+                            d.connectionDidConnect(connection: self)
+                        }
                     }
                 }
             }
+
         } else {
             switch message.name {
             case "wired.send_ping":
@@ -485,15 +496,7 @@ open class Connection: NSObject, SocketChannelDelegate {
         
         message.addParameter(field: "wired.user.nick", value: self.nick)
         
-        if !self.send(message: message) {
-            return false
-        }
-        
-        if self.socket.readMessage() == nil {
-            return false
-        }
-        
-        return true
+        return self.send(message: message)
     }
     
     
@@ -502,15 +505,7 @@ open class Connection: NSObject, SocketChannelDelegate {
         
         message.addParameter(field: "wired.user.status", value: self.status)
         
-        if !self.send(message: message) {
-            return false
-        }
-        
-        if self.socket.readMessage() == nil {
-            return false
-        }
-        
-        return true
+        return self.send(message: message)
     }
     
     
@@ -519,25 +514,19 @@ open class Connection: NSObject, SocketChannelDelegate {
         
         message.addParameter(field: "wired.user.icon", value: Data(base64Encoded: self.icon, options: .ignoreUnknownCharacters))
         
-        if !self.send(message: message) {
-            return false
-        }
-        
-        if self.socket.readMessage() == nil {
-            return false
-        }
-        
-        return true
+        return self.send(message: message)
     }
     
     
     
     private func setUser() -> Bool {
-        _ = self.setNick()
-        _ = self.setStatus()
-        _ = self.setIcon()
+        var ok = false
         
-        return true
+        ok = self.setNick()
+        ok = self.setStatus()
+        ok = self.setIcon()
+        
+        return ok
     }
     
     
@@ -553,10 +542,8 @@ open class Connection: NSObject, SocketChannelDelegate {
         }
                 
         message.addParameter(field: "wired.user.password", value: password)
-                
-        _ = self.send(message: message)
-                
-        return true
+                                
+        return self.send(message: message)
     }
     
     
@@ -598,21 +585,7 @@ open class Connection: NSObject, SocketChannelDelegate {
         #endif
         
         message.addParameter(field: "wired.info.supports_rsrc", value: false)
-        
-        _ = self.send(message: message)
-                
-//        guard let response = self.socket.readMessage() else {
-//            print("no response ?")
-//            return false
-//        }
-//
-//        self.serverInfo = ServerInfo(message: response)
-        
-        return true
+                        
+        return self.send(message: message)
     }
-    
-    
-    // MARK: -
-
-    
 }

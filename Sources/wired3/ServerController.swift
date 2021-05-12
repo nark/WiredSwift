@@ -23,7 +23,6 @@ let SERVER_CHECKSUM     = Checksum.ALL
 public protocol ServerDelegate: class {
     func clientDisconnected(client:Client)
     func disconnectClient(client:Client)
-    
     func receiveMessage(client:Client, message:P7Message)
 }
 
@@ -46,7 +45,6 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
     
     var channels:[ObjectIdentifier:Client] = [:]
     var channelsLock:Lock = Lock()
-    
     
     var startTime:Date? = nil
     
@@ -176,9 +174,7 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
         }
     }
     
-    public func channelAuthenticated(socket: P7Socket, channel: Channel) {
-        print("channelAuthenticated")
-        
+    public func channelAuthenticated(socket: P7Socket, channel: Channel) {        
         let client = Client(userID: App.usersController.nextUserID(), socket: socket)
 
         self.channelsLock.exclusivelyWrite {
@@ -311,84 +307,85 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
     
     // MARK: - Private
     private func handleMessage(client:Client, message:P7Message) {
-        if message.name == "wired.client_info" {
-            self.receiveClientInfo(client, message)
-        }
-        else if message.name == "wired.user.set_nick" {
-            self.receiveUserSetNick(client, message)
-        }
-        else if message.name == "wired.user.set_status" {
-            self.receiveUserSetStatus(client, message)
-        }
-        else if message.name == "wired.user.set_icon" {
-            self.receiveUserSetIcon(client, message)
-        }
-        else if message.name == "wired.send_login" {
-            if !self.receiveSendLogin(client, message) {
-                // login failed
-                self.disconnectClient(client: client)
+        DispatchQueue.global(qos: .userInitiated).async {
+            if message.name == "wired.client_info" {
+                self.receiveClientInfo(client, message)
             }
-        }
-        else if message.name == "wired.chat.get_chats" {
-            App.chatsController.getChats(message: message, client: client)
-        }
-        else if message.name == "wired.chat.create_public_chat" {
-            App.chatsController.createPublicChat(message: message, client: client)
-        }
-        else if message.name == "wired.chat.delete_public_chat" {
-            App.chatsController.deletePublicChat(message: message, client: client)
-        }
-        else if message.name == "wired.chat.create_chat" {
-            App.chatsController.createPrivateChat(message: message, client: client)
-        }
-        else if message.name == "wired.chat.invite_user" {
-            App.chatsController.inviteUser(message: message, client: client)
-        }
-        else if message.name == "wired.chat.send_say" {
-            App.chatsController.receiveChatSay(client, message)
-        }
-        else if message.name == "wired.chat.send_me" {
-            App.chatsController.receiveChatMe(client, message)
-        }
-        else if message.name == "wired.chat.join_chat" {
-            App.chatsController.userJoin(message: message, client: client)
-        }
-        else if message.name == "wired.chat.leave_chat" {
-            App.chatsController.userLeave(message: message, client: client)
-        }
-        else if message.name == "wired.chat.set_topic" {
-            App.chatsController.setTopic(message: message, client: client)
-        }
-        else if message.name == "wired.chat.kick_user" {
-            //App.chatsController.kickUser(user: user, message: message)
-        }
-        else if message.name == "wired.file.list_directory" {
-            App.filesController.listDirectory(client: client, message: message)
-        }
-        else if message.name == "wired.file.delete" {
-            App.filesController.delete(client: client, message: message)
-        }
-        else if message.name == "wired.transfer.download_file" {
-            self.receiveDownloadFile(client, message)
-        }
-        else if message.name == "wired.transfer.upload_file" {
-            self.receiveUploadFile(client, message)
-        }
-        else if message.name == "wired.settings.get_settings" {
-            self.receiveGetSettings(client: client, message: message)
-        }
-            else if message.name == "wired.settings.set_settings" {
-                self.receiveSetSettings(client: client, message: message)
+            else if message.name == "wired.user.set_nick" {
+                self.receiveUserSetNick(client, message)
             }
-        else {
-            WiredSwift.Logger.warning("Message \(message.name ?? "unknow message") not implemented")
+            else if message.name == "wired.user.set_status" {
+                self.receiveUserSetStatus(client, message)
+            }
+            else if message.name == "wired.user.set_icon" {
+                self.receiveUserSetIcon(client, message)
+            }
+            else if message.name == "wired.send_login" {
+                if !self.receiveSendLogin(client, message) {
+                    // login failed
+                    self.disconnectClient(client: client)
+                }
+            }
+            else if message.name == "wired.chat.get_chats" {
+                App.chatsController.getChats(message: message, client: client)
+            }
+            else if message.name == "wired.chat.create_public_chat" {
+                App.chatsController.createPublicChat(message: message, client: client)
+            }
+            else if message.name == "wired.chat.delete_public_chat" {
+                App.chatsController.deletePublicChat(message: message, client: client)
+            }
+            else if message.name == "wired.chat.create_chat" {
+                App.chatsController.createPrivateChat(message: message, client: client)
+            }
+            else if message.name == "wired.chat.invite_user" {
+                App.chatsController.inviteUser(message: message, client: client)
+            }
+            else if message.name == "wired.chat.send_say" {
+                App.chatsController.receiveChatSay(client, message)
+            }
+            else if message.name == "wired.chat.send_me" {
+                App.chatsController.receiveChatMe(client, message)
+            }
+            else if message.name == "wired.chat.join_chat" {
+                App.chatsController.userJoin(message: message, client: client)
+            }
+            else if message.name == "wired.chat.leave_chat" {
+                App.chatsController.userLeave(message: message, client: client)
+            }
+            else if message.name == "wired.chat.set_topic" {
+                App.chatsController.setTopic(message: message, client: client)
+            }
+            else if message.name == "wired.chat.kick_user" {
+                //App.chatsController.kickUser(user: user, message: message)
+            }
+            else if message.name == "wired.file.list_directory" {
+                App.filesController.listDirectory(client: client, message: message)
+            }
+            else if message.name == "wired.file.delete" {
+                App.filesController.delete(client: client, message: message)
+            }
+            else if message.name == "wired.transfer.download_file" {
+                self.receiveDownloadFile(client, message)
+            }
+            else if message.name == "wired.transfer.upload_file" {
+                self.receiveUploadFile(client, message)
+            }
+            else if message.name == "wired.settings.get_settings" {
+                self.receiveGetSettings(client: client, message: message)
+            }
+                else if message.name == "wired.settings.set_settings" {
+                    self.receiveSetSettings(client: client, message: message)
+                }
+            else {
+                WiredSwift.Logger.warning("Message \(message.name ?? "unknow message") not implemented")
+            }
         }
     }
     
     
     
     private func receiveClientInfo(_ client:Client, _ message:P7Message) {
-        print("receiveClientInfo")
         client.state = .GAVE_CLIENT_INFO
       
         App.serverController.reply(client: client,
@@ -444,47 +441,45 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
     
     
     private func receiveSendLogin(_ client:Client, _ message:P7Message) -> Bool {
-        DispatchQueue.global(qos: .userInitiated).async {
-            guard let login = message.string(forField: "wired.user.login") else {
-                return
-            }
-            
-            guard let password = message.string(forField: "wired.user.password") else {
-                return
-            }
-            
-            guard let user = App.usersController.user(withUsername: login, password: password) else {
-                let reply = P7Message(withName: "wired.error", spec: message.spec)
-                reply.addParameter(field: "wired.error.string", value: "Login failed")
-                reply.addParameter(field: "wired.error", value: UInt32(4
-                ))
-                App.serverController.reply(client: client, reply: reply, message: message)
-                
-                Logger.error("Login failed for user '\(login)'")
-                
-                return
-            }
-            
-            client.user     = user
-            client.state    = .LOGGED_IN
-            
-            let response = P7Message(withName: "wired.login", spec: self.spec)
-            
-            response.addParameter(field: "wired.user.id", value: client.userID)
-            
-            App.serverController.reply(client: client, reply: response, message: message)
-            
-            let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
-                    
-            for field in self.spec.accountPrivileges! {
-                if user.hasPrivilege(name: field) {
-                    response2.addParameter(field: field, value: UInt32(1))
-                }
-            }
-                    
-            App.serverController.reply(client: client, reply: response2, message: message)
+        guard let login = message.string(forField: "wired.user.login") else {
+            return false
         }
         
+        guard let password = message.string(forField: "wired.user.password") else {
+            return false
+        }
+        
+        guard let user = App.usersController.user(withUsername: login, password: password) else {
+            let reply = P7Message(withName: "wired.error", spec: message.spec)
+            reply.addParameter(field: "wired.error.string", value: "Login failed")
+            reply.addParameter(field: "wired.error", value: UInt32(4
+            ))
+            App.serverController.reply(client: client, reply: reply, message: message)
+            
+            Logger.error("Login failed for user '\(login)'")
+            
+            return false
+        }
+        
+        client.user     = user
+        client.state    = .LOGGED_IN
+        
+        let response = P7Message(withName: "wired.login", spec: self.spec)
+        
+        response.addParameter(field: "wired.user.id", value: client.userID)
+        
+        App.serverController.reply(client: client, reply: response, message: message)
+        
+        let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
+                
+        for field in self.spec.accountPrivileges! {
+            if user.hasPrivilege(name: field) {
+                response2.addParameter(field: field, value: UInt32(1))
+            }
+        }
+                
+        App.serverController.reply(client: client, reply: response2, message: message)
+
         return true
     }
     

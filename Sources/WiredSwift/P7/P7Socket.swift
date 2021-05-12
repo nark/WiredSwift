@@ -351,6 +351,7 @@ public class P7Socket: ChannelInboundHandler {
         self.channelDelegate?.channelConnected(socket: self, channel: context.channel)
     }
     
+    
     public func channelInactive(context: ChannelHandlerContext) {
         self.channelDelegate?.channelDisconnected(socket: self, channel: context.channel)
     }
@@ -437,6 +438,7 @@ public class P7Socket: ChannelInboundHandler {
     }
     
     
+    
     public func errorCaught(context: ChannelHandlerContext, error: Error) {
         print("error: ", error)
 
@@ -464,90 +466,78 @@ public class P7Socket: ChannelInboundHandler {
     
     // MARK: -
     private func handleClientMessage(_ message: P7Message, context: ChannelHandlerContext) {
-//        switch self.serverState {
-//        case .client_handshake:
-//            if message.name == "p7.handshake.client_handshake" {
-//                if !self.handleClientHandshake(message, channel: context.channel) {
-//                    try? context.close().wait()
-//                }
-//
-//                self.serverState = .acknowledge
-//            } else {
-//
-//            }
-//        case .acknowledge:
-//        default:
-//            
-//        }
-        
-        if message.name == "p7.handshake.client_handshake" && self.serverState == .client_handshake {
-            if !self.handleClientHandshake(message, channel: context.channel) {
-                try? context.close().wait()
-            }
-            
-            self.serverState = .acknowledge
-        }
-        else if message.name == "p7.handshake.acknowledge" && self.serverState == .acknowledge {
-            if self.compression != .NONE {
-                self.configureCompression()
-            
-                Logger.info("Compression enabled for \(self.compression)")
-
-            }
-            
-            if self.checksum != .NONE {
-                self.configureChecksum()
-            
-                Logger.info("Checkum enabled for \(self.checksum)")
-
-            }
-            
-            if !self.handleClientAcknowledge(message, channel: context.channel) {
-                try? context.close().wait()
-            }
-            
-            self.serverState = .client_key
-        }
-        else if message.name == "p7.encryption.client_key" && self.serverState == .client_key {
-            let promise = channel.eventLoop.makePromise(of: Bool.self)
-            
-            let future = self.handleClientKey(message, channel: context.channel, promise: promise)
-            
-            future.whenFailure { (error) in
-                if let e = error as? WiredError {
-                    self.errors.append(e)
-                }
-                
-                try? context.close().wait()
-            }
-            
-            future.whenSuccess { (isOK) in
-                if isOK {
-                    if self.localCompatibilityCheck {
-                        if !self.receiveCompatibilityCheck() {
-                            try? context.close().wait()
-                        }
-                    }
-
-                    if self.remoteCompatibilityCheck {
-                        if !self.sendCompatibilityCheck() {
-                            try? context.close().wait()
-                        }
-                    }
-                    
-                    self.serverState = .authenticated
-                    self.channelDelegate?.channelAuthenticated(socket: self, channel: self.channel)
-
-                } else {
-                    self.errors.append(WiredError(withTitle: "Key Exchange Error", message: "Client key processing failed"))
-                    
+        switch self.serverState {
+        case .client_handshake:
+            if message.name == "p7.handshake.client_handshake" {
+                if !self.handleClientHandshake(message, channel: context.channel) {
                     try? context.close().wait()
                 }
+
+                self.serverState = .acknowledge
+            } else {
+
             }
-        }
-        else {
-            
-            
+        case .acknowledge:
+            if message.name == "p7.handshake.acknowledge" {
+                if self.compression != .NONE {
+                    self.configureCompression()
+                
+                    Logger.info("Compression enabled for \(self.compression)")
+
+                }
+                
+                if self.checksum != .NONE {
+                    self.configureChecksum()
+                
+                    Logger.info("Checkum enabled for \(self.checksum)")
+
+                }
+                
+                if !self.handleClientAcknowledge(message, channel: context.channel) {
+                    try? context.close().wait()
+                }
+                
+                self.serverState = .client_key
+            }
+        case .client_key:
+            if message.name == "p7.encryption.client_key" {
+                let promise = channel.eventLoop.makePromise(of: Bool.self)
+                
+                let future = self.handleClientKey(message, channel: context.channel, promise: promise)
+                
+                future.whenFailure { (error) in
+                    if let e = error as? WiredError {
+                        self.errors.append(e)
+                    }
+                    
+                    try? context.close()
+                }
+                
+                future.whenSuccess { (isOK) in
+                    if isOK {
+                        if self.localCompatibilityCheck {
+                            if !self.receiveCompatibilityCheck() {
+                                try? context.close().wait()
+                            }
+                        }
+
+                        if self.remoteCompatibilityCheck {
+                            if !self.sendCompatibilityCheck() {
+                                try? context.close().wait()
+                            }
+                        }
+                        
+                        self.serverState = .authenticated
+                        self.channelDelegate?.channelAuthenticated(socket: self, channel: self.channel)
+
+                    } else {
+                        self.errors.append(WiredError(withTitle: "Key Exchange Error", message: "Client key processing failed"))
+                        
+                        try? context.close().wait()
+                    }
+                }
+            }
+        default:
             if self.serverState != .authenticated {
                 Logger.error("Authentication failed, message out of sequence")
                 
@@ -564,64 +554,74 @@ public class P7Socket: ChannelInboundHandler {
     
     
     private func handleServerMessage(_ message: P7Message, context: ChannelHandlerContext) {
-        if message.name == "p7.handshake.server_handshake" && self.clientState == .server_handshake {
-            if !self.handleServerHandshake(message, channel: context.channel) {
-                try? context.close().wait()
-            }
-            
-            if self.compression != .NONE {
-                self.configureCompression()
+        switch self.clientState {
+        case .server_handshake:
+            if message.name == "p7.handshake.server_handshake" {
+                if !self.handleServerHandshake(message, channel: context.channel) {
+                    try? context.close().wait()
+                }
+                
+                if self.compression != .NONE {
+                    self.configureCompression()
 
-                Logger.info("Compression enabled for \(self.compression)")
-            }
+                    Logger.info("Compression enabled for \(self.compression)")
+                }
 
-            if self.checksum != .NONE {
-                self.configureChecksum()
+                if self.checksum != .NONE {
+                    self.configureChecksum()
 
-                Logger.info("Checkum enabled for \(self.checksum)")
+                    Logger.info("Checkum enabled for \(self.checksum)")
+                }
+                
+                self.clientState = .server_key
             }
-            
-            self.clientState = .server_key
-        }
-        else if message.name == "p7.encryption.server_key" && self.clientState == .server_key {
-            if !self.handleServerKey(message, channel: context.channel) {
+        case .server_key:
+            if message.name == "p7.encryption.server_key" {
+                if !self.handleServerKey(message, channel: context.channel) {
+                    try? context.close().wait()
+                }
+                
+                self.clientState = .acknowledge
+            }
+        case .acknowledge:
+            if message.name == "p7.encryption.acknowledge" {
+                if !self.handleServerEncryptionAcknowledge(message, channel: context.channel) {
+                    try? context.close().wait()
+                }
+                
+                if self.remoteCompatibilityCheck {
+                    if !self.sendCompatibilityCheck() {
+                        Logger.error("Remote Compatibility Check failed")
+
+                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Remote Compatibility Check failed"))
+
+                        try? context.close().wait()
+                    }
+                }
+
+                if self.localCompatibilityCheck {
+                    if !self.receiveCompatibilityCheck() {
+                        Logger.error("Local Compatibility Check failed")
+
+                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Local Compatibility Check failed"))
+
+                        try? context.close().wait()
+                    }
+                }
+                
+                self.clientState = .authenticated
+            }
+        default:
+            if message.name == "p7.encryption.authentication_error" {
+                Logger.error("Authentification failed for '\(self.username)'")
+                
+                self.errors.append(WiredError(withTitle: "Authentification Error", message: "Authentication failed, message out of sequence"))
+
                 try? context.close().wait()
+                
+                return
             }
             
-            self.clientState = .acknowledge
-        }
-        else if message.name == "p7.encryption.acknowledge" && self.clientState == .acknowledge {
-            if !self.handleServerEncryptionAcknowledge(message, channel: context.channel) {
-                try? context.close().wait()
-            }
-            
-//            if self.remoteCompatibilityCheck {
-//                if !self.sendCompatibilityCheck() {
-//                    Logger.error("Remote Compatibility Check failed")
-//
-//                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Remote Compatibility Check failed"))
-//
-//                    try? context.close().wait()
-//                }
-//            }
-//
-//            if self.localCompatibilityCheck {
-//                if !self.receiveCompatibilityCheck() {
-//                    Logger.error("Local Compatibility Check failed")
-//
-//                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Local Compatibility Check failed"))
-//
-//                    try? context.close().wait()
-//                }
-//            }
-            
-            self.clientState = .authenticated
-        }
-        else if message.name == "p7.encryption.authentication_error" {
-            Logger.error("Authentification failed for '\(self.username)'")
-            try? context.close().wait()
-        }
-        else {
             if self.clientState != .authenticated {
                 Logger.error("Authentication failed, message out of sequence")
                 
@@ -1198,7 +1198,6 @@ public class P7Socket: ChannelInboundHandler {
                 message.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
             }
         }
-                                
         
         return self.write(message, channel: self.channel)
     }
@@ -1208,7 +1207,7 @@ public class P7Socket: ChannelInboundHandler {
     
     
     public func disconnect() {
-        self.channel.close()
+        //self.channel.close()
         
         self.connected = false
         
