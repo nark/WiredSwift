@@ -331,12 +331,10 @@ public class P7Socket: ChannelInboundHandler {
     
     
     public func set(interactive:Bool) {
-//        var option = interactive ? 1 : 0
-//
-//        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
-//            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
-//        }
+        let option = interactive ? 1 : 0
 
+        self.channel.setOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: ChannelOptions.Types.SocketOption.Value(option))
+        
         self.interactive = interactive
     }
     
@@ -448,17 +446,6 @@ public class P7Socket: ChannelInboundHandler {
     }
 
     
-    private func writeToAll(channels: [ObjectIdentifier: Channel], allocator: ByteBufferAllocator, message: String) {
-        let buffer =  allocator.buffer(string: message)
-        self.writeToAll(channels: channels, buffer: buffer)
-    }
-
-    private func writeToAll(channels: [ObjectIdentifier: Channel], buffer: ByteBuffer) {
-        channels.forEach { $0.value.writeAndFlush(buffer, promise: nil) }
-    }
-    
-    
-    
     
         
     
@@ -466,6 +453,16 @@ public class P7Socket: ChannelInboundHandler {
     
     // MARK: -
     private func handleClientMessage(_ message: P7Message, context: ChannelHandlerContext) {
+        let outOfSequenceBlock = { (error: String ) in
+            Logger.error(error)
+            
+            self.errors.append(WiredError(withTitle: "Connection Error", message: error))
+            
+            try? context.close().wait()
+            
+            return
+        }
+        
         switch self.serverState {
         case .client_handshake:
             if message.name == "p7.handshake.client_handshake" {
@@ -475,7 +472,7 @@ public class P7Socket: ChannelInboundHandler {
 
                 self.serverState = .acknowledge
             } else {
-
+                return outOfSequenceBlock("Handshake failed, message out of sequence")
             }
         case .acknowledge:
             if message.name == "p7.handshake.acknowledge" {
@@ -498,6 +495,8 @@ public class P7Socket: ChannelInboundHandler {
                 }
                 
                 self.serverState = .client_key
+            } else {
+                return outOfSequenceBlock("Handshake failed, message out of sequence")
             }
         case .client_key:
             if message.name == "p7.encryption.client_key" {
@@ -536,16 +535,12 @@ public class P7Socket: ChannelInboundHandler {
                         try? context.close().wait()
                     }
                 }
+            } else {
+                return outOfSequenceBlock("Handshake failed, message out of sequence")
             }
         default:
             if self.serverState != .authenticated {
-                Logger.error("Authentication failed, message out of sequence")
-                
-                self.errors.append(WiredError(withTitle: "Connection Error", message: "Authentication failed, message out of sequence"))
-                
-                try? context.close().wait()
-                
-                return
+                return outOfSequenceBlock("Authentication failed, message out of sequence")
             }
             
             channelDelegate?.channelReceiveMessage(message: message, socket: self, channel: context.channel)
