@@ -348,13 +348,6 @@ open class Connection: NSObject, SocketChannelDelegate {
         return false
     }
     
-    
-    public func readMessage() -> P7Message? {
-        if self.socket.connected {
-            return self.socket.readMessage()
-        }
-        return nil
-    }
 
     
     
@@ -372,27 +365,27 @@ open class Connection: NSObject, SocketChannelDelegate {
     }
     
     
-    private func listen() {
-        self.stopListening()
-        
-        // we use a worker to ensure previous thread was terminated
-        listener = DispatchWorkItem {
-           while (self.interactive == true && self.socket.connected == true) {
-               if let message = self.socket.readMessage() {
-                    if self.interactive == true {
-                        self.handleMessage(message)
-                    }
-               } else {
-                    if self.isConnected() {
-                        print("self.socket error : \(self.socket.errors)")
-                        self.disconnect()
-                    }
-               }
-           }
-        }
-        
-        DispatchQueue.global().async(execute: listener)
-    }
+//    private func listen() {
+//        self.stopListening()
+//        
+//        // we use a worker to ensure previous thread was terminated
+//        listener = DispatchWorkItem {
+//           while (self.interactive == true && self.socket.connected == true) {
+//               if let message = self.socket.readMessage() {
+//                    if self.interactive == true {
+//                        self.handleMessage(message)
+//                    }
+//               } else {
+//                    if self.isConnected() {
+//                        print("self.socket error : \(self.socket.errors)")
+//                        self.disconnect()
+//                    }
+//               }
+//           }
+//        }
+//        
+//        DispatchQueue.global().async(execute: listener)
+//    }
     
     
     public func stopListening() {

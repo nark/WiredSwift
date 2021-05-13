@@ -333,9 +333,9 @@ public class P7Socket: ChannelInboundHandler {
     public func set(interactive:Bool) {
         let option = interactive ? 1 : 0
 
-        self.channel.setOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: ChannelOptions.Types.SocketOption.Value(option))
-        
-        self.interactive = interactive
+        self.channel.setOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: ChannelOptions.Types.SocketOption.Value(option)).whenSuccess { (Void) in
+            self.interactive = interactive
+        }
     }
     
     
@@ -355,83 +355,13 @@ public class P7Socket: ChannelInboundHandler {
     }
     
     
-    
+
 
     public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        var error:WiredError? = nil
-        
-        var buffer = self.unwrapInboundIn(data)
-        
-        let messageLength = buffer.readableBytes - (self.checksumEnabled ? self.checksumLength : 0)
-        
-        guard var messageData: Data = buffer.readData(length: messageLength) else {
-            return
-        }
-                
-        let originalData = messageData
-        
-        // decryption
-        if self.encryptionEnabled {
-            guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
-                error = WiredError(withTitle: "Read Error", message: "Cannot decrypt data")
-
-                Logger.error(error!)
-                self.errors.append(error!)
-
-                try? context.close().wait()
-                return
-            }
-            messageData = decryptedMessageData
-        }
-
-        // inflate
-        if self.compressionEnabled {
-            guard let inflatedMessageData = self.inflate(messageData) else {
-                error = WiredError(withTitle: "Read Error", message: "Cannot inflate data")
-
-                Logger.error(error!)
-                self.errors.append(error!)
-
-                try? context.close().wait()
-                return
-            }
-            messageData = inflatedMessageData
-        }
-        
-        // checksum
-        if self.checksumEnabled {
-            guard let remoteChecksum = buffer.readData(length: self.checksumLength) else {
-                error = WiredError(withTitle: "Checksum Error", message: "Missing checksum data")
-
-                Logger.error(error!)
-                self.errors.append(error!)
-
-                try? context.close().wait()
-                return
-            }
-
-            if let localChecksum = self.checksumData(originalData) {
-                if !localChecksum.elementsEqual(remoteChecksum) {
-                    error = WiredError(withTitle: "Checksum Error", message: "Checksum failed")
-
-                    Logger.error(error!)
-                    self.errors.append(error!)
-
-                    try? context.close().wait()
-                    return
-                }
-            }
-        }
-        
-        let message = P7Message(withData: messageData, spec: self.spec)
-        
-        Logger.info("-> READ: \(message.name!) [\(messageData.count)] [encryption: \(self.encryptionEnabled)] [compression: \(self.compressionEnabled)] [checksum: \(self.checksumEnabled)]")
-
-        if self.originator == .Server {
-            self.handleClientMessage(message, context: context)
-        }
-        else if self.originator == .Client {
-            self.handleServerMessage(message, context: context)
+        if self.interactive == true {
+            self.readMessage(context: context, data: data)
+        } else {
+            self.readTransfer(context: context, data: data)
         }
     }
     
@@ -508,8 +438,6 @@ public class P7Socket: ChannelInboundHandler {
                     if let e = error as? WiredError {
                         self.errors.append(e)
                     }
-                    
-                    try? context.close()
                 }
                 
                 future.whenSuccess { (isOK) in
@@ -531,8 +459,7 @@ public class P7Socket: ChannelInboundHandler {
 
                     } else {
                         self.errors.append(WiredError(withTitle: "Key Exchange Error", message: "Client key processing failed"))
-                        
-                        try? context.close().wait()
+                        outOfSequenceBlock("Client key processing failed")
                     }
                 }
             } else {
@@ -1227,14 +1154,15 @@ public class P7Socket: ChannelInboundHandler {
     
     
     
+    
+    
+    // MARK: - MESSAGE READ/WRITE
     public func write(_ message: P7Message) -> Bool {
         return self.write(message, channel: self.channel)
     }
     
     
     
-    
-    // MARK: - MESSAGE READ/WRITE
     public func write(_ message: P7Message, channel: Channel) -> Bool {
             if self.serialization == .XML {
 //                let xml = message.xml()
@@ -1296,125 +1224,6 @@ public class P7Socket: ChannelInboundHandler {
             }
         
         return true
-    }
-    
-    
-    
-    public func readMessage() -> P7Message? {
-//        var messageData = Data()
-//        var error:WiredError? = nil
-//
-//        var lengthBuffer = [Byte](repeating: 0, count: 4)
-//        let bytesRead = self.read(&lengthBuffer, maxLength: 4)
-//
-//        //print("bytesRead : \(bytesRead) \(Thread.current.threadName)")
-//
-//        if bytesRead > 0 {
-//            if self.serialization == .XML {
-//                if let xml = String(bytes: messageData, encoding: .utf8) {
-//                    let message = P7Message(withXML: xml, spec: self.spec)
-//
-//                    return message
-//                }
-//            }
-//            else if self.serialization == .BINARY {
-//                if bytesRead >= 4 {
-//                    guard let messageLength = Data(lengthBuffer).uint32 else {
-//                        error = WiredError(withTitle: "Read Error", message: "Cannot read message length")
-//
-//                        Logger.error(error!)
-//                        self.errors.append(error!)
-//
-//                        return nil
-//                    }
-//
-//                    do {
-//                        messageData = try self.readData(size: Int(messageLength))
-//                    } catch let e {
-//                        error = WiredError(withTitle: "Read Error", message: "")
-//
-//                        if let socketError = e as? Socket.Error {
-//                            error = WiredError(withTitle: "Read Error", message: socketError.description)
-//                        } else {
-//                            error = WiredError(withTitle: "Read Error", message: e.localizedDescription)
-//                        }
-//
-//                        Logger.error(error!)
-//                        self.errors.append(error!)
-//
-//                        return nil
-//                    }
-//
-//                    // data to message object
-//                    if messageData.count > 0 {
-//                        let originalData = messageData
-//
-//                        // decryption
-//                        if self.encryptionEnabled {
-//                            guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
-//                                error = WiredError(withTitle: "Read Error", message: "Cannot decrypt data")
-//
-//                                Logger.error(error!)
-//                                self.errors.append(error!)
-//
-//                                return nil
-//                            }
-//                            messageData = decryptedMessageData
-//                        }
-//
-//                        // Logger.info("READ data before decomp : \(messageData.toHexString())")
-//
-//                        // inflate
-//                        if self.compressionEnabled {
-//                            guard let inflatedMessageData = self.inflate(messageData) else {
-//                                error = WiredError(withTitle: "Read Error", message: "Cannot inflate data")
-//
-//                                Logger.error(error!)
-//                                self.errors.append(error!)
-//
-//                                return nil
-//
-//                            }
-//
-//                            messageData = inflatedMessageData
-//                        }
-//
-//                        // checksum
-//                        if self.checksumEnabled {
-//                            do {
-//                                let remoteChecksum = try self.readData(size: self.checksumLength)
-//                                if remoteChecksum.count == 0 { return nil }
-//
-//                                if let c = self.checksumData(originalData) {
-//                                    if !c.elementsEqual(remoteChecksum) {
-//                                        Logger.fatal("Checksum failed")
-//                                        return nil
-//                                    }
-//                                } else {
-//                                   Logger.error("Checksum failed abnormally")
-//                               }
-//                            } catch let e {
-//                                Logger.error("Checksum error: \(e)")
-//                            }
-//                        }
-//
-//                        // init response message
-//                        //print("read data : \(messageData.toHexString())")
-//                        let message = P7Message(withData: messageData, spec: self.spec)
-//
-//                        Logger.info("READ: \(String(describing: message.name))")
-//                        //Logger.debug("\n\(message.xml())\n")
-//
-//                        return message
-//                    }
-//                }
-//                else {
-//                    Logger.error("Nothing read, abort")
-//                }
-//            }
-//        }
-//
-        return nil
     }
     
     
@@ -1614,42 +1423,6 @@ public class P7Socket: ChannelInboundHandler {
 
     
     
-    
-    // MARK: - COMPATIBILITY CHECK
-    private func sendCompatibilityCheck() -> Bool {
-        let message = P7Message(withName: "p7.compatibility_check.specification", spec: self.spec)
-        
-        message.addParameter(field: "p7.compatibility_check.specification", value: self.spec.xml!)
-                
-        _ = self.write(message)
-        
-        guard let response = self.readMessage() else {
-            return false
-        }
-                
-        if response.name != "p7.compatibility_check.status" {
-            Logger.error("Message should be 'p7.compatibility_check.status', not '\(response.name!)'")
-        }
-        
-        guard let status = response.bool(forField: "p7.compatibility_check.status") else {
-            Logger.error("Message has no 'p7.compatibility_check.status' field")
-            return false
-        }
-        
-        if status == false {
-            Logger.error("Remote protocol '\(self.remoteName!) \(self.remoteVersion!)' is not compatible with local protocol '\(self.spec.protocolName!) \(self.spec.protocolVersion!)'")
-        }
-        
-        return status
-    }
-    
-    
-    private func receiveCompatibilityCheck() -> Bool {
-        // TODO: implement this ?
-        return false
-    }
-    
-    
 
     
     
@@ -1661,6 +1434,136 @@ public class P7Socket: ChannelInboundHandler {
         return nil
     }
 
+}
+
+
+
+private extension P7Socket {
+    // MARK: - READ HELPERS
+    private func readMessage(context: ChannelHandlerContext, data: NIOAny) {
+        var error:WiredError? = nil
+        
+        var buffer = self.unwrapInboundIn(data)
+        
+        let messageLength = buffer.readableBytes - (self.checksumEnabled ? self.checksumLength : 0)
+        
+        guard var messageData: Data = buffer.readData(length: messageLength) else {
+            return
+        }
+                
+        let originalData = messageData
+        
+        // decryption
+        if self.encryptionEnabled {
+            guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
+                error = WiredError(withTitle: "Read Error", message: "Cannot decrypt data")
+
+                Logger.error(error!)
+                self.errors.append(error!)
+
+                try? context.close().wait()
+                return
+            }
+            messageData = decryptedMessageData
+        }
+
+        // inflate
+        if self.compressionEnabled {
+            guard let inflatedMessageData = self.inflate(messageData) else {
+                error = WiredError(withTitle: "Read Error", message: "Cannot inflate data")
+
+                Logger.error(error!)
+                self.errors.append(error!)
+
+                try? context.close().wait()
+                return
+            }
+            messageData = inflatedMessageData
+        }
+        
+        // checksum
+        if self.checksumEnabled {
+            guard let remoteChecksum = buffer.readData(length: self.checksumLength) else {
+                error = WiredError(withTitle: "Checksum Error", message: "Missing checksum data")
+
+                Logger.error(error!)
+                self.errors.append(error!)
+
+                try? context.close().wait()
+                return
+            }
+
+            if let localChecksum = self.checksumData(originalData) {
+                if !localChecksum.elementsEqual(remoteChecksum) {
+                    error = WiredError(withTitle: "Checksum Error", message: "Checksum failed")
+
+                    Logger.error(error!)
+                    self.errors.append(error!)
+
+                    try? context.close().wait()
+                    return
+                }
+            }
+        }
+        
+        let message = P7Message(withData: messageData, spec: self.spec)
+        
+        Logger.info("-> READ: \(message.name!) [\(messageData.count)] [encryption: \(self.encryptionEnabled)] [compression: \(self.compressionEnabled)] [checksum: \(self.checksumEnabled)]")
+
+        if self.originator == .Server {
+            self.handleClientMessage(message, context: context)
+        }
+        else if self.originator == .Client {
+            self.handleServerMessage(message, context: context)
+        }
+    }
+    
+    
+    private func readTransfer(context: ChannelHandlerContext, data: NIOAny) {
+        print("readTransfer")
+    }
+    
+    
+    
+    
+    
+    
+    
+    // MARK: - COMPATIBILITY CHECK
+    private func sendCompatibilityCheck() -> Bool {
+       let message = P7Message(withName: "p7.compatibility_check.specification", spec: self.spec)
+       
+       message.addParameter(field: "p7.compatibility_check.specification", value: self.spec.xml!)
+               
+       return self.write(message)
+       
+//       guard let response = self.readMessage() else {
+//           return false
+//       }
+//
+//       if response.name != "p7.compatibility_check.status" {
+//           Logger.error("Message should be 'p7.compatibility_check.status', not '\(response.name!)'")
+//       }
+//
+//       guard let status = response.bool(forField: "p7.compatibility_check.status") else {
+//           Logger.error("Message has no 'p7.compatibility_check.status' field")
+//           return false
+//       }
+//
+//       if status == false {
+//           Logger.error("Remote protocol '\(self.remoteName!) \(self.remoteVersion!)' is not compatible with local protocol '\(self.spec.protocolName!) \(self.spec.protocolVersion!)'")
+//       }
+//
+//       return status
+    }
+
+
+    private func receiveCompatibilityCheck() -> Bool {
+       // TODO: implement this ?
+       return false
+    }
+    
+    
     
     
     private func configureChecksum() {
@@ -1703,5 +1606,4 @@ public class P7Socket: ChannelInboundHandler {
     private func deflate(_ data: Data) -> Data? {
         return Deflate.compress(data: data)
     }
-    
 }

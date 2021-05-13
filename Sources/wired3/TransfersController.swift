@@ -258,51 +258,47 @@ public class TransfersController {
             Logger.error("Could not write message \(reply.name!) to \(client.user!.username!)")
             return false
         }
+        
+        return false
                         
-        guard let reply2 = transfer.client.socket.readMessage() else {
-            Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path)")
-            return false
-        }
-        
-        if reply2.name != "wired.transfer.upload" {
-            Logger.error("Could not accept message \(reply2.name!) from \(client.user!.username!): Expected 'wired.transfer.upload'")
-            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: reply2)
-        }
-
-        transfer.remainingDataSize = reply2.uint64(forField: "wired.transfer.data")
-        transfer.remainingRsrcSize = reply2.uint64(forField: "wired.transfer.rsrc")
-
-        client.socket.set(interactive: false)
-
-        let result = self.upload(transfer: transfer)
-
-        client.socket.set(interactive: true)
-        
-        if transfer.transferred == (transfer.dataSize + transfer.rsrcSize) {
-            let url = URL(fileURLWithPath: transfer.realDataPath.stringByDeletingPathExtension)
-
-            do {
-                try FileManager.default.moveItem(at: URL(fileURLWithPath: transfer.realDataPath), to: url)
-
-                if transfer.executable {
-                    if !FileManager.set(mode: 0o777, toPath: url.path) {
-                        Logger.error("Could not set mode for executable \(url.path)")
-                    }
-
-//                    wd_files_move_comment(transfer->realdatapath, path, NULL, NULL);
-//                    wd_files_move_label(transfer->realdatapath, path, NULL, NULL);
+//        guard let reply2 = transfer.client.socket.readMessage() else {
+//            Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path)")
+//            return false
+//        }
 //
-//                    if(wi_data_length(transfer->finderinfo) > 0)
-//                        wi_fs_set_finder_info_for_path(transfer->finderinfo, path);
-
-                    App.indexController.addIndex(forPath: url.path)
-                }
-            } catch let error {
-                Logger.error("Could not move \(transfer.realDataPath!) to \(url.path): \(error)")
-            }
-        }
-
-        return result
+//        if reply2.name != "wired.transfer.upload" {
+//            Logger.error("Could not accept message \(reply2.name!) from \(client.user!.username!): Expected 'wired.transfer.upload'")
+//            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: reply2)
+//        }
+//
+//        transfer.remainingDataSize = reply2.uint64(forField: "wired.transfer.data")
+//        transfer.remainingRsrcSize = reply2.uint64(forField: "wired.transfer.rsrc")
+//
+//        client.socket.set(interactive: false)
+//
+//        let result = self.upload(transfer: transfer)
+//
+//        client.socket.set(interactive: true)
+//
+//        if transfer.transferred == (transfer.dataSize + transfer.rsrcSize) {
+//            let url = URL(fileURLWithPath: transfer.realDataPath.stringByDeletingPathExtension)
+//
+//            do {
+//                try FileManager.default.moveItem(at: URL(fileURLWithPath: transfer.realDataPath), to: url)
+//
+//                if transfer.executable {
+//                    if !FileManager.set(mode: 0o777, toPath: url.path) {
+//                        Logger.error("Could not set mode for executable \(url.path)")
+//                    }
+//
+//                    App.indexController.addIndex(forPath: url.path)
+//                }
+//            } catch let error {
+//                Logger.error("Could not move \(transfer.realDataPath!) to \(url.path): \(error)")
+//            }
+//        }
+//
+//        return result
     }
     
     

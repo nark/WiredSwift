@@ -256,10 +256,6 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
     
     
     // MARK: -
-    public func read(message:P7Message, client: Client) -> P7Message? {
-        return client.socket?.readMessage()
-    }
-    
     @discardableResult
     public func send(message:P7Message, client: Client) -> Bool {
         if client.transfer == nil {
