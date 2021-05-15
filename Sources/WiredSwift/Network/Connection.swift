@@ -98,6 +98,8 @@ open class Connection: NSObject, SocketChannelDelegate {
     private var bootstrap:ClientBootstrap!
     private var channel:Channel!
     
+    private let semaphore = DispatchSemaphore(value: 0)
+    
     private var state:ConnectState
     private var userInfoCounter:Int = 0
     
@@ -151,7 +153,7 @@ open class Connection: NSObject, SocketChannelDelegate {
     
     public func connect(withUrl url: Url, cipher:CipherType = .ECDH_AES256_SHA256, compression:Compression = .DEFLATE, checksum:Checksum = .SHA2_256) -> Bool {
         self.url    = url
-        self.socket = P7Socket(spec: self.spec, originator: Originator.Client)
+        self.socket = P7ClientSocket(spec: self.spec, originator: Originator.Client)
 
         self.socket.username    = url.login
         self.socket.password    = url.password
@@ -186,13 +188,16 @@ open class Connection: NSObject, SocketChannelDelegate {
         
         let promise = channel.eventLoop.makePromise(of: Channel.self)
 
-        self.socket.handshake(promise: promise).whenSuccess({ (channel) in
+        self.socket.connect(promise: promise).whenSuccess({ (channel) in
             if self.state == .clientInfo {
                 _ = self.clientInfo()
+                
             }
         })
                 
-        try! channel.closeFuture.wait()
+        //try! channel.closeFuture.wait()
+        
+        semaphore.wait()
         
         return true
     }
@@ -213,7 +218,7 @@ open class Connection: NSObject, SocketChannelDelegate {
         self.state = .clientInfo
         
         // connect
-        self.socket = P7Socket(spec: self.spec, originator: Originator.Client)
+        self.socket = P7ClientSocket(spec: self.spec, originator: Originator.Client)
 
         self.socket.username    = url.login
         self.socket.password    = url.password
@@ -223,8 +228,8 @@ open class Connection: NSObject, SocketChannelDelegate {
         self.socket.checksum    = checksum
         self.socket.channelDelegate = self
         
-        group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        bootstrap = ClientBootstrap(group: group)
+        self.group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        self.bootstrap = ClientBootstrap(group: group)
             .channelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
             .channelInitializer { channel in
                 channel.pipeline.addHandlers([
@@ -248,28 +253,25 @@ open class Connection: NSObject, SocketChannelDelegate {
         
         let promise = channel.eventLoop.makePromise(of: Channel.self)
 
-        self.socket.handshake(promise: promise).whenSuccess({ (channel) in
+        self.socket.connect(promise: promise).whenSuccess({ (channel) in
             if self.state == .clientInfo {
                 _ = self.clientInfo()
             }
         })
                 
-        try! channel.closeFuture.wait()
+        //try! channel.closeFuture.wait()
                 
         return true
     }
     
     
     public func disconnect() {
+        NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
+
         self.socket.disconnect()
         
-        NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
-        
-        defer {
-            try! group.syncShutdownGracefully()
-        }
- 
         DispatchQueue.main.async {
+            try! self.group.syncShutdownGracefully()
             
             NotificationCenter.default.post(name: .linkConnectionDidClose, object: self)
         
@@ -292,7 +294,7 @@ open class Connection: NSObject, SocketChannelDelegate {
     }
     
     public func channelDisconnected(socket: P7Socket, channel: Channel) {
-        
+        self.disconnect()
     }
     
     public func channelAuthenticated(socket: P7Socket, channel: Channel) {
@@ -300,7 +302,7 @@ open class Connection: NSObject, SocketChannelDelegate {
     }
     
     public func channelAuthenticationFailed(socket: P7Socket, channel: Channel) {
-        
+        self.disconnect()
     }
     
     public func channelReceiveMessage(message: P7Message, socket: P7Socket, channel: Channel) {
@@ -399,6 +401,8 @@ open class Connection: NSObject, SocketChannelDelegate {
     
     internal func handleMessage(_ message:P7Message) {
         if self.state < .clientPrivileges {
+            let oldState = self.state
+            
             switch self.state {
             case .clientInfo:
                 if message.name == "wired.server_info" {
@@ -434,12 +438,19 @@ open class Connection: NSObject, SocketChannelDelegate {
                     
                     self.state = .clientPrivileges
                     
+                    // return connect()
+                    semaphore.signal()
+                    
                     for d in self.delegates {
                         DispatchQueue.main.async {
                             d.connectionDidConnect(connection: self)
                         }
                     }
                 }
+            }
+            
+            if oldState == self.state {
+                
             }
 
         } else {

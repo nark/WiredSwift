@@ -74,6 +74,8 @@
 		4C551153262E140A001F65BE /* SWCompression.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "SWCompression::SWCompression::Product" /* SWCompression.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C551155262E140B001F65BE /* Vapor.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "vapor::Vapor::Product" /* Vapor.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C551157262E140B001F65BE /* WebSocketKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "websocket-kit::WebSocketKit::Product" /* WebSocketKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4C7CA067264DB57A00ED10C3 /* P7SpecTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7CA066264DB57A00ED10C3 /* P7SpecTransaction.swift */; };
+		4C7CA069264DBD9C00ED10C3 /* P7MessageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C7CA068264DBD9C00ED10C3 /* P7MessageDecoder.swift */; };
 		4C830A80263145F00017DB77 /* ECDSA.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A7F263145F00017DB77 /* ECDSA.swift */; };
 		4C830A87263451E00017DB77 /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A85263451A90017DB77 /* Client.swift */; };
 		4C830A892634696D0017DB77 /* Thread.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C830A882634696D0017DB77 /* Thread.swift */; };
@@ -5614,6 +5616,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4C7CA066264DB57A00ED10C3 /* P7SpecTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7SpecTransaction.swift; sourceTree = "<group>"; };
+		4C7CA068264DBD9C00ED10C3 /* P7MessageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7MessageDecoder.swift; sourceTree = "<group>"; };
 		4C830A7F263145F00017DB77 /* ECDSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECDSA.swift; sourceTree = "<group>"; };
 		4C830A85263451A90017DB77 /* Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
 		4C830A882634696D0017DB77 /* Thread.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thread.swift; sourceTree = "<group>"; };
@@ -12016,6 +12020,8 @@
 				OBJ_38 /* P7SpecItem.swift */,
 				OBJ_39 /* P7SpecMessage.swift */,
 				OBJ_40 /* P7SpecType.swift */,
+				4C7CA066264DB57A00ED10C3 /* P7SpecTransaction.swift */,
+				4C7CA068264DBD9C00ED10C3 /* P7MessageDecoder.swift */,
 			);
 			path = P7;
 			sourceTree = "<group>";
@@ -18031,6 +18037,7 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_5383 /* Data.swift in Sources */,
+				4C7CA069264DBD9C00ED10C3 /* P7MessageDecoder.swift in Sources */,
 				4C8F5C462635BAF900BF8764 /* TimeInterval.swift in Sources */,
 				OBJ_5384 /* FileManager+ResourceFork.swift in Sources */,
 				OBJ_5386 /* String.swift in Sources */,
@@ -18062,6 +18069,7 @@
 				4CEDA2C92639D493005EEACC /* Config.swift in Sources */,
 				OBJ_5405 /* P7SpecType.swift in Sources */,
 				4CEDA2B826383DEA005EEACC /* Lock.swift in Sources */,
+				4C7CA067264DB57A00ED10C3 /* P7SpecTransaction.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

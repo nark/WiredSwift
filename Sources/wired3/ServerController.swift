@@ -100,7 +100,38 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
     // MARK : -
     
     func listenChannels() {
-        let bootstrap = makeBootstrap()
+        let config = SocketConfiguration(
+            spec:               self.spec,
+            originator:         Originator.Server,
+            cipher:             SERVER_CIPHER,
+            compression:        SERVER_COMPRESSION,
+            checksum:           SERVER_CHECKSUM,
+            passwordProvider:   App.usersController,
+            channelDelegate:     self
+        )
+        
+        let reuseAddrOpt = ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET),
+                                                 SO_REUSEADDR)
+        let bootstrap = ServerBootstrap(group: eventLoopGroup)
+            // Specify backlog and enable SO_REUSEADDR for the server itself
+            .serverChannelOption(ChannelOptions.backlog, value: Int32(256))
+            .serverChannelOption(reuseAddrOpt, value: 1)
+        
+            // Set the handlers that are applied to the accepted Channels
+            .childChannelInitializer { channel in
+                let socket = P7ServerSocket(config)
+                
+                socket.localCompatibilityCheck = true
+                
+                return channel.pipeline.addHandlers([ByteToMessageHandler(P7MessageDecoder(withSocket: socket)), socket])
+            }
+        
+            // Enable TCP_NODELAY and SO_REUSEADDR for the accepted Channels
+            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
+            .childChannelOption(reuseAddrOpt, value: 1)
+            .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
+        
+
         do {
             let address : SocketAddress
         
@@ -121,39 +152,7 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
             Logger.error("Failed to start server, errno: \(type(of:error)) \(error)")
         }
     }
-    
-    
-    func makeBootstrap() -> ServerBootstrap {
-        let config = SocketConfiguration(
-            spec:               self.spec,
-            originator:         Originator.Server,
-            cipher:             SERVER_CIPHER,
-            compression:        SERVER_COMPRESSION,
-            checksum:           SERVER_CHECKSUM,
-            passwordProvider:   App.usersController,
-            channelDelegate:     self
-        )
-        
-        let reuseAddrOpt = ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET),
-                                                 SO_REUSEADDR)
-        let bootstrap = ServerBootstrap(group: eventLoopGroup)
-            // Specify backlog and enable SO_REUSEADDR for the server itself
-            .serverChannelOption(ChannelOptions.backlog, value: Int32(256))
-            .serverChannelOption(reuseAddrOpt, value: 1)
-        
-            // Set the handlers that are applied to the accepted Channels
-            .childChannelInitializer { channel in
-                let socket = P7Socket(config)
-                return channel.pipeline.addHandlers([ByteToMessageHandler(P7MessageDecoder(withSocket: socket)), socket])
-            }
-        
-            // Enable TCP_NODELAY and SO_REUSEADDR for the accepted Channels
-            .childChannelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
-            .childChannelOption(reuseAddrOpt, value: 1)
-            .childChannelOption(ChannelOptions.maxMessagesPerRead, value: 1)
-    
-        return bootstrap
-    }
+
     
     
     

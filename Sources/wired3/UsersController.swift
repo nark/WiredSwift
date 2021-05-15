@@ -26,6 +26,15 @@ public class UsersController: TableController, SocketPasswordDelegate {
     
     
     // MARK: - Database
+    public func passwordForUsername(username: String) -> String? {
+        if let user = self.user(withUsername: username) {
+            return user.password
+        }
+        
+        return nil
+    }
+    
+    
     public func passwordForUsername(username:String, promise: EventLoopPromise<String?>) -> EventLoopFuture<String?> {
         guard let database = App.databaseController.dbs.database(logger: .init(label: "fr.read-write.wired3"), on: promise.futureResult.eventLoop) else {
             promise.fail(WiredError(withTitle: "Password Provider Failed", message: "Cannot connect database"))

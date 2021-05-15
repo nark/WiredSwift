@@ -14,11 +14,12 @@ import AEXML
 
 
 
-public typealias SpecItem       = P7SpecItem
-public typealias SpecType       = P7SpecType
-public typealias SpecField      = P7SpecField
-public typealias SpecMessage    = P7SpecMessage
-public typealias SpecError      = P7SpecError
+public typealias SpecItem           = P7SpecItem
+public typealias SpecType           = P7SpecType
+public typealias SpecField          = P7SpecField
+public typealias SpecMessage        = P7SpecMessage
+public typealias SpecTransaction    = P7SpecTransaction
+public typealias SpecError          = P7SpecError
 
 
 
@@ -58,6 +59,8 @@ public class P7Spec: NSObject, XMLParserDelegate {
     public var messages:        [SpecMessage]           = []
     public var messagesByName:  [String:SpecMessage]    = [:]
     public var messagesByID:    [Int:SpecMessage]       = [:]
+    
+    public var transactionsByName: [String:SpecTransaction]    = [:]
     
     private var accountPrivilegesLock:Bool = false
     public var accountPrivileges:[String]? = nil
@@ -286,7 +289,14 @@ public class P7Spec: NSObject, XMLParserDelegate {
     - Returns: A boolean set to `true` if compatible
     */
     public func isCompatibleWithProtocol(withName name:String, version: String) -> Bool {
-        // TODO: check compatibility
+        if name != self.protocolName {
+            return false
+        }
+        
+        if version != self.protocolVersion {
+            return false
+        }
+        
         return true
     }
     

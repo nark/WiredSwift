@@ -133,10 +133,13 @@ public struct CipherType: OptionSet, CustomStringConvertible, Collection {
 }
 
 
+
+
 public enum Originator {
     case Client
     case Server
 }
+
 
 
 
@@ -175,54 +178,46 @@ public protocol SocketChannelDelegate: class {
 
 
 
+
+
 public protocol SocketPasswordDelegate: class {
     func passwordForUsername(username:String, promise: EventLoopPromise<String?>) -> EventLoopFuture<String?>
+    func passwordForUsername(username:String) -> String?
 }
 
 
-public struct P7MessageDecoder: ByteToMessageDecoder {
-    public typealias InboundOut = ByteBuffer
-    private var socket:P7Socket!
-    private var messageLength:UInt32!
-    
-    public init(withSocket socket: P7Socket) {
-        self.socket = socket
-    }
 
-    public mutating func decode(context: ChannelHandlerContext, buffer: inout ByteBuffer) -> DecodingState {
-        if self.messageLength == nil {
-            guard let length = buffer.readInteger(endianness: .big, as: UInt32.self) else {
-                return .needMoreData
-            }
-            
-             self.messageLength = length
-        }
-                
-        guard var payload = buffer.readSlice(length: Int(self.messageLength)) else {
-            return .needMoreData
-        }
-                        
-        if self.socket.checksumEnabled {
-            guard let remoteChecksum = buffer.readData(length: self.socket.checksumLength) else {
-                return .needMoreData
-            }
-            
-            payload.writeData(remoteChecksum)
-        }
-        
-        self.messageLength = nil
-        
-        context.fireChannelRead(self.wrapInboundOut(payload))
-        
-        return .continue
-    }
+
+
+
+internal protocol P7SocketMessageHandler: class {
+    func handleMessage(message: P7Message, context: ChannelHandlerContext)
 }
 
 
-public class P7Socket: ChannelInboundHandler {
-    public typealias InboundIn = ByteBuffer
-    public typealias OutboundOut = ByteBuffer
-    
+private protocol P7ClientHandshake: class {
+    func handleClientMessage(_ message: P7Message, context: ChannelHandlerContext)
+    func handleClientKey(_ message: P7Message, channel: Channel) -> Bool
+    func handleClientAcknowledge(_ message: P7Message, channel: Channel) -> Bool
+    func handleClientHandshake(_ message: P7Message, channel: Channel) -> Bool
+}
+
+
+
+private protocol P7ServerHandshake: class {
+    func handleServerMessage(_ message: P7Message, context: ChannelHandlerContext)
+    func handleServerEncryptionAcknowledge(_ message: P7Message, channel: Channel) -> Bool
+    func handleServerKey(_ message: P7Message, channel: Channel) -> Bool
+    func handleServerHandshake(_ message: P7Message, channel: Channel) -> Bool
+}
+
+
+
+
+
+public class P7ServerSocket : P7Socket, P7ClientHandshake {
+    private var serverState:ServerState = .client_handshake
+
     private enum ServerState: Int {
         case client_handshake = 0
         case acknowledge
@@ -230,165 +225,20 @@ public class P7Socket: ChannelInboundHandler {
         case authenticated
     }
     
-    private enum ClientState: Int {
-        case server_handshake = 0
-        case server_key
-        case acknowledge
-        case authenticated
-    }
-    
-    public var hostname: String!
-    public var port: Int!
-    public var spec: P7Spec!
-    public var username: String = "guest"
-    public var password: String!
-    public var serialization: Serialization = .BINARY
-    
-    public var compression: Compression = .NONE
-    public var cipherType: CipherType = .NONE
-    public var checksum: Checksum = .NONE
-    
-    // if no consensus is found during the handshake
-    // the server fallback to the following encryption settings
-    public var compressionFallback: Compression = .DEFLATE
-    public var cipherTypeFallback: CipherType = .ECDH_AES256_SHA256
-    public var checksumFallback: Checksum = .SHA2_256
-    
-    public var sslCipher: Cipher!
-    public var timeout: Int = 10
-    public var errors: [WiredError] = []
-    
-    public var compressionEnabled: Bool = false
-    public var compressionConfigured: Bool = false
-    
-    public var encryptionEnabled: Bool = false
-    public var checksumEnabled: Bool = false
-    public var checksumLength: Int = 0
-    
-    public var localCompatibilityCheck: Bool = false
-    public var remoteCompatibilityCheck: Bool = false
-    
-    public var remoteVersion: String!
-    public var remoteName: String!
-    public var remoteAddress:String?
-    
-    public var connected: Bool = false
-    public var passwordProvider:SocketPasswordDelegate?
-    public var channelDelegate:SocketChannelDelegate?
-    
-    // All access to channels is guarded by channelsSyncQueue.
-    private let channelsSyncQueue = DispatchQueue(label: "channelsQueue")
-    private var channels: [ObjectIdentifier: Channel] = [:]
-    public var channel:Channel!
-    
-    public var lastMessage:P7Message!
-    
-    public  var ecdh:ECDH!
-    private var ecdsa:ECDSA!
-    private var digest:Digest!
-    private var serverPublicKey:Data!
-    private var derivedKey:Data!
-    private var handshakePromise:EventLoopPromise<Channel>!
-    private var interactive:Bool = true
-    private var originator:Originator
-
-    private var serverState:ServerState!
-    private var clientState:ClientState!
-    
-    
-    
-    public init(spec: P7Spec, originator:Originator) {
-        self.spec               = spec
-        self.originator         = originator
-        self.clientState        = .server_handshake
-        self.connected          = true
-    }
-    
-    
-    
-    
-    public init(_ configuration:SocketConfiguration) {
-        self.spec               = configuration.spec
-        self.originator         = configuration.originator
-        
-        self.cipherType         = configuration.cipher
-        self.compression        = configuration.compression
-        self.checksum           = configuration.checksum
-        
-        self.passwordProvider   = configuration.passwordProvider
-        self.channelDelegate    = configuration.channelDelegate
-        self.serverState        = .client_handshake
-        
-        self.connected          = true
-    }
-    
-    
-    
-    
-    public func isInteractive() -> Bool {
-        return self.interactive
-    }
-    
-    
-    public func set(interactive:Bool) {
-        let option = interactive ? 1 : 0
-
-        self.channel.setOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: ChannelOptions.Types.SocketOption.Value(option)).whenSuccess { (Void) in
-            self.interactive = interactive
+    public override func handleMessage(message: P7Message, context: ChannelHandlerContext) {
+        if self.originator == .Server {
+            self.handleClientMessage(message, context: context)
         }
     }
     
-    
-    
-    
     // MARK: -
-    
-    public func channelActive(context: ChannelHandlerContext) {
-        self.channel = context.channel
-        
-        self.channelDelegate?.channelConnected(socket: self, channel: context.channel)
-    }
-    
-    
-    public func channelInactive(context: ChannelHandlerContext) {
-        self.channelDelegate?.channelDisconnected(socket: self, channel: context.channel)
-    }
-    
-    
-
-
-    public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
-        if self.interactive == true {
-            self.readMessage(context: context, data: data)
-        } else {
-            self.readTransfer(context: context, data: data)
-        }
-    }
-    
-    
-    
-    public func errorCaught(context: ChannelHandlerContext, error: Error) {
-        print("error: ", error)
-
-        // As we are not really interested getting notified on success or failure we just pass nil as promise to
-        // reduce allocations.
-        context.close(promise: nil)
-    }
-
-    
-    
-        
-    
-    
-    
-    // MARK: -
-    private func handleClientMessage(_ message: P7Message, context: ChannelHandlerContext) {
+    fileprivate func handleClientMessage(_ message: P7Message, context: ChannelHandlerContext) {
         let outOfSequenceBlock = { (error: String ) in
             Logger.error(error)
             
             self.errors.append(WiredError(withTitle: "Connection Error", message: error))
             
-            try? context.close().wait()
+            self.close(context: context)
             
             return
         }
@@ -397,7 +247,7 @@ public class P7Socket: ChannelInboundHandler {
         case .client_handshake:
             if message.name == "p7.handshake.client_handshake" {
                 if !self.handleClientHandshake(message, channel: context.channel) {
-                    try? context.close().wait()
+                    self.close(context: context)
                 }
 
                 self.serverState = .acknowledge
@@ -410,18 +260,16 @@ public class P7Socket: ChannelInboundHandler {
                     self.configureCompression()
                 
                     Logger.info("Compression enabled for \(self.compression)")
-
                 }
                 
                 if self.checksum != .NONE {
                     self.configureChecksum()
                 
                     Logger.info("Checkum enabled for \(self.checksum)")
-
                 }
                 
                 if !self.handleClientAcknowledge(message, channel: context.channel) {
-                    try? context.close().wait()
+                    self.close(context: context)
                 }
                 
                 self.serverState = .client_key
@@ -430,41 +278,20 @@ public class P7Socket: ChannelInboundHandler {
             }
         case .client_key:
             if message.name == "p7.encryption.client_key" {
-                let promise = channel.eventLoop.makePromise(of: Bool.self)
-                
-                let future = self.handleClientKey(message, channel: context.channel, promise: promise)
-                
-                future.whenFailure { (error) in
-                    if let e = error as? WiredError {
-                        self.errors.append(e)
-                    }
-                }
-                
-                future.whenSuccess { (isOK) in
-                    if isOK {
-                        if self.localCompatibilityCheck {
-                            if !self.receiveCompatibilityCheck() {
-                                try? context.close().wait()
-                            }
-                        }
-
-                        if self.remoteCompatibilityCheck {
-                            if !self.sendCompatibilityCheck() {
-                                try? context.close().wait()
-                            }
-                        }
+                DispatchQueue.global(qos: .userInitiated).async {
+                    if !self.handleClientKey(message, channel: context.channel) {
+                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Client key processing failed"))
                         
-                        self.serverState = .authenticated
-                        self.channelDelegate?.channelAuthenticated(socket: self, channel: self.channel)
-
-                    } else {
-                        self.errors.append(WiredError(withTitle: "Key Exchange Error", message: "Client key processing failed"))
-                        outOfSequenceBlock("Client key processing failed")
+                        self.close(context: context)
+                        
+                        return
                     }
+                    
+                    self.serverState = .authenticated
+                    self.channelDelegate?.channelAuthenticated(socket: self, channel: self.channel)
                 }
-            } else {
-                return outOfSequenceBlock("Handshake failed, message out of sequence")
             }
+
         default:
             if self.serverState != .authenticated {
                 return outOfSequenceBlock("Authentication failed, message out of sequence")
@@ -475,12 +302,333 @@ public class P7Socket: ChannelInboundHandler {
     }
     
     
-    private func handleServerMessage(_ message: P7Message, context: ChannelHandlerContext) {
+    
+    fileprivate func handleClientKey(_ message: P7Message, channel: Channel) -> Bool {
+        guard let serverPublicKey = self.ecdh.publicKeyData() else {
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Client public key not found"))
+            return false
+        }
+
+        guard   let combinedBase64Keys = message.data(forField: "p7.encryption.cipher.key"),
+                let combinedKeys = Data(base64Encoded: combinedBase64Keys) else {
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Client public key not found"))
+            return false
+        }
+        
+        let clientPublicKey = combinedKeys.dropLast(64)
+        
+        if clientPublicKey.count != 132 {
+            Logger.error("Invalid public key")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+        
+        let publicSigningKey = combinedKeys.dropFirst(132)
+
+        if publicSigningKey.count != 64 {
+            Logger.error("Invalid signing key")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid signng key"))
+            return false
+        }
+        
+        guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
+            Logger.error("Cannot compute shared secret")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+                        
+        guard   let saltData = serverSharedSecret.data(using: .utf8),
+                let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData,
+                                                                   andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
+            Logger.error("Cannot derive key from shared secret")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+        
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey.hexEncodedString(), iv: derivedIV)
+        self.digest     = Digest(key: derivedKey.hexEncodedString(), type: self.checksum)
+        
+        if self.sslCipher == nil {
+            Logger.error("Cannot init cipher (\(self.cipherType)")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+
+        guard   let dd = message.data(forField: "p7.encryption.username"),
+                let data = self.sslCipher.decrypt(data: dd) else {
+            Logger.error("Message has no 'p7.encryption.username' field")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+        
+        guard let username = data.stringUTF8 else {
+            Logger.error("Message has no 'p7.encryption.username' field")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+
+        self.username = username
+
+        guard let client_password = message.data(forField: "p7.encryption.client_password") else {
+            Logger.error("Message has no 'p7.encryption.client_password' field")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+        
+        if self.passwordProvider == nil {
+            Logger.error("Cannot auth user without a password provider delegate")
+            //promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
+            return false
+        }
+        
+        if self.passwordProvider != nil {
+            guard let password = self.passwordProvider?.passwordForUsername(username: self.username) else {
+                Logger.error("No user found with username '\(self.username)', abort")
+                return false
+            }
+            
+            self.password = password
+        } else {
+            // assume password is empty (guest with empty password access only)
+            self.password = "".sha256()
+        }
+
+        let passwordData = self.password.data(using: .utf8)!
+        var serverPassword1Data = passwordData
+        serverPassword1Data.append(serverPublicKey)
+        serverPassword1Data = serverPassword1Data.sha256().toHexString().data(using: .utf8)!
+
+        var serverPassword2Data = serverPublicKey
+        serverPassword2Data.append(passwordData)
+        serverPassword2Data = serverPassword2Data.sha256().toHexString().data(using: .utf8)!
+        
+        guard let ecdsa = ECDSA(publicKey: publicSigningKey) else {
+            Logger.error("Cannot init ECDSA with public signing key")
+            return false
+        }
+        
+        if !ecdsa.verify(data: serverPassword1Data, withSignature: client_password) {
+            Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
+            return false
+        }
+
+        // acknowledge
+        let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
+        
+        guard let ecdsa2 = ECDSA(privateKey: derivedKey) else {
+            Logger.error("Cannot init ECDSA with private signing key")
+            return false
+        }
+        
+        guard let passwordSignature = ecdsa2.sign(data: serverPassword2Data) else {
+            Logger.error("Cannot sign server password")
+            return false
+        }
+
+        message2.addParameter(field: "p7.encryption.server_password", value: passwordSignature)
+
+        if !self.write(message2) {
+            return false
+        }
+                
+        guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: serverPassword2Data,
+                                                                        andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
+            Logger.error("Cannot derive key from server password")
+            return false
+        }
+
+        self.digest     = Digest(key: derivedKey2.hexEncodedString(), type: self.checksum)
+        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2.hexEncodedString(), iv: derivedIV2)
+
+        if self.digest == nil {
+            Logger.error("Digest cannot be created")
+            return false
+        }
+        
+        if self.sslCipher == nil {
+            Logger.error("Cipher cannot be created")
+            return false
+        }
+
+        self.checksumEnabled    = true
+        self.encryptionEnabled  = true
+
+        return true
+    }
+    
+    
+    
+    fileprivate func handleClientAcknowledge(_ message: P7Message, channel: Channel) -> Bool {
+        if let remoteCompatibilityCheck = message.bool(forField: "p7.handshake.compatibility_check") {
+            self.remoteCompatibilityCheck = remoteCompatibilityCheck
+        } else {
+            self.remoteCompatibilityCheck = false
+        }
+                        
+        if self.cipherType != .NONE {
+            let message = P7Message(withName: "p7.encryption.server_key", spec: self.spec)
+            
+            self.ecdh = ECDH()
+            
+            if self.ecdh == nil {
+                Logger.error("Missing ECDH key")
+                return false
+            }
+            
+            guard let serverPublicKey = self.ecdh.publicKeyData() else {
+                return false
+            }
+
+            message.addParameter(field: "p7.encryption.public_key", value: serverPublicKey)
+        
+            return self.write(message, channel: channel)
+        }
+        
+        print("NO CIPHER !!!")
+        
+        return false
+    }
+    
+    
+    
+    
+    
+    fileprivate func handleClientHandshake(_ message: P7Message, channel: Channel) -> Bool {
+        var clientCipher:CipherType       = .NONE
+        var clientChecksum:Checksum       = .NONE
+        var clientCompression:Compression = .NONE
+        
+        if message.name != "p7.handshake.client_handshake" {
+            Logger.error("Message should be 'p7.handshake.client_handshake', not '\(message.name!)'")
+            return false
+        }
+        
+        // hadshake version
+        guard let version = message.string(forField: "p7.handshake.version") else {
+            Logger.error("Message has no 'p7.handshake.version', field")
+            return false
+        }
+        
+        if version != self.spec.builtinProtocolVersion {
+            Logger.error("Remote P7 protocol \(version) is not compatible")
+
+            return false;
+        }        
+        
+        // protocol compatibility check
+        guard let remoteName = message.string(forField: "p7.handshake.protocol.name") else {
+            Logger.error("Message has no 'p7.handshake.protocol.name', field")
+            return false
+        }
+        
+        guard let remoteVersion = message.string(forField: "p7.handshake.protocol.version") else {
+            Logger.error("Message has no 'p7.handshake.protocol.version', field")
+            return false
+        }
+        
+        self.remoteName = remoteName
+        self.remoteVersion = remoteVersion
+        self.localCompatibilityCheck = !self.spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
+        
+        if self.serialization == .BINARY {
+            if let compression = message.enumeration(forField: "p7.handshake.compression") {
+                clientCompression = Compression(rawValue: compression)
+            }
+            
+            if let encryption = message.enumeration(forField: "p7.handshake.encryption") {
+                clientCipher = CipherType(rawValue: encryption)
+            }
+            
+            if let checksum = message.enumeration(forField: "p7.handshake.checksum") {
+                clientChecksum = Checksum(rawValue: checksum)
+            }
+        }
+                                
+        let response = P7Message(withName: "p7.handshake.server_handshake", spec: self.spec)
+        response.addParameter(field: "p7.handshake.version", value: self.spec.builtinProtocolVersion)
+        response.addParameter(field: "p7.handshake.protocol.name", value: self.spec.protocolName)
+        response.addParameter(field: "p7.handshake.protocol.version", value: self.spec.protocolVersion)
+        
+        if self.serialization == .BINARY {
+            // compression
+            if self.compression.contains(clientCompression) {
+                self.compression = clientCompression
+            } else {
+                Logger.error("Compression not supported (\(clientCompression)), fallback to \(self.compressionFallback)")
+
+                self.compression = self.compressionFallback
+            }
+            
+            if self.compression != .NONE {
+                response.addParameter(field: "p7.handshake.compression", value: self.compression.rawValue)
+            }
+                    
+            //cipher
+            if self.cipherType.contains(clientCipher) {
+                self.cipherType = clientCipher
+            } else {
+                Logger.error("Encryption cipher not supported (\(clientCipher)), fallback to \(self.cipherTypeFallback)")
+
+                self.cipherType = self.cipherTypeFallback
+            }
+            
+            if self.cipherType != .NONE {
+                response.addParameter(field: "p7.handshake.encryption", value: self.cipherType.rawValue)
+            }
+            
+            // checksum
+            if self.checksum.contains(clientChecksum) {
+                self.checksum = clientChecksum
+            } else {
+                Logger.error("Checksum not supported (\(clientChecksum)), fallback to \(self.checksumFallback)")
+                self.checksum = self.checksumFallback
+            }
+                            
+            if self.checksum != .NONE {
+                response.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
+            }
+        }
+                        
+        if self.localCompatibilityCheck {
+            response.addParameter(field: "p7.handshake.compatibility_check", value: true)
+        }
+        
+        print("handshake : \(response)")
+                                
+        return self.write(response, channel: channel)
+    }
+}
+
+
+
+
+
+
+
+
+
+public class P7ClientSocket : P7Socket, P7ServerHandshake {
+    private var clientState:ClientState = .server_handshake
+    
+    private enum ClientState: Int {
+        case server_handshake = 0
+        case server_key
+        case acknowledge
+        case authenticated
+    }
+    
+    public override func handleMessage(message: P7Message, context: ChannelHandlerContext) {
+        if self.originator == .Client {
+            self.handleServerMessage(message, context: context)
+        }
+    }
+    
+    fileprivate func handleServerMessage(_ message: P7Message, context: ChannelHandlerContext) {
         switch self.clientState {
         case .server_handshake:
             if message.name == "p7.handshake.server_handshake" {
                 if !self.handleServerHandshake(message, channel: context.channel) {
-                    try? context.close().wait()
+                    self.close(context: context)
                 }
                 
                 if self.compression != .NONE {
@@ -500,7 +648,7 @@ public class P7Socket: ChannelInboundHandler {
         case .server_key:
             if message.name == "p7.encryption.server_key" {
                 if !self.handleServerKey(message, channel: context.channel) {
-                    try? context.close().wait()
+                    self.close(context: context)
                 }
                 
                 self.clientState = .acknowledge
@@ -508,7 +656,7 @@ public class P7Socket: ChannelInboundHandler {
         case .acknowledge:
             if message.name == "p7.encryption.acknowledge" {
                 if !self.handleServerEncryptionAcknowledge(message, channel: context.channel) {
-                    try? context.close().wait()
+                    self.close(context: context)
                 }
                 
                 if self.remoteCompatibilityCheck {
@@ -517,7 +665,7 @@ public class P7Socket: ChannelInboundHandler {
 
                         self.errors.append(WiredError(withTitle: "Connection Error", message: "Remote Compatibility Check failed"))
 
-                        try? context.close().wait()
+                        self.close(context: context)
                     }
                 }
 
@@ -527,7 +675,7 @@ public class P7Socket: ChannelInboundHandler {
 
                         self.errors.append(WiredError(withTitle: "Connection Error", message: "Local Compatibility Check failed"))
 
-                        try? context.close().wait()
+                        self.close(context: context)
                     }
                 }
                 
@@ -539,7 +687,7 @@ public class P7Socket: ChannelInboundHandler {
                 
                 self.errors.append(WiredError(withTitle: "Authentification Error", message: "Authentication failed, message out of sequence"))
 
-                try? context.close().wait()
+                self.close(context: context)
                 
                 return
             }
@@ -549,7 +697,7 @@ public class P7Socket: ChannelInboundHandler {
                 
                 self.errors.append(WiredError(withTitle: "Connection Error", message: "Authentication failed, message out of sequence"))
                 
-                try? context.close().wait()
+                self.close(context: context)
                 
                 return
             }
@@ -560,7 +708,7 @@ public class P7Socket: ChannelInboundHandler {
     
     
     
-    private func handleServerEncryptionAcknowledge(_ message: P7Message, channel: Channel) -> Bool {
+    fileprivate func handleServerEncryptionAcknowledge(_ message: P7Message, channel: Channel) -> Bool {
         let passwordData = self.password.data(using: .utf8)!
         
         var clientPassword1 = passwordData
@@ -615,177 +763,9 @@ public class P7Socket: ChannelInboundHandler {
         
         return true
     }
+
     
-    
-    private func handleClientKey(_ message: P7Message, channel: Channel, promise: EventLoopPromise<Bool>) -> EventLoopFuture<Bool> {
-        guard let serverPublicKey = self.ecdh.publicKeyData() else {
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Client public key not found"))
-            return promise.futureResult
-        }
-
-        guard   let combinedBase64Keys = message.data(forField: "p7.encryption.cipher.key"),
-                let combinedKeys = Data(base64Encoded: combinedBase64Keys) else {
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Client public key not found"))
-            return promise.futureResult
-        }
-        
-        let clientPublicKey = combinedKeys.dropLast(64)
-        
-        if clientPublicKey.count != 132 {
-            Logger.error("Invalid public key")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-        
-        let publicSigningKey = combinedKeys.dropFirst(132)
-
-        if publicSigningKey.count != 64 {
-            Logger.error("Invalid signing key")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid signng key"))
-            return promise.futureResult
-        }
-        
-        guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
-            Logger.error("Cannot compute shared secret")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-                        
-        guard   let saltData = serverSharedSecret.data(using: .utf8),
-                let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData,
-                                                                   andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-            Logger.error("Cannot derive key from shared secret")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-        
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey.hexEncodedString(), iv: derivedIV)
-        self.digest     = Digest(key: derivedKey.hexEncodedString(), type: self.checksum)
-        
-        if self.sslCipher == nil {
-            Logger.error("Cannot init cipher (\(self.cipherType)")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-
-        guard   let dd = message.data(forField: "p7.encryption.username"),
-                let data = self.sslCipher.decrypt(data: dd) else {
-            Logger.error("Message has no 'p7.encryption.username' field")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-        
-        guard let username = data.stringUTF8 else {
-            Logger.error("Message has no 'p7.encryption.username' field")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-
-        self.username = username
-
-        guard let client_password = message.data(forField: "p7.encryption.client_password") else {
-            Logger.error("Message has no 'p7.encryption.client_password' field")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-        
-        if self.passwordProvider == nil {
-            Logger.error("Cannot auth user without a password provider delegate")
-            promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-            return promise.futureResult
-        }
-
-        let dbPromise = channel.eventLoop.makePromise(of: String?.self)
-        let passwordFuture = self.passwordProvider?.passwordForUsername(username: self.username, promise: dbPromise)
-        
-        passwordFuture?.whenFailure({ (e) in
-            promise.fail(e)
-        })
-        
-        passwordFuture?.whenSuccess({ (p) in
-            guard let password = p else {
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Password not found"))
-                return
-            }
-            
-            self.password = password
-                                        
-            let passwordData = self.password.data(using: .utf8)!
-                        
-            var serverPassword1Data = passwordData
-            serverPassword1Data.append(serverPublicKey)
-            serverPassword1Data = serverPassword1Data.sha256().toHexString().data(using: .utf8)!
-
-            var serverPassword2Data = serverPublicKey
-            serverPassword2Data.append(passwordData)
-            serverPassword2Data = serverPassword2Data.sha256().toHexString().data(using: .utf8)!
-            
-            guard let ecdsa = ECDSA(publicKey: publicSigningKey) else {
-                Logger.error("Cannot init ECDSA with public signing key")
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-                return
-            }
-            
-            if !ecdsa.verify(data: serverPassword1Data, withSignature: client_password) {
-                Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-                return
-            }
-
-            // acknowledge
-            let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
-            
-            guard let ecdsa2 = ECDSA(privateKey: derivedKey) else {
-                Logger.error("Cannot init ECDSA with private signing key")
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-                return
-            }
-            
-            guard let passwordSignature = ecdsa2.sign(data: serverPassword2Data) else {
-                Logger.error("Cannot sign server password")
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-                return
-            }
-
-            message2.addParameter(field: "p7.encryption.server_password", value: passwordSignature)
-
-            self.write(message2, channel: channel)
-            
-            guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: serverPassword2Data,
-                                                                       andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-                Logger.error("Cannot derive key from server password")
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-                return
-            }
-
-            self.digest     = Digest(key: derivedKey2.hexEncodedString(), type: self.checksum)
-            self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2.hexEncodedString(), iv: derivedIV2)
-
-            if self.digest == nil {
-                Logger.error("Digest cannot be created")
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-                return
-            }
-            
-            if self.sslCipher == nil {
-                Logger.error("Cipher cannot be created")
-                promise.fail(WiredError(withTitle: "Key Exchange Error", message: "Invalid public key"))
-                return
-            }
-
-            self.checksumEnabled    = true
-            self.encryptionEnabled  = true
-            
-            promise.succeed(true)
-        })
-        
-        
-        return promise.futureResult
-
-    }
-    
-    
-    private func handleServerKey(_ message: P7Message, channel: Channel) -> Bool {
+    fileprivate func handleServerKey(_ message: P7Message, channel: Channel) -> Bool {
         self.ecdh = ECDH()
         
         guard let serverPublicKey = message.data(forField: "p7.encryption.public_key") else {
@@ -871,39 +851,8 @@ public class P7Socket: ChannelInboundHandler {
     
     
     
-    private func handleClientAcknowledge(_ message: P7Message, channel: Channel) -> Bool {
-        if let remoteCompatibilityCheck = message.bool(forField: "p7.handshake.compatibility_check") {
-            self.remoteCompatibilityCheck = remoteCompatibilityCheck
-        } else {
-            self.remoteCompatibilityCheck = false
-        }
-                        
-        if self.cipherType != .NONE {
-            let message = P7Message(withName: "p7.encryption.server_key", spec: self.spec)
-            
-            self.ecdh = ECDH()
-            
-            if self.ecdh == nil {
-                Logger.error("Missing ECDH key")
-                return false
-            }
-            
-            guard let serverPublicKey = self.ecdh.publicKeyData() else {
-                return false
-            }
-
-            message.addParameter(field: "p7.encryption.public_key", value: serverPublicKey)
-        
-            return self.write(message, channel: channel)
-        }
-        
-        print("NO CIPHER !!!")
-        
-        return false
-    }
     
-    
-    private func handleServerHandshake(_ message: P7Message, channel: Channel) -> Bool {
+    fileprivate func handleServerHandshake(_ message: P7Message, channel: Channel) -> Bool {
         var serverCipher:CipherType?       = nil
         var serverChecksum:Checksum?       = nil
         var serverCompression:Compression? = nil
@@ -966,145 +915,159 @@ public class P7Socket: ChannelInboundHandler {
         }
         
         return self.write(response, channel: channel)
+    }    
+}
+
+
+public class P7Socket: ChannelInboundHandler, P7SocketMessageHandler {
+    public typealias InboundIn = ByteBuffer
+    public typealias OutboundOut = ByteBuffer
+
+    
+    public var hostname: String!
+    public var port: Int!
+    public var spec: P7Spec!
+    public var username: String = "guest"
+    public var password: String!
+    public var serialization: Serialization = .BINARY
+    
+    public var compression: Compression = .NONE
+    public var cipherType: CipherType = .NONE
+    public var checksum: Checksum = .NONE
+    
+    // if no consensus is found during the handshake
+    // the server fallback to the following encryption settings
+    public var compressionFallback: Compression = .DEFLATE
+    public var cipherTypeFallback: CipherType = .ECDH_AES256_SHA256
+    public var checksumFallback: Checksum = .SHA2_256
+    
+    public var sslCipher: Cipher!
+    public var timeout: Int = 10
+    public var errors: [WiredError] = []
+    
+    public var compressionEnabled: Bool = false
+    public var compressionConfigured: Bool = false
+    
+    public var encryptionEnabled: Bool = false
+    public var checksumEnabled: Bool = false
+    public var checksumLength: Int = 0
+    
+    public var localCompatibilityCheck: Bool = false
+    public var remoteCompatibilityCheck: Bool = false
+    
+    public var remoteVersion: String!
+    public var remoteName: String!
+    public var remoteAddress:String?
+    
+    public var connected: Bool = false
+    public var passwordProvider:SocketPasswordDelegate?
+    public var channelDelegate:SocketChannelDelegate?
+    
+    // All access to channels is guarded by channelsSyncQueue.
+    private let channelsSyncQueue = DispatchQueue(label: "channelsQueue")
+    private var channels: [ObjectIdentifier: Channel] = [:]
+    public var channel:Channel!
+    
+    public var lastMessage:P7Message!
+    
+    public  var ecdh:ECDH!
+    internal var ecdsa:ECDSA!
+    internal var digest:Digest!
+    internal var serverPublicKey:Data!
+    internal var derivedKey:Data!
+    internal var handshakePromise:EventLoopPromise<Channel>!
+    internal var interactive:Bool = true
+    internal var originator:Originator
+    
+    
+    
+    public init(spec: P7Spec, originator:Originator) {
+        self.spec               = spec
+        self.originator         = originator
+        self.connected          = true
     }
     
     
     
-    private func handleClientHandshake(_ message: P7Message, channel: Channel) -> Bool {
-        var clientCipher:CipherType       = .NONE
-        var clientChecksum:Checksum       = .NONE
-        var clientCompression:Compression = .NONE
+    
+    public init(_ configuration:SocketConfiguration) {
+        self.spec               = configuration.spec
+        self.originator         = configuration.originator
         
-        if message.name != "p7.handshake.client_handshake" {
-            Logger.error("Message should be 'p7.handshake.client_handshake', not '\(message.name!)'")
-            return false
-        }
+        self.cipherType         = configuration.cipher
+        self.compression        = configuration.compression
+        self.checksum           = configuration.checksum
         
-        // hadshake version
-        guard let version = message.string(forField: "p7.handshake.version") else {
-            Logger.error("Message has no 'p7.handshake.version', field")
-            return false
-        }
+        self.passwordProvider   = configuration.passwordProvider
+        self.channelDelegate    = configuration.channelDelegate
         
-        if version != self.spec.builtinProtocolVersion {
-            Logger.error("Remote P7 protocol \(version) is not compatible")
-
-            return false;
-        }
-        
-        
-        // protocol compatibility check
-        guard let remoteName = message.string(forField: "p7.handshake.protocol.name") else {
-            Logger.error("Message has no 'p7.handshake.protocol.name', field")
-            return false
-        }
-        
-        guard let remoteVersion = message.string(forField: "p7.handshake.protocol.version") else {
-            Logger.error("Message has no 'p7.handshake.protocol.version', field")
-            return false
-        }
-        
-        self.remoteName = remoteName
-        self.remoteVersion = remoteVersion
-        self.localCompatibilityCheck = !self.spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
-        
-        if self.serialization == .BINARY {
-            if let compression = message.enumeration(forField: "p7.handshake.compression") {
-                clientCompression = Compression(rawValue: compression)
-            }
-            
-            if let encryption = message.enumeration(forField: "p7.handshake.encryption") {
-                clientCipher = CipherType(rawValue: encryption)
-            }
-            
-            if let checksum = message.enumeration(forField: "p7.handshake.checksum") {
-                clientChecksum = Checksum(rawValue: checksum)
-            }
-        }
-                                
-        let response = P7Message(withName: "p7.handshake.server_handshake", spec: self.spec)
-        response.addParameter(field: "p7.handshake.version", value: self.spec.builtinProtocolVersion)
-        response.addParameter(field: "p7.handshake.protocol.name", value: self.spec.protocolName)
-        response.addParameter(field: "p7.handshake.protocol.version", value: self.spec.protocolVersion)
-        
-        if self.serialization == .BINARY {
-            // compression
-            if self.compression.contains(clientCompression) {
-                self.compression = clientCompression
-            } else {
-                Logger.error("Compression not supported (\(clientCompression)), fallback to \(self.compressionFallback)")
-
-                self.compression = self.compressionFallback
-            }
-            
-            if self.compression != .NONE {
-                response.addParameter(field: "p7.handshake.compression", value: self.compression.rawValue)
-            }
-                    
-            //cipher
-            if self.cipherType.contains(clientCipher) {
-                self.cipherType = clientCipher
-            } else {
-                Logger.error("Encryption cipher not supported (\(clientCipher)), fallback to \(self.cipherTypeFallback)")
-
-                self.cipherType = self.cipherTypeFallback
-            }
-            
-            if self.cipherType != .NONE {
-                response.addParameter(field: "p7.handshake.encryption", value: self.cipherType.rawValue)
-            }
-            
-            // checksum
-            if self.checksum.contains(clientChecksum) {
-                self.checksum = clientChecksum
-            } else {
-                Logger.error("Checksum not supported (\(clientChecksum)), fallback to \(self.checksumFallback)")
-                self.checksum = self.checksumFallback
-            }
-                            
-            if self.checksum != .NONE {
-                response.addParameter(field: "p7.handshake.checksum", value: self.checksum.rawValue)
-            }
-        }
-                        
-        if self.localCompatibilityCheck {
-            response.addParameter(field: "p7.handshake.compatibility_check", value: true)
-        }
-                                
-        return self.write(response, channel: channel)
+        self.connected          = true
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    // MARK: -
+    
+    public func channelActive(context: ChannelHandlerContext) {
+        self.channel = context.channel
+        
+        self.channelDelegate?.channelConnected(socket: self, channel: context.channel)
+    }
+    
+    
+    public func channelInactive(context: ChannelHandlerContext) {
+        self.channelDelegate?.channelDisconnected(socket: self, channel: context.channel)
+    }
+    
     
 
 
+    public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        if self.interactive == true {
+            self.readMessage(context: context, data: data)
+        } else {
+            self.readTransfer(context: context, data: data)
+        }
+    }
+    
+    
+    
+    public func errorCaught(context: ChannelHandlerContext, error: Error) {
+        print("error: ", error)
+
+        // As we are not really interested getting notified on success or failure we just pass nil as promise to
+        // reduce allocations.
+        context.close(promise: nil)
+    }
 
 
+
+
+    
+    
+    
+    
+    // MARK: -
+    public func handleMessage(message: P7Message, context: ChannelHandlerContext) {
+        
+    }
+    
+    
     
     
     // MARK: - CONNECTION
-    public func handshake(promise: EventLoopPromise<Channel>) -> EventLoopFuture<Channel> {
+    public func connect(promise: EventLoopPromise<Channel>) -> EventLoopFuture<Channel> {
         self.handshakePromise = promise
         
-        if !self.connectHandshake() {
-            Logger.error("Handshake failed")
-            
-            let error = WiredError(withTitle: "Connection Error", message: "Handshake failed")
-            
-            self.errors.append(error)
-            
-            promise.fail(error)
-        }
-        
-        return promise.futureResult
-    }
-
-    
-    
-    
-    private func connectHandshake() -> Bool {
         let message = P7Message(withName: "p7.handshake.client_handshake", spec: self.spec)
         message.addParameter(field: "p7.handshake.version", value: "1.0")
         message.addParameter(field: "p7.handshake.protocol.name", value: "Wired")
-        message.addParameter(field: "p7.handshake.protocol.version", value: "2.0b55")
+        message.addParameter(field: "p7.handshake.protocol.version", value: "3.0")
                 
         // handshake settings
         if self.serialization == .BINARY {
@@ -1121,10 +1084,19 @@ public class P7Socket: ChannelInboundHandler {
             }
         }
         
-        return self.write(message, channel: self.channel)
+        if !self.write(message, channel: self.channel) {
+            Logger.error("Handshake failed")
+            
+            let error = WiredError(withTitle: "Connection Error", message: "Handshake failed")
+            
+            self.errors.append(error)
+            
+            promise.fail(error)
+        }
+        
+        return promise.futureResult
     }
-    
-    
+
     
     
     
@@ -1153,6 +1125,26 @@ public class P7Socket: ChannelInboundHandler {
     
     
     
+    public func isInteractive() -> Bool {
+        return self.interactive
+    }
+    
+    
+    public func set(interactive:Bool) {
+        let option = interactive ? 1 : 0
+
+        self.channel.setOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: ChannelOptions.Types.SocketOption.Value(option)).whenSuccess { (Void) in
+            self.interactive = interactive
+        }
+    }
+    
+    internal func close(context: ChannelHandlerContext) {
+        DispatchQueue.main.async {
+            try? context.close().wait()
+        }
+    }
+    
+    
     
     
     
@@ -1163,7 +1155,7 @@ public class P7Socket: ChannelInboundHandler {
     
     
     
-    public func write(_ message: P7Message, channel: Channel) -> Bool {
+    public func write(_ message: P7Message, channel: Channel, promise: EventLoopPromise<Void>? = nil) -> Bool {
             if self.serialization == .XML {
 //                let xml = message.xml()
 //
@@ -1208,13 +1200,13 @@ public class P7Socket: ChannelInboundHandler {
                 }
                                 
                 let buffer = channel.allocator.buffer(data: lengthData + messageData)
-                channel.write(buffer, promise: nil)
+                channel.write(buffer, promise: promise)
                 
                 // checksum
                 if self.checksumEnabled {
                     if let c = self.checksumData(messageData) {
                         let buffer = channel.allocator.buffer(data: c)
-                        channel.write(buffer, promise: nil)
+                        channel.write(buffer, promise: promise)
                     } else {
                         Logger.error("Checksum failed abnormally")
                     }
@@ -1366,58 +1358,54 @@ public class P7Socket: ChannelInboundHandler {
     
     
     public func writeOOB(data:Data, timeout:TimeInterval = 1.0) -> Bool {
-        do {
-            if self.serialization == .BINARY {
-                var messageData = data
-                let originalData = messageData
-                var lengthData = Data()
-                
+        if self.serialization == .BINARY {
+            var messageData = data
+            let originalData = messageData
+            var lengthData = Data()
+            
+            lengthData.append(uint32: UInt32(messageData.count))
+                                            
+            // deflate
+            if self.compressionEnabled {
+                guard let deflatedMessageData = self.deflate(messageData) else {
+                    Logger.error("Cannot deflate data")
+                    return false
+
+                }
+                messageData = deflatedMessageData
+            }
+
+            // encryption
+            if self.encryptionEnabled {
+                guard let encryptedMessageData = self.sslCipher.encrypt(data: messageData) else {
+                    Logger.error("Cannot encrypt data")
+                    return false
+                }
+
+                messageData = encryptedMessageData
+
+                lengthData = Data()
                 lengthData.append(uint32: UInt32(messageData.count))
-                                                
-                // deflate
-                if self.compressionEnabled {
-                    guard let deflatedMessageData = self.deflate(messageData) else {
-                        Logger.error("Cannot deflate data")
-                        return false
+            }
+            
 
-                    }
-                    messageData = deflatedMessageData
-                }
-
-                // encryption
-                if self.encryptionEnabled {
-                    guard let encryptedMessageData = self.sslCipher.encrypt(data: messageData) else {
-                        Logger.error("Cannot encrypt data")
-                        return false
-                    }
-
-                    messageData = encryptedMessageData
-
-                    lengthData = Data()
-                    lengthData.append(uint32: UInt32(messageData.count))
-                }
-                
-//                _ = try self.socket.write(lengthData.bytes, size: lengthData.count)
-//                _ = try self.socket.write(messageData.bytes, size: messageData.count)
-                
-                // checksum
-                if self.checksumEnabled {
-                    if let c = self.checksumData(originalData) {
-                        _ = self.write(c.bytes, maxLength: self.checksumLength)
-                    } else {
-                        Logger.error("Checksum failed abnormally")
-                    }
+            let buffer = channel.allocator.buffer(data: lengthData + messageData)
+            channel.write(buffer, promise: nil)
+            
+            // checksum
+            // checksum
+            if self.checksumEnabled {
+                if let c = self.checksumData(originalData) {
+                    let buffer = channel.allocator.buffer(data: c)
+                    channel.write(buffer, promise: nil)
+                } else {
+                    Logger.error("Checksum failed abnormally")
                 }
             }
-        } catch let error {
-            if let socketError = error as? Socket.Error {
-                Logger.error(socketError.description)
-            } else {
-                Logger.error(error.localizedDescription)
-            }
-            return false
+            
+            channel.flush()
         }
-        
+    
         return true
     }
 
@@ -1438,7 +1426,11 @@ public class P7Socket: ChannelInboundHandler {
 
 
 
-private extension P7Socket {
+
+
+
+
+internal extension P7Socket {
     // MARK: - READ HELPERS
     private func readMessage(context: ChannelHandlerContext, data: NIOAny) {
         var error:WiredError? = nil
@@ -1461,7 +1453,7 @@ private extension P7Socket {
                 Logger.error(error!)
                 self.errors.append(error!)
 
-                try? context.close().wait()
+                self.close(context: context)
                 return
             }
             messageData = decryptedMessageData
@@ -1475,7 +1467,7 @@ private extension P7Socket {
                 Logger.error(error!)
                 self.errors.append(error!)
 
-                try? context.close().wait()
+                self.close(context: context)
                 return
             }
             messageData = inflatedMessageData
@@ -1489,7 +1481,7 @@ private extension P7Socket {
                 Logger.error(error!)
                 self.errors.append(error!)
 
-                try? context.close().wait()
+                self.close(context: context)
                 return
             }
 
@@ -1500,7 +1492,7 @@ private extension P7Socket {
                     Logger.error(error!)
                     self.errors.append(error!)
 
-                    try? context.close().wait()
+                    self.close(context: context)
                     return
                 }
             }
@@ -1509,14 +1501,13 @@ private extension P7Socket {
         let message = P7Message(withData: messageData, spec: self.spec)
         
         Logger.info("-> READ: \(message.name!) [\(messageData.count)] [encryption: \(self.encryptionEnabled)] [compression: \(self.compressionEnabled)] [checksum: \(self.checksumEnabled)]")
-
-        if self.originator == .Server {
-            self.handleClientMessage(message, context: context)
-        }
-        else if self.originator == .Client {
-            self.handleServerMessage(message, context: context)
-        }
+        
+        
+        self.handleMessage(message: message, context: context)
     }
+
+    
+    
     
     
     private func readTransfer(context: ChannelHandlerContext, data: NIOAny) {
@@ -1530,7 +1521,7 @@ private extension P7Socket {
     
     
     // MARK: - COMPATIBILITY CHECK
-    private func sendCompatibilityCheck() -> Bool {
+    func sendCompatibilityCheck() -> Bool {
        let message = P7Message(withName: "p7.compatibility_check.specification", spec: self.spec)
        
        message.addParameter(field: "p7.compatibility_check.specification", value: self.spec.xml!)
@@ -1558,15 +1549,15 @@ private extension P7Socket {
     }
 
 
-    private func receiveCompatibilityCheck() -> Bool {
+    func receiveCompatibilityCheck() -> Bool {
        // TODO: implement this ?
        return false
     }
     
     
     
-    
-    private func configureChecksum() {
+    // MARK: - CHECKSUM
+    func configureChecksum() {
         if self.checksum == .SHA2_256 {
             self.checksumLength = sha2_256DigestLength
             
@@ -1579,13 +1570,11 @@ private extension P7Socket {
         } else if self.checksum == .Poly1305 {
             self.checksumLength = poly1305DigestLength
         }
-        
-        // self.checksumEnabled = true
     }
     
     
     // MARK: - COMPRESSION
-    private func configureCompression() {
+    func configureCompression() {
         if self.compression == .DEFLATE {
             self.compressionEnabled = true
             
@@ -1593,6 +1582,8 @@ private extension P7Socket {
             self.compressionEnabled = false
         }
     }
+    
+    
     
     private func inflate(_ data: Data) -> Data? {
         do {
