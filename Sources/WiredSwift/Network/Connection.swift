@@ -73,7 +73,7 @@ public extension ServerInfoDelegate {
 open class Connection: NSObject, SocketChannelDelegate {
     public var spec:        P7Spec
     public var url:         Url!
-    public var socket:      P7Socket!
+    public var socket:      P7ClientSocket!
     public var delegates:   [ConnectionDelegate] = []
     public var clientInfoDelegate:ClientInfoDelegate?
     public var serverInfoDelegate:ServerInfoDelegate?
@@ -97,9 +97,7 @@ open class Connection: NSObject, SocketChannelDelegate {
     private var group:MultiThreadedEventLoopGroup!
     private var bootstrap:ClientBootstrap!
     private var channel:Channel!
-    
-    private let semaphore = DispatchSemaphore(value: 0)
-    
+        
     private var state:ConnectState
     private var userInfoCounter:Int = 0
     
@@ -186,19 +184,13 @@ open class Connection: NSObject, SocketChannelDelegate {
         
         self.channel = channel
         
-        let promise = channel.eventLoop.makePromise(of: Channel.self)
-
-        self.socket.connect(promise: promise).whenSuccess({ (channel) in
+        if self.socket.connect() {
             if self.state == .clientInfo {
                 _ = self.clientInfo()
                 
             }
-        })
+        }
                 
-        //try! channel.closeFuture.wait()
-        
-        semaphore.wait()
-        
         return true
     }
     
@@ -251,15 +243,12 @@ open class Connection: NSObject, SocketChannelDelegate {
         
         self.channel = channel
         
-        let promise = channel.eventLoop.makePromise(of: Channel.self)
-
-        self.socket.connect(promise: promise).whenSuccess({ (channel) in
+        if self.socket.connect() {
             if self.state == .clientInfo {
                 _ = self.clientInfo()
-            }
-        })
                 
-        //try! channel.closeFuture.wait()
+            }
+        }
                 
         return true
     }
@@ -437,9 +426,6 @@ open class Connection: NSObject, SocketChannelDelegate {
                     })
                     
                     self.state = .clientPrivileges
-                    
-                    // return connect()
-                    semaphore.signal()
                     
                     for d in self.delegates {
                         DispatchQueue.main.async {

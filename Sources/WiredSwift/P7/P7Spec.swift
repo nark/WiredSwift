@@ -70,6 +70,10 @@ public class P7Spec: NSObject, XMLParserDelegate {
     public var errorsByName:    [String:SpecError]         = [:]
     
     private var currentMessage: SpecMessage?
+    private var currentTransaction: SpecTransaction?
+    private var currentAnd: AndOrReply?
+    private var currentOr: AndOrReply?
+    private var transactionHasAnd: Bool = false
     
     public var path: String?
 
@@ -340,6 +344,43 @@ public class P7Spec: NSObject, XMLParserDelegate {
         else if elementName == "p7:message" {
             self.loadMessage(attributeDict)
         }
+        else if elementName == "p7:transaction" {
+            self.loadTransaction(attributeDict)
+        }
+        else if elementName == "p7:or" {
+            if self.currentTransaction != nil {
+                self.currentOr = AndOrReply(name: "or", spec: self, attributes: attributeDict, andOr: .OR)
+                
+                self.currentTransaction?.andOrReplies.append(self.currentOr!)
+            }
+        }
+        else if elementName == "p7:and" {
+            if self.currentTransaction != nil {
+                self.currentAnd = AndOrReply(name: "and", spec: self, attributes: attributeDict, andOr: .AND)
+                
+                self.currentOr?.children.append(self.currentAnd!)
+            }
+        }
+        else if elementName == "p7:reply" {
+            if self.currentTransaction != nil {
+                if  let messageName = attributeDict["message"],
+                    let _ = self.messagesByName[messageName] {
+                    
+                    if self.currentAnd != nil {
+                        let reply = P7SpecReply(name: messageName, spec: self, attributes: attributeDict)
+                        self.currentAnd?.replies.append(reply)
+                    }
+                    else if self.currentOr != nil {
+                        let reply = P7SpecReply(name: messageName, spec: self, attributes: attributeDict)
+                        self.currentOr?.replies.append(reply)
+                    }
+                    else {
+                        let reply = P7SpecReply(name: messageName, spec: self, attributes: attributeDict)
+                        self.currentTransaction?.replies.append(reply)
+                    }
+                }
+            }
+        }
         else if elementName == "p7:collection" {
             if attributeDict["name"] == "wired.account.privileges" {
                 accountPrivileges = []
@@ -366,9 +407,18 @@ public class P7Spec: NSObject, XMLParserDelegate {
     
     public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         if elementName == "p7:collection" {
-            if accountPrivilegesLock {
-                accountPrivilegesLock = false
+            if self.accountPrivilegesLock {
+                self.accountPrivilegesLock = false
             }
+        }
+        else if elementName == "p7:transaction" {
+            self.currentTransaction = nil
+        }
+        else if elementName == "p7:or" {
+            self.currentOr = nil
+        }
+        else if elementName == "p7:and" {
+            self.currentAnd = nil
         }
     }
     
@@ -451,6 +501,25 @@ public class P7Spec: NSObject, XMLParserDelegate {
         self.messagesByID[messageID]    = message
         
         self.currentMessage = message
+    }
+    
+    
+    
+    private func loadTransaction(_ attributes: [String : String]) {
+        guard let messageName = attributes["message"] else {
+            return
+        }
+        
+        guard let originator = attributes["originator"] else {
+            return
+        }
+        
+        let o = originator == "client" ? Originator.Client : Originator.Server
+        
+        let transaction = SpecTransaction(name: messageName, spec: self, attributes: attributes, originator: o)
+        self.transactionsByName[messageName] = transaction
+        
+        self.currentTransaction = transaction
     }
     
     

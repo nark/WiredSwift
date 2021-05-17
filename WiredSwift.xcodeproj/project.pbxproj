@@ -21,6 +21,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		4C1ED34526511434004466CA /* P7TransactionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1ED34426511434004466CA /* P7TransactionHandler.swift */; };
 		4C5510EF262E13FF001F65BE /* AEXML.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "AEXML::AEXML::Product" /* AEXML.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C5510F1262E13FF001F65BE /* AsyncHTTPClient.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "async-http-client::AsyncHTTPClient::Product" /* AsyncHTTPClient.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4C5510F3262E13FF001F65BE /* AsyncKit.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = "async-kit::AsyncKit::Product" /* AsyncKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -5616,6 +5617,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4C1ED34426511434004466CA /* P7TransactionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7TransactionHandler.swift; sourceTree = "<group>"; };
 		4C7CA066264DB57A00ED10C3 /* P7SpecTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7SpecTransaction.swift; sourceTree = "<group>"; };
 		4C7CA068264DBD9C00ED10C3 /* P7MessageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7MessageDecoder.swift; sourceTree = "<group>"; };
 		4C830A7F263145F00017DB77 /* ECDSA.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECDSA.swift; sourceTree = "<group>"; };
@@ -12013,15 +12015,16 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_33 /* P7Message.swift */,
+				4C7CA068264DBD9C00ED10C3 /* P7MessageDecoder.swift */,
 				OBJ_34 /* P7Socket.swift */,
+				4C1ED34426511434004466CA /* P7TransactionHandler.swift */,
 				OBJ_35 /* P7Spec.swift */,
 				OBJ_36 /* P7SpecError.swift */,
 				OBJ_37 /* P7SpecField.swift */,
 				OBJ_38 /* P7SpecItem.swift */,
 				OBJ_39 /* P7SpecMessage.swift */,
-				OBJ_40 /* P7SpecType.swift */,
 				4C7CA066264DB57A00ED10C3 /* P7SpecTransaction.swift */,
-				4C7CA068264DBD9C00ED10C3 /* P7MessageDecoder.swift */,
+				OBJ_40 /* P7SpecType.swift */,
 			);
 			path = P7;
 			sourceTree = "<group>";
@@ -18040,6 +18043,7 @@
 				4C7CA069264DBD9C00ED10C3 /* P7MessageDecoder.swift in Sources */,
 				4C8F5C462635BAF900BF8764 /* TimeInterval.swift in Sources */,
 				OBJ_5384 /* FileManager+ResourceFork.swift in Sources */,
+				4C1ED34526511434004466CA /* P7TransactionHandler.swift in Sources */,
 				OBJ_5386 /* String.swift in Sources */,
 				OBJ_5387 /* Const.swift in Sources */,
 				OBJ_5388 /* Logger.swift in Sources */,
