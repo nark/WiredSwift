@@ -159,12 +159,12 @@ public class ServerController: SocketChannelDelegate, ServerDelegate {
     // MARK: -
     
     public func channelConnected(socket: P7Socket, channel: Channel) {
-        print("channelConnected")
+        //print("channelConnected")
 
     }
     
     public func channelDisconnected(socket: P7Socket, channel: Channel) {
-        print("channelDisconnected")
+        //print("channelDisconnected")
 
         self.channelsLock.exclusivelyWrite {
             if let client = self.channels.removeValue(forKey: ObjectIdentifier(channel)) {

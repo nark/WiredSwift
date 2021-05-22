@@ -85,6 +85,7 @@
 		4C8F5C422635A14700BF8764 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F5C412635A14700BF8764 /* Array.swift */; };
 		4C8F5C442635AB5300BF8764 /* Double.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F5C432635AB5300BF8764 /* Double.swift */; };
 		4C8F5C462635BAF900BF8764 /* TimeInterval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C8F5C452635BAF900BF8764 /* TimeInterval.swift */; };
+		4CD3988E2655785A008E1A01 /* P7Transaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD3988D2655785A008E1A01 /* P7Transaction.swift */; };
 		4CD5562D262ED0E6004DC4A5 /* ClientsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */; };
 		4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */; };
 		4CD55632262F5032004DC4A5 /* Digest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CD55631262F5032004DC4A5 /* Digest.swift */; };
@@ -5628,6 +5629,7 @@
 		4C8F5C412635A14700BF8764 /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
 		4C8F5C432635AB5300BF8764 /* Double.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Double.swift; sourceTree = "<group>"; };
 		4C8F5C452635BAF900BF8764 /* TimeInterval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeInterval.swift; sourceTree = "<group>"; };
+		4CD3988D2655785A008E1A01 /* P7Transaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P7Transaction.swift; sourceTree = "<group>"; };
 		4CD5562B262ED0E0004DC4A5 /* ClientsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientsController.swift; sourceTree = "<group>"; };
 		4CD5562F262F12D9004DC4A5 /* OptionSet+Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OptionSet+Collection.swift"; sourceTree = "<group>"; };
 		4CD55631262F5032004DC4A5 /* Digest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Digest.swift; sourceTree = "<group>"; };
@@ -12014,9 +12016,10 @@
 		OBJ_32 /* P7 */ = {
 			isa = PBXGroup;
 			children = (
+				OBJ_34 /* P7Socket.swift */,
 				OBJ_33 /* P7Message.swift */,
 				4C7CA068264DBD9C00ED10C3 /* P7MessageDecoder.swift */,
-				OBJ_34 /* P7Socket.swift */,
+				4CD3988D2655785A008E1A01 /* P7Transaction.swift */,
 				4C1ED34426511434004466CA /* P7TransactionHandler.swift */,
 				OBJ_35 /* P7Spec.swift */,
 				OBJ_36 /* P7SpecError.swift */,
@@ -18064,6 +18067,7 @@
 				4CD55630262F12D9004DC4A5 /* OptionSet+Collection.swift in Sources */,
 				OBJ_5400 /* P7Spec.swift in Sources */,
 				OBJ_5401 /* P7SpecError.swift in Sources */,
+				4CD3988E2655785A008E1A01 /* P7Transaction.swift in Sources */,
 				OBJ_5402 /* P7SpecField.swift in Sources */,
 				4CD55632262F5032004DC4A5 /* Digest.swift in Sources */,
 				OBJ_5403 /* P7SpecItem.swift in Sources */,

@@ -59,6 +59,7 @@ public class P7SpecTransaction: P7SpecItem {
     public override var description: String {
         return "[\(self.name!)]"
     }
+
     
     public func verify(candidate: P7Message) -> Bool {
         // single replies

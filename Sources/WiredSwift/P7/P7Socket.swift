@@ -220,9 +220,87 @@ public class P7ServerSocket : P7Socket, P7ClientHandshake {
     }
     
     
+    
+    private func upstate() -> Bool {
+        guard let state = ServerState(rawValue: self.serverState.rawValue + 1) else {
+            Logger.error("Message is out of sequence, abort connection")
+            
+            return false
+        }
+        
+        self.serverState = state
+        
+        return true
+    }
+    
+    
     public override func handleMessage(message: P7Message, context: ChannelHandlerContext) {
-        if message.name == "p7.handshake.client_handshake" {
-            if self.accept(message: message, compression: self.compression, cipher: self.cipherType, checksum: self.checksum) {
+        switch self.serverState {
+        case .client_handshake:
+            if message.name == "p7.handshake.client_handshake" {
+                if !self.accept(message: message, compression: self.compression, cipher: self.cipherType, checksum: self.checksum) {
+                    self.disconnect()
+                }
+                
+                if !upstate() {
+                    self.disconnect()
+                }
+            }
+        case .acknowledge:
+            if message.name == "p7.handshake.acknowledge" {
+                if let remoteCompatibilityCheck = message.bool(forField: "p7.handshake.compatibility_check") {
+                    self.remoteCompatibilityCheck = remoteCompatibilityCheck
+                } else {
+                    self.remoteCompatibilityCheck = false
+                }
+                
+                if self.compression != .NONE {
+                    self.configureCompression()
+                
+                    Logger.info("Compression enabled for \(self.compression)")
+
+                }
+                
+                if self.checksum != .NONE {
+                    self.configureChecksum()
+                
+                    Logger.info("Checkum enabled for \(self.checksum)")
+
+                }
+                        
+                if self.cipherType != .NONE {
+                    if !self.acceptKeyExchange(timeout: timeout) {
+                        
+                        self.disconnect()
+                    }
+                
+                    Logger.info("Encryption enabled for \(self.cipherType)")
+                }
+                        
+                if self.localCompatibilityCheck {
+                    if !self.receiveCompatibilityCheck() {
+                        
+                        self.disconnect()
+                    }
+                }
+
+                if self.remoteCompatibilityCheck {
+                    if !self.sendCompatibilityCheck() {
+                        
+                        self.disconnect()
+                    }
+                }
+                
+                if !upstate() {
+                    self.disconnect()
+                }
+            }
+        case .client_key:
+            if message.name == "p7.handshake.acknowledge" {
+                
+            }
+        case .authenticated:
+            if message.name == "p7.handshake.acknowledge" {
                 
             }
         }
@@ -233,41 +311,7 @@ public class P7ServerSocket : P7Socket, P7ClientHandshake {
         self.remoteAddress = self.clientAddress()
         
         if !self.acceptHandshake(response: message, timeout: timeout, compression: compression, cipher: cipher, checksum: checksum) {
-                return false
-        }
-            
-        if self.compression != .NONE {
-            self.configureCompression()
-        
-            Logger.info("Compression enabled for \(self.compression)")
-
-        }
-        
-        if self.checksum != .NONE {
-            self.configureChecksum()
-        
-            Logger.info("Checkum enabled for \(self.checksum)")
-
-        }
-                
-        if self.cipherType != .NONE {
-            if !self.acceptKeyExchange(timeout: timeout) {
-                return false
-            }
-        
-            Logger.info("Encryption enabled for \(self.cipherType)")
-        }
-                
-        if self.localCompatibilityCheck {
-            if !self.receiveCompatibilityCheck() {
-                return false
-            }
-        }
-
-        if self.remoteCompatibilityCheck {
-            if !self.sendCompatibilityCheck() {
-                return false
-            }
+            return false
         }
         
         return true
@@ -380,25 +424,10 @@ public class P7ServerSocket : P7Socket, P7ClientHandshake {
         if self.localCompatibilityCheck {
             message.addParameter(field: "p7.handshake.compatibility_check", value: true)
         }
-        
-        print("acceptHandshake")
-                        
-        guard let acknowledge = self.send(message) else {
-            print("NOOOO acknowledge")
-            return false
-        }
-        
-        print("acknowledge \(acknowledge)")
                 
-        if acknowledge.name != "p7.handshake.acknowledge" {
-            Logger.error("Message should be 'p7.handshake.acknowledge', not '\(response.name!)'")
+        if !self.write(message) {
+            Logger.error("Cannot write server_handshake")
             return false
-        }
-        
-        if let remoteCompatibilityCheck = acknowledge.bool(forField: "p7.handshake.compatibility_check") {
-            self.remoteCompatibilityCheck = remoteCompatibilityCheck
-        } else {
-            self.remoteCompatibilityCheck = false
         }
         
         return true
@@ -598,50 +627,52 @@ public class P7ClientSocket : P7Socket, P7ServerHandshake {
                 
                 return false
             }
+            
+            return false
 
-            if self.compression != .NONE {
-                self.configureCompression()
-            
-                Logger.info("Compression enabled for \(self.compression)")
-            }
-                            
-            if self.checksum != .NONE {
-                self.configureChecksum()
-                
-                Logger.info("Checkum enabled for \(self.checksum)")
-            }
-
-            if self.cipherType != .NONE {
-                guard let reply2 = self.connectKeyExchange(response: reply) else {
-                    Logger.error("Key Exchange failed")
-                    
-                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Authentication failed"))
-                    
-                    return false
-                }
-                
-                Logger.info("Encryption enabled for \(self.cipherType)")
-            }
-            
-            if self.remoteCompatibilityCheck {
-                if !self.sendCompatibilityCheck() {
-                    Logger.error("Remote Compatibility Check failed")
-                    
-                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Remote Compatibility Check failed"))
-                    
-                    return false
-                }
-            }
-            
-            if self.localCompatibilityCheck {
-                if !self.receiveCompatibilityCheck() {
-                    Logger.error("Local Compatibility Check failed")
-                    
-                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Local Compatibility Check failed"))
-                    
-                    return false
-                }
-            }
+//            if self.compression != .NONE {
+//                self.configureCompression()
+//
+//                Logger.info("Compression enabled for \(self.compression)")
+//            }
+//
+//            if self.checksum != .NONE {
+//                self.configureChecksum()
+//
+//                Logger.info("Checkum enabled for \(self.checksum)")
+//            }
+//
+//            if self.cipherType != .NONE {
+//                guard let reply2 = self.connectKeyExchange(response: reply) else {
+//                    Logger.error("Key Exchange failed")
+//
+//                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Authentication failed"))
+//
+//                    return false
+//                }
+//
+//                Logger.info("Encryption enabled for \(self.cipherType)")
+//            }
+//
+//            if self.remoteCompatibilityCheck {
+//                if !self.sendCompatibilityCheck() {
+//                    Logger.error("Remote Compatibility Check failed")
+//
+//                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Remote Compatibility Check failed"))
+//
+//                    return false
+//                }
+//            }
+//
+//            if self.localCompatibilityCheck {
+//                if !self.receiveCompatibilityCheck() {
+//                    Logger.error("Local Compatibility Check failed")
+//
+//                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Local Compatibility Check failed"))
+//
+//                    return false
+//                }
+//            }
         }
 
         return true
@@ -740,7 +771,7 @@ public class P7ClientSocket : P7Socket, P7ServerHandshake {
             message.addParameter(field: "p7.handshake.compatibility_check", value: true)
         }
                         
-        return self.send(message)
+        return self.reply(reply: message, message: response)
     }
     
     
@@ -1386,12 +1417,18 @@ public class P7Socket: ChannelInboundHandler, P7SocketMessageHandler {
             reply.addParameter(field: "wired.transaction", value: transactionID)
         }
         
-        return self.send(reply, channel: channel)
+        return self.send(reply, channel: channel, isReply: true)
     }
     
     
-    public func send(_ message: P7Message, channel: Channel? = nil) -> P7Message? {
-        return self.transactionHandler?.send(message: message, channel: channel == nil ? self.channel : channel!)
+    public func send(_ message: P7Message, channel: Channel? = nil, isReply:Bool = false) -> P7Message? {
+        let channel = channel == nil ? self.channel! : channel!
+        
+        return self.transactionHandler?.send(
+            message: message,
+            channel: channel,
+            originator: self.originator,
+            waitForReply: !isReply)
     }
     
     
@@ -1748,10 +1785,11 @@ internal extension P7Socket {
         
         let message = P7Message(withData: messageData, spec: self.spec)
         
-        self.transactionHandler?.receive(message: message)
+        self.transactionHandler?.receive(message: message, originator: self.originator)
         
         Logger.info("-> READ: \(message.name!) [\(messageData.count)] [encryption: \(self.encryptionEnabled)] [compression: \(self.compressionEnabled)] [checksum: \(self.checksumEnabled)] [transaction: \(message.uint32(forField: "wired.transaction"))]")
-        
+        //Logger.debug("\n\(message)\n")
+
         self.handleMessage(message: message, context: context)
     }
 
