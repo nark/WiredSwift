@@ -11,23 +11,42 @@ import SocketSwift
 import CryptoSwift
 import Crypto
 import SWCompression
+import DataCompression
 
 var sha2_256DigestLength  = 32
+var sha2_384DigestLength  = 48
 var sha3_256DigestLength  = 32
+var sha3_384DigestLength  = 48
 var hmac_256DigestLength  = 32
-var poly1305DigestLength  = 16
+var hmac_384DigestLength  = 48
+
 
 public protocol SocketPasswordDelegate: class {
     func passwordForUsername(username:String) -> String?
 }
 
 public class P7Socket: NSObject {
+    enum P7SocketError: Error {
+        case interactiveSocketFailed
+        case socketError(Error)
+        case addressResolutionFailed(host: String, port: Int)
+        case handshakeFailed(_ message: String? = nil, underlying: Error? = nil)
+        case keyExchangeFailed(_ message: String? = nil)
+        case remoteCompatibilityFailed(_ message: String? = nil)
+        case localCompatibilityFailed(_ message: String? = nil)
+        
+        case writeFailed(_ message: String? = nil)
+        case readFailed(_ message: String? = nil)
+        
+        case inflateError
+        case deflateError
+    }
+    
     public enum Serialization:Int {
         case XML            = 0
         case BINARY         = 1
     }
-    
-    
+
     
     
     public struct Compression:OptionSet, CustomStringConvertible {
@@ -39,8 +58,10 @@ public class P7Socket: NSObject {
         
         public static let NONE                              = Compression(rawValue: 1 << 0)
         public static let DEFLATE                           = Compression(rawValue: 1 << 1)
-        public static let ALL:Compression                   = [.NONE, .DEFLATE]
-        public static let COMPRESSION_ONLY:Compression      = [.DEFLATE]
+        public static let LZFSE                             = Compression(rawValue: 1 << 2)
+        public static let LZ4                               = Compression(rawValue: 1 << 3)
+        public static let ALL:Compression                   = [.NONE, .DEFLATE, .LZFSE, .LZ4]
+        public static let COMPRESSION_ONLY:Compression      = [.DEFLATE, .LZFSE, .LZ4]
         
         public var description: String {
             switch self {
@@ -48,6 +69,10 @@ public class P7Socket: NSObject {
                 return "None"
             case .DEFLATE:
                 return "DEFLATE"
+            case .LZFSE:
+                return "LZFSE"
+            case .LZ4:
+                return "LZ4"
             default:
                 return "None"
             }
@@ -56,22 +81,38 @@ public class P7Socket: NSObject {
     
     
     
-    
-    public struct Checksum:OptionSet, CustomStringConvertible {
+    public struct Checksum:OptionSet, CustomStringConvertible, Collection {
         public let rawValue: UInt32
         
         public init(rawValue:UInt32 ) {
             self.rawValue = rawValue
         }
         
-        public static let NONE           = Checksum(rawValue: 1 << 0)
-        public static let SHA2_256       = Checksum(rawValue: 1 << 1)
-        public static let SHA3_256       = Checksum(rawValue: 1 << 2)
-        public static let HMAC_256       = Checksum(rawValue: 1 << 3)
-        public static let Poly1305       = Checksum(rawValue: 1 << 4)
+        public static let NONE      = Checksum(rawValue: 1 << 0)
+        public static let SHA2_256  = Checksum(rawValue: 1 << 1)
+        public static let SHA2_384  = Checksum(rawValue: 1 << 2)
+        public static let SHA3_256  = Checksum(rawValue: 1 << 3)
+        public static let SHA3_384  = Checksum(rawValue: 1 << 4)
+        public static let HMAC_256  = Checksum(rawValue: 1 << 5)
+        public static let HMAC_384  = Checksum(rawValue: 1 << 6)
         
-        public static let ALL:Checksum          = [.NONE, .SHA2_256, .SHA3_256, .HMAC_256, .Poly1305]
-        public static let SECURE_ONLY:Checksum  = [.SHA2_256, .SHA3_256, .HMAC_256, .Poly1305]
+        public static let ALL:Checksum = [
+            .NONE,
+            .SHA2_256,
+            .SHA2_384,
+            .SHA3_256,
+            .SHA3_384,
+            .HMAC_256,
+            .HMAC_384
+        ]
+        public static let SECURE_ONLY:Checksum = [
+            .SHA2_256,
+            .SHA2_384,
+            .SHA3_256,
+            .SHA3_384,
+            .HMAC_256,
+            .HMAC_384
+        ]
         
         public var description: String {
             switch self {
@@ -79,12 +120,16 @@ public class P7Socket: NSObject {
                 return "None"
             case .SHA2_256:
                 return "SHA2_256"
+            case .SHA2_384:
+                return "SHA2_384"
             case .SHA3_256:
                 return "SHA3_256"
+            case .SHA3_384:
+                return "SHA3_384"
             case .HMAC_256:
                 return "HMAC_256"
-            case .Poly1305:
-                return "Poly_1305"
+            case .HMAC_384:
+                return "HMAC_384"
             case .SECURE_ONLY:
                 return "SECURE_ONLY"
             case .ALL:
@@ -94,7 +139,6 @@ public class P7Socket: NSObject {
             }
         }
     }
-    
     
     
     
@@ -107,13 +151,26 @@ public class P7Socket: NSObject {
         
         public static let NONE                      = CipherType(rawValue: 1 << 0)
         public static let ECDH_AES256_SHA256        = CipherType(rawValue: 1 << 1)
-        public static let ECDH_CHACHA20_SHA256      = CipherType(rawValue: 1 << 2)
+        public static let ECDH_AES128_GCM           = CipherType(rawValue: 1 << 2)
+        public static let ECDH_AES256_GCM           = CipherType(rawValue: 1 << 3)
+        public static let ECDH_CHACHA20_POLY1305    = CipherType(rawValue: 1 << 4)
+        public static let ECDH_XCHACHA20_POLY1305   = CipherType(rawValue: 1 << 5)
         
-        public static let ALL:CipherType            = [.NONE,
-                                                       .ECDH_AES256_SHA256,
-                                                       .ECDH_CHACHA20_SHA256]
-        public static let SECURE_ONLY:CipherType    = [.ECDH_AES256_SHA256,
-                                                       .ECDH_CHACHA20_SHA256]
+        public static let ALL:CipherType = [
+            .NONE,
+            .ECDH_AES256_SHA256,
+            .ECDH_AES128_GCM,
+            .ECDH_AES256_GCM,
+            .ECDH_CHACHA20_POLY1305,
+            .ECDH_XCHACHA20_POLY1305
+        ]
+        public static let SECURE_ONLY:CipherType = [
+            .ECDH_AES256_SHA256,
+            .ECDH_AES128_GCM,
+            .ECDH_AES256_GCM,
+            .ECDH_CHACHA20_POLY1305,
+            .ECDH_XCHACHA20_POLY1305
+        ]
         
         public var description: String {
             switch self {
@@ -121,8 +178,14 @@ public class P7Socket: NSObject {
                 return "None"
             case .ECDH_AES256_SHA256:
                 return "ECDHE-ECDSA-AES256-SHA256"
-            case .ECDH_CHACHA20_SHA256:
-                return "ECDHE-ECDSA-ChaCha20-SHA256"
+            case .ECDH_AES128_GCM:
+                return "ECDHE-ECDSA-AES128-GCM"
+            case .ECDH_AES256_GCM:
+                return "ECDHE-ECDSA-AES256-GCM"
+            case .ECDH_CHACHA20_POLY1305:
+                return "ECDHE-ECDSA-ChaCha20-Poly1305"
+            case .ECDH_XCHACHA20_POLY1305:
+                return "ECDHE-ECDSA-XChaCha20-Poly1305"
             case .ALL:
                 return "ALL"
             case .SECURE_ONLY:
@@ -133,7 +196,6 @@ public class P7Socket: NSObject {
         }
     }
 
-    
     
     
     public var hostname: String!
@@ -162,7 +224,6 @@ public class P7Socket: NSObject {
     
     public var encryptionEnabled: Bool = false
     public var checksumEnabled: Bool = false
-    public var checksumLength: Int = 0
     
     public var localCompatibilityCheck: Bool = false
     public var remoteCompatibilityCheck: Bool = false
@@ -174,13 +235,21 @@ public class P7Socket: NSObject {
     public var connected: Bool = false
     public var passwordProvider:SocketPasswordDelegate?
     
-    private var socket: Socket!
+    private var socket: Socket?
+    private let readLock = NSLock()
+    private let writeLock = NSLock()
+    
     public  var ecdh:ECDH!
-    private var digest:Digest!
+    public var digest:Digest = Digest(type: .SHA2_256)
     
     private var interactive:Bool = true
     
-    
+    private var cipherProvidesIntegrity: Bool {
+           cipherType.contains(.ECDH_AES128_GCM)
+        || cipherType.contains(.ECDH_AES256_GCM)
+        || cipherType.contains(.ECDH_CHACHA20_POLY1305)
+        || cipherType.contains(.ECDH_XCHACHA20_POLY1305)
+    }
     
     
     public init(hostname: String, port: Int, spec: P7Spec) {
@@ -197,7 +266,7 @@ public class P7Socket: NSObject {
     }
     
     
-    public func getNativeSocket() -> Socket {
+    public func getNativeSocket() -> Socket? {
         return self.socket
     }
     
@@ -206,11 +275,14 @@ public class P7Socket: NSObject {
         return self.interactive
     }
     
-    public func set(interactive:Bool) {
+    public func set(interactive:Bool) throws {
         var option = interactive ? 1 : 0
         
-        if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
-            Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
+        if let socket {
+            if(setsockopt(socket.fileDescriptor, Int32(IPPROTO_TCP), TCP_NODELAY, &option, socklen_t(MemoryLayout.size(ofValue: option))) < 0) {
+                Logger.error("Cannot setsockopt TCP_NODELAY (interactive socket)")
+                throw P7SocketError.interactiveSocketFailed
+            }
         }
 
         self.interactive = interactive
@@ -219,110 +291,77 @@ public class P7Socket: NSObject {
     
     
     // MARK: - CONNECTION
-    public func connect(withHandshake handshake: Bool = true) -> Bool {
+    public func connect(withHandshake handshake: Bool = true) throws {
+
         do {
             self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
-            
-            try socket.set(option: .receiveTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
-            try socket.set(option: .sendTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
-            try socket.set(option: .receiveBufferSize, 327680)
-            try socket.set(option: .sendBufferSize, 327680)
-            
-            var addr:SocketAddress!
-            
-            do {
-                addr = try socket.addresses(for: self.hostname, port: Port(self.port)).first!
-            } catch let e {
-                if let socketError = e as? Socket.Error {
-                    self.errors.append(WiredError(withTitle: "Socket Error", message: socketError.description))
-                    Logger.error(socketError.description)
-                } else {
-                    self.errors.append(WiredError(withTitle: "Socket Error", message: e.localizedDescription))
-                    Logger.error(e.localizedDescription)
-                }
-                return false
-            }
-            
-            
-            try self.socket.connect(address: addr)
 
+            try socket?.set(option: .receiveTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
+            try socket?.set(option: .sendTimeout, TimeValue(seconds: 10, milliseconds: 0, microseconds: 0))
+            try socket?.set(option: .receiveBufferSize, 327680)
+            try socket?.set(option: .sendBufferSize, 327680)
+
+            // Résolution d’adresse
+            guard let addr = try socket?
+                .addresses(for: self.hostname, port: Port(self.port))
+                .first
+            else {
+                print("throwing here")
+                throw P7SocketError.addressResolutionFailed(
+                    host: hostname,
+                    port: port
+                )
+            }
+
+            try socket?.connect(address: addr)
             self.connected = true
 
-            if handshake {
-                if !self.connectHandshake() {
-                    Logger.error("Handshake failed")
-                    
-                    self.errors.append(WiredError(withTitle: "Connection Error", message: "Handshake failed"))
-                    
-                    return false
-                }
+            guard handshake else { return }
 
-                if self.compression != .NONE {
-                    self.configureCompression()
-                
-                    Logger.info("Compression enabled for \(self.compression)")
-                }
-                                
-                if self.checksum != .NONE {
-                    self.configureChecksum()
-                    
-                    Logger.info("Checkum enabled for \(self.checksum)")
-                }
+            // Handshake
+            try self.connectHandshake()
 
-                if self.cipherType != .NONE {
-                    if !self.connectKeyExchange() {
-                        Logger.error("Key Exchange failed")
-                        
-                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Authentication failed"))
-                        
-                        return false
-                    }
-                    
-                    Logger.info("Encryption enabled for \(self.cipherType)")
-                }
+            if self.compression != .NONE {
+                self.configureCompression()
                 
-                if self.remoteCompatibilityCheck {
-                    if !self.sendCompatibilityCheck() {
-                        Logger.error("Remote Compatibility Check failed")
-                        
-                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Remote Compatibility Check failed"))
-                        
-                        return false
-                    }
-                }
-                
-                if self.localCompatibilityCheck {
-                    if !self.receiveCompatibilityCheck() {
-                        Logger.error("Local Compatibility Check failed")
-                        
-                        self.errors.append(WiredError(withTitle: "Connection Error", message: "Local Compatibility Check failed"))
-                        
-                        return false
-                    }
-                }
+                Logger.info("Compression enabled for \(self.compression)")
             }
-        } catch let error {
+
+            if self.checksum != .NONE {
+                self.configureChecksum()
+                
+                Logger.info("Checksum enabled for \(self.checksum)")
+            }
+
+            if self.cipherType != .NONE {
+                // Key Exchange
+                try self.connectKeyExchange()
+                
+                Logger.info("Connect with encryption enabled for \(self.cipherType)")
+            }
+
+            if self.remoteCompatibilityCheck {
+                try self.sendCompatibilityCheck()
+            }
+
+            if self.localCompatibilityCheck {
+                try self.receiveCompatibilityCheck()
+            }
+
+        } catch {
             if let socketError = error as? Socket.Error {
-                self.errors.append(WiredError(withTitle: "Socket Error", message: socketError.description))
-                Logger.error(socketError.description)
+                throw NetworkError.fromErrno(errno, host: hostname, port: port)
             } else {
-                self.errors.append(WiredError(withTitle: "Socket Error", message: error.localizedDescription))
-                Logger.error(error.localizedDescription)
+                throw error
             }
-            return false
         }
-        
-        return true
     }
     
     
-    
-    public func accept(compression:Compression, cipher:CipherType, checksum:Checksum) -> Bool {
+    public func accept(compression:Compression, cipher:CipherType, checksum:Checksum) throws {
         self.remoteAddress = self.clientAddress()
         
-        if !self.acceptHandshake(timeout: timeout, compression: compression, cipher: cipher, checksum: checksum) {
-                return false
-        }
+        try self.acceptHandshake(timeout: timeout, compression: compression, cipher: cipher, checksum: checksum)
             
         if self.compression != .NONE {
             self.configureCompression()
@@ -337,33 +376,25 @@ public class P7Socket: NSObject {
             Logger.info("Checkum enabled for \(self.checksum)")
 
         }
-                
+                        
         if self.cipherType != .NONE {
-            if !self.acceptKeyExchange(timeout: timeout) {
-                return false
-            }
+            try self.acceptKeyExchange(timeout: timeout)
         
-            Logger.info("Encryption enabled for \(self.cipherType)")
+            Logger.info("Accept with encryption enabled for \(self.cipherType)")
         }
                 
         if self.localCompatibilityCheck {
-            if !self.receiveCompatibilityCheck() {
-                return false
-            }
+            try self.receiveCompatibilityCheck()
         }
 
         if self.remoteCompatibilityCheck {
-            if !self.sendCompatibilityCheck() {
-                return false
-            }
+            try self.sendCompatibilityCheck()
         }
-        
-        return true
     }
     
     
     public func disconnect() {
-        self.socket.close()
+        self.socket?.close()
         
         self.connected = false
         
@@ -372,7 +403,6 @@ public class P7Socket: NSObject {
         
         self.encryptionEnabled = false
         self.checksumEnabled = false
-        self.checksumLength = 0
 
         self.localCompatibilityCheck = false
         self.remoteCompatibilityCheck = false
@@ -381,40 +411,19 @@ public class P7Socket: NSObject {
     }
     
     
-    public func clientAddress() -> String? {
-        var addresString:String? = nil
-        var address = sockaddr_in()
-        var len = socklen_t(MemoryLayout.size(ofValue: address))
-        //let ptr = UnsafeMutableRawPointer(&address).assumingMemoryBound(to: sockaddr.self)
-        
-         withUnsafeMutablePointer(to: &address) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { ptr in
-                if getsockname(self.socket.fileDescriptor, ptr, &len) == 0 {
-                    var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    
-                    if getnameinfo(ptr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) == 0 {
-                        addresString = String(cString: hostBuffer)
-                    }
-                }
-            }
-        }
-        
-        return addresString
-    }
-    
-    
-    
-    
     
     
     // MARK: - MESSAGE READ/WRITE
     public func write(_ message: P7Message) -> Bool {
+        writeLock.lock()
+        defer { writeLock.unlock() }
+        
         do {
             if self.serialization == .XML {
                 let xml = message.xml()
                 
                 if let xmlData = xml.data(using: .utf8) {
-                    try self.socket.write(xmlData.bytes)
+                    try self.socket?.write(Array(xmlData))
                 }
             }
             else if self.serialization == .BINARY {
@@ -428,12 +437,7 @@ public class P7Socket: NSObject {
                 
                 // deflate
                 if self.compressionEnabled {
-                    guard let deflatedMessageData = self.deflate(messageData) else {
-                        Logger.error("Cannot deflate data")
-                        return false
-                        
-                    }
-                    messageData = deflatedMessageData
+                    messageData = try self.decompress(messageData)
                     
                     lengthData = Data()
                     lengthData.append(uint32: UInt32(messageData.count))
@@ -443,7 +447,7 @@ public class P7Socket: NSObject {
                 
                 // encryption
                 if self.encryptionEnabled {
-                    guard let encryptedMessageData = self.sslCipher.encrypt(data: messageData) else {
+                    guard let encryptedMessageData = try? self.sslCipher.encrypt(data: messageData) else {
                         Logger.error("Cannot encrypt data")
                         return false
                     }
@@ -456,15 +460,18 @@ public class P7Socket: NSObject {
 
                 //print("write data : \(messageData.toHexString())")
                 
-                _ = self.write(lengthData.bytes, maxLength: lengthData.count)
-                _ = self.write(messageData.bytes, maxLength: messageData.bytes.count)
+                _ = self.write(Array(lengthData), maxLength: lengthData.count)
+                _ = self.write(Array(messageData), maxLength: Array(messageData).count)
                                 
                 // checksum
                 if self.checksumEnabled {
-                    if let c = self.checksumData(messageData) {
-                        _ = self.write(c.bytes, maxLength: self.checksumLength)
-                    } else {
-                        Logger.error("Checksum failed abnormally")
+                    do {
+                        let c = try self.checksumData(messageData)
+                        
+                        _ = self.write(Array(c), maxLength: self.checksumLength(self.digest.type))
+
+                    } catch let error {
+                        Logger.error("Checksum failed abnormally \(error)")
                     }
                 }
             }
@@ -481,138 +488,76 @@ public class P7Socket: NSObject {
     }
     
     
-    
-    public func readMessage() -> P7Message? {
-        //print("readMessage")
-        var messageData = Data()
-        var error:WiredError? = nil
-        
-        var lengthBuffer = [Byte](repeating: 0, count: 4)
-        let bytesRead = self.read(&lengthBuffer, maxLength: 4)
-        
-        //print("bytesRead : \(bytesRead) \(Thread.current.threadName)")
-                                
-        if bytesRead > 0 {
-            if self.serialization == .XML {
-                if let xml = String(bytes: messageData, encoding: .utf8) {
-                    let message = P7Message(withXML: xml, spec: self.spec)
+    public func readMessage() throws -> P7Message {
+        readLock.lock()
+        defer { readLock.unlock() }
 
-                    return message
-                }
-            }
-            else if self.serialization == .BINARY {
-                if bytesRead >= 4 {
-                    guard let messageLength = Data(lengthBuffer).uint32 else {
-                        error = WiredError(withTitle: "Read Error", message: "Cannot read message length")
-                        
-                        Logger.error(error!)
-                        self.errors.append(error!)
-                        
-                        return nil
-                    }
-                    
-                    //print("messageLength : \(messageLength)")
-                    
-                    do {
-                        messageData = try self.readData(size: Int(messageLength))
-                    } catch let e {
-                        error = WiredError(withTitle: "Read Error", message: "")
-                        
-                        if let socketError = e as? Socket.Error {
-                            error = WiredError(withTitle: "Read Error", message: socketError.description)
-                        } else {
-                            error = WiredError(withTitle: "Read Error", message: e.localizedDescription)
-                        }
-                        
-                        Logger.error(error!)
-                        self.errors.append(error!)
-                        
-                        return nil
-                    }
-                                        
-                    // data to message object
-                    if messageData.count > 0 {
-                        let originalData = messageData
-                        
-                        // decryption
-                        if self.encryptionEnabled {
-                            guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
-                                error = WiredError(withTitle: "Read Error", message: "Cannot decrypt data")
-
-                                Logger.error(error!)
-                                self.errors.append(error!)
-                                
-                                return nil
-                            }
-                            messageData = decryptedMessageData
-                        }
-                        
-                        // Logger.info("READ data before decomp : \(messageData.toHexString())")
-                        
-                        // inflate
-                        if self.compressionEnabled {
-                            guard let inflatedMessageData = self.inflate(messageData) else {
-                                error = WiredError(withTitle: "Read Error", message: "Cannot inflate data")
-
-                                Logger.error(error!)
-                                self.errors.append(error!)
-                                
-                                return nil
-                                
-                            }
-                            
-                            messageData = inflatedMessageData
-                        }
-                        
-                        //Logger.info("READ data after decomp : \(messageData.toHexString())")
-                        
-                        // checksum
-                        if self.checksumEnabled {
-                            do {
-                                let remoteChecksum = try self.readData(size: self.checksumLength)
-                                if remoteChecksum.count == 0 { return nil }
-
-                                if let c = self.checksumData(originalData) {
-                                    if !c.elementsEqual(remoteChecksum) {
-                                        Logger.fatal("Checksum failed")
-                                        return nil
-                                    }
-                                } else {
-                                   Logger.error("Checksum failed abnormally")
-                               }
-                            } catch let e {
-                                Logger.error("Checksum error: \(e)")
-                            }
-                        }
-
-                        // init response message
-                        //print("read data : \(messageData.toHexString())")
-                        let message = P7Message(withData: messageData, spec: self.spec)
-                        
-                        Logger.info("READ [\(self.hash)]: \(message.name)")
-                        //Logger.debug("\n\(message.xml())\n")
-                        
-                        return message
-                    }
-                }
-                else {
-                    Logger.error("Nothing read, abort")
-                }
-            }
+        guard connected else {
+            throw P7SocketError.readFailed("Not connected")
         }
         
-        return nil
+        guard serialization == .BINARY else {
+            throw P7SocketError.readFailed("Not binary serialization")
+        }
+
+        // 1️⃣ Read message length (4 bytes)
+        let lengthData = try readExactly(size: 4)
+        guard let messageLength = lengthData.uint32 else {
+            let errorMessage = "Cannot read message length"
+            Logger.error(errorMessage)
+            throw P7SocketError.readFailed(errorMessage)
+        }
+
+        // 2️⃣ Read payload
+        let encryptedPayload = try readExactly(size: Int(messageLength))
+        let originalPayload = encryptedPayload
+        var payload = encryptedPayload
+
+        // 3️⃣ Decrypt
+        if encryptionEnabled {
+            guard let decrypted = try? sslCipher.decrypt(data: payload) else {
+                let errorMessage = "Decryption failed"
+                Logger.error(errorMessage)
+                throw P7SocketError.readFailed(errorMessage)
+            }
+            payload = decrypted
+        }
+
+        // 4️⃣ Inflate
+        if compressionEnabled {
+            payload = try compress(payload)
+        }
+
+        // 5️⃣ Checksum (STRICT framing)
+        if checksumEnabled {
+            let remoteChecksum = try readExactly(size: checksumLength(self.digest.type))
+            let localChecksum = try checksumData(originalPayload)
+            
+            if localChecksum != remoteChecksum {
+                let errorMessage = "Checksum failed"
+                Logger.error(errorMessage)
+                throw P7SocketError.readFailed(errorMessage)
+            }
+        }
+
+        // 6️⃣ Build message
+        let message = P7Message(withData: payload, spec: spec)
+        Logger.info("READ [\(hash)]: \(message.name)")
+        
+        return message
+
     }
+    
     
     
     
     
     // MARK: - PRIVATE READ/WRITE
     private func write(_ buffer: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
-        while let available = try? socket.wait(for: .write, timeout: timeout), self.connected == true {
+        while let available = try? socket?.wait(for: .write, timeout: timeout), self.connected == true {
             guard available else { continue } // timeout happend, try again
             
-            let n = try? socket.write(buffer, size: len)
+            let n = try? socket?.write(buffer, size: len)
             
             return n ?? 0
         }
@@ -621,114 +566,73 @@ public class P7Socket: NSObject {
     }
     
     
-    
-    private func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
-        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
-            guard available else { continue } // timeout happend, try again
-
-            let n = try? socket.read(buffer, size: len)
-
-            return n ?? 0
+    private func readExactly(size: Int, timeout: TimeInterval = 1.0) throws -> Data {
+        guard let socket = socket else {
+            throw Socket.Error(errno: -1)
         }
-        
-        return 0
-    }
-    
-    
-    // I have pretty much had to rewrite my own read() function here
-    private func readData(size: Int, timeout:TimeInterval = 1.0) throws -> Data {
-        while let available = try? socket.wait(for: .read, timeout: timeout), self.connected == true {
-            guard available else { continue } // timeout happend, try again
-                
-            var data = Data()
-            var readBytes = 0
-            var nLength = size
 
-            while readBytes < size && nLength > 0 && self.connected == true {
-                var messageBuffer = [Byte](repeating: 0, count: nLength)
-                
-                readBytes += try ing { recv(socket.fileDescriptor, &messageBuffer, nLength, Int32(MSG_WAITALL)) }
-                nLength    = size - readBytes
-                
-                //print("readBytes : \(readBytes)")
-                //print("nLength : \(nLength)")
-                
-                let subdata = Data(bytes: messageBuffer, count: readBytes)
-                if subdata.count > nLength {
-                    _ = subdata.dropLast(nLength)
+        var buffer = Data()
+        buffer.reserveCapacity(size)
+
+        while buffer.count < size {
+            // Vérifie la connexion de façon thread-safe
+            guard connected else { throw Socket.Error(errno: ECONNRESET) }
+
+            // Attend que le socket soit lisible
+            let available = try socket.wait(for: .read, timeout: timeout)
+            guard available else { continue }
+
+            var temp = [UInt8](repeating: 0, count: size - buffer.count)
+            let bytesRead = recv(socket.fileDescriptor, &temp, temp.count, 0)
+
+            if bytesRead == 0 {
+                // Socket fermé proprement
+                throw Socket.Error(errno: ECONNRESET)
+            } else if bytesRead < 0 {
+                // Vérifie si c’est une interruption ou un EAGAIN
+                if errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK {
+                    continue // réessaye
+                } else {
+                    throw Socket.Error(errno: errno)
                 }
-            
-                //print("subdata : \(subdata.toHex())")
-                
-                data.append(subdata)
             }
-            
-            return data
+
+            buffer.append(temp, count: bytesRead)
         }
-            
-        return Data()
+
+        return buffer
     }
-    
+
     
     // MARK: - OOB DATA
-    public func readOOB(timeout:TimeInterval = 1.0) -> Data? {
-        var messageData = Data()
-        var lengthBuffer = [Byte](repeating: 0, count: 4)
-        let bytesRead = self.read(&lengthBuffer, maxLength: 4, timeout: timeout)
+    public func readOOB(timeout:TimeInterval = 1.0) throws -> Data {
+        let lengthData = try readExactly(size: 4, timeout: timeout)
         
-        if bytesRead >= 4 {
-            guard let messageLength = Data(lengthBuffer).uint32 else {
-                Logger.error("Cannot read message length")
-                return nil
-            }
-            
-            messageData = try! self.readData(size: Int(messageLength))
-            
-            // data to message object
-            if messageData.count > 0 {
-                // decryption
-                if self.encryptionEnabled {
-                    guard let decryptedMessageData = self.sslCipher.decrypt(data: messageData) else {
-                        Logger.error("Cannot decrypt data")
-                        return messageData
-                    }
-                    messageData = decryptedMessageData
-                }
-
-                // inflate
-                if self.compressionEnabled {
-                    guard let inflatedMessageData = self.inflate(messageData) else {
-                        Logger.error("Cannot inflate data")
-                        return nil
-
-                    }
-                    messageData = inflatedMessageData
-                }
-
-                // checksum
-                if self.checksumEnabled {
-                    do {
-                        let remoteChecksum = try self.readData(size: self.checksumLength)
-                        if remoteChecksum.count == 0 { return nil }
-
-                        if let c = self.checksumData(messageData) {
-                            if !c.elementsEqual(remoteChecksum) {
-                                Logger.fatal("Checksum failed")
-                                return nil
-                            }
-                        } else {
-                           Logger.error("Checksum failed abnormally")
-                       }
-                    } catch let e {
-                        Logger.error("Checksum error: \(e)")
-                    }
-                }
-                
-                return messageData
-            }
+        guard let messageLength = Data(lengthData).uint32 else {
+            Logger.error("Cannot read message length")
+            throw P7SocketError.readFailed("Cannot read message length")
         }
-        else {
-            Logger.error("Nothing read, abort")
+        
+        var messageData = try self.readExactly(size: Int(messageLength), timeout: timeout)
+        let originalPayload = messageData
+        
+        if self.encryptionEnabled {
+            messageData = try self.sslCipher.decrypt(data: messageData)
+        }
+        
+        if self.compressionEnabled {
+            messageData = try self.compress(messageData)
+        }
+        
+        if self.checksumEnabled {
+            let remoteChecksum = try readExactly(size: checksumLength(self.digest.type))
+            let localChecksum = try checksumData(originalPayload)
+            
+            if localChecksum != remoteChecksum {
+                let errorMessage = "Checksum failed"
+                Logger.error(errorMessage)
+                throw P7SocketError.readFailed(errorMessage)
+            }
         }
         
         return messageData
@@ -736,65 +640,48 @@ public class P7Socket: NSObject {
     
     
     
-    public func writeOOB(data:Data, timeout:TimeInterval = 1.0) -> Bool {
-        do {
-            if self.serialization == .BINARY {
-                var messageData = data
-                let originalData = messageData
-                var lengthData = Data()
-                
-                lengthData.append(uint32: UInt32(messageData.count))
-                                                
-                // deflate
-                if self.compressionEnabled {
-                    guard let deflatedMessageData = self.deflate(messageData) else {
-                        Logger.error("Cannot deflate data")
-                        return false
-
-                    }
-                    messageData = deflatedMessageData
-                }
-
-                // encryption
-                if self.encryptionEnabled {
-                    guard let encryptedMessageData = self.sslCipher.encrypt(data: messageData) else {
-                        Logger.error("Cannot encrypt data")
-                        return false
-                    }
-
-                    messageData = encryptedMessageData
-
-                    lengthData = Data()
-                    lengthData.append(uint32: UInt32(messageData.count))
-                }
-                
-                _ = try self.socket.write(lengthData.bytes, size: lengthData.count)
-                _ = try self.socket.write(messageData.bytes, size: messageData.count)
-                
-                // checksum
-                if self.checksumEnabled {
-                    if let c = self.checksumData(originalData) {
-                        _ = self.write(c.bytes, maxLength: self.checksumLength)
-                    } else {
-                        Logger.error("Checksum failed abnormally")
-                    }
-                }
-            }
-        } catch let error {
-            if let socketError = error as? Socket.Error {
-                Logger.error(socketError.description)
-            } else {
-                Logger.error(error.localizedDescription)
-            }
-            return false
+    public func writeOOB(data:Data, timeout:TimeInterval = 1.0) throws {
+        guard connected else {
+            throw P7SocketError.readFailed("Not connected")
         }
         
-        return true
+        guard serialization == .BINARY else {
+            throw P7SocketError.readFailed("Not binary serialization")
+        }
+        
+        var messageData = data
+        let originalData = messageData
+        var lengthData = Data()
+        
+        lengthData.append(uint32: UInt32(messageData.count))
+                                        
+        // deflate
+        if self.compressionEnabled {
+            messageData = try self.decompress(messageData)
+        }
+
+        // encryption
+        if self.encryptionEnabled {
+            messageData = try self.sslCipher.encrypt(data: messageData)
+
+            lengthData = Data()
+            lengthData.append(uint32: UInt32(messageData.count))
+        }
+                
+        _ = try self.socket?.write(Array(lengthData), size: lengthData.count)
+        _ = try self.socket?.write(Array(messageData), size: messageData.count)
+                        
+        // checksum
+        if self.checksumEnabled {
+            let c = try self.checksumData(messageData)
+            
+            _ = self.write(Array(c), maxLength: self.checksumLength(self.digest.type))
+        }
     }
     
     
     // MARK: - Handshake
-    private func connectHandshake() -> Bool {
+    private func connectHandshake() throws {
         var serverCipher:P7Socket.CipherType?       = nil
         var serverChecksum:P7Socket.Checksum?       = nil
         var serverCompression:P7Socket.Compression? = nil
@@ -802,7 +689,7 @@ public class P7Socket: NSObject {
         var message = P7Message(withName: "p7.handshake.client_handshake", spec: self.spec)
         message.addParameter(field: "p7.handshake.version", value: "1.0")
         message.addParameter(field: "p7.handshake.protocol.name", value: "Wired")
-        message.addParameter(field: "p7.handshake.protocol.version", value: "2.0b55")
+        message.addParameter(field: "p7.handshake.protocol.version", value: "3.0")
                 
         // handshake settings
         if self.serialization == .BINARY {
@@ -821,23 +708,24 @@ public class P7Socket: NSObject {
                                 
         _ = self.write(message)
         
-        guard let response = self.readMessage() else {
-            Logger.error("Handshake Failed: Should Receive Message: p7.handshake.server_handshake")
-            return false
-        }
+        let response = try self.readMessage()
                 
         if response.name != "p7.handshake.server_handshake" {
-            Logger.error("Handshake Failed: Unexpected message \(response.name!) instead of p7.handshake.server_handshake")
+            let message = "Handshake Failed: Unexpected message \(response.name!) instead of p7.handshake.server_handshake"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         guard let p7Version = response.string(forField: "p7.handshake.version") else {
-            Logger.error("Handshake Failed: Built-in protocol version field is missing (p7.handshake.version)")
-            return false
+            let message = "Handshake Failed: Built-in protocol version field is missing (p7.handshake.version)"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         if p7Version != spec.builtinProtocolVersion {
-            Logger.error("Handshake Failed: Local version is \(p7Version) but remote version is \(spec.builtinProtocolVersion!)")
-            return false
+            let message = "Handshake Failed: Local version is \(p7Version) but remote version is \(spec.builtinProtocolVersion!)"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         self.remoteName = response.string(forField: "p7.handshake.protocol.name")
@@ -865,15 +753,15 @@ public class P7Socket: NSObject {
             }
             
             if serverCompression != self.compression {
-                return false
+                throw P7SocketError.handshakeFailed("Compression configure failed")
             }
             
             if serverCipher != self.cipherType {
-                return false
+                throw P7SocketError.handshakeFailed("Cipher configure failed")
             }
             
             if serverChecksum != self.checksum {
-                return false
+                throw P7SocketError.handshakeFailed("Checksum configure failed")
             }
         }
                                 
@@ -888,15 +776,10 @@ public class P7Socket: NSObject {
         }
         
         _ = self.write(message)
-        
-        
-        
-        return true
     }
     
     
-    
-    private func acceptHandshake(timeout:Int, compression:Compression, cipher:CipherType, checksum:Checksum) -> Bool {
+    private func acceptHandshake(timeout:Int, compression:Compression, cipher:CipherType, checksum:Checksum) throws {
         var clientCipher:P7Socket.CipherType       = .NONE
         var clientChecksum:P7Socket.Checksum       = .NONE
         var clientCompression:P7Socket.Compression = .NONE
@@ -906,38 +789,39 @@ public class P7Socket: NSObject {
         self.checksum = checksum
         
         // client handshake message
-        guard let response = self.readMessage() else {
-            Logger.error("Handshake Failed: cannot read client handshake")
-            return false
-        }
+        let response = try self.readMessage()
         
         if response.name != "p7.handshake.client_handshake" {
-            Logger.error("Message should be 'p7.handshake.client_handshake', not '\(response.name!)'")
-            return false
+            let message = "Message should be 'p7.handshake.client_handshake', not '\(response.name!)'"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         // hadshake version
         guard let version = response.string(forField: "p7.handshake.version") else {
-            Logger.error("Message has no 'p7.handshake.version', field")
-            return false
+            let message = "Message has no 'p7.handshake.version', field"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         if version != self.spec.builtinProtocolVersion {
-            Logger.error("Remote P7 protocol \(version) is not compatible")
-
-            return false;
+            let message = "Remote P7 protocol \(version) is not compatible"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         
         // protocol compatibility check
         guard let remoteName = response.string(forField: "p7.handshake.protocol.name") else {
-            Logger.error("Message has no 'p7.handshake.protocol.name', field")
-            return false
+            let message = "Message has no 'p7.handshake.protocol.name', field"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         guard let remoteVersion = response.string(forField: "p7.handshake.protocol.version") else {
-            Logger.error("Message has no 'p7.handshake.protocol.version', field")
-            return false
+            let message = "Message has no 'p7.handshake.protocol.version', field"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         self.remoteName = remoteName
@@ -1008,16 +892,15 @@ public class P7Socket: NSObject {
         }
                         
         if !self.write(message) {
-            return false
+            throw P7SocketError.writeFailed()
         }
         
-        guard let acknowledge = self.readMessage() else {
-            return false
-        }
+        let acknowledge = try self.readMessage()
                 
         if acknowledge.name != "p7.handshake.acknowledge" {
-            Logger.error("Message should be 'p7.handshake.acknowledge', not '\(response.name!)'")
-            return false
+            let message = "Message should be 'p7.handshake.acknowledge', not '\(response.name!)'"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
         }
         
         if let remoteCompatibilityCheck = acknowledge.bool(forField: "p7.handshake.compatibility_check") {
@@ -1025,58 +908,55 @@ public class P7Socket: NSObject {
         } else {
             self.remoteCompatibilityCheck = false
         }
-        
-        return true
     }
     
     
     // MARK: - KEY EXCHANGE
-    private func connectKeyExchange() -> Bool  {
+    private func connectKeyExchange() throws  {
         self.ecdh = ECDH()
+        self.digest = Digest(type: .SHA2_256)
         
         if self.ecdh == nil {
-            Logger.error("ECDH Public key cannot be created")
-            return false
+            let message = "ECDH Public key cannot be created"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
-        
-        guard let response = self.readMessage() else {
-            Logger.error("Handshake Failed: cannot read server key")
-            return false
-        }
+                        
+        let response = try self.readMessage()
         
         if response.name != "p7.encryption.server_key" {
-            Logger.error("Message should be 'p7.encryption.server_key', not '\(response.name!)'")
+            let message = "Message should be 'p7.encryption.server_key', not '\(response.name!)'"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard let serverPublicKey = response.data(forField: "p7.encryption.public_key") else {
-            Logger.error("Message has no 'p7.encryption.public_key' field")
-            return false
+            let message = "Message has no 'p7.encryption.public_key' field"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: serverPublicKey) else {
-            Logger.error("Cannot compute shared secret")
-            return false
+            let message = "Cannot compute shared secret"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
                 
         guard   let saltData = serverSharedSecret.data(using: .utf8),
                 let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData, andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-            Logger.error("Cannot derive key from shared secret")
-            return false
+            let message = "Cannot derive key from shared secret"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
                 
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey.hexEncodedString(), iv: derivedIV)
-        self.digest     = Digest(key: derivedKey.hexEncodedString(), type: self.checksum)
-        
-        if self.sslCipher == nil {
-            Logger.error("Cipher cannot be created")
-            return false
+        do {
+            self.sslCipher = try Cipher(cipher: self.cipherType, keyData: derivedKey, iv: derivedIV)
+        } catch let error {
+            let message = "Cipher cannot be created: \(error)"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
-        if self.digest == nil {
-            Logger.error("Digest cannot be created")
-            return false
-        }
-
         if self.password == nil || self.password == "" {
             self.password = "".sha256()
         } else {
@@ -1096,23 +976,27 @@ public class P7Socket: NSObject {
         let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
 
         guard var clientPublicKey = self.ecdh.publicKeyData() else {
-            Logger.error("Cannot read client public key")
-            return false
+            let message = "Cannot read client public key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
-        guard let d = self.username.data(using: .utf8), let encryptedUsername = self.sslCipher.encrypt(data: d)  else {
-            Logger.error("Cannot encrypt username")
-            return false
+        guard let d = self.username.data(using: .utf8), let encryptedUsername = try? self.sslCipher.encrypt(data: d)  else {
+            let message = "Cannot encrypt username"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         guard let ecdsa = ECDSA(privateKey: derivedKey) else {
-            Logger.error("Cannot ini ECDSA")
-            return false
+            let message = "Cannot ini ECDSA"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard let passwordSignature = ecdsa.sign(data: clientPassword1) else {
-            Logger.error("Cannot read client password")
-            return false
+            let message = "Cannot read client password"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         clientPublicKey.append(ecdsa.publicKey.rawRepresentation)
@@ -1122,152 +1006,180 @@ public class P7Socket: NSObject {
         message.addParameter(field: "p7.encryption.client_password", value: passwordSignature)
         
         _ = self.write(message)
+        
+        self.digest = Digest(type: self.checksum, key: derivedKey.hexEncodedString())
+        //checksumLength = 48
 
-        guard let response2 = self.readMessage() else {
-            Logger.error("Cannot read p7.encryption.acknowledge message")
-            return false
+        if self.digest == nil {
+            let message = "Digest cannot be created"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
+        
+        let response2 = try self.readMessage()
 
         if response2.name == "p7.encryption.authentication_error" {
-            Logger.error("Authentification failed for '\(self.username)'")
-            return false
+            let message = "Authentification failed for '\(self.username)'"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         if response2.name != "p7.encryption.acknowledge" {
-            Logger.error("Message should be 'p7.encryption.acknowledge', not '\(response2.name!)'")
-            return false
+            let message = "Message should be 'p7.encryption.acknowledge', not '\(response2.name!)'"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         guard let encryptedServerPasswordData = response2.data(forField: "p7.encryption.server_password") else {
-            Logger.error("Message has no 'p7.encryption.server_password' field")
-            return false
+            let message = "Message has no 'p7.encryption.server_password' field"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         if !ecdsa.verify(data: clientPassword2, withSignature: encryptedServerPasswordData) {
-            Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
-            return false
+            let message = "Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: clientPassword2,
                                                                         andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-            Logger.error("Cannot derive key from server password")
-            return false
+            let message = "Cannot derive key from server password"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
                                                                             
         }
 
-        self.digest     = Digest(key: derivedKey2.hexEncodedString(), type: self.checksum)
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2.hexEncodedString(), iv: derivedIV2)
+        self.digest     = Digest(type: self.checksum, key: derivedKey2.hexEncodedString())
         
-        if self.digest == nil {
-            Logger.error("Digest cannot be created")
-            return false
+        do {
+            self.sslCipher = try Cipher(cipher: self.cipherType, keyData: derivedKey2, iv: derivedIV2)
+        } catch let error {
+            let message = "Cipher cannot be created: \(error)"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         if self.sslCipher == nil {
-            Logger.error("Cipher cannot be created")
-            return false
+            let message = "Cipher cannot be created"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
-        self.checksumEnabled = true
         self.encryptionEnabled = true
-
-        return true
     }
     
     
-    private func acceptKeyExchange(timeout: Int) -> Bool {
+    private func acceptKeyExchange(timeout: Int) throws {
         // send the server public key
         let message = P7Message(withName: "p7.encryption.server_key", spec: self.spec)
         
         self.ecdh = ECDH()
-        
+        self.digest = Digest(type: .SHA2_256)
+
         if self.ecdh == nil {
-            Logger.error("Missing ECDH key")
-            return false
+            let message = "Missing ECDH key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard let serverPublicKey = self.ecdh.publicKeyData() else {
-            return false
+            let message = "Failed to generate ECDH public key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         message.addParameter(field: "p7.encryption.public_key", value: serverPublicKey)
-
+                
         if !self.write(message) {
-            return false
+            let message = "Failed to send server public key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         // read the client public key
-        guard let response = self.readMessage() else {
-            return false
-        }
+        let response = try self.readMessage()
         
         if response.name != "p7.encryption.client_key" {
-            Logger.error("Message should be 'p7.encryption.client_key', not '\(response.name!)'")
-            return false
+            let message = "Message should be 'p7.encryption.client_key', not '\(response.name!)'"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard   let combinedBase64Keys = response.data(forField: "p7.encryption.cipher.key"),
                 let combinedKeys = Data(base64Encoded: combinedBase64Keys) else {
-            Logger.error("Client public key not found")
-            return false
+            let message = "Client public key not found"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         let clientPublicKey = combinedKeys.dropLast(64)
         
         if clientPublicKey.count != 132 {
-            Logger.error("Invalid public key")
-            return false
+            let message = "Invalid public key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         let publicSigningKey = combinedKeys.dropFirst(132)
 
         if publicSigningKey.count != 64 {
-            Logger.error("Invalid signing key")
-            return false
+            let message = "Invalid signing key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
-            Logger.error("Cannot compute shared secret")
-            return false
+            let message = "Cannot compute shared secret"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
                 
         guard   let saltData = serverSharedSecret.data(using: .utf8),
                 let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData,
                                                                    andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-            Logger.error("Cannot derive key from shared secret")
-            return false
+            let message = "Cannot derive key from shared secret"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey.hexEncodedString(), iv: derivedIV)
-        self.digest     = Digest(key: derivedKey.hexEncodedString(), type: self.checksum)
-        
-        if self.sslCipher == nil {
-            Logger.error("Cannot init cipher (\(self.cipherType)")
-            return false
+        do {
+            self.sslCipher  = try Cipher(cipher: self.cipherType, keyData: derivedKey, iv: derivedIV)
+        } catch let error {
+            let message = "Cipher cannot be created: \(error)"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
-
+        
+        self.digest = Digest(type: self.checksum, key: derivedKey.hexEncodedString())
+        //checksumLength = 48
+        
         guard   let dd = response.data(forField: "p7.encryption.username"),
-                let data = self.sslCipher.decrypt(data: dd) else {
-            Logger.error("Message has no 'p7.encryption.username' field")
-            return false
+                let data = try?  self.sslCipher.decrypt(data: dd) else {
+            let message = "Message has no 'p7.encryption.username' field"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard let username = data.stringUTF8 else {
-            Logger.error("Message has no 'p7.encryption.username' field")
-            return false
+            let message = "Message has no 'p7.encryption.username' field"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         self.username = username
 
         guard let client_password = response.data(forField: "p7.encryption.client_password") else {
-            Logger.error("Message has no 'p7.encryption.client_password' field")
-            return false
+            let message = "Message has no 'p7.encryption.client_password' field"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         if self.passwordProvider != nil {
             guard let password = self.passwordProvider?.passwordForUsername(username: self.username) else {
-                Logger.error("No user found with username '\(self.username)', abort")
-                return false
+                let message = "No user found with username '\(self.username)', abort"
+                Logger.error(message)
+                throw P7SocketError.keyExchangeFailed(message)
             }
             
             self.password = password
@@ -1286,94 +1198,101 @@ public class P7Socket: NSObject {
         serverPassword2Data = serverPassword2Data.sha256().toHexString().data(using: .utf8)!
         
         guard let ecdsa = ECDSA(publicKey: publicSigningKey) else {
-            Logger.error("Cannot init ECDSA with public signing key")
-            return false
+            let message = "Cannot init ECDSA with public signing key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         if !ecdsa.verify(data: serverPassword1Data, withSignature: client_password) {
-            Logger.error("Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed")
-            return false
+            let message = "Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         // acknowledge
         let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
         
         guard let ecdsa2 = ECDSA(privateKey: derivedKey) else {
-            Logger.error("Cannot init ECDSA with private signing key")
-            return false
+            let message = "Cannot init ECDSA with private signing key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
         guard let passwordSignature = ecdsa2.sign(data: serverPassword2Data) else {
-            Logger.error("Cannot sign server password")
-            return false
+            let message = "Cannot sign server password"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
         message2.addParameter(field: "p7.encryption.server_password", value: passwordSignature)
 
         if !self.write(message2) {
-            return false
+            let message = "Cannot write acknowledge message"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
                 
         guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: serverPassword2Data,
                                                                         andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-            Logger.error("Cannot derive key from server password")
-            return false
+            let message = "Cannot derive key from server password"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
-        self.digest     = Digest(key: derivedKey2.hexEncodedString(), type: self.checksum)
-        self.sslCipher  = Cipher(cipher: self.cipherType, key: derivedKey2.hexEncodedString(), iv: derivedIV2)
+        self.digest = Digest(type: self.checksum, key: derivedKey2.hexEncodedString())
 
-        if self.digest == nil {
-            Logger.error("Digest cannot be created")
-            return false
+        do {
+            self.sslCipher = try? Cipher(cipher: self.cipherType, keyData: derivedKey2, iv: derivedIV2)
+        } catch let error {
+            let message = "Cipher cannot be created: \(error)"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
         
-        if self.sslCipher == nil {
-            Logger.error("Cipher cannot be created")
-            return false
+        if self.digest == nil {
+            let message = "Digest cannot be created"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
         }
 
-        self.checksumEnabled    = true
         self.encryptionEnabled  = true
-
-        return true
     }
 
     
     
     
     // MARK: - COMPATIBILITY CHECK
-    private func sendCompatibilityCheck() -> Bool {
+    private func sendCompatibilityCheck() throws {
         let message = P7Message(withName: "p7.compatibility_check.specification", spec: self.spec)
         
         message.addParameter(field: "p7.compatibility_check.specification", value: self.spec.xml!)
                 
         _ = self.write(message)
         
-        guard let response = self.readMessage() else {
-            return false
-        }
+        let response = try self.readMessage()
                 
         if response.name != "p7.compatibility_check.status" {
-            Logger.error("Message should be 'p7.compatibility_check.status', not '\(response.name!)'")
+            let message = "Message should be 'p7.compatibility_check.status', not '\(response.name!)'"
+            Logger.error(message)
+            throw P7SocketError.remoteCompatibilityFailed(message)
         }
         
         guard let status = response.bool(forField: "p7.compatibility_check.status") else {
-            Logger.error("Message has no 'p7.compatibility_check.status' field")
-            return false
+            let message = "Message has no 'p7.compatibility_check.status' field"
+            Logger.error(message)
+            throw P7SocketError.remoteCompatibilityFailed(message)
         }
         
         if status == false {
-            Logger.error("Remote protocol '\(self.remoteName!) \(self.remoteVersion!)' is not compatible with local protocol '\(self.spec.protocolName!) \(self.spec.protocolVersion!)'")
+            let message = "Remote protocol '\(self.remoteName!) \(self.remoteVersion!)' is not compatible with local protocol '\(self.spec.protocolName!) \(self.spec.protocolVersion!)'"
+            Logger.error(message)
+            throw P7SocketError.remoteCompatibilityFailed(message)
         }
-        
-        return status
     }
     
     
-    private func receiveCompatibilityCheck() -> Bool {
+    private func receiveCompatibilityCheck() throws {
         // TODO: implement this ?
-        return false
     }
     
     
@@ -1381,32 +1300,48 @@ public class P7Socket: NSObject {
     
     
     // MARK: - CHECKSUM
-    private func checksumData(_ data:Data) -> Data? {
+    private func checksumData(_ data:Data) throws -> Data {
         if self.digest != nil  {
-            return self.digest.authenticate(data: data)
+            return try self.digest.authenticate(data: data)
         }
-        return nil
+                
+        return try Digest(type: .SHA2_256).authenticate(data: data)
     }
 
     
     
     private func configureChecksum() {
-        if self.checksum == .SHA2_256 {
-            self.checksumLength = sha2_256DigestLength
-            
-        } else if self.checksum == .SHA3_256 {
-            self.checksumLength = sha3_256DigestLength
-            
-        } else if self.checksum == .HMAC_256 {
-            self.checksumLength = hmac_256DigestLength
-            
-        } else if self.checksum == .Poly1305 {
-            self.checksumLength = poly1305DigestLength
+        // AEAD already authenticates; checksum here is redundant (and currently over ciphertext)
+        if cipherProvidesIntegrity {
+            self.checksumEnabled = false
+        } else {
+            self.checksumEnabled = (self.checksum != .NONE)
         }
-        
-        // self.checksumEnabled = true
     }
     
+    public func checksumLength(_ type: Checksum) -> Int {
+        if type == .SHA2_256 {
+            sha2_256DigestLength
+            
+        } else if type == .SHA2_384 {
+            sha2_384DigestLength
+            
+        } else if type == .SHA3_256 {
+            sha3_256DigestLength
+            
+        } else if type == .SHA3_384 {
+            sha3_384DigestLength
+            
+        } else if type == .HMAC_256 {
+            hmac_256DigestLength
+            
+        } else if type == .HMAC_384 {
+            hmac_384DigestLength
+            
+        } else {
+            0
+        }
+    }
     
     // MARK: - COMPRESSION
     private func configureCompression() {
@@ -1418,17 +1353,183 @@ public class P7Socket: NSObject {
         }
     }
     
-    private func inflate(_ data: Data) -> Data? {
-        do {
-            return try Deflate.decompress(data: data)
-        } catch let error {
-            Logger.error("Inflate error: \(error)")
-            return nil
+    private func compress(_ data: Data) throws -> Data {
+        if compression == .DEFLATE {
+            if let out = data.inflate() {
+                return out
+            }
+        } else if compression == .LZFSE {
+            if let out = data.compress(withAlgorithm: .lzfse) {
+                return out
+            }
+            
+        } else if compression == .LZ4 {
+            if let out = data.compress(withAlgorithm: .lz4) {
+                return out
+            }
+            
+        } else if compression == .NONE {
+            return data
         }
+        
+        throw P7SocketError.inflateError
     }
         
-    private func deflate(_ data: Data) -> Data? {
-        return Deflate.compress(data: data)
+    private func decompress(_ data: Data) throws -> Data {
+        if compression == .DEFLATE {
+            if let out = data.deflate() {
+                return out
+            }
+        } else if compression == .LZFSE {
+            if let out = data.decompress(withAlgorithm: .lzfse) {
+                return out
+            }
+            
+        } else if compression == .LZ4 {
+            if let out = data.decompress(withAlgorithm: .lz4) {
+                return out
+            }
+            
+        } else if compression == .NONE {
+            return data
+        }
+        
+        throw P7SocketError.deflateError
     }
     
+    
+    // MARK: -
+    
+    private func handleConnectionError(_ error: Error) {
+        if let socketError = error as? Socket.Error {
+            self.errors.append(
+                WiredError(withTitle: "Socket Error",
+                           message: socketError.description)
+            )
+            Logger.error(socketError.description)
+        } else {
+            self.errors.append(
+                WiredError(withTitle: "Connection Error",
+                           message: error.localizedDescription)
+            )
+            Logger.error(error.localizedDescription)
+        }
+    }
+    
+    // MARK: -
+    
+    public func getClientIP() -> String? {
+        if let fileDescriptor = self.socket?.fileDescriptor {
+            return peerIPAddress(socketFD: fileDescriptor)
+        }
+        
+        return nil
+    }
+    
+    public func getClientHostname() -> String? {
+        if let fileDescriptor = self.socket?.fileDescriptor {
+            return peerIPAddress(socketFD: fileDescriptor)
+        }
+        
+        return nil
+    }
+    
+    public func clientAddress() -> String? {
+        var addresString:String? = nil
+        var address = sockaddr_in()
+        var len = socklen_t(MemoryLayout.size(ofValue: address))
+        //let ptr = UnsafeMutableRawPointer(&address).assumingMemoryBound(to: sockaddr.self)
+        
+         withUnsafeMutablePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { ptr in
+                if let socket {
+                    if getsockname(socket.fileDescriptor, ptr, &len) == 0 {
+                        var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                        
+                        if getnameinfo(ptr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) == 0 {
+                            addresString = String(cString: hostBuffer)
+                        }
+                    }
+                }
+            }
+        }
+        
+        return addresString
+    }
+    
+    private func peerIPAddress(socketFD: Int32) -> String? {
+        var addr = sockaddr_storage()
+        var len = socklen_t(MemoryLayout<sockaddr_storage>.size)
+
+        let result = withUnsafeMutablePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                getpeername(socketFD, $0, &len)
+            }
+        }
+
+        guard result == 0 else {
+            return nil
+        }
+
+        if addr.ss_family == sa_family_t(AF_INET) {
+            var addr4 = withUnsafePointer(to: &addr) {
+                $0.withMemoryRebound(to: sockaddr_in.self, capacity: 1) { $0.pointee }
+            }
+
+            var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+            inet_ntop(AF_INET, &addr4.sin_addr, &buffer, socklen_t(INET_ADDRSTRLEN))
+            return String(cString: buffer)
+        }
+
+        if addr.ss_family == sa_family_t(AF_INET6) {
+            var addr6 = withUnsafePointer(to: &addr) {
+                $0.withMemoryRebound(to: sockaddr_in6.self, capacity: 1) { $0.pointee }
+            }
+
+            var buffer = [CChar](repeating: 0, count: Int(INET6_ADDRSTRLEN))
+            inet_ntop(AF_INET6, &addr6.sin6_addr, &buffer, socklen_t(INET6_ADDRSTRLEN))
+            return String(cString: buffer)
+        }
+
+        return nil
+    }
+    
+    private func peerHostInfo(socketFD: Int32) -> String? {
+        var addr = sockaddr_storage()
+        var len = socklen_t(MemoryLayout<sockaddr_storage>.size)
+
+        let result = withUnsafeMutablePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                getpeername(socketFD, $0, &len)
+            }
+        }
+
+        guard result == 0 else {
+            return nil
+        }
+
+        // Buffer hostname / service
+        var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        var serv = [CChar](repeating: 0, count: Int(NI_MAXSERV))
+
+        let flags = NI_NAMEREQD // force le reverse DNS
+
+        let nameResult = withUnsafePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                getnameinfo(
+                    $0,
+                    len,
+                    &host,
+                    socklen_t(host.count),
+                    &serv,
+                    socklen_t(serv.count),
+                    flags
+                )
+            }
+        }
+
+        let hostname = (nameResult == 0) ? String(cString: host) : nil
+
+        return hostname
+    }
 }

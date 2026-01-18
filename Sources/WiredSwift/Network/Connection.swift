@@ -28,6 +28,9 @@ public protocol ConnectionDelegate: class {
     func connectionDidSendMessage(connection: Connection, message: P7Message)
     func connectionDidReceiveMessage(connection: Connection, message: P7Message)
     func connectionDidReceiveError(connection: Connection, message: P7Message)
+    
+    func connectionDidLogin(connection: Connection, message: P7Message)
+    func connectionDidReceivePriviledges(connection: Connection, message: P7Message)
 }
 
 public protocol ClientInfoDelegate: class {
@@ -48,6 +51,8 @@ public extension ConnectionDelegate {
     func connectionDidFailToConnect(connection: Connection, error: Error) { }
     func connectionDisconnected(connection: Connection, error: Error?) { }
     func connectionDidSendMessage(connection: Connection, message: P7Message) { }
+    func connectionDidLogin(connection: Connection, message: P7Message) { }
+    func connectionDidReceivePriviledges(connection: Connection, message: P7Message) { }
 }
 
 public extension ClientInfoDelegate {
@@ -64,6 +69,13 @@ public extension ServerInfoDelegate {
 
 
 open class Connection: NSObject {
+    enum ConnectionError: Error {
+        case cannotReadMessage(_ message: String?)
+        case cannotSetNick
+        case cannotSetStatus
+        case cannotSetIcon
+    }
+    
     public var spec:        P7Spec
     public var url:         Url!
     public var socket:      P7Socket!
@@ -71,6 +83,8 @@ open class Connection: NSObject {
     public var clientInfoDelegate:ClientInfoDelegate?
     public var serverInfoDelegate:ServerInfoDelegate?
     public var interactive: Bool = true
+    
+    public var transactionCounter:UInt32 = 1
     
     public var userID: UInt32!
     public var userInfo: UserInfo?
@@ -80,7 +94,7 @@ open class Connection: NSObject {
     public var status: String   = ""
     public var icon: String     = Wired.defaultUserIcon
     
-    public var serverInfo: ServerInfo!
+    public var serverInfo: ServerInfo? = nil
     
     private var lastPingDate:Date!
     private var pingCheckTimer:Timer!
@@ -119,7 +133,68 @@ open class Connection: NSObject {
     }
     
     
-    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .NONE, compression:P7Socket.Compression = .NONE, checksum:P7Socket.Checksum = .NONE) -> Bool {
+//    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .ECDH_AES256_SHA256, compression:P7Socket.Compression = .DEFLATE, checksum:P7Socket.Checksum = .SHA2_256) -> Bool {
+//        self.url    = url
+//        self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
+//        
+//        self.socket.username    = url.login
+//        self.socket.password    = url.password
+//        
+//        self.socket.cipherType  = cipher
+//        self.socket.compression = compression
+//        self.socket.checksum    = checksum
+//
+//        if !self.socket.connect() {
+//            for d in self.delegates {
+//                DispatchQueue.main.async {
+//                    if let error = self.socket.errors.first {
+//                        d.connectionDidFailToConnect(connection: self, error: error)
+//                    }
+//                }
+//            }
+//            return false
+//        }
+//        
+//        for d in self.delegates {
+//            DispatchQueue.main.async {
+//                d.connectionDidConnect(connection: self)
+//            }
+//        }
+//        
+//        if !self.clientInfo() {
+//            return false
+//        }
+//        
+//        if !self.setUser() {
+//            return false
+//        }
+//        
+//        if !self.login() {
+//            return false
+//        }
+//        
+//        if self.interactive == true {
+//            self.listen()
+//        }
+//        
+//        self.pingCheckTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true, block: { (timer) in
+//            if let lpd = self.lastPingDate {
+//                let interval = Date().timeIntervalSince(lpd)
+//                if interval > 65 {
+//                    Logger.error("Lost ping, server is probably down, disconnecting...")
+//                    
+//                    if self.isConnected() {
+//                        self.disconnect()
+//                    }
+//                }
+//            }
+//        })
+//        
+//        return true
+//
+//    }
+    
+    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .ECDH_AES256_SHA256, compression:P7Socket.Compression = .DEFLATE, checksum:P7Socket.Checksum = .SHA2_256) throws {
         self.url    = url
         self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
         
@@ -129,16 +204,17 @@ open class Connection: NSObject {
         self.socket.cipherType  = cipher
         self.socket.compression = compression
         self.socket.checksum    = checksum
-
-        if !self.socket.connect() {
+        
+        do {
+            try self.socket.connect()
+        } catch {
             for d in self.delegates {
                 DispatchQueue.main.async {
-                    if let error = self.socket.errors.first {
-                        d.connectionDidFailToConnect(connection: self, error: error)
-                    }
+                    d.connectionDidFailToConnect(connection: self, error: error)
                 }
             }
-            return false
+            
+            throw error
         }
         
         for d in self.delegates {
@@ -147,17 +223,9 @@ open class Connection: NSObject {
             }
         }
         
-        if !self.clientInfo() {
-            return false
-        }
-        
-        if !self.setUser() {
-            return false
-        }
-        
-        if !self.login() {
-            return false
-        }
+        try self.clientInfo()
+        try self.setUser()
+        try self.login()
         
         if self.interactive == true {
             self.listen()
@@ -175,13 +243,10 @@ open class Connection: NSObject {
                 }
             }
         })
-        
-        return true
-
     }
     
     
-    public func reconnect() -> Bool {
+    public func reconnect() throws {
         self.pingCheckTimer.invalidate()
         self.pingCheckTimer = nil
         
@@ -200,21 +265,10 @@ open class Connection: NSObject {
         self.socket.compression = compression
         self.socket.checksum    = checksum
                 
-        if !self.socket.connect() {
-            return false
-        }
-        
-        if !self.clientInfo() {
-            return false
-        }
-        
-        if !self.setUser() {
-            return false
-        }
-        
-        if !self.login() {
-            return false
-        }
+        try self.socket.connect()
+        try self.clientInfo()
+        try self.setUser()
+        try self.login()
         
         if self.interactive == true {
             self.listen()
@@ -232,8 +286,6 @@ open class Connection: NSObject {
                 }
             }
         })
-        
-        return true
     }
     
     
@@ -277,6 +329,10 @@ open class Connection: NSObject {
     @discardableResult
     public func send(message:P7Message) -> Bool {
         if self.socket.connected {
+            message.addParameter(field: "wired.transaction", value: transactionCounter)
+            
+            transactionCounter += 1
+            
             let r = self.socket.write(message)
             
             DispatchQueue.main.async {
@@ -291,11 +347,8 @@ open class Connection: NSObject {
     }
     
     
-    public func readMessage() -> P7Message? {
-        if self.socket.connected {
-            return self.socket.readMessage()
-        }
-        return nil
+    public func readMessage() throws -> P7Message {
+        return try self.socket.readMessage()
     }
 
     
@@ -320,15 +373,17 @@ open class Connection: NSObject {
         // we use a worker to ensure previous thread was terminated
         listener = DispatchWorkItem {
            while (self.interactive == true && self.socket.connected == true) {
-               if let message = self.socket.readMessage() {
-                    if self.interactive == true {
-                        self.handleMessage(message)
-                    }
-               } else {
-                    if self.isConnected() {
-                        print("self.socket error : \(self.socket.errors)")
-                        self.disconnect()
-                    }
+               do {
+                   let message = try self.socket.readMessage()
+                   
+                   if self.interactive == true {
+                       self.handleMessage(message)
+                   }
+               } catch let error {
+                   if self.isConnected() {
+                       print("self.socket error : \(self.socket.errors)")
+                       self.disconnect()
+                   }
                }
            }
         }
@@ -387,76 +442,45 @@ open class Connection: NSObject {
 
     
     
-    private func setNick() -> Bool {
+    private func setNick() throws {
         let message = P7Message(withName: "wired.user.set_nick", spec: self.spec)
         
         message.addParameter(field: "wired.user.nick", value: self.nick)
         
-        if !self.send(message: message) {
-            return false
-        }
-        
-        if self.socket.readMessage() == nil {
-            return false
-        }
-        
-        return true
+        try self.send(message: message)
+        try self.socket.readMessage()
     }
     
     
-    private func setStatus() -> Bool {
+    private func setStatus() throws {
         let message = P7Message(withName: "wired.user.set_status", spec: self.spec)
         
         message.addParameter(field: "wired.user.status", value: self.status)
         
-        if !self.send(message: message) {
-            return false
-        }
-        
-        if self.socket.readMessage() == nil {
-            return false
-        }
-        
-        return true
+        try self.send(message: message)
+        try self.socket.readMessage()
     }
     
     
-    private func setIcon() -> Bool {
+    private func setIcon() throws {
         let message = P7Message(withName: "wired.user.set_icon", spec: self.spec)
         
         message.addParameter(field: "wired.user.icon", value: Data(base64Encoded: self.icon, options: .ignoreUnknownCharacters))
         
-        if !self.send(message: message) {
-            return false
-        }
-        
-        if self.socket.readMessage() == nil {
-            return false
-        }
-        
-        return true
+        try self.send(message: message)
+        try self.socket.readMessage()
     }
     
     
     
-    private func setUser() -> Bool {
-        if !self.setNick() {
-            return false
-        }
-        
-        if !self.setStatus() {
-            return false
-        }
-        
-        if !self.setIcon() {
-            return false
-        }
-        
-        return true
+    private func setUser() throws {
+        try self.setNick()
+        try self.setStatus()
+        try self.setIcon()
     }
     
     
-    private func login() -> Bool  {
+    private func login() throws {
         let message = P7Message(withName: "wired.send_login", spec: self.spec)
         
         message.addParameter(field: "wired.user.login", value: self.url!.login)
@@ -471,26 +495,34 @@ open class Connection: NSObject {
                 
         _ = self.send(message: message)
                 
-        guard let response = self.socket.readMessage() else {
-            return false
-        }
+        let response = try self.socket.readMessage()
         
         if let uid = response.uint32(forField: "wired.user.id") {
             self.userID = uid
         }
         
-        // read account priviledges
-        let privilegesMessage = self.socket.readMessage()
+        DispatchQueue.main.async {
+            for d in self.delegates {
+                d.connectionDidLogin(connection: self, message: response)
+            }
+        }
         
-        privilegesMessage?.parameterKeys.forEach({ (key) in
+        // read account priviledges
+        let privilegesMessage = try self.socket.readMessage()
+        
+        privilegesMessage.parameterKeys.forEach({ (key) in
             self.privileges.append(key)
         })
         
-        return true
+        DispatchQueue.main.async {
+            for d in self.delegates {
+                d.connectionDidReceivePriviledges(connection: self, message: privilegesMessage)
+            }
+        }
     }
     
     
-    private func clientInfo() -> Bool {
+    private func clientInfo() throws {
         let message = P7Message(withName: "wired.client_info", spec: self.spec)
         message.addParameter(field: "wired.info.application.name", value: "Wired Client")
         
@@ -513,36 +545,195 @@ open class Connection: NSObject {
         message.addParameter(field: "wired.info.os.name", value: "iOS")
         #elseif os(macOS)
         message.addParameter(field: "wired.info.os.name", value: "macOS")
+        #elseif os(visionOS)
+        message.addParameter(field: "wired.info.os.name", value: "visionOS")
         #else
         message.addParameter(field: "wired.info.os.name", value: "Linux")
         #endif
         
         message.addParameter(field: "wired.info.os.version", value: ProcessInfo.processInfo.operatingSystemVersionString)
-        
-        #if os(iOS)
-        message.addParameter(field: "wired.info.arch", value: "armv7")
-        #elseif os(macOS)
-        message.addParameter(field: "wired.info.arch", value: "x86_64")
-        #else
-        message.addParameter(field: "wired.info.arch", value: "x86_64")
-        #endif
-        
+        message.addParameter(field: "wired.info.arch", value: machineArchitecture())
         message.addParameter(field: "wired.info.supports_rsrc", value: false)
         
         _ = self.send(message: message)
                 
-        guard let response = self.socket.readMessage() else {
-            print("no response ?")
-            return false
-        }
+        let response = try self.socket.readMessage()
                         
         self.serverInfo = ServerInfo(message: response)
-        
-        return true
     }
     
     
     // MARK: -
 
-    
+    private func machineArchitecture() -> String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+
+        let machine = withUnsafePointer(to: &systemInfo.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                String(cString: $0)
+            }
+        }
+
+        return machine
+    }
+}
+
+
+public enum NetworkError: Error, Equatable {
+
+    // MARK: - DNS / Address resolution
+
+    case dnsFailure(host: String, code: Int32)
+    case invalidAddress(host: String)
+    case unsupportedAddressFamily
+
+    // MARK: - Connection lifecycle
+
+    case connectionRefused(host: String, port: Int)
+    case connectionTimedOut(host: String, port: Int)
+    case hostUnreachable(host: String)
+    case networkUnreachable
+    case connectionReset
+    case connectionAborted
+    case alreadyConnected
+    case notConnected
+
+    // MARK: - Socket state
+
+    case socketClosed
+    case socketNotOpen
+    case brokenPipe
+    case shutdown
+
+    // MARK: - IO
+
+    case readFailed(errno: Int32)
+    case writeFailed(errno: Int32)
+    case interrupted
+
+    // MARK: - TLS / Security (si tu ajoutes TLS plus tard)
+
+    case tlsHandshakeFailed
+    case tlsInvalidCertificate
+    case tlsCertificateExpired
+
+    // MARK: - Timeout / Flow
+
+    case readTimedOut
+    case writeTimedOut
+
+    // MARK: - Resource / System
+
+    case noFileDescriptors
+    case noMemory
+    case permissionDenied
+
+    // MARK: - Application / Protocol
+
+    case invalidResponse
+    case protocolViolation(reason: String)
+    case payloadTooLarge
+
+    // MARK: - Fallback
+
+    case unknown(errno: Int32)
+}
+
+
+extension NetworkError {
+
+    static func fromErrno(
+        _ errno: Int32,
+        host: String,
+        port: Int
+    ) -> NetworkError {
+
+        switch errno {
+
+        // Connection
+        case ECONNREFUSED:
+            return .connectionRefused(host: host, port: port)
+
+        case ETIMEDOUT:
+            return .connectionTimedOut(host: host, port: port)
+
+        case ENETUNREACH:
+            return .networkUnreachable
+
+        case EHOSTUNREACH:
+            return .hostUnreachable(host: host)
+
+        case ECONNRESET:
+            return .connectionReset
+
+        case ECONNABORTED:
+            return .connectionAborted
+
+        case EISCONN:
+            return .alreadyConnected
+
+        case ENOTCONN:
+            return .notConnected
+
+        // IO
+        case EPIPE:
+            return .brokenPipe
+
+        case EINTR:
+            return .interrupted
+
+        // Permissions / resources
+        case EACCES:
+            return .permissionDenied
+
+        case EMFILE, ENFILE:
+            return .noFileDescriptors
+
+        case ENOMEM:
+            return .noMemory
+
+        // Fallback
+        default:
+            return .unknown(errno: errno)
+        }
+    }
+}
+
+extension NetworkError: LocalizedError {
+
+    public var errorDescription: String? {
+        switch self {
+
+        case .dnsFailure(let host, _):
+            return "DNS resolution failed for \(host)"
+
+        case .connectionRefused(let host, let port):
+            return "Connection refused by \(host):\(port)"
+
+        case .connectionTimedOut(let host, let port):
+            return "Connection to \(host):\(port) timed out"
+
+        case .hostUnreachable(let host):
+            return "Host \(host) is unreachable"
+
+        case .networkUnreachable:
+            return "Network is unreachable"
+
+        case .brokenPipe:
+            return "Connection closed by peer"
+
+        case .permissionDenied:
+            return "Permission denied"
+
+        case .notConnected:
+            return "Socket is not connected"
+
+        case .unknown(let errno):
+            return "Unknown network error (errno \(errno))"
+
+        default:
+            return "Network error"
+        }
+    }
 }

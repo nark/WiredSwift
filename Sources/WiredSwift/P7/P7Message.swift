@@ -235,6 +235,7 @@ public class P7Message: NSObject {
             // append fields
             for (field, value) in self.parameters {
                 if let specField = spec.fieldsByName[field] {
+                    //print("specField \(specField.name)")
                     if let fieldIDStr = specField.id {
                         // append field ID
                         if let fieldID = UInt32(fieldIDStr) {
@@ -422,7 +423,7 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: String(bytes: fieldData, encoding: .utf8))
                         }
                         else if specField.type == .uuid {
-                            self.addParameter(field: specField.name, value: NSUUID(uuidBytes: fieldData.bytes).uuidString)
+                            self.addParameter(field: specField.name, value: NSUUID(uuidBytes: Array(fieldData)).uuidString)
                         }
                         else if specField.type == .date {
                             if let interval = fieldData.to(type: Double.self) {

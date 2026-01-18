@@ -10,24 +10,32 @@ import Foundation
 
 
 public class ServerInfo {
-    public var applicationName: String!
-    public var applicationVersion: String!
-    public var applicationBuild: String!
+    public var applicationName: String = ""
+    public var applicationVersion: String = ""
+    public var applicationBuild: String = ""
     
-    public var osName: String!
-    public var osVersion: String!
-    public var arch: String!
+    public var osName: String = ""
+    public var osVersion: String = ""
+    public var arch: String = ""
     
-    public var supportRSRC: Bool!
-    public var serverName: String!
-    public var serverDescription: String!
-    public var serverBanner: Data!
+    public var supportRSRC: Bool = false
+    public var serverName: String = ""
+    public var serverDescription: String = ""
+    public var serverBanner: Data = Data()
     
-    public var startTime:Date!
-    public var filesCount:UInt64!
-    public var filesSize:UInt64!
+    public var startTime:Date = Date()
+    public var filesCount:UInt64 = 0
+    public var filesSize:UInt64 = 0
     
-    private var message: P7Message!
+    private var message: P7Message
+    
+    public var serverVersion: String {
+        return "\(applicationVersion) (\(applicationBuild))"
+    }
+    
+    public var hostInfo: String {
+        return "\(osName) \(osVersion) (\(arch))"
+    }
     
     public init(message: P7Message) {
         self.message = message

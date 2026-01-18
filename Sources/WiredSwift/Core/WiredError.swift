@@ -11,12 +11,20 @@ import Foundation
 public class WiredError: NSObject, Error {
     public var specError:SpecError?
 
-    private var errorTitle:String!
-    private var errorMessage:String!
+    private var errorTitle:String
+    private var errorMessage:String
     
     
     public init(withSPecError specError: SpecError) {
         self.specError = specError
+        
+        if let se = self.specError {
+            errorTitle = se.name
+            errorMessage = se.description
+        } else {
+            errorTitle = "Unknown error"
+            errorMessage = "Unknown error message"
+        }
     }
     
     
@@ -26,36 +34,23 @@ public class WiredError: NSObject, Error {
     }
     
     
+    public init(message: P7Message) {
+        self.errorTitle = "Server Error"
+        self.errorMessage = message.string(forField: "wired.error.string") ?? "No error message"
+    }
+    
+    
     public override var description: String {
-        if let se = self.specError {
-            return se.name
-        }
-        else {
-            return "\(String(describing: self.errorTitle)): \(String(describing: self.errorMessage))"
-        }
+        return "\(self.errorTitle): \(self.errorMessage)"
     }
     
     
     public var title:String {
-        get {
-            if let se = self.specError {
-                return se.name
-            }
-            else {
-                return self.errorTitle
-            }
-        }
+        self.errorTitle
     }
     
     
     public var message:String {
-        get {
-            if let se = self.specError {
-                return se.name
-            }
-            else {
-                return self.errorMessage
-            }
-        }
+        self.errorMessage
     }
 }

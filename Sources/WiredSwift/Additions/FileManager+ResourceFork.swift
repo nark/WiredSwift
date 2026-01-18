@@ -56,39 +56,49 @@ extension FileManager {
     
     
     
-    public func finderInfo(atPath path:String) -> Data? {
+    public func finderInfo(atPath path:String?) -> Data? {
+        guard let path, !path.isEmpty else { return nil }
+        guard fileExists(atPath: path) else { return nil }
+        
         #if os(Linux)
             return nil
         #else
-            var attrs:attrlist = attrlist()
-            var finderinfo:FileManagerFinderInfo = FileManagerFinderInfo()
-            
-            attrs.bitmapcount   = u_short(ATTR_BIT_MAP_COUNT)
-            attrs.reserved      = 0
-            attrs.commonattr    = attrgroup_t(ATTR_CMN_FNDRINFO)
-            attrs.volattr       = 0
-            attrs.dirattr       = 0
-            attrs.fileattr      = 0
-            attrs.forkattr      = 0
-            
-            let mpath = path
-            let attrOK = mpath.withCString { (cstr) -> Bool in
-                if getattrlist(cstr, &attrs, &finderinfo, MemoryLayout<FileManagerFinderInfo>.size, UInt32(FSOPT_NOFOLLOW)) < 0 {
-                    return true
-                }
-                return false
-            }
-            
-            if !attrOK {
-                return nil
-            }
-            
-            let data = finderinfo.data.withUnsafeBytes { (bytes) -> Data in
-                return Data(bytes)
-            }
-                    
-            return data
+        let name = "com.apple.FinderInfo"
+
+        // 1) Query size
+        let size = getxattr(path, name, nil, 0, 0, 0)
+        if size < 0 {
+            // ENOATTR: attribute absent -> normal
+            return nil
+        }
+
+        // FinderInfo is normally 32 bytes, but we accept >= 32 and truncate, or reject weird values if you prefer.
+        if size == 0 { return nil }
+
+        // 2) Read attribute
+        var data = Data(count: Int(size))
+        let readCount: Int = data.withUnsafeMutableBytes { rawBuf in
+            guard let base = rawBuf.baseAddress else { return -1 }
+            return getxattr(path, name, base, rawBuf.count, 0, 0)
+        }
+
+        guard readCount >= 0 else { return nil }
+        if readCount == 0 { return nil }
+
+        // Normaliser à 32 bytes si tu veux rester conforme FinderInfo
+        if data.count >= 32 {
+            return data.prefix(32)
+        } else {
+            // Si tu veux être strict: return nil
+            // ou padding:
+            var padded = Data(count: 32)
+            padded.replaceSubrange(0..<data.count, with: data)
+            return padded
+        }
+        
         #endif
+        
+        return nil
     }
     
     

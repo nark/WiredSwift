@@ -1,34 +1,42 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "DataCompression",
-        "repositoryURL": "https://github.com/mw99/DataCompression",
-        "state": {
-          "branch": null,
-          "revision": "6abb8f3cd0e4b2a33b4927a7a92b6764528f2440",
-          "version": "3.6.0"
-        }
-      },
-      {
-        "package": "GRDB",
-        "repositoryURL": "https://github.com/groue/GRDB.swift",
-        "state": {
-          "branch": null,
-          "revision": "ae3c491661c4dd6771d996beb6fc869f4520701f",
-          "version": "5.6.0"
-        }
-      },
-      {
-        "package": "swift-argument-parser",
-        "repositoryURL": "https://github.com/apple/swift-argument-parser",
-        "state": {
-          "branch": null,
-          "revision": "831ed5e860a70e745bc1337830af4786b2576881",
-          "version": "0.4.1"
-        }
+  "originHash" : "bd5dce55f49d367747134880a2fd7f58f30a0959a5875e07397c03075ba1ef27",
+  "pins" : [
+    {
+      "identity" : "configuration",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kitura/Configuration.git",
+      "state" : {
+        "revision" : "75fb96405263e72a2ed4546dceebe0993b92eb79",
+        "version" : "3.1.0"
       }
-    ]
-  },
-  "version": 1
+    },
+    {
+      "identity" : "filekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kitura/FileKit.git",
+      "state" : {
+        "revision" : "9d3ddb89a16d388eaad0db5e17c4682b767bd48f",
+        "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "loggerapi",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kitura/LoggerAPI.git",
+      "state" : {
+        "revision" : "4e6b45e850ffa275e8e26a24c6454fd709d5b6ac",
+        "version" : "2.0.0"
+      }
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log.git",
+      "state" : {
+        "revision" : "bc386b95f2a16ccd0150a8235e7c69eab2b866ca",
+        "version" : "1.8.0"
+      }
+    }
+  ],
+  "version" : 3
 }

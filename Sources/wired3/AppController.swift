@@ -38,7 +38,7 @@ public class AppController : DatabaseControllerDelegate {
     // MARK: - Public
     public init(specPath:String, dbPath:String, rootPath:String, configPath: String) {
         let specUrl = URL(fileURLWithPath: specPath)
-
+        
         self.rootPath = rootPath
         self.configPath = configPath
         self.databaseURL = URL(fileURLWithPath: dbPath)

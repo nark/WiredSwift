@@ -164,14 +164,14 @@ public class ServerController: ServerDelegate {
     
     
     // MARK: -
-    public func read(message:P7Message, client: Client) -> P7Message? {
-        return client.socket?.readMessage()
+    public func read(message:P7Message, client: Client) throws -> P7Message {
+        return try client.socket.readMessage()
     }
     
     @discardableResult
     public func send(message:P7Message, client: Client) -> Bool {
         if client.transfer == nil {
-            return client.socket?.write(message) ?? false
+            return client.socket.write(message) ?? false
         }
         
         return false
@@ -190,13 +190,12 @@ public class ServerController: ServerDelegate {
     
     
     public func replyError(client: Client, error:String, message:P7Message?) {
-        let reply = P7Message(withName: "wired.error", spec: client.socket!.spec)
-        
-        reply.addParameter(field: "wired.error.string", value: "Login failed")
+        let reply = P7Message(withName: "wired.error", spec: client.socket.spec)
 
         if let message = message {
             if let errorEnumValue = message.spec.errorsByName[error] {
                 reply.addParameter(field: "wired.error", value: UInt32(errorEnumValue.id))
+                reply.addParameter(field: "wired.error.string", value: errorEnumValue.name)
             }
             
             self.reply(client: client, reply: reply, message: message)
@@ -206,7 +205,7 @@ public class ServerController: ServerDelegate {
     }
     
     public func replyOK(client: Client, message:P7Message) {
-        let reply = P7Message(withName: "wired.okay", spec: client.socket!.spec)
+        let reply = P7Message(withName: "wired.okay", spec: client.socket.spec)
         
         self.reply(client: client, reply: reply, message: message)
     }
@@ -215,6 +214,13 @@ public class ServerController: ServerDelegate {
     
     // MARK: - Private
     private func handleMessage(client:Client, message:P7Message) {
+        // make sure to broadcast idle status if needed
+        if client.idle && message.name != "wired.user.set_nick" && message.name != "wired.user.set_status" && message.name != "wired.user.set_icon" && message.name != "wired.user.set_idle" {
+            client.idle = false
+            
+            self.sendUserStatus(forClient: client)
+        }
+        
         if message.name == "wired.client_info" {
             self.receiveClientInfo(client, message)
         }
@@ -227,11 +233,17 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.user.set_icon" {
             self.receiveUserSetIcon(client, message)
         }
+        else if message.name == "wired.user.set_idle" {
+            self.receiveUserSetIdle(client, message)
+        }
         else if message.name == "wired.send_login" {
             if !self.receiveSendLogin(client, message) {
                 // login failed
                 self.disconnectClient(client: client)
             }
+        }
+        else if message.name == "wired.user.get_info" {
+            self.receiveUserGetInfo(client, message)
         }
         else if message.name == "wired.chat.get_chats" {
             App.chatsController.getChats(message: message, client: client)
@@ -294,6 +306,34 @@ public class ServerController: ServerDelegate {
     private func receiveClientInfo(_ client:Client, _ message:P7Message) {
         client.state = .GAVE_CLIENT_INFO
                 
+        if let applicationName = message.string(forField: "wired.info.application.name") {
+            client.applicationName = applicationName
+        }
+        
+        if let applicationVersion = message.string(forField: "wired.info.application.version") {
+            client.applicationVersion = applicationVersion
+        }
+        
+        if let applicationBuild = message.string(forField: "wired.info.application.build") {
+            client.applicationBuild = applicationBuild
+        }
+        
+        if let osName = message.string(forField: "wired.info.os.name") {
+            client.osName = osName
+        }
+        
+        if let osVersion = message.string(forField: "wired.info.os.version") {
+            client.osVersion = osVersion
+        }
+        
+        if let arch = message.string(forField: "wired.info.arch") {
+            client.arch = arch
+        }
+        
+        if let supportsRsrc = message.bool(forField: "wired.info.supports_rsrc") {
+            client.supportsRsrc = supportsRsrc
+        }
+                
         App.serverController.reply(client: client,
                                    reply: self.serverInfoMessage(),
                                    message: message)
@@ -345,6 +385,65 @@ public class ServerController: ServerDelegate {
         }
     }
     
+    private func receiveUserSetIdle(_ client:Client, _ message:P7Message) {
+        client.idle = true
+        client.idleTime = Date()
+        
+        let response = P7Message(withName: "wired.okay", spec: self.spec)
+        _ = self.send(message: response, client: client)
+        
+        // broadcast if already logged in
+        if client.state == .LOGGED_IN {
+            self.sendUserStatus(forClient: client)
+        }
+    }
+    
+    
+    private func receiveUserGetInfo(_ fromClient:Client, _ message:P7Message) {
+        if !fromClient.user!.hasPrivilege(name: "wired.account.user.get_info") {
+            App.serverController.replyError(client: fromClient, error: "wired.error.permission_denied", message: message)
+            
+            return
+        }
+        
+        guard let userID = message.uint32(forField: "wired.user.id") else { return }
+        guard let client = App.clientsController.user(withID: userID) else { return }
+        
+        let response = P7Message(withName: "wired.user.info", spec: self.spec)
+        
+        response.addParameter(field: "wired.user.id", value: client.userID ?? "")
+        response.addParameter(field: "wired.user.nick", value: client.nick ?? "")
+        response.addParameter(field: "wired.user.status", value: client.status ?? "")
+        response.addParameter(field: "wired.user.idle", value: client.idle)
+        response.addParameter(field: "wired.user.icon", value: client.icon ?? "")
+        
+        response.addParameter(field: "wired.user.login", value: client.user?.username ?? "")
+        response.addParameter(field: "wired.user.ip", value: client.socket.getClientIP() ?? "")
+        response.addParameter(field: "wired.user.host", value: client.socket.getClientHostname() ?? "")
+        response.addParameter(field: "wired.user.cipher.name", value: client.socket.cipherType.description)
+        response.addParameter(field: "wired.user.cipher.bits", value: UInt32(client.socket.checksumLength(client.socket.digest.type)))
+        
+        if let loginTime = client.loginTime {
+            response.addParameter(field: "wired.user.login_time", value: loginTime)
+        }
+        
+        if let idleTime = client.idleTime {
+            response.addParameter(field: "wired.user.idle_time", value: idleTime)
+        }
+        
+        response.addParameter(field: "wired.info.application.name", value: client.applicationName)
+        response.addParameter(field: "wired.info.application.version", value: client.applicationBuild)
+        response.addParameter(field: "wired.info.application.build", value: client.applicationVersion)
+        response.addParameter(field: "wired.info.os.name", value: client.osName)
+        response.addParameter(field: "wired.info.os.version", value: client.osVersion)
+        response.addParameter(field: "wired.info.arch", value: client.arch)
+        response.addParameter(field: "wired.info.supports_rsrc", value: client.supportsRsrc)
+        
+        App.serverController.reply(client: fromClient,
+                                   reply: response,
+                                   message: message)
+    }
+    
     
     private func receiveSendLogin(_ client:Client, _ message:P7Message) -> Bool {
         guard let login = message.string(forField: "wired.user.login") else {
@@ -361,7 +460,7 @@ public class ServerController: ServerDelegate {
             reply.addParameter(field: "wired.error", value: UInt32(4
             ))
             App.serverController.reply(client: client, reply: reply, message: message)
-            
+                        
             Logger.error("Login failed for user '\(login)'")
             
             return false
@@ -378,11 +477,28 @@ public class ServerController: ServerDelegate {
         
         let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
                 
-        for field in spec.accountPrivileges! {
-            if user.hasPrivilege(name: field) {
-                response2.addParameter(field: field, value: UInt32(1))
+        for p in user.privileges {
+            if let field = spec.fieldsByName[p.name!] {
+                if field.type == .bool {
+                    response2.addParameter(field: field.name, value: true)
+                } else if field.type == .uint32 {
+                    response2.addParameter(field: field.name, value: UInt32(1))
+                }
             }
         }
+        
+//        for field in spec.accountPrivileges! {
+//            if user.hasPrivilege(name: field) {
+//                print("user has priviledges \(field)")
+//                if field.type == .bool {
+//                    response2.addParameter(field: field, value: UInt32(1))
+//                } else if field.type == .uint32 {
+//                    response2.addParameter(field: field, value: UInt32(1))
+//                }
+//            }
+//        }
+        
+        client.loginTime = Date()
                 
         App.serverController.reply(client: client, reply: response2, message: message)
         
@@ -483,7 +599,12 @@ public class ServerController: ServerDelegate {
                                                          client: client, message: message) {
             client.transfer = transfer
             
-            client.socket.set(interactive: false)
+            do {
+                try client.socket.set(interactive: false)
+            } catch let error {
+                client.state = .DISCONNECTED
+                client.transfer = nil
+            }
                         
             if(!App.transfersController.run(transfer: transfer, client: client, message: message)) {
                 client.state = .DISCONNECTED
@@ -569,17 +690,19 @@ public class ServerController: ServerDelegate {
     // MARK: -
     
     private func sendUserStatus(forClient client:Client) {
-        let broadcast = P7Message(withName: "wired.chat.user_status", spec: self.spec)
-        
-        broadcast.addParameter(field: "wired.chat.id", value: App.chatsController.publicChat.chatID)
-        broadcast.addParameter(field: "wired.user.id", value: client.userID)
-        broadcast.addParameter(field: "wired.user.idle", value: false)
-        broadcast.addParameter(field: "wired.user.nick", value: client.nick)
-        broadcast.addParameter(field: "wired.user.status", value: client.status)
-        broadcast.addParameter(field: "wired.user.icon", value: client.icon)
-        broadcast.addParameter(field: "wired.account.color", value: UInt32(0))
-        
-        App.clientsController.broadcast(message: broadcast)
+        for chat in App.chatsController.publicChats {
+            let broadcast = P7Message(withName: "wired.chat.user_status", spec: self.spec)
+            
+            broadcast.addParameter(field: "wired.chat.id", value: chat.chatID)
+            broadcast.addParameter(field: "wired.user.id", value: client.userID)
+            broadcast.addParameter(field: "wired.user.idle", value: client.idle)
+            broadcast.addParameter(field: "wired.user.nick", value: client.nick)
+            broadcast.addParameter(field: "wired.user.status", value: client.status)
+            broadcast.addParameter(field: "wired.user.icon", value: client.icon)
+            broadcast.addParameter(field: "wired.account.color", value: UInt32(0))
+            
+            App.clientsController.broadcast(message: broadcast)
+        }
     }
     
     
@@ -613,7 +736,8 @@ public class ServerController: ServerDelegate {
         message.addParameter(field: "wired.info.description", value: self.serverDescription)
         
         if let bannerPath = App.config["server", "banner"] as? String {
-            if let data = try? Data(contentsOf: URL.init(fileURLWithPath: bannerPath)) {
+            let fullPath = App.rootPath.stringByAppendingPathComponent(path: bannerPath)
+            if let data = try? Data(contentsOf: URL.init(fileURLWithPath: fullPath)) {
                 message.addParameter(field: "wired.info.banner", value: data)
             }
         }
@@ -665,10 +789,13 @@ public class ServerController: ServerDelegate {
                 let userID = App.usersController.nextUserID()
                 let client = Client(userID: userID, socket: p7Socket)
                 
-                if p7Socket.accept(compression: SERVER_COMPRESSION,
-                                   cipher:      SERVER_CIPHER,
-                                   checksum:    SERVER_CHECKSUM) {
-                                    
+                do {
+                    try p7Socket.accept(
+                        compression: SERVER_COMPRESSION,
+                        cipher:      SERVER_CIPHER,
+                        checksum:    SERVER_CHECKSUM
+                    )
+                    
                     Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")
 
                     App.clientsController.addClient(client: client)
@@ -676,8 +803,8 @@ public class ServerController: ServerDelegate {
                     client.state = .CONNECTED
                     
                     self.clientLoop(client)
-                }
-                else {
+   
+                } catch {
                     p7Socket.disconnect()
                 }
             }
@@ -709,15 +836,17 @@ public class ServerController: ServerDelegate {
             
             Logger.debug("ClientLoop \(client.userID) before readMessage() interactive: \(client.socket.isInteractive())")
             
-            if let message = client.socket.readMessage() {
+            do {
+                let message = try client.socket.readMessage()
+                
                 for delegate in delegates {
                     delegate.receiveMessage(client: client, message: message)
                 }
-            }
-            else {
+            } catch {
                 for delegate in delegates {
                     delegate.clientDisconnected(client: client)
                 }
+                
                 break
             }
         }

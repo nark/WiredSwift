@@ -17,8 +17,8 @@ public class Group: Model {
     @ID(key: .id)
     public var id:UUID?
     
-    @Field(key: "groupID")
-    public var groupID:UInt32!
+//    @Field(key: "group_id")
+//    public var groupID:UInt32!
     
     @Field(key: "name")
     public var name:String?

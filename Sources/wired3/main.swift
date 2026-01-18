@@ -34,4 +34,7 @@ struct Wired: ParsableCommand {
     }
 }
 
+// ignore writing to closed socket
+signal(SIGPIPE, SIG_IGN)
+
 Wired.main()

@@ -21,12 +21,23 @@ public class Client {
     public var nick:String?
     public var status:String?
     public var icon:Data?
+    public var idle:Bool = false
+    public var idleTime:Date?
+    public var loginTime:Date?
     public var state:State = .DISCONNECTED
     
     public var userID:UInt32
     public var user:User?
-    public var socket:P7Socket!
+    public var socket:P7Socket
     public var transfer:Transfer?
+    
+    public var applicationName = ""
+    public var applicationVersion = ""
+    public var applicationBuild = ""
+    public var osName = ""
+    public var osVersion = ""
+    public var arch = ""
+    public var supportsRsrc = false
     
     public init(userID:UInt32, socket: P7Socket) {
         self.userID = userID

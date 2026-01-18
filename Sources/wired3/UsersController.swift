@@ -37,16 +37,17 @@ public class UsersController: TableController, SocketPasswordDelegate {
     
     public func user(withUsername username: String, password: String) -> User? {
         var user:User? = nil
-                
+
         do {
             user = try User.query(on: databaseController.pool)
+                        .with(\.$privileges)
                         .filter(\.$username == username)
                         .filter(\.$password == password)
                         .first()
                         .wait()
             
         } catch {  }
-        
+                
         return user
     }
     

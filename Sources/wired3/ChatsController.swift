@@ -62,15 +62,13 @@ private extension ChatsController {
         }
            
         if let chat = self.chat(withID: chatID) {
-            chat.clientsLock.concurrentlyRead {
-                for (_, toClient) in chat.clients {
-                    let messageName = isSay ? "wired.chat.say" : "wired.chat.me"
-                    let reply = P7Message(withName: messageName, spec: toClient.socket.spec)
-                    reply.addParameter(field: "wired.chat.id", value: chatID)
-                    reply.addParameter(field: "wired.user.id", value: client.userID)
-                    reply.addParameter(field: messageName, value: string)
-                    App.serverController.reply(client: toClient, reply: reply, message: message)
-                }
+            chat.withClients { toClient in
+                let messageName = isSay ? "wired.chat.say" : "wired.chat.me"
+                let reply = P7Message(withName: messageName, spec: toClient.socket.spec)
+                reply.addParameter(field: "wired.chat.id", value: chatID)
+                reply.addParameter(field: "wired.user.id", value: client.userID)
+                reply.addParameter(field: messageName, value: string)
+                App.serverController.reply(client: toClient, reply: reply, message: message)
             }
         } else {
             let reply = P7Message(withName: "wired.error", spec: client.socket.spec)
@@ -280,28 +278,25 @@ public class ChatsController : TableController {
             }
         }
         
-        chat.clientsLock.exclusivelyWrite {
-            chat.clients[client.userID] = client
-        }
+        chat.addClient(client)
         
         if let privateChat = chat as? PrivateChat {
             privateChat.removeInvitation(client: client)
         }
         
         // reply users
-        chat.clientsLock.concurrentlyRead {
-            for (userID, chatClient) in chat.clients {
-                let response = P7Message(withName: "wired.chat.user_list", spec: client.socket.spec)
-                response.addParameter(field: "wired.chat.id", value: chatID)
-                response.addParameter(field: "wired.user.id", value: userID)
-                response.addParameter(field: "wired.user.idle", value: false)
-                response.addParameter(field: "wired.user.nick", value: chatClient.nick)
-                response.addParameter(field: "wired.user.status", value: chatClient.status)
-                response.addParameter(field: "wired.user.icon", value: chatClient.icon)
-                response.addParameter(field: "wired.account.color", value: UInt32(0))
-                
-                App.serverController.reply(client: client, reply: response, message: message)
-            }
+        chat.withClients { chatClient in
+            let response = P7Message(withName: "wired.chat.user_list", spec: client.socket.spec)
+            response.addParameter(field: "wired.chat.id", value: chatID)
+            response.addParameter(field: "wired.user.id", value: chatClient.userID)
+            response.addParameter(field: "wired.user.idle", value: chatClient.idle)
+            response.addParameter(field: "wired.user.nick", value: chatClient.nick)
+            response.addParameter(field: "wired.user.status", value: chatClient.status)
+            response.addParameter(field: "wired.user.icon", value: chatClient.icon)
+            response.addParameter(field: "wired.account.color", value: UInt32(0))
+            
+            App.serverController.reply(client: client, reply: response, message: message)
+            
         }
         
         let response = P7Message(withName: "wired.chat.user_list.done", spec: client.socket.spec)
@@ -319,20 +314,18 @@ public class ChatsController : TableController {
         App.serverController.reply(client: client, reply: topicMessage, message: message)
         
         // broadcast to joined users
-        chat.clientsLock.concurrentlyRead {
-            for (userID, chatClient) in chat.clients {
-                if userID != client.userID {
-                    let reply = P7Message(withName: "wired.chat.user_join", spec: client.socket.spec)
-                    reply.addParameter(field: "wired.chat.id", value: chatID)
-                    reply.addParameter(field: "wired.user.idle", value: false)
-                    reply.addParameter(field: "wired.user.id", value: client.userID)
-                    reply.addParameter(field: "wired.user.nick", value: client.nick)
-                    reply.addParameter(field: "wired.user.status", value: client.status)
-                    reply.addParameter(field: "wired.user.icon", value: client.icon)
-                    reply.addParameter(field: "wired.account.color", value: UInt32(0))
-                    
-                    App.serverController.reply(client: chatClient, reply: reply, message: message)
-                }
+        chat.withClients { chatClient in
+            if chatClient.userID != client.userID {
+                let reply = P7Message(withName: "wired.chat.user_join", spec: client.socket.spec)
+                reply.addParameter(field: "wired.chat.id", value: chatID)
+                reply.addParameter(field: "wired.user.idle", value: chatClient.idle)
+                reply.addParameter(field: "wired.user.id", value: client.userID)
+                reply.addParameter(field: "wired.user.nick", value: client.nick)
+                reply.addParameter(field: "wired.user.status", value: client.status)
+                reply.addParameter(field: "wired.user.icon", value: client.icon)
+                reply.addParameter(field: "wired.account.color", value: UInt32(0))
+                
+                App.serverController.reply(client: chatClient, reply: reply, message: message)
             }
         }
     }
@@ -369,17 +362,13 @@ public class ChatsController : TableController {
     
     private func userLeave(chatID:UInt32, client:Client) {
         if let chat = self.chat(withID: chatID) {
-            chat.clientsLock.exclusivelyWrite {
-                chat.clients[client.userID] = nil
-            }
-                        
-            chat.clientsLock.concurrentlyRead {
-                for (_, chat_user) in chat.clients {
-                    let reply = P7Message(withName: "wired.chat.user_leave", spec: client.socket.spec)
-                    reply.addParameter(field: "wired.chat.id", value: chatID)
-                    reply.addParameter(field: "wired.user.id", value: client.userID)
-                    App.serverController.send(message: reply, client: chat_user)
-                }
+            chat.removeClient(client.userID)
+            
+            chat.withClients { chatClient in
+                let reply = P7Message(withName: "wired.chat.user_leave", spec: client.socket.spec)
+                reply.addParameter(field: "wired.chat.id", value: chatID)
+                reply.addParameter(field: "wired.user.id", value: client.userID)
+                App.serverController.send(message: reply, client: chatClient)
             }
         }
     }
@@ -440,16 +429,14 @@ public class ChatsController : TableController {
             App.serverController.replyOK(client: client, message: message)
             
             // broadcast topic update
-            chat.clientsLock.concurrentlyRead {
-                for (_, toClient) in chat.clients {
-                    let reply = P7Message(withName: "wired.chat.topic", spec: message.spec)
-                    reply.addParameter(field: "wired.chat.id", value: chatID)
-                    reply.addParameter(field: "wired.user.nick", value: client.nick)
-                    reply.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
-                    reply.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
-                    
-                    App.serverController.reply(client: toClient, reply: reply, message: message)
-                }
+            chat.withClients { toClient in
+                let reply = P7Message(withName: "wired.chat.topic", spec: message.spec)
+                reply.addParameter(field: "wired.chat.id", value: chatID)
+                reply.addParameter(field: "wired.user.nick", value: client.nick)
+                reply.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
+                reply.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
+                
+                App.serverController.reply(client: toClient, reply: reply, message: message)
             }
             
         } catch let error {

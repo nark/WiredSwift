@@ -37,8 +37,8 @@ public class Chat: Model {
     @Field(key: "creationTime")
     public var creationTime:Date
     
-    public var clients:[UInt32:Client] = [:]
-    public var clientsLock:Lock = Lock()
+    private var clients:[UInt32:Client] = [:]
+    private var clientsLock:Lock = Lock()
     
     public required init() { }
     
@@ -69,6 +69,28 @@ public class Chat: Model {
     public func client(withID userID:UInt32) -> Client? {
         return self.clientsLock.concurrentlyRead {
             self.clients[userID]
+        }
+    }
+    
+    public func withClients(
+        _ body: (Client) -> Void
+    ) {
+        clientsLock.concurrentlyRead {
+            for (_, client) in clients {
+                body(client)
+            }
+        }
+    }
+    
+    public func addClient(_ client: Client) {
+        clientsLock.exclusivelyWrite {
+            self.clients[client.userID] = client
+        }
+    }
+
+    public func removeClient(_ userID: UInt32) {
+        clientsLock.exclusivelyWrite {
+            self.clients[userID] = nil
         }
     }
 }

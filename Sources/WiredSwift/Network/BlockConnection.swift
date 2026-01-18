@@ -11,7 +11,6 @@ import Foundation
 open class BlockConnection: Connection {
     private let queue = DispatchQueue(label: "fr.read-write.WiredSwift.BlockConnection", attributes: .concurrent)
     
-    var transactionCounter:UInt32 = 0
     var progressBlocks:[UInt32:(P7Message) -> Void] = [:]
     var completionBlocks:[UInt32:(P7Message?) -> Void] = [:]
     

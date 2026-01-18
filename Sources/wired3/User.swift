@@ -36,7 +36,7 @@ public class User: Model {
 
     public var group:String?
     public var groups:String?
-    
+        
     required public init() { }
     
     public init(username: String, password: String) {
