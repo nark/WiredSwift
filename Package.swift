@@ -9,15 +9,9 @@ var targets: [Target] = []
 
     
 
-#if os(Linux)
-    dependencies.append(.package(url: "https://github.com/IBM-Swift/OpenSSL.git", from: "2.2.0"))
-    targetDependencies.append(.byName(name: "OpenSSL"))
-#endif
-
-
 dependencies.append(.package(name: "AEXML", url: "https://github.com/tadija/AEXML.git", from: "4.5.0"))
 dependencies.append(.package(name: "CryptoSwift", url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.9.0")) // 1.3.0
-dependencies.append(.package(name: "SocketSwift", url: "https://github.com/BiAtoms/Socket.swift.git", from: "2.4.0"))
+dependencies.append(.package(path: "Vendor/SocketSwift"))
 dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBrancati/Queuer.git", from: "2.0.0"))
 dependencies.append(.package(name: "SWCompression", url: "https://github.com/tsolomko/SWCompression.git", from: "4.5.0"))
 #if !os(Linux)
