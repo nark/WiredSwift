@@ -57,6 +57,8 @@ public extension Data {
 
 private enum LinuxCompressionCodec {
     private static let chunkSize = 64 * 1024
+    private static let appleLZ4Header: [UInt8] = [0x62, 0x76, 0x34, 0x2d] // "bv4-"
+    private static let appleLZ4Footer: [UInt8] = [0x62, 0x76, 0x34, 0x24] // "bv4$"
 
     static func zlibDeflate(_ input: Data) -> Data? {
         processZlib(input: input, compress: true)
@@ -144,11 +146,6 @@ private enum LinuxCompressionCodec {
             return Data()
         }
 
-        // Prefer LZ4 frame format for better cross-platform interoperability.
-        if let framed = lz4FrameCompress(input) {
-            return framed
-        }
-
         let sourceCount = input.count
         let maxCompressedSize = Int(LZ4_compressBound(Int32(sourceCount)))
         guard maxCompressedSize > 0 else { return nil }
@@ -165,7 +162,13 @@ private enum LinuxCompressionCodec {
                                      Int32(maxCompressedSize))
             }
             guard written > 0 else { return nil }
-            return Data(destination.prefix(Int(written)))
+            var framed = Data()
+            framed.append(contentsOf: appleLZ4Header)
+            var originalSizeLE = UInt32(sourceCount).littleEndian
+            framed.append(Data(bytes: &originalSizeLE, count: MemoryLayout<UInt32>.size))
+            framed.append(destination, count: Int(written))
+            framed.append(contentsOf: appleLZ4Footer)
+            return framed
         }
     }
 
@@ -174,8 +177,26 @@ private enum LinuxCompressionCodec {
             return Data()
         }
 
-        if let framed = lz4FrameDecompress(input) {
-            return framed
+        if let payload = unwrapAppleLZ4Frame(input) {
+            let (compressed, expectedSize) = payload
+            if expectedSize == 0 {
+                return Data()
+            }
+            var destination = [UInt8](repeating: 0, count: expectedSize)
+            let decodedCount: Int32? = compressed.withUnsafeBytes { rawBuffer in
+                let source = rawBuffer.bindMemory(to: CChar.self)
+                guard let sourcePtr = source.baseAddress else { return nil }
+                return destination.withUnsafeMutableBufferPointer { outBuffer in
+                    LZ4_decompress_safe(sourcePtr,
+                                        outBuffer.baseAddress,
+                                        Int32(compressed.count),
+                                        Int32(expectedSize))
+                }
+            }
+            if let decodedCount, decodedCount == Int32(expectedSize) {
+                return Data(destination)
+            }
+            return nil
         }
 
         var destinationCapacity = max(chunkSize, input.count * 4)
@@ -204,86 +225,28 @@ private enum LinuxCompressionCodec {
         return nil
     }
 
-    private static func lz4FrameCompress(_ input: Data) -> Data? {
-        let bound = Int(LZ4F_compressFrameBound(input.count, nil))
-        guard bound > 0 else { return nil }
+    private static func unwrapAppleLZ4Frame(_ input: Data) -> (compressed: Data, expectedSize: Int)? {
+        let overhead = appleLZ4Header.count + MemoryLayout<UInt32>.size + appleLZ4Footer.count
+        guard input.count >= overhead else { return nil }
 
-        var destination = [UInt8](repeating: 0, count: bound)
-        let encodedSize: Int? = input.withUnsafeBytes { rawBuffer in
-            let source = rawBuffer.bindMemory(to: UInt8.self)
-            guard let sourcePtr = source.baseAddress else { return nil }
-            return destination.withUnsafeMutableBufferPointer { outBuffer in
-                let written = LZ4F_compressFrame(outBuffer.baseAddress,
-                                                 bound,
-                                                 sourcePtr,
-                                                 input.count,
-                                                 nil)
-                if LZ4F_isError(written) != 0 {
-                    return nil
-                }
-                return Int(written)
-            }
-        }
-
-        guard let encodedSize, encodedSize > 0 else { return nil }
-        return Data(destination.prefix(encodedSize))
-    }
-
-    private static func lz4FrameDecompress(_ input: Data) -> Data? {
-        var dctx: OpaquePointer?
-        guard LZ4F_isError(LZ4F_createDecompressionContext(&dctx, UInt32(LZ4F_VERSION))) == 0 else {
+        let prefix = input.prefix(appleLZ4Header.count)
+        let suffix = input.suffix(appleLZ4Footer.count)
+        guard Array(prefix) == appleLZ4Header, Array(suffix) == appleLZ4Footer else {
             return nil
         }
-        defer {
-            if let dctx {
-                LZ4F_freeDecompressionContext(dctx)
-            }
+
+        let sizeOffset = appleLZ4Header.count
+        let sizeEnd = sizeOffset + MemoryLayout<UInt32>.size
+        let sizeData = input.subdata(in: sizeOffset..<sizeEnd)
+        let expectedSize = sizeData.withUnsafeBytes { rawBuffer -> Int in
+            let value = rawBuffer.load(as: UInt32.self)
+            return Int(UInt32(littleEndian: value))
         }
 
-        var sourceOffset = 0
-        var output = Data()
-        var nextHint: Int = 1
-
-        while sourceOffset < input.count && nextHint > 0 {
-            var destination = [UInt8](repeating: 0, count: chunkSize)
-            var destinationSize = destination.count
-            var sourceSize = input.count - sourceOffset
-
-            let status = input.withUnsafeBytes { rawBuffer -> size_t in
-                let source = rawBuffer.bindMemory(to: UInt8.self)
-                guard let sourcePtr = source.baseAddress else {
-                    return size_t.max
-                }
-                return destination.withUnsafeMutableBufferPointer { outBuffer in
-                    guard let dctx, let outPtr = outBuffer.baseAddress else {
-                        return size_t.max
-                    }
-                    var srcConsumed = sourceSize
-                    var dstWritten = destinationSize
-                    let res = LZ4F_decompress(dctx,
-                                              outPtr,
-                                              &dstWritten,
-                                              sourcePtr.advanced(by: sourceOffset),
-                                              &srcConsumed,
-                                              nil)
-                    sourceSize = srcConsumed
-                    destinationSize = dstWritten
-                    return res
-                }
-            }
-
-            if status == size_t.max || LZ4F_isError(status) != 0 || sourceSize == 0 {
-                return nil
-            }
-
-            sourceOffset += sourceSize
-            if destinationSize > 0 {
-                output.append(destination, count: destinationSize)
-            }
-            nextHint = Int(status)
-        }
-
-        return nextHint == 0 ? output : nil
+        let payloadStart = sizeEnd
+        let payloadEnd = input.count - appleLZ4Footer.count
+        let payload = input.subdata(in: payloadStart..<payloadEnd)
+        return (payload, expectedSize)
     }
 
     static func lzfseCompress(_ input: Data) -> Data? {
