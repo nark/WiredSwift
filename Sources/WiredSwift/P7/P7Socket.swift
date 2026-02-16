@@ -11,7 +11,9 @@ import SocketSwift
 import CryptoSwift
 import Crypto
 import SWCompression
+#if !os(Linux)
 import DataCompression
+#endif
 
 var sha2_256DigestLength  = 32
 var sha2_384DigestLength  = 48
@@ -1345,7 +1347,7 @@ public class P7Socket: NSObject {
     
     // MARK: - COMPRESSION
     private func configureCompression() {
-        if self.compression == .DEFLATE {
+        if self.compression != .NONE {
             self.compressionEnabled = true
             
         } else {
