@@ -11,6 +11,10 @@ WiredSwift is an implementation of the Wired 2.0 protocol written in Swift.
 * iOS 12
 * Xcode 
 
+## Linux requirements
+
+    sudo apt-get install libressl zlib1g-dev liblz4-dev liblzfse-dev
+
 ## Dependencies
 
 Dependencies are managed by Swift Package Manager, have a look to the [Package.swif](https://github.com/nark/WiredSwift/blob/master/Package.swift) file for details. 
