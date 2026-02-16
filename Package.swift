@@ -13,7 +13,6 @@ dependencies.append(.package(name: "AEXML", url: "https://github.com/tadija/AEXM
 dependencies.append(.package(name: "CryptoSwift", url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.9.0")) // 1.3.0
 dependencies.append(.package(path: "Vendor/SocketSwift"))
 dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBrancati/Queuer.git", from: "2.0.0"))
-dependencies.append(.package(name: "SWCompression", url: "https://github.com/tsolomko/SWCompression.git", from: "4.5.0"))
 #if !os(Linux)
 dependencies.append(.package(name: "DataCompression", url: "https://github.com/mw99/DataCompression.git", from: "3.9.0"))
 #endif
@@ -27,7 +26,6 @@ targetDependencies.append(.byName(name: "AEXML"))
 targetDependencies.append(.byName(name: "CryptoSwift"))
 targetDependencies.append(.byName(name: "SocketSwift"))
 targetDependencies.append(.byName(name: "Queuer"))
-targetDependencies.append(.byName(name: "SWCompression"))
 #if !os(Linux)
 targetDependencies.append(.byName(name: "DataCompression"))
 #else

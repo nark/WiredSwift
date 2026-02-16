@@ -10,7 +10,6 @@ import Foundation
 import SocketSwift
 import CryptoSwift
 import Crypto
-import SWCompression
 #if !os(Linux)
 import DataCompression
 #endif
