@@ -29,15 +29,6 @@
         }
       },
       {
-        "package": "BitByteData",
-        "repositoryURL": "https://github.com/tsolomko/BitByteData",
-        "state": {
-          "branch": null,
-          "revision": "3ee55b113ae52d5c1f4cbec0ed4eae613dcd7eff",
-          "version": "1.4.3"
-        }
-      },
-      {
         "package": "Configuration",
         "repositoryURL": "https://github.com/Kitura/Configuration.git",
         "state": {
@@ -170,15 +161,6 @@
           "branch": null,
           "revision": "2ab61385b70da8ed74958ce62fa9ebf0359cb08b",
           "version": "1.12.2"
-        }
-      },
-      {
-        "package": "SWCompression",
-        "repositoryURL": "https://github.com/tsolomko/SWCompression.git",
-        "state": {
-          "branch": null,
-          "revision": "48ecebcadeecb81a41d66af547a5d7fcc1d8d5cb",
-          "version": "4.5.8"
         }
       },
       {
