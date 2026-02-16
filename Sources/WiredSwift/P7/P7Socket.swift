@@ -453,7 +453,7 @@ public class P7Socket: NSObject {
                 
                 // deflate
                 if self.compressionEnabled {
-                    messageData = try self.decompress(messageData)
+                    messageData = try self.compress(messageData)
                     
                     lengthData = Data()
                     lengthData.append(uint32: UInt32(messageData.count))
@@ -541,7 +541,7 @@ public class P7Socket: NSObject {
 
         // 4️⃣ Inflate
         if compressionEnabled {
-            payload = try compress(payload)
+            payload = try decompress(payload)
         }
 
         // 5️⃣ Checksum (STRICT framing)
@@ -637,7 +637,7 @@ public class P7Socket: NSObject {
         }
         
         if self.compressionEnabled {
-            messageData = try self.compress(messageData)
+            messageData = try self.decompress(messageData)
         }
         
         if self.checksumEnabled {
@@ -673,7 +673,7 @@ public class P7Socket: NSObject {
                                         
         // deflate
         if self.compressionEnabled {
-            messageData = try self.decompress(messageData)
+            messageData = try self.compress(messageData)
         }
 
         // encryption
@@ -1372,7 +1372,7 @@ public class P7Socket: NSObject {
     
     private func compress(_ data: Data) throws -> Data {
         if compression == .DEFLATE {
-            if let out = data.inflate() {
+            if let out = data.deflate() {
                 return out
             }
         } else if compression == .LZFSE {
@@ -1394,7 +1394,7 @@ public class P7Socket: NSObject {
         
     private func decompress(_ data: Data) throws -> Data {
         if compression == .DEFLATE {
-            if let out = data.deflate() {
+            if let out = data.inflate() {
                 return out
             }
         } else if compression == .LZFSE {
