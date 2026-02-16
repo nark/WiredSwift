@@ -144,6 +144,11 @@ private enum LinuxCompressionCodec {
             return Data()
         }
 
+        // Prefer LZ4 frame format for better cross-platform interoperability.
+        if let framed = lz4FrameCompress(input) {
+            return framed
+        }
+
         let sourceCount = input.count
         let maxCompressedSize = Int(LZ4_compressBound(Int32(sourceCount)))
         guard maxCompressedSize > 0 else { return nil }
@@ -167,6 +172,10 @@ private enum LinuxCompressionCodec {
     static func lz4Decompress(_ input: Data) -> Data? {
         if input.isEmpty {
             return Data()
+        }
+
+        if let framed = lz4FrameDecompress(input) {
+            return framed
         }
 
         var destinationCapacity = max(chunkSize, input.count * 4)
@@ -193,6 +202,88 @@ private enum LinuxCompressionCodec {
         }
 
         return nil
+    }
+
+    private static func lz4FrameCompress(_ input: Data) -> Data? {
+        let bound = Int(LZ4F_compressFrameBound(input.count, nil))
+        guard bound > 0 else { return nil }
+
+        var destination = [UInt8](repeating: 0, count: bound)
+        let encodedSize: Int? = input.withUnsafeBytes { rawBuffer in
+            let source = rawBuffer.bindMemory(to: UInt8.self)
+            guard let sourcePtr = source.baseAddress else { return nil }
+            return destination.withUnsafeMutableBufferPointer { outBuffer in
+                let written = LZ4F_compressFrame(outBuffer.baseAddress,
+                                                 bound,
+                                                 sourcePtr,
+                                                 input.count,
+                                                 nil)
+                if LZ4F_isError(written) != 0 {
+                    return nil
+                }
+                return Int(written)
+            }
+        }
+
+        guard let encodedSize, encodedSize > 0 else { return nil }
+        return Data(destination.prefix(encodedSize))
+    }
+
+    private static func lz4FrameDecompress(_ input: Data) -> Data? {
+        var dctx: OpaquePointer?
+        guard LZ4F_isError(LZ4F_createDecompressionContext(&dctx, LZ4F_VERSION)) == 0 else {
+            return nil
+        }
+        defer {
+            if let dctx {
+                LZ4F_freeDecompressionContext(dctx)
+            }
+        }
+
+        var sourceOffset = 0
+        var output = Data()
+        var nextHint: Int = 1
+
+        while sourceOffset < input.count && nextHint > 0 {
+            var destination = [UInt8](repeating: 0, count: chunkSize)
+            var destinationSize = destination.count
+            var sourceSize = input.count - sourceOffset
+
+            let status = input.withUnsafeBytes { rawBuffer -> size_t in
+                let source = rawBuffer.bindMemory(to: UInt8.self)
+                guard let sourcePtr = source.baseAddress else {
+                    return size_t.max
+                }
+                return destination.withUnsafeMutableBufferPointer { outBuffer in
+                    guard let dctx, let outPtr = outBuffer.baseAddress else {
+                        return size_t.max
+                    }
+                    var srcConsumed = sourceSize
+                    var dstWritten = destinationSize
+                    let res = LZ4F_decompress(dctx,
+                                              outPtr,
+                                              &dstWritten,
+                                              sourcePtr.advanced(by: sourceOffset),
+                                              &srcConsumed,
+                                              nil)
+                    sourceSize = srcConsumed
+                    destinationSize = dstWritten
+                    return res
+                }
+            }
+
+            if status == size_t.max || LZ4F_isError(status) != 0 || sourceSize == 0 {
+                return nil
+            }
+
+            sourceOffset += sourceSize
+            if destinationSize > 0 {
+                output.append(destination, count: destinationSize)
+            }
+            nextHint = Int(status)
+        }
+
+        return nextHint == 0 ? output : nil
     }
 
     static func lzfseCompress(_ input: Data) -> Data? {
