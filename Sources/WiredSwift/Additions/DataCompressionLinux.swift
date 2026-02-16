@@ -146,31 +146,16 @@ private enum LinuxCompressionCodec {
             return Data()
         }
 
-        let sourceCount = input.count
-        let maxCompressedSize = Int(LZ4_compressBound(Int32(sourceCount)))
-        guard maxCompressedSize > 0 else { return nil }
-
-        var destination = [UInt8](repeating: 0, count: maxCompressedSize)
-
-        return input.withUnsafeBytes { rawBuffer in
-            let source = rawBuffer.bindMemory(to: CChar.self)
-            guard let sourcePtr = source.baseAddress else { return nil }
-            let written = destination.withUnsafeMutableBufferPointer { outBuffer in
-                LZ4_compress_default(sourcePtr,
-                                     outBuffer.baseAddress,
-                                     Int32(sourceCount),
-                                     Int32(maxCompressedSize))
-            }
-            guard written > 0 else { return nil }
-            var framed = Data()
-            framed.append(contentsOf: appleLZ4Header)
-            var originalSizeLE = UInt32(sourceCount).littleEndian
-            framed.append(Data(bytes: &originalSizeLE, count: MemoryLayout<UInt32>.size))
-            framed.append(destination, count: Int(written))
-            framed.append(contentsOf: appleLZ4Footer)
-            Logger.debug("Linux LZ4 encode frame: in=\(sourceCount) out=\(framed.count) raw=\(written)")
-            return framed
-        }
+        // Apple's lz4 stream format accepts stored (uncompressed) payload in bv4 framing.
+        // Use this mode for strict cross-platform interoperability with Compression.framework.
+        var framed = Data()
+        framed.append(contentsOf: appleLZ4Header)
+        var originalSizeLE = UInt32(input.count).littleEndian
+        framed.append(Data(bytes: &originalSizeLE, count: MemoryLayout<UInt32>.size))
+        framed.append(input)
+        framed.append(contentsOf: appleLZ4Footer)
+        Logger.debug("Linux LZ4 encode frame (store): in=\(input.count) out=\(framed.count)")
+        return framed
     }
 
     static func lz4Decompress(_ input: Data) -> Data? {
@@ -183,6 +168,10 @@ private enum LinuxCompressionCodec {
             if expectedSize == 0 {
                 Logger.debug("Linux LZ4 decode frame: expectedSize=0")
                 return Data()
+            }
+            if compressed.count == expectedSize {
+                Logger.debug("Linux LZ4 decode frame (store): payload=\(compressed.count)")
+                return compressed
             }
             var destination = [UInt8](repeating: 0, count: expectedSize)
             let decodedCount: Int32? = compressed.withUnsafeBytes { rawBuffer in
