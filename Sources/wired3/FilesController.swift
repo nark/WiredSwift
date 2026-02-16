@@ -162,123 +162,19 @@ public class FilesController {
     
     
     private func replyList(_ path:String, _ recursive:Bool, _ client:Client, _ message:P7Message) {
-        var realPath:String = path
-        var isDir: ObjCBool = false
-        
         DispatchQueue.global(qos: .default).async {
-            if path == "/" {
-                realPath = self.rootPath
-            }
-            else {
-                realPath = self.real(path: path)
-            }
-                                     
-            if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir) {
+            let realPath: String = (path == "/") ? self.rootPath : self.real(path: path)
+            var isDir: ObjCBool = false
+
+            if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir) || !isDir.boolValue {
                 App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
-            
-            var files:[String]? = []
-            
-            do {
-                files = try FileManager.default.contentsOfDirectory(atPath: realPath)
-            } catch {
+
+            var visited: Set<String> = []
+            if !self.replyListRecursive(realPath: realPath, virtualPath: path, recursive: recursive, visited: &visited, client: client, message: message) {
                 App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
-            }
-    
-                                    
-            for file in files! {
-                // skip invisible file
-                if file.hasPrefix(".") {
-                    continue
-                }
-                
-                let virtualPath = path.stringByAppendingPathComponent(path: file)
-                let realFilePath = realPath.stringByAppendingPathComponent(path: file)
-                
-                let type = WiredSwift.File.FileType.type(path: realFilePath)
-                let privileges = FilePrivilege(path: realFilePath)
-
-                var datasize:UInt64 = 0
-                var rsrcsize:UInt64 = 0
-                var directorycount:UInt32 = 0
-
-                var readable = false
-                var writable = false
-
-                if type == .dropbox {
-                    if privileges != nil {
-                        readable = client.user!.hasPermission(toRead: privileges!)
-                        writable = client.user!.hasPermission(toWrite: privileges!)
-                    }
-                }
-
-                // TODO: read comment
-
-                switch(type) {
-                case .file:
-                  datasize = File.size(path: realFilePath)
-                  rsrcsize = 0
-                  directorycount = 0
-                case .dropbox:
-                  datasize = 0
-                  rsrcsize = 0
-                  directorycount = readable ? File.count(path: realFilePath) : 0
-                case .directory:
-                  datasize = 0
-                  rsrcsize = 0
-                  directorycount = File.count(path: realFilePath)
-                case .uploads:
-                  datasize = 0
-                  rsrcsize = 0
-                  directorycount = File.count(path: realFilePath)
-                case .none:
-                  datasize = 0
-                  rsrcsize = 0
-                  directorycount = 0
-                }
-                
-                // TODO: read label
-                // TODO: resolve alias or link if needed
-                                                    
-                let reply = P7Message(withName: "wired.file.file_list", spec: message.spec)
-                reply.addParameter(field: "wired.file.path", value: virtualPath)
-
-                if let type = File.FileType.type(path: realFilePath) {
-                    if type == .file {
-                        reply.addParameter(field: "wired.file.data_size", value: datasize)
-                        reply.addParameter(field: "wired.file.rsrc_size", value: rsrcsize)
-                    } else if type == .directory || type == .uploads || type == .dropbox {
-                        reply.addParameter(field: "wired.file.directory_count", value: directorycount)
-                    }
-                    
-                    reply.addParameter(field: "wired.file.type", value: type.rawValue)
-                }
-                                
-                reply.addParameter(field: "wired.file.link", value: false)
-                reply.addParameter(field: "wired.file.executable", value: false)
-                reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
-                reply.addParameter(field: "wired.file.volume", value: UInt32(0))
-                
-                if type == .dropbox {
-//                    if let p = privileges {
-//                        reply.addParameter(field: "wired.file.owner", value: p.owner)
-//                        reply.addParameter(field: "wired.file.owner.read", value: p.mode?.contains(File.FilePermissions.ownerRead))
-//                        reply.addParameter(field: "wired.file.owner.write", value: p.mode?.contains(File.FilePermissions.ownerWrite))
-//
-//                        reply.addParameter(field: "wired.file.group", value: p.owner)
-//                        reply.addParameter(field: "wired.file.group.read", value: p.mode?.contains(File.FilePermissions.groupRead))
-//                        reply.addParameter(field: "wired.file.group.write", value: p.mode?.contains(File.FilePermissions.groupWrite))
-//
-//                        reply.addParameter(field: "wired.file.everyone.read", value: p.mode?.contains(File.FilePermissions.everyoneRead))
-//                        reply.addParameter(field: "wired.file.everyone.write", value: p.mode?.contains(File.FilePermissions.everyoneWrite))
-//                    }
-                    reply.addParameter(field: "wired.file.readable", value: readable)
-                    reply.addParameter(field: "wired.file.writable", value: writable)
-                }
-                
-                App.serverController.reply(client: client, reply: reply, message: message)
             }
             
             let reply = P7Message(withName: "wired.file.file_list.done", spec: message.spec)
@@ -286,6 +182,122 @@ public class FilesController {
             reply.addParameter(field: "wired.file.available", value: UInt64(1))
             App.serverController.reply(client: client, reply: reply, message: message)
         }
+    }
+
+    private func replyListRecursive(
+        realPath: String,
+        virtualPath: String,
+        recursive: Bool,
+        visited: inout Set<String>,
+        client: Client,
+        message: P7Message
+    ) -> Bool {
+        let fm = FileManager.default
+        let canonicalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().standardized.path
+
+        if visited.contains(canonicalPath) {
+            return true
+        }
+        visited.insert(canonicalPath)
+
+        let files: [String]
+        do {
+            files = try fm.contentsOfDirectory(atPath: realPath).sorted()
+        } catch {
+            return false
+        }
+
+        for file in files {
+            // skip invisible file
+            if file.hasPrefix(".") {
+                continue
+            }
+
+            let childVirtualPath = virtualPath.stringByAppendingPathComponent(path: file)
+            let childRealPath = realPath.stringByAppendingPathComponent(path: file)
+
+            let type = WiredSwift.File.FileType.type(path: childRealPath)
+            let privileges = FilePrivilege(path: childRealPath)
+
+            var datasize: UInt64 = 0
+            var rsrcsize: UInt64 = 0
+            var directorycount: UInt32 = 0
+
+            var readable = false
+            var writable = false
+
+            if type == .dropbox, let privileges {
+                readable = client.user!.hasPermission(toRead: privileges)
+                writable = client.user!.hasPermission(toWrite: privileges)
+            }
+
+            // TODO: read comment
+            switch type {
+            case .file:
+                datasize = File.size(path: childRealPath)
+                rsrcsize = 0
+                directorycount = 0
+            case .dropbox:
+                datasize = 0
+                rsrcsize = 0
+                directorycount = readable ? File.count(path: childRealPath) : 0
+            case .directory:
+                datasize = 0
+                rsrcsize = 0
+                directorycount = File.count(path: childRealPath)
+            case .uploads:
+                datasize = 0
+                rsrcsize = 0
+                directorycount = File.count(path: childRealPath)
+            case .none:
+                datasize = 0
+                rsrcsize = 0
+                directorycount = 0
+            }
+
+            // TODO: read label
+            // TODO: resolve alias or link if needed
+            let reply = P7Message(withName: "wired.file.file_list", spec: message.spec)
+            reply.addParameter(field: "wired.file.path", value: childVirtualPath)
+
+            if let type = File.FileType.type(path: childRealPath) {
+                if type == .file {
+                    reply.addParameter(field: "wired.file.data_size", value: datasize)
+                    reply.addParameter(field: "wired.file.rsrc_size", value: rsrcsize)
+                } else if type == .directory || type == .uploads || type == .dropbox {
+                    reply.addParameter(field: "wired.file.directory_count", value: directorycount)
+                }
+
+                reply.addParameter(field: "wired.file.type", value: type.rawValue)
+            }
+
+            reply.addParameter(field: "wired.file.link", value: false)
+            reply.addParameter(field: "wired.file.executable", value: false)
+            reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
+            reply.addParameter(field: "wired.file.volume", value: UInt32(0))
+
+            if type == .dropbox {
+                reply.addParameter(field: "wired.file.readable", value: readable)
+                reply.addParameter(field: "wired.file.writable", value: writable)
+            }
+
+            App.serverController.reply(client: client, reply: reply, message: message)
+
+            if recursive && (type == .directory || type == .uploads || type == .dropbox) {
+                if !self.replyListRecursive(
+                    realPath: childRealPath,
+                    virtualPath: childVirtualPath,
+                    recursive: true,
+                    visited: &visited,
+                    client: client,
+                    message: message
+                ) {
+                    return false
+                }
+            }
+        }
+
+        return true
     }
     
     
