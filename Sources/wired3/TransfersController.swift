@@ -65,6 +65,16 @@ public class TransfersController {
     private var activeUploads: Int = 0
     private var userActiveDownloads: [String: Int] = [:]
     private var userActiveUploads: [String: Int] = [:]
+
+    private enum MessageReadTimeout: Error {
+        case timeout
+    }
+
+    private func effectiveLimit(_ value: Int?) -> Int? {
+        guard let value else { return nil }
+        // Wired semantics: 0 means unlimited.
+        return value > 0 ? value : nil
+    }
     
     
     
@@ -186,6 +196,35 @@ public class TransfersController {
         queueRecalcLock.unlock()
     }
 
+    private func readMessageWithTimeout(socket: P7Socket, timeout: TimeInterval) throws -> P7Message {
+        let semaphore = DispatchSemaphore(value: 0)
+        var result: Result<P7Message, Error>?
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                result = .success(try socket.readMessage())
+            } catch {
+                result = .failure(error)
+            }
+            semaphore.signal()
+        }
+
+        if semaphore.wait(timeout: .now() + timeout) == .timedOut {
+            throw MessageReadTimeout.timeout
+        }
+
+        guard let result else {
+            throw MessageReadTimeout.timeout
+        }
+
+        switch result {
+        case .success(let message):
+            return message
+        case .failure(let error):
+            throw error
+        }
+    }
+
     private func queueRecomputeLoop() {
         while true {
             queueRecalcLock.lock()
@@ -233,6 +272,11 @@ public class TransfersController {
         var newActiveUploads = activeUploads
         var newUserDownloads = userActiveDownloads
         var newUserUploads = userActiveUploads
+
+        let totalDownloadLimit = effectiveLimit(self.totalDownloadLimit)
+        let totalUploadLimit = effectiveLimit(self.totalUploadLimit)
+        let perUserDownloadLimit = effectiveLimit(self.perUserDownloadLimit)
+        let perUserUploadLimit = effectiveLimit(self.perUserUploadLimit)
 
         func canReserve(_ e: QueueEntry) -> Bool {
             if e.isDownload {
@@ -420,6 +464,17 @@ public class TransfersController {
     
     // MARK: -
     private func wait(untilReady transfer:Transfer, client:Client, message:P7Message) -> Bool {
+        // If no queue limits are active, transfers are immediately ready.
+        let hasActiveLimits =
+            effectiveLimit(totalDownloadLimit) != nil ||
+            effectiveLimit(totalUploadLimit) != nil ||
+            effectiveLimit(perUserDownloadLimit) != nil ||
+            effectiveLimit(perUserUploadLimit) != nil
+
+        if !hasActiveLimits {
+            return true
+        }
+
         // Make sure we have at least one recompute pass.
         self.signalQueueRecalc()
 
@@ -516,14 +571,39 @@ public class TransfersController {
             return false
         }
         
-        guard let reply2 = try? transfer.client.socket.readMessage() else {
-            Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path)")
+        let reply2: P7Message
+        while true {
+            let incoming: P7Message
+            do {
+                incoming = try readMessageWithTimeout(socket: transfer.client.socket, timeout: WiredTransferTimeout)
+            } catch MessageReadTimeout.timeout {
+                Logger.error("Timed out waiting for upload message from \(client.user!.username!) for \(transfer.path)")
+                return false
+            } catch {
+                Logger.error("Could not read message from \(client.user!.username!) while waiting for upload \(transfer.path): \(error)")
+                return false
+            }
+
+            if incoming.name == "wired.transfer.upload" {
+                reply2 = incoming
+                break
+            }
+
+            if incoming.name == "wired.send_ping" {
+                let pong = P7Message(withName: "wired.ping", spec: message.spec)
+                if let t = incoming.uint32(forField: "wired.transaction") {
+                    pong.addParameter(field: "wired.transaction", value: t)
+                }
+                if !transfer.client.socket.write(pong) {
+                    Logger.error("Could not reply ping while waiting for upload \(transfer.path)")
+                    return false
+                }
+                continue
+            }
+
+            Logger.error("Could not accept message \(incoming.name ?? "nil") from \(client.user!.username!): Expected 'wired.transfer.upload'")
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: incoming)
             return false
-        }
-        
-        if reply2.name != "wired.transfer.upload" {
-            Logger.error("Could not accept message \(reply2.name!) from \(client.user!.username!): Expected 'wired.transfer.upload'")
-            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: reply2)
         }
 
         transfer.remainingDataSize = reply2.uint64(forField: "wired.transfer.data")
@@ -655,9 +735,11 @@ public class TransfersController {
                 break
             }
             
-            guard let inData = try? transfer.client.socket.readOOB(timeout: WiredTransferTimeout) else {
-                Logger.error("Could not read upload from \(transfer.realDataPath!)")
-
+            let inData: Data
+            do {
+                inData = try transfer.client.socket.readOOB(timeout: WiredTransferTimeout)
+            } catch {
+                Logger.error("Could not read upload from \(transfer.realDataPath!): \(error)")
                 result = false
                 break
             }

@@ -524,15 +524,26 @@ public class P7Socket: NSObject {
 
                 //print("write data : \(messageData.toHexString())")
                 
-                _ = self.write(Array(lengthData), maxLength: lengthData.count)
-                _ = self.write(Array(messageData), maxLength: Array(messageData).count)
+                let wroteLength = self.write(Array(lengthData), maxLength: lengthData.count)
+                if wroteLength != lengthData.count {
+                    return false
+                }
+
+                let payloadBytes = Array(messageData)
+                let wrotePayload = self.write(payloadBytes, maxLength: payloadBytes.count)
+                if wrotePayload != payloadBytes.count {
+                    return false
+                }
                                 
                 // checksum
                 if self.checksumEnabled {
                     do {
                         let c = try self.checksumData(messageData)
                         
-                        _ = self.write(Array(c), maxLength: self.checksumLength(self.digest.type))
+                        let wroteChecksum = self.write(Array(c), maxLength: self.checksumLength(self.digest.type))
+                        if wroteChecksum != self.checksumLength(self.digest.type) {
+                            return false
+                        }
 
                     } catch let error {
                         Logger.error("Checksum failed abnormally \(error)")
@@ -617,28 +628,62 @@ public class P7Socket: NSObject {
     
     
     // MARK: - PRIVATE READ/WRITE
-    private func write(_ buffer: Array<UInt8>, maxLength len: Int, timeout:TimeInterval = 1.0) -> Int {
-        while let available = try? socket?.wait(for: .write, timeout: timeout), self.connected == true {
-            guard available else { continue } // timeout happend, try again
-            
-            let n = try? socket?.write(buffer, size: len)
-            
-            return n ?? 0
+    private func write(
+        _ buffer: Array<UInt8>,
+        maxLength len: Int,
+        timeout: TimeInterval = 1.0,
+        enforceDeadline: Bool = false
+    ) -> Int {
+        guard len > 0 else { return 0 }
+
+        var written = 0
+        let start = Date()
+        while self.connected == true && written < len {
+            if enforceDeadline && Date().timeIntervalSince(start) >= timeout {
+                break
+            }
+
+            guard let available = try? socket?.wait(for: .write, timeout: timeout) else {
+                break
+            }
+            guard available else { continue }
+
+            let remaining = len - written
+            let n: Int = buffer.withUnsafeBytes { raw in
+                guard let base = raw.baseAddress else { return 0 }
+                let ptr = base.advanced(by: written)
+                return (try? socket?.write(ptr, size: remaining)) ?? 0
+            }
+
+            if n <= 0 {
+                break
+            }
+
+            written += n
         }
-        
-        return 0
+
+        return written
     }
     
     
-    private func readExactly(size: Int, timeout: TimeInterval = 1.0) throws -> Data {
+    private func readExactly(
+        size: Int,
+        timeout: TimeInterval = 1.0,
+        enforceDeadline: Bool = false
+    ) throws -> Data {
         guard let socket = socket else {
             throw Socket.Error(errno: -1)
         }
 
         var buffer = Data()
         buffer.reserveCapacity(size)
+        let start = Date()
 
         while buffer.count < size {
+            if enforceDeadline && Date().timeIntervalSince(start) >= timeout {
+                throw P7SocketError.readFailed("Timed out while reading data")
+            }
+
             // Vérifie la connexion de façon thread-safe
             guard connected else { throw Socket.Error(errno: ECONNRESET) }
 
@@ -670,14 +715,14 @@ public class P7Socket: NSObject {
     
     // MARK: - OOB DATA
     public func readOOB(timeout:TimeInterval = 1.0) throws -> Data {
-        let lengthData = try readExactly(size: 4, timeout: timeout)
+        let lengthData = try readExactly(size: 4, timeout: timeout, enforceDeadline: true)
         
         guard let messageLength = Data(lengthData).uint32 else {
             Logger.error("Cannot read message length")
             throw P7SocketError.readFailed("Cannot read message length")
         }
         
-        var messageData = try self.readExactly(size: Int(messageLength), timeout: timeout)
+        var messageData = try self.readExactly(size: Int(messageLength), timeout: timeout, enforceDeadline: true)
         let originalPayload = messageData
         
         if self.encryptionEnabled {
@@ -689,7 +734,7 @@ public class P7Socket: NSObject {
         }
         
         if self.checksumEnabled {
-            let remoteChecksum = try readExactly(size: checksumLength(self.digest.type))
+            let remoteChecksum = try readExactly(size: checksumLength(self.digest.type), timeout: timeout, enforceDeadline: true)
             let localChecksum = try checksumData(originalPayload)
             
             if localChecksum != remoteChecksum {
@@ -732,14 +777,25 @@ public class P7Socket: NSObject {
             lengthData.append(uint32: UInt32(messageData.count))
         }
                 
-        _ = try self.socket?.write(Array(lengthData), size: lengthData.count)
-        _ = try self.socket?.write(Array(messageData), size: messageData.count)
+        let wroteLength = self.write(Array(lengthData), maxLength: lengthData.count, timeout: timeout, enforceDeadline: true)
+        guard wroteLength == lengthData.count else {
+            throw P7SocketError.writeFailed("Cannot write OOB length")
+        }
+
+        let payloadBytes = Array(messageData)
+        let wrotePayload = self.write(payloadBytes, maxLength: payloadBytes.count, timeout: timeout, enforceDeadline: true)
+        guard wrotePayload == payloadBytes.count else {
+            throw P7SocketError.writeFailed("Cannot write OOB payload")
+        }
                         
         // checksum
         if self.checksumEnabled {
             let c = try self.checksumData(messageData)
             
-            _ = self.write(Array(c), maxLength: self.checksumLength(self.digest.type))
+            let wroteChecksum = self.write(Array(c), maxLength: self.checksumLength(self.digest.type), timeout: timeout, enforceDeadline: true)
+            guard wroteChecksum == self.checksumLength(self.digest.type) else {
+                throw P7SocketError.writeFailed("Cannot write OOB checksum")
+            }
         }
     }
     
