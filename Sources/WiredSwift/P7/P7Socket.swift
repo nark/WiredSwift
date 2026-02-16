@@ -252,6 +252,18 @@ public class P7Socket: NSObject {
         || cipherType.contains(.ECDH_CHACHA20_POLY1305)
         || cipherType.contains(.ECDH_XCHACHA20_POLY1305)
     }
+
+    private func normalizedCompression(_ value: Compression) -> Compression {
+        #if os(Linux)
+        var normalized = value
+        if !LinuxCompressionSupport.isLZFSEAvailable {
+            normalized.remove(.LZFSE)
+        }
+        return normalized.rawValue == 0 ? .NONE : normalized
+        #else
+        return value
+        #endif
+    }
     
     
     public init(hostname: String, port: Int, spec: P7Spec) {
@@ -294,6 +306,8 @@ public class P7Socket: NSObject {
     
     // MARK: - CONNECTION
     public func connect(withHandshake handshake: Bool = true) throws {
+        self.compression = normalizedCompression(self.compression)
+        self.compressionFallback = normalizedCompression(self.compressionFallback)
 
         do {
             self.socket = try Socket(.inet, type: .stream, protocol: .tcp)
@@ -786,7 +800,8 @@ public class P7Socket: NSObject {
         var clientChecksum:P7Socket.Checksum       = .NONE
         var clientCompression:P7Socket.Compression = .NONE
         
-        self.compression = compression
+        self.compression = normalizedCompression(compression)
+        self.compressionFallback = normalizedCompression(self.compressionFallback)
         self.cipherType = cipher
         self.checksum = checksum
         

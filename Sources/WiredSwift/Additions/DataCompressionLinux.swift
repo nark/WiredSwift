@@ -1,8 +1,14 @@
 #if os(Linux)
 import Foundation
+import Glibc
 import CZlib
 import CLZ4
-import CLZFSE
+
+public enum LinuxCompressionSupport {
+    public static var isLZFSEAvailable: Bool {
+        LinuxLZFSE.shared.isAvailable
+    }
+}
 
 public extension Data {
     enum CompressionAlgorithm {
@@ -190,6 +196,10 @@ private enum LinuxCompressionCodec {
     }
 
     static func lzfseCompress(_ input: Data) -> Data? {
+        guard let encode = LinuxLZFSE.shared.encode else {
+            return nil
+        }
+
         if input.isEmpty {
             return Data()
         }
@@ -203,11 +213,11 @@ private enum LinuxCompressionCodec {
                 let source = rawBuffer.bindMemory(to: UInt8.self)
                 guard let sourcePtr = source.baseAddress else { return nil }
                 return destination.withUnsafeMutableBufferPointer { outBuffer in
-                    Int(lzfse_encode_buffer(outBuffer.baseAddress,
-                                            destinationCapacity,
-                                            sourcePtr,
-                                            input.count,
-                                            nil))
+                    encode(outBuffer.baseAddress,
+                           destinationCapacity,
+                           sourcePtr,
+                           input.count,
+                           nil)
                 }
             }
 
@@ -222,6 +232,10 @@ private enum LinuxCompressionCodec {
     }
 
     static func lzfseDecompress(_ input: Data) -> Data? {
+        guard let decode = LinuxLZFSE.shared.decode else {
+            return nil
+        }
+
         if input.isEmpty {
             return Data()
         }
@@ -235,11 +249,11 @@ private enum LinuxCompressionCodec {
                 let source = rawBuffer.bindMemory(to: UInt8.self)
                 guard let sourcePtr = source.baseAddress else { return nil }
                 return destination.withUnsafeMutableBufferPointer { outBuffer in
-                    Int(lzfse_decode_buffer(outBuffer.baseAddress,
-                                            destinationCapacity,
-                                            sourcePtr,
-                                            input.count,
-                                            nil))
+                    decode(outBuffer.baseAddress,
+                           destinationCapacity,
+                           sourcePtr,
+                           input.count,
+                           nil)
                 }
             }
 
@@ -251,6 +265,54 @@ private enum LinuxCompressionCodec {
         }
 
         return nil
+    }
+}
+
+private struct LinuxLZFSE {
+    typealias EncodeFn = @convention(c) (UnsafeMutablePointer<UInt8>?, Int, UnsafePointer<UInt8>?, Int, UnsafeMutableRawPointer?) -> Int
+    typealias DecodeFn = @convention(c) (UnsafeMutablePointer<UInt8>?, Int, UnsafePointer<UInt8>?, Int, UnsafeMutableRawPointer?) -> Int
+
+    static let shared = LinuxLZFSE()
+
+    let handle: UnsafeMutableRawPointer?
+    let encode: EncodeFn?
+    let decode: DecodeFn?
+
+    var isAvailable: Bool {
+        encode != nil && decode != nil
+    }
+
+    init() {
+        let candidates = ["liblzfse.so", "liblzfse.so.1", "liblzfse.so.0"]
+        var loadedHandle: UnsafeMutableRawPointer? = nil
+
+        for library in candidates {
+            if let handle = dlopen(library, RTLD_LAZY | RTLD_LOCAL) {
+                loadedHandle = handle
+                break
+            }
+        }
+
+        guard let loadedHandle else {
+            self.handle = nil
+            self.encode = nil
+            self.decode = nil
+            return
+        }
+
+        guard let encodeSymbol = dlsym(loadedHandle, "lzfse_encode_buffer"),
+              let decodeSymbol = dlsym(loadedHandle, "lzfse_decode_buffer")
+        else {
+            dlclose(loadedHandle)
+            self.handle = nil
+            self.encode = nil
+            self.decode = nil
+            return
+        }
+
+        self.handle = loadedHandle
+        self.encode = unsafeBitCast(encodeSymbol, to: EncodeFn.self)
+        self.decode = unsafeBitCast(decodeSymbol, to: DecodeFn.self)
     }
 }
 #endif

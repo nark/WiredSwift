@@ -33,7 +33,6 @@ targetDependencies.append(.byName(name: "DataCompression"))
 #else
 targetDependencies.append(.byName(name: "CZlib"))
 targetDependencies.append(.byName(name: "CLZ4"))
-targetDependencies.append(.byName(name: "CLZFSE"))
 #endif
 targetDependencies.append(.product(name: "Crypto", package: "swift-crypto"))
 targetDependencies.append(.product(name: "Fluent", package: "fluent"))
@@ -80,16 +79,6 @@ targets.append(
         providers: [
             .apt(["liblz4-dev"]),
             .brew(["lz4"])
-        ]
-    )
-)
-targets.append(
-    .systemLibrary(
-        name: "CLZFSE",
-        pkgConfig: "liblzfse",
-        providers: [
-            .apt(["liblzfse-dev"]),
-            .brew(["lzfse"])
         ]
     )
 )
