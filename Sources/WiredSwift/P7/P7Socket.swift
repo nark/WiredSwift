@@ -270,6 +270,49 @@ public class P7Socket: NSObject {
         let hex = prefix.map { String(format: "%02x", $0) }.joined(separator: " ")
         return "\(hex) (len=\(data.count))"
     }
+
+    // Keep LZ4 wire format deterministic across platforms:
+    // use Apple-compatible stored frame (bv4- + size + payload + bv4$).
+    private func encodeLZ4StoreFrame(_ data: Data) -> Data {
+        let header: [UInt8] = [0x62, 0x76, 0x34, 0x2d] // "bv4-"
+        let footer: [UInt8] = [0x62, 0x76, 0x34, 0x24] // "bv4$"
+
+        var framed = Data()
+        framed.append(contentsOf: header)
+        var sizeLE = UInt32(data.count).littleEndian
+        framed.append(Data(bytes: &sizeLE, count: MemoryLayout<UInt32>.size))
+        framed.append(data)
+        framed.append(contentsOf: footer)
+        return framed
+    }
+
+    private func decodeLZ4StoreFrame(_ data: Data) -> Data? {
+        let overhead = 4 + MemoryLayout<UInt32>.size + 4
+        guard data.count >= overhead else { return nil }
+
+        let prefix = Array(data.prefix(4))
+        let suffix = Array(data.suffix(4))
+        guard prefix.count == 4,
+              prefix[0] == 0x62, // b
+              prefix[1] == 0x76, // v
+              prefix[2] == 0x34, // 4
+              suffix == [0x62, 0x76, 0x34, 0x24] // bv4$
+        else {
+            return nil
+        }
+
+        let sizeData = data.subdata(in: 4..<(4 + MemoryLayout<UInt32>.size))
+        let expectedSize = sizeData.withUnsafeBytes { rawBuffer -> Int in
+            Int(UInt32(littleEndian: rawBuffer.load(as: UInt32.self)))
+        }
+
+        let payload = data.subdata(in: (4 + MemoryLayout<UInt32>.size)..<(data.count - 4))
+        if payload.count == expectedSize {
+            return payload
+        }
+
+        return nil
+    }
     
     
     public init(hostname: String, port: Int, spec: P7Spec) {
@@ -1387,9 +1430,7 @@ public class P7Socket: NSObject {
             }
             
         } else if compression == .LZ4 {
-            if let out = data.compress(withAlgorithm: .lz4) {
-                return out
-            }
+            return encodeLZ4StoreFrame(data)
             
         } else if compression == .NONE {
             return data
@@ -1409,6 +1450,9 @@ public class P7Socket: NSObject {
             }
             
         } else if compression == .LZ4 {
+            if let out = decodeLZ4StoreFrame(data) {
+                return out
+            }
             if let out = data.decompress(withAlgorithm: .lz4) {
                 return out
             }
