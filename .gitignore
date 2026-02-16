@@ -91,3 +91,5 @@ fastlane/test_output
 
 iOSInjectionProject/
 run/
+
+*.db
