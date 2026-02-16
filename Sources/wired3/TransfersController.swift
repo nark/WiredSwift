@@ -562,6 +562,8 @@ public class TransfersController {
 
                     App.indexController.addIndex(forPath: url.path)
                 }
+
+                App.filesController.notifyDirectoryChanged(path: transfer.path.stringByDeletingLastPathComponent)
             } catch let error {
                 Logger.error("Could not move \(transfer.realDataPath!) to \(url.path): \(error)")
             }

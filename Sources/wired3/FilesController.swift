@@ -10,6 +10,9 @@ import WiredSwift
 
 public class FilesController {
     public var rootPath:String
+    private let subscriptionsLock = NSLock()
+    private var subscribedRealPathsByClient:[UInt32:Set<String>] = [:]
+    private var subscribedVirtualPathsByClient:[UInt32:[String:String]] = [:]
     
     
     public init(rootPath:String) {
@@ -91,7 +94,8 @@ public class FilesController {
         }
         
         if createPath(path, type: fileType, user: client.user!, message: message) {
-            
+            self.notifyDirectoryChanged(path: path.stringByDeletingLastPathComponent)
+            App.serverController.replyOK(client: client, message: message)
         }
     }
     
@@ -132,6 +136,8 @@ public class FilesController {
     
     private func delete(path:String, client:Client, message:P7Message) -> Bool {
         let realPath = self.real(path: path)
+        let parentPath = path.stringByDeletingLastPathComponent
+        let isDirectory = File.FileType.type(path: realPath) != .file
         
         do {
             try FileManager.default.removeItem(atPath: realPath)
@@ -143,6 +149,12 @@ public class FilesController {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             
             return false
+        }
+
+        self.notifyDirectoryChanged(path: parentPath)
+
+        if isDirectory {
+            self.notifyDirectoryDeleted(path: path)
         }
         
         return true
@@ -309,5 +321,130 @@ public class FilesController {
         }
         
         return true
+    }
+
+
+    // MARK: - Directory subscriptions
+    public func subscribeDirectory(client: Client, message: P7Message) {
+        if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let virtualPath = message.string(forField: "wired.file.path") else {
+            return
+        }
+
+        if !File.isValid(path: virtualPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedVirtualPath = NSString(string: virtualPath).standardizingPath
+        let realPath = URL(fileURLWithPath: self.real(path: normalizedVirtualPath)).resolvingSymlinksInPath().path
+        var isDirectory: ObjCBool = false
+
+        if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        subscriptionsLock.lock()
+        if subscribedRealPathsByClient[client.userID] == nil {
+            subscribedRealPathsByClient[client.userID] = Set<String>()
+        }
+        subscribedRealPathsByClient[client.userID]?.insert(realPath)
+
+        if subscribedVirtualPathsByClient[client.userID] == nil {
+            subscribedVirtualPathsByClient[client.userID] = [:]
+        }
+        subscribedVirtualPathsByClient[client.userID]?[realPath] = normalizedVirtualPath
+        subscriptionsLock.unlock()
+
+        App.serverController.replyOK(client: client, message: message)
+    }
+
+    public func unsubscribeDirectory(client: Client, message: P7Message) {
+        if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let virtualPath = message.string(forField: "wired.file.path") else {
+            return
+        }
+
+        if !File.isValid(path: virtualPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedVirtualPath = NSString(string: virtualPath).standardizingPath
+        let realPath = URL(fileURLWithPath: self.real(path: normalizedVirtualPath)).resolvingSymlinksInPath().path
+        var isDirectory: ObjCBool = false
+
+        if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        subscriptionsLock.lock()
+        let isSubscribed = subscribedRealPathsByClient[client.userID]?.contains(realPath) ?? false
+
+        if isSubscribed {
+            subscribedRealPathsByClient[client.userID]?.remove(realPath)
+            subscribedVirtualPathsByClient[client.userID]?[realPath] = nil
+        }
+        subscriptionsLock.unlock()
+
+        if !isSubscribed {
+            App.serverController.replyError(client: client, error: "wired.error.not_subscribed", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+    }
+
+    public func unsubscribeAll(client: Client) {
+        subscriptionsLock.lock()
+        subscribedRealPathsByClient[client.userID] = nil
+        subscribedVirtualPathsByClient[client.userID] = nil
+        subscriptionsLock.unlock()
+    }
+
+    public func notifyDirectoryChanged(path: String) {
+        notify(path: path, messageName: "wired.file.directory_changed", removeSubscriptionAfterNotify: false)
+    }
+
+    public func notifyDirectoryDeleted(path: String) {
+        notify(path: path, messageName: "wired.file.directory_deleted", removeSubscriptionAfterNotify: true)
+    }
+
+    private func notify(path: String, messageName: String, removeSubscriptionAfterNotify: Bool) {
+        let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+        var deliveries:[(Client, String)] = []
+
+        subscriptionsLock.lock()
+        for (userID, paths) in subscribedRealPathsByClient where paths.contains(realPath) {
+            if let virtualPath = subscribedVirtualPathsByClient[userID]?[realPath],
+               let client = App.clientsController.user(withID: userID),
+               client.state == .LOGGED_IN {
+                deliveries.append((client, virtualPath))
+            }
+        }
+
+        if removeSubscriptionAfterNotify {
+            for userID in subscribedRealPathsByClient.keys {
+                subscribedRealPathsByClient[userID]?.remove(realPath)
+                subscribedVirtualPathsByClient[userID]?[realPath] = nil
+            }
+        }
+        subscriptionsLock.unlock()
+
+        for (client, virtualPath) in deliveries {
+            let reply = P7Message(withName: messageName, spec: client.socket.spec)
+            reply.addParameter(field: "wired.file.path", value: virtualPath)
+            _ = App.serverController.send(message: reply, client: client)
+        }
     }
 }

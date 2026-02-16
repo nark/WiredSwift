@@ -131,6 +131,7 @@ public class ServerController: ServerDelegate {
     
     
     public func disconnectClient(client: Client) {
+        App.filesController.unsubscribeAll(client: client)
         App.chatsController.userLeave(client: client)
         App.clientsController.removeClient(client: client)
     }
@@ -287,11 +288,20 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.file.delete" {
             App.filesController.delete(client: client, message: message)
         }
+        else if message.name == "wired.file.subscribe_directory" {
+            App.filesController.subscribeDirectory(client: client, message: message)
+        }
+        else if message.name == "wired.file.unsubscribe_directory" {
+            App.filesController.unsubscribeDirectory(client: client, message: message)
+        }
         else if message.name == "wired.transfer.download_file" {
             self.receiveDownloadFile(client, message)
         }
         else if message.name == "wired.transfer.upload_file" {
             self.receiveUploadFile(client, message)
+        }
+        else if message.name == "wired.transfer.upload_directory" {
+            self.receiveUploadDirectory(client, message)
         }
         else if message.name == "wired.settings.get_settings" {
             self.receiveGetSettings(client: client, message: message)
@@ -586,9 +596,16 @@ public class ServerController: ServerDelegate {
         // user privileges
         if let type = File.FileType.type(path: parentPath) {
             switch type {
-                case .directory:    if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_files")      { return }; break
-                case .uploads:      if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_anywhere")   { return }; break
-                default:            if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_anywhere")   { return }; break
+                case .uploads, .dropbox:
+                    if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_files") {
+                        App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                        return
+                    }
+                default:
+                    if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_anywhere") {
+                        App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                        return
+                    }
             }
         }
         
@@ -615,6 +632,61 @@ public class ServerController: ServerDelegate {
             
             client.transfer = nil
         }
+    }
+
+
+    private func receiveUploadDirectory(_ client:Client, _ message:P7Message) {
+        if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_directories") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let path = message.string(forField: "wired.file.path") else {
+            return
+        }
+
+        // sanitize checks
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let realPath = App.filesController.real(path: path)
+
+        // file privileges
+        if let privilege = FilePrivilege(path: realPath) {
+            if !client.user!.hasPermission(toWrite: privilege) {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        }
+
+        let parentPath = realPath.stringByDeletingLastPathComponent
+
+        guard let parentType = File.FileType.type(path: parentPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if parentType == .directory && !client.user!.hasPrivilege(name: "wired.account.transfer.upload_anywhere") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        do {
+            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o777])
+        } catch {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if parentType != .directory {
+            _ = File.FileType.set(type: parentType, path: realPath)
+        }
+
+        App.indexController.addIndex(forPath: realPath)
+        App.filesController.notifyDirectoryChanged(path: path.stringByDeletingLastPathComponent)
+        App.serverController.replyOK(client: client, message: message)
     }
     
     
