@@ -8,6 +8,11 @@
 import Foundation
 import WiredSwift
 import Queuer
+#if os(Linux)
+import Glibc
+#else
+import Darwin
+#endif
 
 
 let WiredTransferBufferSize = 16384
@@ -664,7 +669,7 @@ public class TransfersController {
                     return -1
                 }
 
-                return Darwin.write(
+                return write(
                     transfer.dataFd.fileDescriptor,
                     baseAddress,
                     rawBuffer.count
