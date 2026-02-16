@@ -57,7 +57,7 @@ public extension Data {
 
 private enum LinuxCompressionCodec {
     private static let chunkSize = 64 * 1024
-    private static let appleLZ4Header: [UInt8] = [0x62, 0x76, 0x34, 0x2d] // "bv4-"
+    private static let appleLZ4HeaderStore: [UInt8] = [0x62, 0x76, 0x34, 0x2d] // "bv4-"
     private static let appleLZ4Footer: [UInt8] = [0x62, 0x76, 0x34, 0x24] // "bv4$"
 
     static func zlibDeflate(_ input: Data) -> Data? {
@@ -149,7 +149,7 @@ private enum LinuxCompressionCodec {
         // Apple's lz4 stream format accepts stored (uncompressed) payload in bv4 framing.
         // Use this mode for strict cross-platform interoperability with Compression.framework.
         var framed = Data()
-        framed.append(contentsOf: appleLZ4Header)
+        framed.append(contentsOf: appleLZ4HeaderStore)
         var originalSizeLE = UInt32(input.count).littleEndian
         framed.append(Data(bytes: &originalSizeLE, count: MemoryLayout<UInt32>.size))
         framed.append(input)
@@ -164,13 +164,13 @@ private enum LinuxCompressionCodec {
         }
 
         if let payload = unwrapAppleLZ4Frame(input) {
-            let (compressed, expectedSize) = payload
+            let (compressed, expectedSize, variant) = payload
             if expectedSize == 0 {
                 Logger.debug("Linux LZ4 decode frame: expectedSize=0")
                 return Data()
             }
             if compressed.count == expectedSize {
-                Logger.debug("Linux LZ4 decode frame (store): payload=\(compressed.count)")
+                Logger.debug("Linux LZ4 decode frame (store): variant=\(variant) payload=\(compressed.count)")
                 return compressed
             }
             var destination = [UInt8](repeating: 0, count: expectedSize)
@@ -185,10 +185,10 @@ private enum LinuxCompressionCodec {
                 }
             }
             if let decodedCount, decodedCount == Int32(expectedSize) {
-                Logger.debug("Linux LZ4 decode frame: compressed=\(compressed.count) decoded=\(decodedCount)")
+                Logger.debug("Linux LZ4 decode frame: variant=\(variant) compressed=\(compressed.count) decoded=\(decodedCount)")
                 return Data(destination)
             }
-            Logger.error("Linux LZ4 decode frame failed: compressed=\(compressed.count) expected=\(expectedSize) decoded=\(decodedCount ?? -1)")
+            Logger.error("Linux LZ4 decode frame failed: variant=\(variant) compressed=\(compressed.count) expected=\(expectedSize) decoded=\(decodedCount ?? -1)")
             return nil
         }
 
@@ -219,18 +219,25 @@ private enum LinuxCompressionCodec {
         return nil
     }
 
-    private static func unwrapAppleLZ4Frame(_ input: Data) -> (compressed: Data, expectedSize: Int)? {
-        let overhead = appleLZ4Header.count + MemoryLayout<UInt32>.size + appleLZ4Footer.count
+    private static func unwrapAppleLZ4Frame(_ input: Data) -> (compressed: Data, expectedSize: Int, variant: UInt8)? {
+        let overhead = 4 + MemoryLayout<UInt32>.size + appleLZ4Footer.count
         guard input.count >= overhead else { return nil }
 
-        let prefix = input.prefix(appleLZ4Header.count)
+        let prefix = input.prefix(4)
         let suffix = input.suffix(appleLZ4Footer.count)
-        guard Array(prefix) == appleLZ4Header, Array(suffix) == appleLZ4Footer else {
+        let prefixBytes = Array(prefix)
+        guard prefixBytes.count == 4,
+              prefixBytes[0] == 0x62, // b
+              prefixBytes[1] == 0x76, // v
+              prefixBytes[2] == 0x34, // 4
+              Array(suffix) == appleLZ4Footer
+        else {
             Logger.debug("Linux LZ4 frame markers not found: prefix=\(Array(prefix)) suffix=\(Array(suffix))")
             return nil
         }
+        let variant = prefixBytes[3]
 
-        let sizeOffset = appleLZ4Header.count
+        let sizeOffset = 4
         let sizeEnd = sizeOffset + MemoryLayout<UInt32>.size
         let sizeData = input.subdata(in: sizeOffset..<sizeEnd)
         let expectedSize = sizeData.withUnsafeBytes { rawBuffer -> Int in
@@ -241,8 +248,8 @@ private enum LinuxCompressionCodec {
         let payloadStart = sizeEnd
         let payloadEnd = input.count - appleLZ4Footer.count
         let payload = input.subdata(in: payloadStart..<payloadEnd)
-        Logger.debug("Linux LZ4 frame detected: payload=\(payload.count) expected=\(expectedSize)")
-        return (payload, expectedSize)
+        Logger.debug("Linux LZ4 frame detected: variant=\(variant) payload=\(payload.count) expected=\(expectedSize)")
+        return (payload, expectedSize, variant)
     }
 
     static func lzfseCompress(_ input: Data) -> Data? {
