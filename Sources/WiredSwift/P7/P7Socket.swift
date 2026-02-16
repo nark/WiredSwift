@@ -264,6 +264,12 @@ public class P7Socket: NSObject {
         return value
         #endif
     }
+
+    private func compressionPreview(_ data: Data, limit: Int = 16) -> String {
+        let prefix = data.prefix(limit)
+        let hex = prefix.map { String(format: "%02x", $0) }.joined(separator: " ")
+        return "\(hex) (len=\(data.count))"
+    }
     
     
     public init(hostname: String, port: Int, spec: P7Spec) {
@@ -1388,7 +1394,7 @@ public class P7Socket: NSObject {
         } else if compression == .NONE {
             return data
         }
-        
+        Logger.error("Compression encode failed for \(compression). input=\(compressionPreview(data))")
         throw P7SocketError.inflateError
     }
         
@@ -1410,7 +1416,7 @@ public class P7Socket: NSObject {
         } else if compression == .NONE {
             return data
         }
-        
+        Logger.error("Compression decode failed for \(compression). input=\(compressionPreview(data))")
         throw P7SocketError.deflateError
     }
     
