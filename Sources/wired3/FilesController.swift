@@ -62,6 +62,41 @@ public class FilesController {
         self.replyList(path, recursive, client, message)
     }
     
+    public func createDirectory(client:Client, message:P7Message) {
+        guard let path = message.string(forField: "wired.file.path") else {
+            return
+        }
+        
+        // sanitize checks
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+        
+        if let privilege = FilePrivilege(path: self.real(path: path)) {
+            if !client.user!.hasPermission(toRead: privilege) || !client.user!.hasPermission(toWrite: privilege) {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else {
+            if !client.user!.hasPrivilege(name: "wired.account.file.create_directory") {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        }
+        
+        guard let type = message.enumeration(forField: "wired.file.type"),
+              let fileType = File.FileType(rawValue: type) else {
+            return
+        }
+        
+        if createPath(path, type: fileType, user: client.user!, message: message) {
+            
+        }
+    }
+    
+    
+    
     
     public func delete(client:Client, message:P7Message) {
         guard let path = message.string(forField: "wired.file.path") else {
@@ -262,5 +297,17 @@ public class FilesController {
             let privilege = FilePrivilege(owner: "admin", group: "", mode: .ownerRead)
             _ = FilePrivilege.set(privileges: privilege, path: dropboxes)
         }
+    }
+    
+    private func createPath(_ path: String, type: File.FileType, user: User, message: P7Message) -> Bool {
+        let realPath = self.real(path: path)
+        
+        do {
+            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0777])
+        } catch {
+            return false
+        }
+        
+        return true
     }
 }

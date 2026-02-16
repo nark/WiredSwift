@@ -136,10 +136,10 @@ open class Connection: NSObject {
 //    public func connect(withUrl url: Url, cipher:P7Socket.CipherType = .ECDH_AES256_SHA256, compression:P7Socket.Compression = .DEFLATE, checksum:P7Socket.Checksum = .SHA2_256) -> Bool {
 //        self.url    = url
 //        self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
-//        
+//
 //        self.socket.username    = url.login
 //        self.socket.password    = url.password
-//        
+//
 //        self.socket.cipherType  = cipher
 //        self.socket.compression = compression
 //        self.socket.checksum    = checksum
@@ -154,42 +154,42 @@ open class Connection: NSObject {
 //            }
 //            return false
 //        }
-//        
+//
 //        for d in self.delegates {
 //            DispatchQueue.main.async {
 //                d.connectionDidConnect(connection: self)
 //            }
 //        }
-//        
+//
 //        if !self.clientInfo() {
 //            return false
 //        }
-//        
+//
 //        if !self.setUser() {
 //            return false
 //        }
-//        
+//
 //        if !self.login() {
 //            return false
 //        }
-//        
+//
 //        if self.interactive == true {
 //            self.listen()
 //        }
-//        
+//
 //        self.pingCheckTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true, block: { (timer) in
 //            if let lpd = self.lastPingDate {
 //                let interval = Date().timeIntervalSince(lpd)
 //                if interval > 65 {
 //                    Logger.error("Lost ping, server is probably down, disconnecting...")
-//                    
+//
 //                    if self.isConnected() {
 //                        self.disconnect()
 //                    }
 //                }
 //            }
 //        })
-//        
+//
 //        return true
 //
 //    }
@@ -293,7 +293,12 @@ open class Connection: NSObject {
         NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
         
         self.stopListening()
-        self.socket.disconnect()
+
+        // `socket` is an IUO and may legitimately be nil in some teardown / restore scenarios
+        // (e.g. when transfers are resumed after app relaunch). Make disconnect idempotent.
+        if self.socket != nil {
+            self.socket.disconnect()
+        }
  
         DispatchQueue.main.async {
             
@@ -307,7 +312,7 @@ open class Connection: NSObject {
     
     
     public func isConnected() -> Bool {
-        return self.socket.connected
+        return self.socket?.connected ?? false
     }
     
     

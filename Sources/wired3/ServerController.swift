@@ -281,6 +281,9 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.file.list_directory" {
             App.filesController.listDirectory(client: client, message: message)
         }
+        else if message.name == "wired.file.create_directory" {
+            App.filesController.createDirectory(client: client, message: message)
+        }
         else if message.name == "wired.file.delete" {
             App.filesController.delete(client: client, message: message)
         }
