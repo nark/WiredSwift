@@ -231,7 +231,7 @@ private enum LinuxCompressionCodec {
 
     private static func lz4FrameDecompress(_ input: Data) -> Data? {
         var dctx: OpaquePointer?
-        guard LZ4F_isError(LZ4F_createDecompressionContext(&dctx, LZ4F_VERSION)) == 0 else {
+        guard LZ4F_isError(LZ4F_createDecompressionContext(&dctx, UInt32(LZ4F_VERSION))) == 0 else {
             return nil
         }
         defer {
