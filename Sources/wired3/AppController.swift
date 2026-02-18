@@ -72,6 +72,8 @@ public class AppController : DatabaseControllerDelegate {
         if !self.databaseController.initDatabase() {
             Logger.error("Error while initializing databasse")
         }
+
+        self.usersController.migrateLegacyPrivilegesSchemaIfNeeded()
         
         self.chatsController.loadChats()
         self.indexController.indexFiles()

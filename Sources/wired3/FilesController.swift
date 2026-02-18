@@ -44,8 +44,10 @@ public class FilesController {
             return
         }
         
-        // file privileges
-        if let privilege = FilePrivilege(path: self.real(path: path)) {
+        let normalizedPath = NSString(string: path).standardizingPath
+
+        // file privileges (dropbox inherited in path)
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
             if !client.user!.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
@@ -62,7 +64,7 @@ public class FilesController {
             recursive = r
         }
         
-        self.replyList(path, recursive, client, message)
+        self.replyList(normalizedPath, recursive, client, message)
     }
     
     public func createDirectory(client:Client, message:P7Message) {
@@ -76,25 +78,71 @@ public class FilesController {
             return
         }
         
-        if let privilege = FilePrivilege(path: self.real(path: path)) {
-            if !client.user!.hasPermission(toRead: privilege) || !client.user!.hasPermission(toWrite: privilege) {
+        let normalizedPath = NSString(string: path).standardizingPath
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !client.user!.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
-            if !client.user!.hasPrivilege(name: "wired.account.file.create_directory") {
+            if !client.user!.hasPrivilege(name: "wired.account.file.create_directories") {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
+
+        let fileType: File.FileType = {
+            guard let type = message.enumeration(forField: "wired.file.type"),
+                  let fileType = File.FileType(rawValue: type),
+                  fileType != .file else {
+                return .directory
+            }
+            return fileType
+        }()
         
-        guard let type = message.enumeration(forField: "wired.file.type"),
-              let fileType = File.FileType(rawValue: type) else {
+        if createPath(normalizedPath, type: fileType, user: client.user!, message: message) {
+            self.notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
+            App.serverController.replyOK(client: client, message: message)
+        } else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+
+    public func setType(client: Client, message: P7Message) {
+        guard let path = message.string(forField: "wired.file.path") else {
             return
         }
-        
-        if createPath(path, type: fileType, user: client.user!, message: message) {
-            self.notifyDirectoryChanged(path: path.stringByDeletingLastPathComponent)
+
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedPath = NSString(string: path).standardizingPath
+        let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath)
+
+        if let privileges {
+            if !client.user!.hasPermission(toWrite: privileges) {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !client.user!.hasPrivilege(name: "wired.account.file.set_type") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let typeValue = message.enumeration(forField: "wired.file.type"),
+              let fileType = File.FileType(rawValue: typeValue),
+              fileType != .file else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if setType(path: normalizedPath, type: fileType, client: client, message: message) {
+            // Keep parent listing and directory subscriptions in sync with type updates.
+            self.notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
+            self.notifyDirectoryChanged(path: normalizedPath)
             App.serverController.replyOK(client: client, message: message)
         }
     }
@@ -113,8 +161,10 @@ public class FilesController {
             return
         }
         
+        let normalizedPath = NSString(string: path).standardizingPath
+
         // file privileges
-        if let privilege = FilePrivilege(path: self.real(path: path)) {
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
             if !client.user!.hasPermission(toRead: privilege) || !client.user!.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
@@ -127,7 +177,51 @@ public class FilesController {
             }
         }
         
-        if self.delete(path: path, client: client, message: message) {
+        if self.delete(path: normalizedPath, client: client, message: message) {
+            App.serverController.replyOK(client: client, message: message)
+        }
+    }
+
+    public func move(client: Client, message: P7Message) {
+        guard let fromPath = message.string(forField: "wired.file.path"),
+              let toPath = message.string(forField: "wired.file.new_path") else {
+            return
+        }
+
+        if !File.isValid(path: fromPath) || !File.isValid(path: toPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedFromPath = NSString(string: fromPath).standardizingPath
+        let normalizedToPath = NSString(string: toPath).standardizingPath
+        let fromDirectory = normalizedFromPath.stringByDeletingLastPathComponent
+        let toDirectory = normalizedToPath.stringByDeletingLastPathComponent
+        let isRenameOnly = fromDirectory == toDirectory
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedFromPath) {
+            if !client.user!.hasPermission(toWrite: privilege) {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !client.user!.hasPrivilege(name: "wired.account.file.move_files") &&
+                    (!client.user!.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedToPath) {
+            if !client.user!.hasPermission(toWrite: privilege) {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !client.user!.hasPrivilege(name: "wired.account.file.move_files") &&
+                    (!client.user!.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if move(from: normalizedFromPath, to: normalizedToPath, client: client, message: message) {
             App.serverController.replyOK(client: client, message: message)
         }
     }
@@ -157,6 +251,29 @@ public class FilesController {
             self.notifyDirectoryDeleted(path: path)
         }
         
+        return true
+    }
+
+    private func move(from sourcePath: String, to destinationPath: String, client: Client, message: P7Message) -> Bool {
+        let sourceRealPath = URL(fileURLWithPath: self.real(path: sourcePath)).resolvingSymlinksInPath().path
+        let destinationRealPath = URL(fileURLWithPath: self.real(path: destinationPath)).resolvingSymlinksInPath().path
+        let sourceParentPath = sourcePath.stringByDeletingLastPathComponent
+        let destinationParentPath = destinationPath.stringByDeletingLastPathComponent
+
+        do {
+            try FileManager.default.moveItem(atPath: sourceRealPath, toPath: destinationRealPath)
+        } catch {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return false
+        }
+
+        App.indexController.removeIndex(forPath: sourceRealPath)
+        App.indexController.addIndex(forPath: destinationRealPath)
+        self.notifyDirectoryChanged(path: sourceParentPath)
+        if sourceParentPath != destinationParentPath {
+            self.notifyDirectoryChanged(path: destinationParentPath)
+        }
+
         return true
     }
     
@@ -217,7 +334,6 @@ public class FilesController {
             let childRealPath = realPath.stringByAppendingPathComponent(path: file)
 
             let type = WiredSwift.File.FileType.type(path: childRealPath)
-            let privileges = FilePrivilege(path: childRealPath)
 
             var datasize: UInt64 = 0
             var rsrcsize: UInt64 = 0
@@ -226,7 +342,7 @@ public class FilesController {
             var readable = false
             var writable = false
 
-            if type == .dropbox, let privileges {
+            if type == .dropbox, let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
                 readable = client.user!.hasPermission(toRead: privileges)
                 writable = client.user!.hasPermission(toWrite: privileges)
             }
@@ -331,8 +447,62 @@ public class FilesController {
         } catch {
             return false
         }
+
+        if !File.FileType.set(type: type, path: realPath) {
+            return false
+        }
         
         return true
+    }
+
+    private func setType(path: String, type: File.FileType, client: Client, message: P7Message) -> Bool {
+        let canonicalPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+        var isDirectory: ObjCBool = false
+
+        if !FileManager.default.fileExists(atPath: canonicalPath, isDirectory: &isDirectory) || !isDirectory.boolValue {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
+
+        if !File.FileType.set(type: type, path: canonicalPath) {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return false
+        }
+
+        return true
+    }
+
+    func dropBoxPrivileges(forVirtualPath path: String) -> FilePrivilege? {
+        guard let dropBoxPath = dropBoxRealPath(inVirtualPath: path) else {
+            return nil
+        }
+
+        if let privileges = FilePrivilege(path: dropBoxPath) {
+            return privileges
+        }
+
+        // Same default as legacy wired: writable by everyone when no permissions file exists.
+        return FilePrivilege(owner: "", group: "", mode: .everyoneWrite)
+    }
+
+    private func dropBoxRealPath(inVirtualPath path: String) -> String? {
+        let normalized = NSString(string: path).standardizingPath
+        let components = normalized.split(separator: "/").map(String.init)
+
+        var current = URL(fileURLWithPath: self.real(path: "/")).resolvingSymlinksInPath().path
+
+        for component in components {
+            if component.isEmpty {
+                continue
+            }
+
+            current = current.stringByAppendingPathComponent(path: component)
+            if File.FileType.type(path: current) == .dropbox {
+                return current
+            }
+        }
+
+        return nil
     }
 
 

@@ -288,6 +288,12 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.file.delete" {
             App.filesController.delete(client: client, message: message)
         }
+        else if message.name == "wired.file.move" {
+            App.filesController.move(client: client, message: message)
+        }
+        else if message.name == "wired.file.set_type" {
+            App.filesController.setType(client: client, message: message)
+        }
         else if message.name == "wired.file.subscribe_directory" {
             App.filesController.subscribeDirectory(client: client, message: message)
         }
@@ -306,9 +312,27 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.settings.get_settings" {
             self.receiveGetSettings(client: client, message: message)
         }
-            else if message.name == "wired.settings.set_settings" {
-                self.receiveSetSettings(client: client, message: message)
-            }
+        else if message.name == "wired.settings.set_settings" {
+            self.receiveSetSettings(client: client, message: message)
+        }
+        else if message.name == "wired.account.list_users" {
+            self.receiveAccountListUsers(client: client, message: message)
+        }
+        else if message.name == "wired.account.list_groups" {
+            self.receiveAccountListGroups(client: client, message: message)
+        }
+        else if message.name == "wired.account.read_user" {
+            self.receiveAccountReadUser(client: client, message: message)
+        }
+        else if message.name == "wired.account.read_group" {
+            self.receiveAccountReadGroup(client: client, message: message)
+        }
+        else if message.name == "wired.account.edit_user" {
+            self.receiveAccountEditUser(client: client, message: message)
+        }
+        else if message.name == "wired.account.edit_group" {
+            self.receiveAccountEditGroup(client: client, message: message)
+        }
         else {
             WiredSwift.Logger.warning("Message \(message.name ?? "unknow message") not implemented")
         }
@@ -521,13 +545,19 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveDownloadFile(_ client:Client, _ message:P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.transfer.download_files") {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        if !user.hasPrivilege(name: "wired.account.transfer.download_files") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             
             return
         }
         
         guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
@@ -539,18 +569,21 @@ public class ServerController: ServerDelegate {
         
         // file privileges
         if let privilege = FilePrivilege(path: App.filesController.real(path: path)) {
-            if !client.user!.hasPermission(toRead: privilege) {
+            if !user.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
         
-        let dataOffset = message.uint64(forField: "wired.transfer.data_offset")
-        let rsrcOffset = message.uint64(forField: "wired.transfer.rsrc_offset")
+        guard let dataOffset = message.uint64(forField: "wired.transfer.data_offset"),
+              let rsrcOffset = message.uint64(forField: "wired.transfer.rsrc_offset") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
                 
         if let transfer = App.transfersController.download(path: path,
-                                                           dataOffset: dataOffset!,
-                                                           rsrcOffset: rsrcOffset!,
+                                                           dataOffset: dataOffset,
+                                                           rsrcOffset: rsrcOffset,
                                                            client: client, message: message) {
             client.transfer = transfer
             
@@ -559,6 +592,8 @@ public class ServerController: ServerDelegate {
             }
             
             client.transfer = nil
+        } else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
     }
     
@@ -566,13 +601,13 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveUploadFile(_ client:Client, _ message:P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_files") {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
             return
         }
-        
+
         guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
@@ -582,12 +617,13 @@ public class ServerController: ServerDelegate {
             return
         }
         
-        let realPath = App.filesController.real(path: path)
+        let normalizedPath = NSString(string: path).standardizingPath
+        let realPath = App.filesController.real(path: normalizedPath)
         let parentPath = realPath.stringByDeletingLastPathComponent
-        
+
         // file privileges
-        if let privilege = FilePrivilege(path: realPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+        if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -596,23 +632,26 @@ public class ServerController: ServerDelegate {
         // user privileges
         if let type = File.FileType.type(path: parentPath) {
             switch type {
-                case .uploads, .dropbox:
-                    if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_files") {
-                        App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-                        return
-                    }
-                default:
-                    if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_anywhere") {
-                        App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-                        return
-                    }
+            case .uploads, .dropbox:
+                if !user.hasPrivilege(name: "wired.account.transfer.upload_files") {
+                    App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                    return
+                }
+            default:
+                if !user.hasPrivilege(name: "wired.account.transfer.upload_anywhere") {
+                    App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                    return
+                }
             }
+        } else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
         }
         
         let dataSize = message.uint64(forField: "wired.transfer.data_size") ?? UInt64(0)
         let rsrcSize = message.uint64(forField: "wired.transfer.rsrc_size") ?? UInt64(0)
         
-        if let transfer = App.transfersController.upload(path: path,
+        if let transfer = App.transfersController.upload(path: normalizedPath,
                                                          dataSize: dataSize,
                                                          rsrcSize: rsrcSize,
                                                          executable: false,
@@ -621,27 +660,38 @@ public class ServerController: ServerDelegate {
             
             do {
                 try client.socket.set(interactive: false)
-            } catch let error {
+            } catch {
+                App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
                 client.state = .DISCONNECTED
                 client.transfer = nil
+                return
             }
                         
             if(!App.transfersController.run(transfer: transfer, client: client, message: message)) {
+                App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
                 client.state = .DISCONNECTED
             }
             
             client.transfer = nil
+        } else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
     }
 
 
     private func receiveUploadDirectory(_ client:Client, _ message:P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.transfer.upload_directories") {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        if !user.hasPrivilege(name: "wired.account.transfer.upload_directories") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
         guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
 
@@ -651,11 +701,12 @@ public class ServerController: ServerDelegate {
             return
         }
 
-        let realPath = App.filesController.real(path: path)
+        let normalizedPath = NSString(string: path).standardizingPath
+        let realPath = App.filesController.real(path: normalizedPath)
 
         // file privileges
-        if let privilege = FilePrivilege(path: realPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+        if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -668,7 +719,7 @@ public class ServerController: ServerDelegate {
             return
         }
 
-        if parentType == .directory && !client.user!.hasPrivilege(name: "wired.account.transfer.upload_anywhere") {
+        if parentType == .directory && !user.hasPrivilege(name: "wired.account.transfer.upload_anywhere") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -685,7 +736,7 @@ public class ServerController: ServerDelegate {
         }
 
         App.indexController.addIndex(forPath: realPath)
-        App.filesController.notifyDirectoryChanged(path: path.stringByDeletingLastPathComponent)
+        App.filesController.notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
         App.serverController.replyOK(client: client, message: message)
     }
     
@@ -757,6 +808,321 @@ public class ServerController: ServerDelegate {
         if changed {
             App.clientsController.broadcast(message: self.serverInfoMessage())
         }
+    }
+
+    private func receiveAccountListUsers(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.account.list_accounts") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let users = App.usersController.users()
+        let defaultDate = Date(timeIntervalSince1970: 0)
+
+        for listedUser in users {
+            guard let username = listedUser.username else { continue }
+
+            let reply = P7Message(withName: "wired.account.user_list", spec: self.spec)
+            reply.addParameter(field: "wired.account.name", value: username)
+            reply.addParameter(field: "wired.account.full_name", value: listedUser.fullName ?? "")
+            reply.addParameter(field: "wired.account.comment", value: listedUser.comment ?? "")
+            reply.addParameter(field: "wired.account.creation_time", value: listedUser.creationTime ?? defaultDate)
+            reply.addParameter(field: "wired.account.modification_time", value: listedUser.modificationTime ?? defaultDate)
+            reply.addParameter(field: "wired.account.login_time", value: listedUser.loginTime ?? defaultDate)
+            reply.addParameter(field: "wired.account.edited_by", value: listedUser.editedBy ?? "")
+            let downloads = UInt32(clamping: Int(listedUser.downloads ?? 0))
+            let downloadTransferred = UInt64(clamping: Int(listedUser.downloadTransferred ?? 0))
+            let uploads = UInt32(clamping: Int(listedUser.uploads ?? 0))
+            let uploadTransferred = UInt64(clamping: Int(listedUser.uploadTransferred ?? 0))
+
+            reply.addParameter(field: "wired.account.downloads", value: downloads)
+            reply.addParameter(field: "wired.account.download_transferred", value: downloadTransferred)
+            reply.addParameter(field: "wired.account.uploads", value: uploads)
+            reply.addParameter(field: "wired.account.upload_transferred", value: uploadTransferred)
+            reply.addParameter(field: "wired.account.group", value: listedUser.group ?? "")
+            reply.addParameter(field: "wired.account.groups", value: listedUser.groups?
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty } ?? [])
+            reply.addParameter(field: "wired.account.password", value: listedUser.password ?? "")
+
+            self.reply(client: client, reply: reply, message: message)
+        }
+
+        let done = P7Message(withName: "wired.account.user_list.done", spec: self.spec)
+        self.reply(client: client, reply: done, message: message)
+    }
+
+    private func receiveAccountListGroups(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.account.list_accounts") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let groups = App.usersController.groups()
+        let defaultDate = Date(timeIntervalSince1970: 0)
+
+        for listedGroup in groups {
+            guard let groupName = listedGroup.name else { continue }
+
+            let reply = P7Message(withName: "wired.account.group_list", spec: self.spec)
+            reply.addParameter(field: "wired.account.name", value: groupName)
+            reply.addParameter(field: "wired.account.comment", value: "")
+            reply.addParameter(field: "wired.account.creation_time", value: defaultDate)
+            reply.addParameter(field: "wired.account.modification_time", value: defaultDate)
+            reply.addParameter(field: "wired.account.edited_by", value: "")
+
+            self.reply(client: client, reply: reply, message: message)
+        }
+
+        let done = P7Message(withName: "wired.account.group_list.done", spec: self.spec)
+        self.reply(client: client, reply: done, message: message)
+    }
+
+    private func receiveAccountReadUser(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.read_accounts") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name"), !name.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let account = App.usersController.userWithPrivileges(withUsername: name) else {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        let reply = accountUserMessage(for: account, name: "wired.account.user")
+        self.reply(client: client, reply: reply, message: message)
+    }
+
+    private func receiveAccountReadGroup(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.read_accounts") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name"), !name.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let account = App.usersController.groupWithPrivileges(withName: name) else {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        let reply = accountGroupMessage(for: account, name: "wired.account.group")
+        self.reply(client: client, reply: reply, message: message)
+    }
+
+    private func receiveAccountEditUser(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.edit_users") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name"), !name.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let account = App.usersController.userWithPrivileges(withUsername: name) else {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        if let newName = message.string(forField: "wired.account.new_name"), !newName.isEmpty, newName != name {
+            if App.usersController.user(withUsername: newName) != nil {
+                App.serverController.replyError(client: client, error: "wired.error.account_exists", message: message)
+                return
+            }
+            account.username = newName
+        }
+
+        if let fullName = message.string(forField: "wired.account.full_name") {
+            account.fullName = fullName
+        }
+        if let comment = message.string(forField: "wired.account.comment") {
+            account.comment = comment
+        }
+        if let password = message.string(forField: "wired.account.password"), !password.isEmpty {
+            account.password = password
+        }
+        if let group = message.string(forField: "wired.account.group") {
+            account.group = group
+        }
+        if let secondaryGroups = message.stringList(forField: "wired.account.groups") {
+            account.groups = secondaryGroups.joined(separator: ", ")
+        }
+
+        account.editedBy = requestingUser.username ?? ""
+        account.modificationTime = Date()
+
+        var privilegesSaved = true
+
+        for privilege in spec?.accountPrivileges ?? [] {
+            guard let field = spec?.fieldsByName[privilege] else { continue }
+            switch field.type {
+            case .bool:
+                if let value = message.bool(forField: privilege) {
+                    if !App.usersController.setUserPrivilege(privilege, value: value, for: account) {
+                        privilegesSaved = false
+                    }
+                }
+            case .uint32:
+                if privilege == "wired.account.color", let value = message.uint32(forField: privilege) {
+                    account.color = String(value)
+                }
+            default:
+                break
+            }
+        }
+
+        if !privilegesSaved {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        if !App.usersController.save(user: account) {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+    }
+
+    private func receiveAccountEditGroup(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.edit_groups") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name"), !name.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let account = App.usersController.groupWithPrivileges(withName: name) else {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        if let newName = message.string(forField: "wired.account.new_name"), !newName.isEmpty, newName != name {
+            if App.usersController.group(withName: newName) != nil {
+                App.serverController.replyError(client: client, error: "wired.error.account_exists", message: message)
+                return
+            }
+            account.name = newName
+        }
+
+        var privilegesSaved = true
+
+        for privilege in spec?.accountPrivileges ?? [] {
+            guard let field = spec?.fieldsByName[privilege] else { continue }
+            if field.type == .bool, let value = message.bool(forField: privilege) {
+                if !App.usersController.setGroupPrivilege(privilege, value: value, for: account) {
+                    privilegesSaved = false
+                }
+            }
+        }
+
+        if !privilegesSaved {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        if !App.usersController.save(group: account) {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+    }
+
+    private func accountUserMessage(for account: User, name: String) -> P7Message {
+        let defaultDate = Date(timeIntervalSince1970: 0)
+        let reply = P7Message(withName: name, spec: self.spec)
+
+        reply.addParameter(field: "wired.account.name", value: account.username ?? "")
+        reply.addParameter(field: "wired.account.full_name", value: account.fullName ?? "")
+        reply.addParameter(field: "wired.account.comment", value: account.comment ?? "")
+        reply.addParameter(field: "wired.account.password", value: account.password ?? "")
+        reply.addParameter(field: "wired.account.group", value: account.group ?? "")
+        reply.addParameter(field: "wired.account.groups", value: account.groups?
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty } ?? [])
+        reply.addParameter(field: "wired.account.creation_time", value: account.creationTime ?? defaultDate)
+        reply.addParameter(field: "wired.account.modification_time", value: account.modificationTime ?? defaultDate)
+        reply.addParameter(field: "wired.account.login_time", value: account.loginTime ?? defaultDate)
+        reply.addParameter(field: "wired.account.edited_by", value: account.editedBy ?? "")
+        reply.addParameter(field: "wired.account.downloads", value: UInt32(clamping: Int(account.downloads ?? 0)))
+        reply.addParameter(field: "wired.account.uploads", value: UInt32(clamping: Int(account.uploads ?? 0)))
+        reply.addParameter(field: "wired.account.download_transferred", value: UInt64(clamping: Int(account.downloadTransferred ?? 0)))
+        reply.addParameter(field: "wired.account.upload_transferred", value: UInt64(clamping: Int(account.uploadTransferred ?? 0)))
+
+        let privilegesByName = Dictionary(uniqueKeysWithValues: account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
+
+        for privilege in spec?.accountPrivileges ?? [] {
+            guard let field = spec?.fieldsByName[privilege] else { continue }
+            switch field.type {
+            case .bool:
+                reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
+            case .uint32:
+                if privilege == "wired.account.color" {
+                    reply.addParameter(field: privilege, value: UInt32(account.color ?? "") ?? 0)
+                } else {
+                    reply.addParameter(field: privilege, value: UInt32(0))
+                }
+            default:
+                break
+            }
+        }
+
+        return reply
+    }
+
+    private func accountGroupMessage(for account: Group, name: String) -> P7Message {
+        let defaultDate = Date(timeIntervalSince1970: 0)
+        let reply = P7Message(withName: name, spec: self.spec)
+
+        reply.addParameter(field: "wired.account.name", value: account.name ?? "")
+        reply.addParameter(field: "wired.account.comment", value: "")
+        reply.addParameter(field: "wired.account.creation_time", value: defaultDate)
+        reply.addParameter(field: "wired.account.modification_time", value: defaultDate)
+        reply.addParameter(field: "wired.account.edited_by", value: "")
+
+        let privilegesByName = Dictionary(uniqueKeysWithValues: account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
+
+        for privilege in spec?.accountPrivileges ?? [] {
+            guard let field = spec?.fieldsByName[privilege] else { continue }
+            switch field.type {
+            case .bool:
+                reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
+            case .uint32:
+                reply.addParameter(field: privilege, value: UInt32(0))
+            default:
+                break
+            }
+        }
+
+        return reply
     }
     
     

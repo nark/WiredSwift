@@ -30,12 +30,51 @@ public class User: Model {
     
     @Field(key: "password")
     public var password:String?
+
+    @OptionalField(key: "full_name")
+    public var fullName: String?
+
+    @OptionalField(key: "comment")
+    public var comment: String?
+
+    @OptionalField(key: "creation_time")
+    public var creationTime: Date?
+
+    @OptionalField(key: "modification_time")
+    public var modificationTime: Date?
+
+    @OptionalField(key: "login_time")
+    public var loginTime: Date?
+
+    @OptionalField(key: "edited_by")
+    public var editedBy: String?
+
+    @OptionalField(key: "downloads")
+    public var downloads: Int64?
+
+    @OptionalField(key: "download_transferred")
+    public var downloadTransferred: Int64?
+
+    @OptionalField(key: "uploads")
+    public var uploads: Int64?
+
+    @OptionalField(key: "upload_transferred")
+    public var uploadTransferred: Int64?
+
+    @OptionalField(key: "group")
+    public var group: String?
+
+    @OptionalField(key: "groups")
+    public var groups: String?
+
+    @OptionalField(key: "color")
+    public var color: String?
+
+    @OptionalField(key: "files")
+    public var files: String?
     
     @Children(for: \.$user)
     public var privileges: [UserPrivilege]
-
-    public var group:String?
-    public var groups:String?
         
     required public init() { }
     

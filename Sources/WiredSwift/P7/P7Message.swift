@@ -135,6 +135,20 @@ public class P7Message: NSObject {
         }
         return nil
     }
+
+    public func list(forField field: String) -> [Any]? {
+        if let list = self.parameters[field] as? [Any] {
+            return list
+        }
+        return nil
+    }
+
+    public func stringList(forField field: String) -> [String]? {
+        if let list = self.parameters[field] as? [String] {
+            return list
+        }
+        return nil
+    }
     
     
     public func date(forField field: String) -> Date? {        
@@ -217,6 +231,11 @@ public class P7Message: NSObject {
                     p.value = dateFormatter.string(from: Date(timeIntervalSince1970: val))
                 }
             }
+            else if spec.fieldsByName[field]?.type == .list {
+                if let val = value as? [String] {
+                    p.value = val.joined(separator: ",")
+                }
+            }
             // TODO: complete all types
         }
 
@@ -295,7 +314,28 @@ public class P7Message: NSObject {
                                     data.append(d)
                                 }
                             } else if specField.type == .list { // list (x)
-
+                                if let list = value as? [String] {
+                                    var listData = Data()
+                                    for string in list {
+                                        let bytes = Array(string.utf8) + [0]
+                                        listData.append(uint32: UInt32(bytes.count), bigEndian: true)
+                                        listData.append(Data(bytes))
+                                    }
+                                    data.append(uint32: UInt32(listData.count), bigEndian: true)
+                                    data.append(listData)
+                                } else if let list = value as? [Any] {
+                                    var listData = Data()
+                                    for item in list {
+                                        guard let string = item as? String else { continue }
+                                        let bytes = Array(string.utf8) + [0]
+                                        listData.append(uint32: UInt32(bytes.count), bigEndian: true)
+                                        listData.append(Data(bytes))
+                                    }
+                                    data.append(uint32: UInt32(listData.count), bigEndian: true)
+                                    data.append(listData)
+                                } else {
+                                    data.append(uint32: 0, bigEndian: true)
+                                }
                             }
                         }
                     }
@@ -440,7 +480,34 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData)
                         }
                         else if specField.type == .list {
-                            //print(fieldData.toHex())
+                            let listType = specField.attributes["listtype"] as? String
+                            if listType == "string" {
+                                var items: [String] = []
+                                var listOffset = 0
+
+                                while listOffset < fieldLength {
+                                    guard listOffset + 4 <= fieldLength else { break }
+                                    let sizeData = fieldData.subdata(in: listOffset..<(listOffset + 4))
+                                    guard let itemSize = sizeData.uint32 else { break }
+                                    let size = Int(itemSize)
+                                    listOffset += 4
+
+                                    guard size > 0 else { continue }
+                                    guard listOffset + size <= fieldLength else { break }
+
+                                    let itemData = fieldData.subdata(in: listOffset..<(listOffset + size))
+                                    listOffset += size
+
+                                    if size > 0 {
+                                        let stringBytes = itemData.prefix(size - 1)
+                                        if let string = String(bytes: stringBytes, encoding: .utf8) {
+                                            items.append(string)
+                                        }
+                                    }
+                                }
+
+                                self.addParameter(field: specField.name, value: items)
+                            }
                         }
                         
                         // TODO: complete all types

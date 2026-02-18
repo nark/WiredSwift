@@ -29,12 +29,38 @@ public class File {
             if !FileManager.default.fileExists(atPath: path, isDirectory: &isDir) {
                 return false
             }
+
+            // wired.file.set_type applies to directories only, and may not be .file.
+            if !isDir.boolValue || type == .file {
+                return false
+            }
             
             let typePath = path.stringByAppendingPathComponent(path: wiredFileMetaType)
-            let typeData = String(Int(type.rawValue)).data(using: .utf8)
-            
+            let wiredPath = typePath.stringByDeletingLastPathComponent
+
+            if type == .directory {
+                if FileManager.default.fileExists(atPath: typePath) {
+                    do {
+                        try FileManager.default.removeItem(atPath: typePath)
+                    } catch {
+                        print(error)
+                        return false
+                    }
+                }
+
+                return true
+            }
+
             do {
-                try typeData?.write(to: URL.init(fileURLWithPath: typePath))
+                try FileManager.default.createDirectory(atPath: wiredPath, withIntermediateDirectories: true, attributes: nil)
+            } catch {
+                print(error)
+                return false
+            }
+
+            do {
+                let value = "\(type.rawValue)\n"
+                try value.write(to: URL(fileURLWithPath: typePath), atomically: true, encoding: .utf8)
             } catch {
                 print(error)
                 return false
@@ -64,7 +90,7 @@ public class File {
             
             let typeData = FileManager.default.contents(atPath: typePath)
             
-            if  let typeString = typeData?.stringUTF8,
+            if  let typeString = typeData?.stringUTF8?.trimmingCharacters(in: .whitespacesAndNewlines),
                 let value = UInt32(typeString) {
                 type = FileType(rawValue: value)
             }
