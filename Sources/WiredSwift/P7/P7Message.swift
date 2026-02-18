@@ -394,7 +394,10 @@ public class P7Message: NSObject {
                         fieldLength = SpecType.size(forType: specField.type)
                     }
                 
-                    if fieldLength > 0 {
+                    if fieldLength == 0 && specField.type == .string {
+                        // Keep explicit empty strings (length=0) instead of dropping the field.
+                        self.addParameter(field: specField.name, value: "")
+                    } else if fieldLength > 0 {
                         // read value
                         let fieldData = data.subdata(in: offset..<offset+fieldLength)
                         
