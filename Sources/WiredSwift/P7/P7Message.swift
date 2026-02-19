@@ -266,19 +266,19 @@ public class P7Message: NSObject {
                                 data.append(uint8: v, bigEndian: true)
                                 
                             } else if specField.type == .enum32 { // enum (4)
-                                data.append(uint32: value as! UInt32, bigEndian: true)
+                                data.append(uint32: self.coerceUInt32(value), bigEndian: true)
                                 
                             } else if specField.type == .int32 { // int32 (4)
-                                data.append(uint32: value as! UInt32, bigEndian: true)
+                                data.append(uint32: self.coerceUInt32(value), bigEndian: true)
                                 
                             } else if specField.type == .uint32 { // uint32 (4)
-                                data.append(uint32: value as! UInt32, bigEndian: true)
+                                data.append(uint32: self.coerceUInt32(value), bigEndian: true)
                                 
                             } else if specField.type == .int64 { // int64 (4)
-                                data.append(uint64: value as! UInt64, bigEndian: true)
+                                data.append(uint64: self.coerceUInt64(value), bigEndian: true)
                                 
                             } else if specField.type == .uint64 { // uint64 (4)
-                                data.append(uint64: value as! UInt64, bigEndian: true)
+                                data.append(uint64: self.coerceUInt64(value), bigEndian: true)
                                 
                             } else if specField.type == .double { // double (4)
                                 data.append(double: value as! Double, bigEndian: true)
@@ -346,6 +346,62 @@ public class P7Message: NSObject {
         self.size = data.count
         
         return data
+    }
+
+    private func coerceUInt32(_ any: Any) -> UInt32 {
+        if let value = any as? UInt32 {
+            return value
+        }
+        if let value = any as? Int {
+            return UInt32(clamping: value)
+        }
+        if let value = any as? Int64 {
+            return UInt32(clamping: value)
+        }
+        if let value = any as? UInt64 {
+            return UInt32(clamping: value)
+        }
+        if let value = any as? UInt8 {
+            return UInt32(value)
+        }
+        if let value = any as? Bool {
+            return value ? 1 : 0
+        }
+        if let value = any as? NSNumber {
+            return value.uint32Value
+        }
+        if let value = any as? String, let parsed = UInt32(value) {
+            return parsed
+        }
+        return 0
+    }
+
+    private func coerceUInt64(_ any: Any) -> UInt64 {
+        if let value = any as? UInt64 {
+            return value
+        }
+        if let value = any as? Int {
+            return UInt64(clamping: value)
+        }
+        if let value = any as? Int64 {
+            return UInt64(clamping: value)
+        }
+        if let value = any as? UInt32 {
+            return UInt64(value)
+        }
+        if let value = any as? UInt8 {
+            return UInt64(value)
+        }
+        if let value = any as? Bool {
+            return value ? 1 : 0
+        }
+        if let value = any as? NSNumber {
+            return value.uint64Value
+        }
+        if let value = any as? String, let parsed = UInt64(value) {
+            return parsed
+        }
+        return 0
     }
     
     
