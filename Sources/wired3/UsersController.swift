@@ -310,13 +310,18 @@ public class UsersController: TableController, SocketPasswordDelegate {
                     .create().wait()
             
             // defaults groups
-            try Group(name: "guest").create(on: self.databaseController.pool).wait()
+            let guestGroup = Group(name: "guest")
+            guestGroup.color = "0"
+            try guestGroup.create(on: self.databaseController.pool).wait()
             let adminGroup = Group(name: "admin")
+            adminGroup.color = "1"
             try adminGroup.create(on: self.databaseController.pool).wait()
             
             // defaults users
             let admin = User(username: "admin", password: "admin".sha256())
             let guest = User(username: "guest", password: "".sha256())
+            admin.color = "1"
+            guest.color = "0"
             
             try admin.create(on: self.databaseController.pool).wait()
             try guest.create(on: self.databaseController.pool).wait()
@@ -342,12 +347,14 @@ public class UsersController: TableController, SocketPasswordDelegate {
             
             // USERS PRIVILEGES
             for field in App.spec.accountPrivileges! {
+                guard App.spec.fieldsByName[field]?.type == .bool else { continue }
                 let privilege = UserPrivilege(name: field, value: true, user: admin)
                 try privilege.create(on: self.databaseController.pool).wait()
             }
 
             // GROUPS PRIVILEGES
             for field in App.spec.accountPrivileges! {
+                guard App.spec.fieldsByName[field]?.type == .bool else { continue }
                 let privilege = GroupPrivilege(name: field, value: true, group: adminGroup)
                 try privilege.create(on: self.databaseController.pool).wait()
             }

@@ -840,6 +840,7 @@ public class ServerController: ServerDelegate {
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty } ?? [])
             reply.addParameter(field: "wired.account.password", value: listedUser.password ?? "")
+            reply.addParameter(field: "wired.account.color", value: UInt32(listedUser.color ?? "") ?? 0)
 
             self.reply(client: client, reply: reply, message: message)
         }
@@ -868,6 +869,7 @@ public class ServerController: ServerDelegate {
             reply.addParameter(field: "wired.account.creation_time", value: defaultDate)
             reply.addParameter(field: "wired.account.modification_time", value: defaultDate)
             reply.addParameter(field: "wired.account.edited_by", value: "")
+            reply.addParameter(field: "wired.account.color", value: UInt32(listedGroup.color ?? "") ?? 0)
 
             self.reply(client: client, reply: reply, message: message)
         }
