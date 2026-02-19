@@ -262,6 +262,9 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.chat.invite_user" {
             App.chatsController.inviteUser(message: message, client: client)
         }
+        else if message.name == "wired.chat.decline_invitation" {
+            App.chatsController.declineInvitation(message: message, client: client)
+        }
         else if message.name == "wired.chat.send_say" {
             App.chatsController.receiveChatSay(client, message)
         }
