@@ -66,9 +66,93 @@ public class FilesController {
         
         self.replyList(normalizedPath, recursive, client, message)
     }
+
+    public func getInfo(client: Client, message: P7Message) {
+        guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedPath = NSString(string: path).standardizingPath
+        let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
+
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        guard client.user!.hasPrivilege(name: "wired.account.file.get_info") else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !client.user!.hasPermission(toRead: privilege) {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        }
+
+        guard let type = File.FileType.type(path: realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let reply = P7Message(withName: "wired.file.info", spec: message.spec)
+        reply.addParameter(field: "wired.file.path", value: normalizedPath)
+        reply.addParameter(field: "wired.file.type", value: type.rawValue)
+
+        let attributes = try? FileManager.default.attributesOfItem(atPath: realPath)
+        if let creationDate = attributes?[.creationDate] as? Date {
+            reply.addParameter(field: "wired.file.creation_time", value: creationDate)
+        } else {
+            reply.addParameter(field: "wired.file.creation_time", value: Date(timeIntervalSince1970: 0))
+        }
+        if let modificationDate = attributes?[.modificationDate] as? Date {
+            reply.addParameter(field: "wired.file.modification_time", value: modificationDate)
+        } else {
+            reply.addParameter(field: "wired.file.modification_time", value: Date(timeIntervalSince1970: 0))
+        }
+
+        reply.addParameter(field: "wired.file.link", value: false)
+        reply.addParameter(field: "wired.file.executable", value: false)
+        reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
+        reply.addParameter(field: "wired.file.volume", value: UInt32(0))
+        reply.addParameter(field: "wired.file.comment", value: "")
+
+        if type == .file {
+            reply.addParameter(field: "wired.file.data_size", value: File.size(path: realPath))
+            reply.addParameter(field: "wired.file.rsrc_size", value: UInt64(0))
+        } else {
+            reply.addParameter(field: "wired.file.directory_count", value: File.count(path: realPath))
+        }
+
+        if type == .dropbox, let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            let mode = privilege.mode ?? []
+            reply.addParameter(field: "wired.file.owner", value: privilege.owner ?? "")
+            reply.addParameter(field: "wired.file.group", value: privilege.group ?? "")
+            reply.addParameter(field: "wired.file.owner.read", value: mode.contains(File.FilePermissions.ownerRead))
+            reply.addParameter(field: "wired.file.owner.write", value: mode.contains(File.FilePermissions.ownerWrite))
+            reply.addParameter(field: "wired.file.group.read", value: mode.contains(File.FilePermissions.groupRead))
+            reply.addParameter(field: "wired.file.group.write", value: mode.contains(File.FilePermissions.groupWrite))
+            reply.addParameter(field: "wired.file.everyone.read", value: mode.contains(File.FilePermissions.everyoneRead))
+            reply.addParameter(field: "wired.file.everyone.write", value: mode.contains(File.FilePermissions.everyoneWrite))
+            reply.addParameter(field: "wired.file.readable", value: client.user!.hasPermission(toRead: privilege))
+            reply.addParameter(field: "wired.file.writable", value: client.user!.hasPermission(toWrite: privilege))
+        }
+
+        App.serverController.reply(client: client, reply: reply, message: message)
+    }
     
     public func createDirectory(client:Client, message:P7Message) {
         guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
         
@@ -79,6 +163,7 @@ public class FilesController {
         }
         
         let normalizedPath = NSString(string: path).standardizingPath
+        let realPath = self.real(path: normalizedPath)
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
             if !client.user!.hasPermission(toWrite: privilege) {
@@ -100,10 +185,30 @@ public class FilesController {
             }
             return fileType
         }()
-        
+
+        if FileManager.default.fileExists(atPath: realPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
+            return
+        }
+
         if createPath(normalizedPath, type: fileType, user: client.user!, message: message) {
+            if fileType == .dropbox, client.user!.hasPrivilege(name: "wired.account.file.set_permissions") {
+                let privileges = privilegesFromMessage(message)
+
+                if !FilePrivilege.set(privileges: privileges, path: realPath) {
+                    try? FileManager.default.removeItem(atPath: realPath)
+                    App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+                    return
+                }
+            }
+
+            App.indexController.addIndex(forPath: realPath)
             self.notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
             App.serverController.replyOK(client: client, message: message)
+        } else if (path as NSString).lastPathComponent.isEmpty {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+        } else if FileManager.default.fileExists(atPath: realPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
         } else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
@@ -145,6 +250,73 @@ public class FilesController {
             self.notifyDirectoryChanged(path: normalizedPath)
             App.serverController.replyOK(client: client, message: message)
         }
+    }
+
+    public func setPermissions(client: Client, message: P7Message) {
+        guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedPath = NSString(string: path).standardizingPath
+        let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
+        var isDirectory: ObjCBool = false
+
+        if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) || !isDirectory.boolValue {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !client.user!.hasPermission(toWrite: privileges) {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !client.user!.hasPrivilege(name: "wired.account.file.set_permissions") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let owner = message.string(forField: "wired.file.owner"),
+              let group = message.string(forField: "wired.file.group"),
+              let ownerRead = message.bool(forField: "wired.file.owner.read"),
+              let ownerWrite = message.bool(forField: "wired.file.owner.write"),
+              let groupRead = message.bool(forField: "wired.file.group.read"),
+              let groupWrite = message.bool(forField: "wired.file.group.write"),
+              let everyoneRead = message.bool(forField: "wired.file.everyone.read"),
+              let everyoneWrite = message.bool(forField: "wired.file.everyone.write") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        var mode: File.FilePermissions = []
+        if ownerRead { mode.insert(.ownerRead) }
+        if ownerWrite { mode.insert(.ownerWrite) }
+        if groupRead { mode.insert(.groupRead) }
+        if groupWrite { mode.insert(.groupWrite) }
+        if everyoneRead { mode.insert(.everyoneRead) }
+        if everyoneWrite { mode.insert(.everyoneWrite) }
+
+        let wiredMetaPath = realPath.stringByAppendingPathComponent(path: ".wired")
+        do {
+            try FileManager.default.createDirectory(atPath: wiredMetaPath, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        let newPrivileges = FilePrivilege(owner: owner, group: group, mode: mode)
+        if !FilePrivilege.set(privileges: newPrivileges, path: realPath) {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
     }
     
     
@@ -443,7 +615,7 @@ public class FilesController {
         let realPath = self.real(path: path)
         
         do {
-            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0777])
+            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o777])
         } catch {
             return false
         }
@@ -453,6 +625,21 @@ public class FilesController {
         }
         
         return true
+    }
+
+    private func privilegesFromMessage(_ message: P7Message) -> FilePrivilege {
+        let owner = message.string(forField: "wired.file.owner") ?? ""
+        let group = message.string(forField: "wired.file.group") ?? ""
+
+        var mode: File.FilePermissions = []
+        if message.bool(forField: "wired.file.owner.read") ?? false { mode.insert(.ownerRead) }
+        if message.bool(forField: "wired.file.owner.write") ?? false { mode.insert(.ownerWrite) }
+        if message.bool(forField: "wired.file.group.read") ?? false { mode.insert(.groupRead) }
+        if message.bool(forField: "wired.file.group.write") ?? false { mode.insert(.groupWrite) }
+        if message.bool(forField: "wired.file.everyone.read") ?? false { mode.insert(.everyoneRead) }
+        if message.bool(forField: "wired.file.everyone.write") ?? false { mode.insert(.everyoneWrite) }
+
+        return FilePrivilege(owner: owner, group: group, mode: mode)
     }
 
     private func setType(path: String, type: File.FileType, client: Client, message: P7Message) -> Bool {
