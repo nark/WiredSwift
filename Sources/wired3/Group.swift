@@ -23,6 +23,9 @@ public class Group: Model {
     @Field(key: "name")
     public var name:String?
 
+    @OptionalField(key: "color")
+    public var color: String?
+
     @Children(for: \.$group)
     public var privileges: [GroupPrivilege]
     

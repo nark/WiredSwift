@@ -1040,11 +1040,25 @@ public class ServerController: ServerDelegate {
 
         for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
-            if field.type == .bool, let value = message.bool(forField: privilege) {
-                if !App.usersController.setGroupPrivilege(privilege, value: value, for: account) {
-                    privilegesSaved = false
+            switch field.type {
+            case .bool:
+                if let value = message.bool(forField: privilege) {
+                    if !App.usersController.setGroupPrivilege(privilege, value: value, for: account) {
+                        privilegesSaved = false
+                    }
                 }
+            case .enum32, .uint32:
+                if privilege == "wired.account.color", let value = message.uint32(forField: privilege) {
+                    account.color = String(value)
+                }
+            default:
+                break
             }
+        }
+
+        if let color = message.enumeration(forField: "wired.account.color")
+            ?? message.uint32(forField: "wired.account.color") {
+            account.color = String(color)
         }
 
         if !privilegesSaved {
@@ -1250,7 +1264,11 @@ public class ServerController: ServerDelegate {
             case .bool:
                 reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
             case .enum32, .uint32:
-                reply.addParameter(field: privilege, value: UInt32(0))
+                if privilege == "wired.account.color" {
+                    reply.addParameter(field: privilege, value: UInt32(account.color ?? "") ?? 0)
+                } else {
+                    reply.addParameter(field: privilege, value: UInt32(0))
+                }
             default:
                 break
             }

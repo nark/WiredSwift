@@ -205,6 +205,8 @@ public class UsersController: TableController, SocketPasswordDelegate {
                                        table: "group_privileges",
                                        ownerColumn: "group_id",
                                        constraintName: "uq:group_privileges.name.group_id")
+
+        migrateGroupsColorColumnIfNeeded(db: db)
     }
 
     private func migratePrivilegesTableIfNeeded(db: OpaquePointer,
@@ -235,6 +237,21 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
 
         WiredSwift.Logger.info("Migrated \(table) to per-account unique privileges")
+    }
+
+    private func migrateGroupsColorColumnIfNeeded(db: OpaquePointer) {
+        guard let schema = readSchema(db: db, table: "groups") else { return }
+        guard !schema.contains("\"color\"") else { return }
+
+        let statement = "ALTER TABLE \"groups\" ADD COLUMN \"color\" TEXT;"
+        if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+            if let message = sqlite3_errmsg(db) {
+                WiredSwift.Logger.error("Could not add groups.color column: \(String(cString: message))")
+            }
+            return
+        }
+
+        WiredSwift.Logger.info("Added groups.color column")
     }
 
     private func readSchema(db: OpaquePointer, table: String) -> String? {
@@ -288,6 +305,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
                     .schema("groups")
                     .id()
                     .field("name", .string, .required)
+                    .field("color", .string)
                     .unique(on: "name")
                     .create().wait()
             
