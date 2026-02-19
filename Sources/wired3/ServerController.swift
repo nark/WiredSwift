@@ -132,6 +132,7 @@ public class ServerController: ServerDelegate {
     
     public func disconnectClient(client: Client) {
         App.filesController.unsubscribeAll(client: client)
+        client.isSubscribedToAccounts = false
         App.chatsController.userLeave(client: client)
         App.clientsController.removeClient(client: client)
     }
@@ -282,6 +283,9 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.file.list_directory" {
             App.filesController.listDirectory(client: client, message: message)
         }
+        else if message.name == "wired.file.get_info" {
+            App.filesController.getInfo(client: client, message: message)
+        }
         else if message.name == "wired.file.create_directory" {
             App.filesController.createDirectory(client: client, message: message)
         }
@@ -293,6 +297,9 @@ public class ServerController: ServerDelegate {
         }
         else if message.name == "wired.file.set_type" {
             App.filesController.setType(client: client, message: message)
+        }
+        else if message.name == "wired.file.set_permissions" {
+            App.filesController.setPermissions(client: client, message: message)
         }
         else if message.name == "wired.file.subscribe_directory" {
             App.filesController.subscribeDirectory(client: client, message: message)
@@ -332,6 +339,12 @@ public class ServerController: ServerDelegate {
         }
         else if message.name == "wired.account.edit_group" {
             self.receiveAccountEditGroup(client: client, message: message)
+        }
+        else if message.name == "wired.account.subscribe_accounts" {
+            self.receiveAccountSubscribeAccounts(client: client, message: message)
+        }
+        else if message.name == "wired.account.unsubscribe_accounts" {
+            self.receiveAccountUnsubscribeAccounts(client: client, message: message)
         }
         else {
             WiredSwift.Logger.warning("Message \(message.name ?? "unknow message") not implemented")
@@ -512,32 +525,9 @@ public class ServerController: ServerDelegate {
         
         App.serverController.reply(client: client, reply: response, message: message)
         
-        let response2 = P7Message(withName: "wired.account.privileges", spec: self.spec)
-                
-        for p in user.privileges {
-            if let field = spec.fieldsByName[p.name!] {
-                if field.type == .bool {
-                    response2.addParameter(field: field.name, value: true)
-                } else if field.type == .uint32 {
-                    response2.addParameter(field: field.name, value: UInt32(1))
-                }
-            }
-        }
-        
-//        for field in spec.accountPrivileges! {
-//            if user.hasPrivilege(name: field) {
-//                print("user has priviledges \(field)")
-//                if field.type == .bool {
-//                    response2.addParameter(field: field, value: UInt32(1))
-//                } else if field.type == .uint32 {
-//                    response2.addParameter(field: field, value: UInt32(1))
-//                }
-//            }
-//        }
-        
         client.loginTime = Date()
                 
-        App.serverController.reply(client: client, reply: response2, message: message)
+        App.serverController.reply(client: client, reply: accountPrivilegesMessage(for: user), message: message)
         
         return true
     }
@@ -1003,6 +993,13 @@ public class ServerController: ServerDelegate {
         }
 
         App.serverController.replyOK(client: client, message: message)
+
+        let updatedName = account.username ?? name
+        if updatedName != name {
+            self.broadcastAccountsChangedToSubscribers()
+        }
+
+        self.reloadPrivilegesForLoggedInUsers(matchingAccountNames: [name, updatedName])
     }
 
     private func receiveAccountEditGroup(client: Client, message: P7Message) {
@@ -1053,6 +1050,47 @@ public class ServerController: ServerDelegate {
         }
 
         App.serverController.replyOK(client: client, message: message)
+
+        let updatedName = account.name ?? name
+        if updatedName != name {
+            self.broadcastAccountsChangedToSubscribers()
+        }
+
+        self.reloadPrivilegesForLoggedInUsers(affectedByGroups: [name, updatedName])
+    }
+
+    private func receiveAccountSubscribeAccounts(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.account.list_accounts") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if client.isSubscribedToAccounts {
+            App.serverController.replyError(client: client, error: "wired.error.already_subscribed", message: message)
+            return
+        }
+
+        client.isSubscribedToAccounts = true
+        App.serverController.replyOK(client: client, message: message)
+    }
+
+    private func receiveAccountUnsubscribeAccounts(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.account.list_accounts") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if !client.isSubscribedToAccounts {
+            App.serverController.replyError(client: client, error: "wired.error.not_subscribed", message: message)
+            return
+        }
+
+        client.isSubscribedToAccounts = false
+        App.serverController.replyOK(client: client, message: message)
     }
 
     private func accountUserMessage(for account: User, name: String) -> P7Message {
@@ -1096,6 +1134,94 @@ public class ServerController: ServerDelegate {
         }
 
         return reply
+    }
+
+    private func accountPrivilegesMessage(for account: User) -> P7Message {
+        let reply = P7Message(withName: "wired.account.privileges", spec: self.spec)
+        let privilegesByName = Dictionary(uniqueKeysWithValues: account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
+
+        for privilege in spec?.accountPrivileges ?? [] {
+            guard let field = spec?.fieldsByName[privilege] else { continue }
+            switch field.type {
+            case .bool:
+                reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
+            case .uint32:
+                if privilege == "wired.account.color" {
+                    reply.addParameter(field: privilege, value: UInt32(account.color ?? "") ?? 0)
+                } else {
+                    reply.addParameter(field: privilege, value: UInt32(0))
+                }
+            default:
+                break
+            }
+        }
+
+        return reply
+    }
+
+    private func broadcastAccountsChangedToSubscribers() {
+        let broadcast = P7Message(withName: "wired.account.accounts_changed", spec: self.spec)
+
+        for connectedClient in App.clientsController.connectedClientsSnapshot() {
+            guard connectedClient.state == .LOGGED_IN else { continue }
+            guard connectedClient.isSubscribedToAccounts else { continue }
+            guard let user = connectedClient.user else { continue }
+
+            if !user.hasPrivilege(name: "wired.account.account.list_accounts") {
+                connectedClient.isSubscribedToAccounts = false
+                continue
+            }
+
+            _ = self.send(message: broadcast, client: connectedClient)
+        }
+    }
+
+    private func reloadPrivilegesForLoggedInUsers(matchingAccountNames accountNames: [String]) {
+        let normalizedNames = Set(accountNames.filter { !$0.isEmpty })
+        guard !normalizedNames.isEmpty else { return }
+
+        for connectedClient in App.clientsController.connectedClientsSnapshot() {
+            guard connectedClient.state == .LOGGED_IN else { continue }
+            guard let currentName = connectedClient.user?.username else { continue }
+            guard normalizedNames.contains(currentName) else { continue }
+
+            guard let refreshedUser =
+                    App.usersController.userWithPrivileges(withUsername: currentName)
+                    ?? App.usersController.userWithPrivileges(withUsername: accountNames.last ?? "") else {
+                continue
+            }
+
+            connectedClient.user = refreshedUser
+
+            if !refreshedUser.hasPrivilege(name: "wired.account.account.list_accounts") {
+                connectedClient.isSubscribedToAccounts = false
+            }
+
+            _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
+        }
+    }
+
+    private func reloadPrivilegesForLoggedInUsers(affectedByGroups groupNames: [String]) {
+        let normalizedNames = Set(groupNames.filter { !$0.isEmpty })
+        guard !normalizedNames.isEmpty else { return }
+
+        for connectedClient in App.clientsController.connectedClientsSnapshot() {
+            guard connectedClient.state == .LOGGED_IN else { continue }
+            guard let currentUser = connectedClient.user else { continue }
+            guard let username = currentUser.username else { continue }
+
+            let wasInAffectedGroup = normalizedNames.contains { currentUser.hasGroup(string: $0) }
+            guard wasInAffectedGroup else { continue }
+
+            guard let refreshedUser = App.usersController.userWithPrivileges(withUsername: username) else { continue }
+            connectedClient.user = refreshedUser
+
+            if !refreshedUser.hasPrivilege(name: "wired.account.account.list_accounts") {
+                connectedClient.isSubscribedToAccounts = false
+            }
+
+            _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
+        }
     }
 
     private func accountGroupMessage(for account: Group, name: String) -> P7Message {

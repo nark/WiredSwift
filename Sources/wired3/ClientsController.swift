@@ -50,4 +50,10 @@ public class ClientsController {
             }
         }
     }
+
+    public func connectedClientsSnapshot() -> [Client] {
+        self.clientsLock.concurrentlyRead {
+            Array(self.connectedClients.values)
+        }
+    }
 }

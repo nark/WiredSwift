@@ -30,6 +30,7 @@ public class Client {
     public var user:User?
     public var socket:P7Socket
     public var transfer:Transfer?
+    public var isSubscribedToAccounts: Bool = false
     
     public var applicationName = ""
     public var applicationVersion = ""
