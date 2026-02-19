@@ -976,7 +976,7 @@ public class ServerController: ServerDelegate {
                         privilegesSaved = false
                     }
                 }
-            case .uint32:
+            case .enum32, .uint32:
                 if privilege == "wired.account.color", let value = message.uint32(forField: privilege) {
                     account.color = String(value)
                 }
@@ -1125,7 +1125,7 @@ public class ServerController: ServerDelegate {
             switch field.type {
             case .bool:
                 reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
-            case .uint32:
+            case .enum32, .uint32:
                 if privilege == "wired.account.color" {
                     reply.addParameter(field: privilege, value: UInt32(account.color ?? "") ?? 0)
                 } else {
@@ -1148,7 +1148,7 @@ public class ServerController: ServerDelegate {
             switch field.type {
             case .bool:
                 reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
-            case .uint32:
+            case .enum32, .uint32:
                 if privilege == "wired.account.color" {
                     reply.addParameter(field: privilege, value: UInt32(account.color ?? "") ?? 0)
                 } else {
@@ -1244,7 +1244,7 @@ public class ServerController: ServerDelegate {
             switch field.type {
             case .bool:
                 reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
-            case .uint32:
+            case .enum32, .uint32:
                 reply.addParameter(field: privilege, value: UInt32(0))
             default:
                 break
@@ -1269,7 +1269,7 @@ public class ServerController: ServerDelegate {
             broadcast.addParameter(field: "wired.user.nick", value: client.nick)
             broadcast.addParameter(field: "wired.user.status", value: client.status)
             broadcast.addParameter(field: "wired.user.icon", value: client.icon)
-            broadcast.addParameter(field: "wired.account.color", value: UInt32(0))
+            broadcast.addParameter(field: "wired.account.color", value: client.accountColor)
             
             App.clientsController.broadcast(message: broadcast)
         }

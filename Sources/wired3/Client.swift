@@ -31,6 +31,9 @@ public class Client {
     public var socket:P7Socket
     public var transfer:Transfer?
     public var isSubscribedToAccounts: Bool = false
+    public var accountColor: UInt32 {
+        UInt32(user?.color ?? "") ?? 0
+    }
     
     public var applicationName = ""
     public var applicationVersion = ""

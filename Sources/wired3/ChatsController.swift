@@ -327,7 +327,7 @@ public class ChatsController : TableController {
             response.addParameter(field: "wired.user.nick", value: chatClient.nick)
             response.addParameter(field: "wired.user.status", value: chatClient.status)
             response.addParameter(field: "wired.user.icon", value: chatClient.icon)
-            response.addParameter(field: "wired.account.color", value: UInt32(0))
+            response.addParameter(field: "wired.account.color", value: chatClient.accountColor)
             
             App.serverController.reply(client: client, reply: response, message: message)
             
@@ -357,7 +357,7 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.user.nick", value: client.nick)
                 reply.addParameter(field: "wired.user.status", value: client.status)
                 reply.addParameter(field: "wired.user.icon", value: client.icon)
-                reply.addParameter(field: "wired.account.color", value: UInt32(0))
+                reply.addParameter(field: "wired.account.color", value: client.accountColor)
                 
                 App.serverController.reply(client: chatClient, reply: reply, message: message)
             }
