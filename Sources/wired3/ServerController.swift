@@ -967,7 +967,7 @@ public class ServerController: ServerDelegate {
 
         var privilegesSaved = true
 
-        for privilege in spec?.accountPrivileges ?? [] {
+        for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             switch field.type {
             case .bool:
@@ -983,6 +983,11 @@ public class ServerController: ServerDelegate {
             default:
                 break
             }
+        }
+
+        if let color = message.enumeration(forField: "wired.account.color")
+            ?? message.uint32(forField: "wired.account.color") {
+            account.color = String(color)
         }
 
         if !privilegesSaved {
@@ -1033,7 +1038,7 @@ public class ServerController: ServerDelegate {
 
         var privilegesSaved = true
 
-        for privilege in spec?.accountPrivileges ?? [] {
+        for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             if field.type == .bool, let value = message.bool(forField: privilege) {
                 if !App.usersController.setGroupPrivilege(privilege, value: value, for: account) {
@@ -1120,7 +1125,7 @@ public class ServerController: ServerDelegate {
 
         let privilegesByName = Dictionary(uniqueKeysWithValues: account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
 
-        for privilege in spec?.accountPrivileges ?? [] {
+        for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             switch field.type {
             case .bool:
@@ -1143,7 +1148,7 @@ public class ServerController: ServerDelegate {
         let reply = P7Message(withName: "wired.account.privileges", spec: self.spec)
         let privilegesByName = Dictionary(uniqueKeysWithValues: account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
 
-        for privilege in spec?.accountPrivileges ?? [] {
+        for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             switch field.type {
             case .bool:
@@ -1239,7 +1244,7 @@ public class ServerController: ServerDelegate {
 
         let privilegesByName = Dictionary(uniqueKeysWithValues: account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
 
-        for privilege in spec?.accountPrivileges ?? [] {
+        for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             switch field.type {
             case .bool:
@@ -1252,6 +1257,17 @@ public class ServerController: ServerDelegate {
         }
 
         return reply
+    }
+
+    private func accountPrivilegesIncludingColor() -> [String] {
+        var privileges = spec?.accountPrivileges ?? []
+
+        if spec?.fieldsByName["wired.account.color"] != nil,
+           !privileges.contains("wired.account.color") {
+            privileges.append("wired.account.color")
+        }
+
+        return privileges
     }
     
     
