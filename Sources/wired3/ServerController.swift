@@ -283,6 +283,12 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.chat.kick_user" {
             //App.chatsController.kickUser(user: user, message: message)
         }
+        else if message.name == "wired.message.send_message" {
+            self.receiveMessageSendMessage(client: client, message: message)
+        }
+        else if message.name == "wired.message.send_broadcast" {
+            self.receiveMessageSendBroadcast(client: client, message: message)
+        }
         else if message.name == "wired.file.list_directory" {
             App.filesController.listDirectory(client: client, message: message)
         }
@@ -495,6 +501,62 @@ public class ServerController: ServerDelegate {
         App.serverController.reply(client: fromClient,
                                    reply: response,
                                    message: message)
+    }
+
+    private func receiveMessageSendMessage(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        if !user.hasPrivilege(name: "wired.account.message.send_messages") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let recipientID = message.uint32(forField: "wired.user.id"),
+              let recipient = App.clientsController.user(withID: recipientID) else {
+            App.serverController.replyError(client: client, error: "wired.error.user_not_found", message: message)
+            return
+        }
+
+        guard let body = message.string(forField: "wired.message.message"),
+              !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let reply = P7Message(withName: "wired.message.message", spec: self.spec)
+        reply.addParameter(field: "wired.user.id", value: client.userID)
+        reply.addParameter(field: "wired.message.message", value: body)
+
+        _ = self.send(message: reply, client: recipient)
+        App.serverController.replyOK(client: client, message: message)
+    }
+
+    private func receiveMessageSendBroadcast(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        if !user.hasPrivilege(name: "wired.account.message.broadcast") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let body = message.string(forField: "wired.message.broadcast"),
+              !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let broadcast = P7Message(withName: "wired.message.broadcast", spec: self.spec)
+        broadcast.addParameter(field: "wired.user.id", value: client.userID)
+        broadcast.addParameter(field: "wired.message.broadcast", value: body)
+
+        App.clientsController.broadcast(message: broadcast)
+        App.serverController.replyOK(client: client, message: message)
     }
     
     
@@ -1201,19 +1263,16 @@ public class ServerController: ServerDelegate {
     }
 
     private func reloadPrivilegesForLoggedInUsers(matchingAccountNames accountNames: [String]) {
-        let normalizedNames = Set(accountNames.filter { !$0.isEmpty })
+        let normalizedNames = Set(accountNames.map { normalizedAccountIdentifier($0) }.filter { !$0.isEmpty })
         guard !normalizedNames.isEmpty else { return }
 
         for connectedClient in App.clientsController.connectedClientsSnapshot() {
             guard connectedClient.state == .LOGGED_IN else { continue }
             guard let currentName = connectedClient.user?.username else { continue }
-            guard normalizedNames.contains(currentName) else { continue }
+            let normalizedCurrentName = normalizedAccountIdentifier(currentName)
+            guard normalizedNames.contains(normalizedCurrentName) else { continue }
 
-            guard let refreshedUser =
-                    App.usersController.userWithPrivileges(withUsername: currentName)
-                    ?? App.usersController.userWithPrivileges(withUsername: accountNames.last ?? "") else {
-                continue
-            }
+            guard let refreshedUser = userWithPrivileges(matchingUsername: currentName) else { continue }
 
             connectedClient.user = refreshedUser
 
@@ -1226,7 +1285,7 @@ public class ServerController: ServerDelegate {
     }
 
     private func reloadPrivilegesForLoggedInUsers(affectedByGroups groupNames: [String]) {
-        let normalizedNames = Set(groupNames.filter { !$0.isEmpty })
+        let normalizedNames = Set(groupNames.map { normalizedAccountIdentifier($0) }.filter { !$0.isEmpty })
         guard !normalizedNames.isEmpty else { return }
 
         for connectedClient in App.clientsController.connectedClientsSnapshot() {
@@ -1234,10 +1293,11 @@ public class ServerController: ServerDelegate {
             guard let currentUser = connectedClient.user else { continue }
             guard let username = currentUser.username else { continue }
 
-            let wasInAffectedGroup = normalizedNames.contains { currentUser.hasGroup(string: $0) }
+            let currentGroups = normalizedGroupIdentifiers(for: currentUser)
+            let wasInAffectedGroup = !currentGroups.isDisjoint(with: normalizedNames)
             guard wasInAffectedGroup else { continue }
 
-            guard let refreshedUser = App.usersController.userWithPrivileges(withUsername: username) else { continue }
+            guard let refreshedUser = userWithPrivileges(matchingUsername: username) else { continue }
             connectedClient.user = refreshedUser
 
             if !refreshedUser.hasPrivilege(name: "wired.account.account.list_accounts") {
@@ -1246,6 +1306,50 @@ public class ServerController: ServerDelegate {
 
             _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
         }
+    }
+
+    private func normalizedAccountIdentifier(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func normalizedGroupIdentifiers(for user: User) -> Set<String> {
+        var groups = Set<String>()
+
+        if let primary = user.group {
+            let normalized = normalizedAccountIdentifier(primary)
+            if !normalized.isEmpty {
+                groups.insert(normalized)
+            }
+        }
+
+        if let secondaryGroups = user.groups {
+            for raw in secondaryGroups.split(separator: ",") {
+                let normalized = normalizedAccountIdentifier(String(raw))
+                if !normalized.isEmpty {
+                    groups.insert(normalized)
+                }
+            }
+        }
+
+        return groups
+    }
+
+    private func userWithPrivileges(matchingUsername username: String) -> User? {
+        if let exact = App.usersController.userWithPrivileges(withUsername: username) {
+            return exact
+        }
+
+        let normalizedUsername = normalizedAccountIdentifier(username)
+        guard !normalizedUsername.isEmpty else { return nil }
+
+        for listedUser in App.usersController.users() {
+            guard let listedUsername = listedUser.username else { continue }
+            if normalizedAccountIdentifier(listedUsername) == normalizedUsername {
+                return App.usersController.userWithPrivileges(withUsername: listedUsername)
+            }
+        }
+
+        return nil
     }
 
     private func accountGroupMessage(for account: Group, name: String) -> P7Message {
