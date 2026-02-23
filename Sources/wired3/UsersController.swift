@@ -79,6 +79,127 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    public func userWithPrivileges(identity: String) -> User? {
+        do {
+            return try User.query(on: databaseController.pool)
+                .with(\.$privileges)
+                .filter(\.$identity == identity)
+                .first()
+                .wait()
+        } catch {
+            return nil
+        }
+    }
+
+    public func users(matchingIdentityQuery query: String, limit: Int = 50) -> [User] {
+        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalizedQuery.isEmpty else { return [] }
+
+        do {
+            let listedUsers = try User.query(on: databaseController.pool)
+                .all()
+                .wait()
+
+            return listedUsers
+                .filter { user in
+                    let username = (user.username ?? "").lowercased()
+                    let fullName = (user.fullName ?? "").lowercased()
+                    let identity = (user.identity ?? "").lowercased()
+                    return username.contains(normalizedQuery)
+                        || fullName.contains(normalizedQuery)
+                        || identity.contains(normalizedQuery)
+                }
+                .prefix(limit)
+                .map { $0 }
+        } catch {
+            return []
+        }
+    }
+
+    public func isIdentityAvailable(_ identity: String) -> Bool {
+        do {
+            let existing = try User.query(on: databaseController.pool)
+                .filter(\.$identity == identity)
+                .first()
+                .wait()
+            return existing == nil
+        } catch {
+            return false
+        }
+    }
+
+    private func normalizedIdentity(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+
+    private func generatedIdentitySeed(from user: User) -> String {
+        let source = (user.fullName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            ? user.fullName
+            : user.username) ?? "user"
+
+        let cleaned = source
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: "-")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+
+        return cleaned.isEmpty ? "user" : cleaned
+    }
+
+    public func backfillStableIdentitiesIfNeeded() {
+        do {
+            let loadedUsers = try User.query(on: databaseController.pool)
+                .all()
+                .wait()
+                .sorted {
+                    ($0.username ?? "").localizedCaseInsensitiveCompare($1.username ?? "") == .orderedAscending
+                }
+
+            var usedIdentities: Set<String> = []
+            var updatedUsers = 0
+
+            for user in loadedUsers {
+                let currentIdentity = normalizedIdentity(user.identity ?? "")
+
+                if !currentIdentity.isEmpty, !usedIdentities.contains(currentIdentity) {
+                    usedIdentities.insert(currentIdentity)
+
+                    if user.identity != currentIdentity {
+                        user.identity = currentIdentity
+                        if save(user: user) {
+                            updatedUsers += 1
+                        }
+                    }
+                    continue
+                }
+
+                let base = generatedIdentitySeed(from: user)
+                var candidate = base
+                var suffix = 2
+
+                while usedIdentities.contains(candidate) {
+                    candidate = "\(base)-\(suffix)"
+                    suffix += 1
+                }
+
+                user.identity = candidate
+                if save(user: user) {
+                    usedIdentities.insert(candidate)
+                    updatedUsers += 1
+                }
+            }
+
+            if updatedUsers > 0 {
+                WiredSwift.Logger.info("Backfilled \(updatedUsers) user identities")
+            }
+        } catch {
+            WiredSwift.Logger.error("Could not backfill user identities: \(error.localizedDescription)")
+        }
+    }
+
     public func users() -> [User] {
         do {
             return try User.query(on: databaseController.pool)
@@ -207,6 +328,8 @@ public class UsersController: TableController, SocketPasswordDelegate {
                                        constraintName: "uq:group_privileges.name.group_id")
 
         migrateGroupsColorColumnIfNeeded(db: db)
+        migrateUsersOfflineMessagingColumnsIfNeeded(db: db)
+        migrateOfflineMessagesTableIfNeeded(db: db)
     }
 
     private func migratePrivilegesTableIfNeeded(db: OpaquePointer,
@@ -254,6 +377,73 @@ public class UsersController: TableController, SocketPasswordDelegate {
         WiredSwift.Logger.info("Added groups.color column")
     }
 
+    private func migrateUsersOfflineMessagingColumnsIfNeeded(db: OpaquePointer) {
+        guard let schema = readSchema(db: db, table: "users") else { return }
+
+        let columnStatements: [(column: String, statement: String)] = [
+            ("identity", "ALTER TABLE \"users\" ADD COLUMN \"identity\" TEXT;"),
+            ("offline_public_key", "ALTER TABLE \"users\" ADD COLUMN \"offline_public_key\" BLOB;"),
+            ("offline_key_id", "ALTER TABLE \"users\" ADD COLUMN \"offline_key_id\" TEXT;"),
+            ("offline_crypto", "ALTER TABLE \"users\" ADD COLUMN \"offline_crypto\" TEXT;")
+        ]
+
+        for (column, statement) in columnStatements where !schema.contains("\"\(column)\"") {
+            if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+                if let message = sqlite3_errmsg(db) {
+                    WiredSwift.Logger.error("Could not add users.\(column) column: \(String(cString: message))")
+                }
+            } else {
+                WiredSwift.Logger.info("Added users.\(column) column")
+            }
+        }
+
+        let uniqueIdentityIndex = "CREATE UNIQUE INDEX IF NOT EXISTS \"users_identity_unique\" ON \"users\"(\"identity\");"
+        if sqlite3_exec(db, uniqueIdentityIndex, nil, nil, nil) != SQLITE_OK {
+            if let message = sqlite3_errmsg(db) {
+                WiredSwift.Logger.error("Could not create users.identity unique index: \(String(cString: message))")
+            }
+        }
+    }
+
+    private func migrateOfflineMessagesTableIfNeeded(db: OpaquePointer) {
+        let statement = """
+        CREATE TABLE IF NOT EXISTS "offline_messages" (
+          "id" UUID PRIMARY KEY,
+          "sender_identity" TEXT NOT NULL,
+          "recipient_identity" TEXT NOT NULL,
+          "ciphertext" BLOB NOT NULL,
+          "nonce" BLOB NOT NULL,
+          "wrapped_key_recipient" BLOB NOT NULL,
+          "wrapped_key_sender" BLOB,
+          "recipient_key_id" TEXT,
+          "created_at" DATETIME NOT NULL,
+          "expires_at" DATETIME NOT NULL,
+          "delivered_at" DATETIME,
+          "acked_at" DATETIME
+        );
+        """
+
+        if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+            if let message = sqlite3_errmsg(db) {
+                WiredSwift.Logger.error("Could not create offline_messages table: \(String(cString: message))")
+            }
+            return
+        }
+
+        let indexStatements = [
+            "CREATE INDEX IF NOT EXISTS \"offline_messages_recipient_index\" ON \"offline_messages\"(\"recipient_identity\");",
+            "CREATE INDEX IF NOT EXISTS \"offline_messages_expires_index\" ON \"offline_messages\"(\"expires_at\");"
+        ]
+
+        for indexStatement in indexStatements {
+            if sqlite3_exec(db, indexStatement, nil, nil, nil) != SQLITE_OK {
+                if let message = sqlite3_errmsg(db) {
+                    WiredSwift.Logger.error("Could not create offline_messages index: \(String(cString: message))")
+                }
+            }
+        }
+    }
+
     private func readSchema(db: OpaquePointer, table: String) -> String? {
         let query = "SELECT sql FROM sqlite_master WHERE type='table' AND name='\(table)' LIMIT 1;"
         var statement: OpaquePointer?
@@ -284,6 +474,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
                     .field("username", .string, .required)
                     .field("password", .string, .required)
                     .field("full_name", .string)
+                    .field("identity", .string)
                     .field("comment", .string)
                     .field("creation_time", .datetime)
                     .field("modification_time", .datetime)
@@ -297,7 +488,11 @@ public class UsersController: TableController, SocketPasswordDelegate {
                     .field("groups", .string)
                     .field("color", .string)
                     .field("files", .string)
+                    .field("offline_public_key", .data)
+                    .field("offline_key_id", .string)
+                    .field("offline_crypto", .string)
                     .unique(on: "username")
+                    .unique(on: "identity")
                     .create().wait()
             
             // create groups table
@@ -343,6 +538,22 @@ public class UsersController: TableController, SocketPasswordDelegate {
                     .field("value", .bool, .required)
                     .field("group_id", .uuid, .required)
                     .unique(on: "name", "group_id")
+                    .create().wait()
+
+            try self.databaseController.pool
+                    .schema("offline_messages")
+                    .id()
+                    .field("sender_identity", .string, .required)
+                    .field("recipient_identity", .string, .required)
+                    .field("ciphertext", .data, .required)
+                    .field("nonce", .data, .required)
+                    .field("wrapped_key_recipient", .data, .required)
+                    .field("wrapped_key_sender", .data)
+                    .field("recipient_key_id", .string)
+                    .field("created_at", .datetime, .required)
+                    .field("expires_at", .datetime, .required)
+                    .field("delivered_at", .datetime)
+                    .field("acked_at", .datetime)
                     .create().wait()
             
             // USERS PRIVILEGES

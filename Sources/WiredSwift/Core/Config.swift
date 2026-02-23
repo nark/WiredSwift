@@ -84,10 +84,16 @@ public class Config {
     
     public subscript(section:String, key: String) -> Any? {
         get {
-            return config["[\(section)]"]![key]
+            return config["[\(section)]"]?[key]
         }
         set(newValue) {
-            config["[\(section)]"]![key] = newValue
+            let sectionKey = "[\(section)]"
+
+            if config[sectionKey] == nil {
+                config[sectionKey] = [:]
+            }
+
+            config[sectionKey]![key] = newValue
             
             self.save()
         }

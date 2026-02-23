@@ -38,41 +38,143 @@ public class ServerController: ServerDelegate {
     public var uploads:UInt32 = 0
     public var downloadSpeed:UInt32 = 0
     public var uploadSpeed:UInt32 = 0
+    public var registerWithTrackers: Bool = false
+    public var trackers: [String] = []
+    public var trackerEnabled: Bool = false
+    public var trackerCategories: [String] = []
     
     private var socket:Socket!
     private let ecdh = ECDH()
     private let group = DispatchGroup()
     
     var startTime:Date? = nil
+
+    private func resolvedConfigPath(_ path: String) -> String {
+        let expanded = (path as NSString).expandingTildeInPath
+        if (expanded as NSString).isAbsolutePath {
+            return expanded
+        }
+
+        return App.workingDirectoryPath.stringByAppendingPathComponent(path: expanded)
+    }
+
+    private var bannerFilePath: String? {
+        guard let bannerPath = App.config["server", "banner"] as? String else {
+            return nil
+        }
+
+        return resolvedConfigPath(bannerPath)
+    }
     
     
     
     public init(port: Int, spec: P7Spec) {
         self.port = port
         self.spec = spec
+
+        func configString(_ section: String, _ key: String) -> String? {
+            App.config[section, key] as? String
+        }
+
+        func configUInt32(_ section: String, _ key: String) -> UInt32? {
+            if let value = App.config[section, key] as? UInt32 {
+                return value
+            }
+            if let value = App.config[section, key] as? Int, value >= 0 {
+                return UInt32(value)
+            }
+            if let string = configString(section, key),
+               let value = UInt32(string.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                return value
+            }
+            return nil
+        }
+
+        func configBool(_ section: String, _ key: String) -> Bool? {
+            if let value = App.config[section, key] as? Bool {
+                return value
+            }
+            if let string = configString(section, key)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased() {
+                if ["1", "true", "yes", "on"].contains(string) {
+                    return true
+                }
+                if ["0", "false", "no", "off"].contains(string) {
+                    return false
+                }
+            }
+            return nil
+        }
+
+        func configStringList(_ section: String, _ key: String) -> [String]? {
+            if let value = App.config[section, key] as? [String] {
+                return value
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+            }
+            if let value = configString(section, key)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+               !value.isEmpty {
+                if value.hasPrefix("["),
+                   let data = value.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [Any] {
+                    let parsed = json
+                        .compactMap { $0 as? String }
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { !$0.isEmpty }
+                    if !parsed.isEmpty {
+                        return parsed
+                    }
+                }
+
+                return value
+                    .split(separator: ",")
+                    .map { token in
+                        token
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                            .trimmingCharacters(in: CharacterSet(charactersIn: "[]\""))
+                    }
+                    .filter { !$0.isEmpty }
+            }
+            return nil
+        }
         
-        if let string = App.config["server", "name"] as? String {
+        if let string = configString("server", "name") {
             self.serverName = string
         }
         
-        if let string = App.config["server", "description"] as? String {
+        if let string = configString("server", "description") {
             self.serverDescription = string
         }
         
-        if let number = App.config["transfers", "downloads"] as? UInt32 {
+        if let number = configUInt32("transfers", "downloads") {
             self.downloads = number
         }
         
-        if let number = App.config["transfers", "uploads"] as? UInt32 {
+        if let number = configUInt32("transfers", "uploads") {
             self.uploads = number
         }
         
-        if let number = App.config["transfers", "downloadSpeed"] as? UInt32 {
-            self.uploadSpeed = number
+        if let number = configUInt32("transfers", "downloadSpeed") {
+            self.downloadSpeed = number
         }
         
-        if let number = App.config["transfers", "uploadSpeed"] as? UInt32 {
+        if let number = configUInt32("transfers", "uploadSpeed") {
             self.uploadSpeed = number
+        }
+
+        if let value = configBool("settings", "register_with_trackers") {
+            self.registerWithTrackers = value
+        }
+        if let value = configStringList("settings", "trackers") {
+            self.trackers = value
+        }
+        if let value = configBool("tracker", "tracker") {
+            self.trackerEnabled = value
+        }
+        if let value = configStringList("tracker", "categories") {
+            self.trackerCategories = value
         }
             
         self.addDelegate(self)
@@ -811,8 +913,8 @@ public class ServerController: ServerDelegate {
         response.addParameter(field: "wired.info.name", value: self.serverName)
         response.addParameter(field: "wired.info.description", value: self.serverDescription)
         
-        if let bannerPath = App.config["server", "banner"] as? String {
-            if let data = try? Data(contentsOf: URL.init(fileURLWithPath: bannerPath)) {
+        if let bannerPath = bannerFilePath {
+            if let data = try? Data(contentsOf: URL(fileURLWithPath: bannerPath)) {
                 response.addParameter(field: "wired.info.banner", value: data)
             }
         }
@@ -821,8 +923,10 @@ public class ServerController: ServerDelegate {
         response.addParameter(field: "wired.info.uploads", value: self.uploads)
         response.addParameter(field: "wired.info.download_speed", value: self.downloadSpeed)
         response.addParameter(field: "wired.info.upload_speed", value: self.uploadSpeed)
-        
-        // TODO: add tracker here
+        response.addParameter(field: "wired.settings.register_with_trackers", value: self.registerWithTrackers)
+        response.addParameter(field: "wired.settings.trackers", value: self.trackers)
+        response.addParameter(field: "wired.tracker.tracker", value: self.trackerEnabled)
+        response.addParameter(field: "wired.tracker.categories", value: self.trackerCategories)
         
         self.reply(client: client, reply: response, message: message)
     }
@@ -853,9 +957,68 @@ public class ServerController: ServerDelegate {
             }
         }
         
-        if let bannerPath = App.config["server", "banner"] as? String {
+        if let bannerPath = bannerFilePath {
             if let bannerData = message.data(forField: "wired.info.banner") {
                 try? bannerData.write(to: URL(fileURLWithPath: bannerPath))
+                changed = true
+            }
+        }
+
+        if let downloads = message.uint32(forField: "wired.info.downloads"), self.downloads != downloads {
+            self.downloads = downloads
+            App.config["transfers", "downloads"] = downloads
+            changed = true
+        }
+
+        if let uploads = message.uint32(forField: "wired.info.uploads"), self.uploads != uploads {
+            self.uploads = uploads
+            App.config["transfers", "uploads"] = uploads
+            changed = true
+        }
+
+        if let downloadSpeed = message.uint32(forField: "wired.info.download_speed"), self.downloadSpeed != downloadSpeed {
+            self.downloadSpeed = downloadSpeed
+            App.config["transfers", "downloadSpeed"] = downloadSpeed
+            changed = true
+        }
+
+        if let uploadSpeed = message.uint32(forField: "wired.info.upload_speed"), self.uploadSpeed != uploadSpeed {
+            self.uploadSpeed = uploadSpeed
+            App.config["transfers", "uploadSpeed"] = uploadSpeed
+            changed = true
+        }
+
+        if let registerWithTrackers = message.bool(forField: "wired.settings.register_with_trackers"),
+           self.registerWithTrackers != registerWithTrackers {
+            self.registerWithTrackers = registerWithTrackers
+            App.config["settings", "register_with_trackers"] = registerWithTrackers
+            changed = true
+        }
+
+        if let trackers = message.stringList(forField: "wired.settings.trackers") {
+            let normalized = trackers
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            if self.trackers != normalized {
+                self.trackers = normalized
+                App.config["settings", "trackers"] = normalized
+                changed = true
+            }
+        }
+
+        if let trackerEnabled = message.bool(forField: "wired.tracker.tracker"), self.trackerEnabled != trackerEnabled {
+            self.trackerEnabled = trackerEnabled
+            App.config["tracker", "tracker"] = trackerEnabled
+            changed = true
+        }
+
+        if let categories = message.stringList(forField: "wired.tracker.categories") {
+            let normalized = categories
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            if self.trackerCategories != normalized {
+                self.trackerCategories = normalized
+                App.config["tracker", "categories"] = normalized
                 changed = true
             }
         }
@@ -863,6 +1026,8 @@ public class ServerController: ServerDelegate {
         if changed {
             App.clientsController.broadcast(message: self.serverInfoMessage())
         }
+
+        App.serverController.replyOK(client: client, message: message)
     }
 
     private func receiveAccountListUsers(client: Client, message: P7Message) {
@@ -1445,9 +1610,8 @@ public class ServerController: ServerDelegate {
         message.addParameter(field: "wired.info.name", value: self.serverName)
         message.addParameter(field: "wired.info.description", value: self.serverDescription)
         
-        if let bannerPath = App.config["server", "banner"] as? String {
-            let fullPath = App.rootPath.stringByAppendingPathComponent(path: bannerPath)
-            if let data = try? Data(contentsOf: URL.init(fileURLWithPath: fullPath)) {
+        if let bannerPath = bannerFilePath {
+            if let data = try? Data(contentsOf: URL(fileURLWithPath: bannerPath)) {
                 message.addParameter(field: "wired.info.banner", value: data)
             }
         }

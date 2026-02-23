@@ -17,6 +17,7 @@ public let DEFAULT_PORT = 4871
 
 
 public class AppController : DatabaseControllerDelegate {
+    var workingDirectoryPath:String
     var rootPath:String
     var configPath:String
     
@@ -36,9 +37,10 @@ public class AppController : DatabaseControllerDelegate {
     var config:Config
     
     // MARK: - Public
-    public init(specPath:String, dbPath:String, rootPath:String, configPath: String) {
+    public init(specPath:String, dbPath:String, rootPath:String, configPath: String, workingDirectoryPath: String) {
         let specUrl = URL(fileURLWithPath: specPath)
         
+        self.workingDirectoryPath = workingDirectoryPath
         self.rootPath = rootPath
         self.configPath = configPath
         self.databaseURL = URL(fileURLWithPath: dbPath)
@@ -51,6 +53,9 @@ public class AppController : DatabaseControllerDelegate {
         
         if let spec = P7Spec(withUrl: specUrl) {
             self.spec = spec
+        } else {
+            Logger.fatal("Cannot load spec file at path \(specPath)")
+            exit(-1)
         }
     }
     
@@ -74,6 +79,7 @@ public class AppController : DatabaseControllerDelegate {
         }
 
         self.usersController.migrateLegacyPrivilegesSchemaIfNeeded()
+        self.usersController.backfillStableIdentitiesIfNeeded()
         
         self.chatsController.loadChats()
         self.indexController.indexFiles()

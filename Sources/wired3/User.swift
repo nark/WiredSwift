@@ -34,6 +34,9 @@ public class User: Model {
     @OptionalField(key: "full_name")
     public var fullName: String?
 
+    @OptionalField(key: "identity")
+    public var identity: String?
+
     @OptionalField(key: "comment")
     public var comment: String?
 
