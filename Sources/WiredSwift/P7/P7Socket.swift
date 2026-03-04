@@ -301,9 +301,14 @@ public class P7Socket: NSObject {
         }
 
         let sizeData = data.subdata(in: 4..<(4 + MemoryLayout<UInt32>.size))
-        let expectedSize = sizeData.withUnsafeBytes { rawBuffer -> Int in
-            Int(UInt32(littleEndian: rawBuffer.load(as: UInt32.self)))
-        }
+        let sizeBytes = Array(sizeData)
+        guard sizeBytes.count == 4 else { return nil }
+        let expectedSize = Int(
+            UInt32(sizeBytes[0]) |
+            (UInt32(sizeBytes[1]) << 8) |
+            (UInt32(sizeBytes[2]) << 16) |
+            (UInt32(sizeBytes[3]) << 24)
+        )
 
         let payload = data.subdata(in: (4 + MemoryLayout<UInt32>.size)..<(data.count - 4))
         if payload.count == expectedSize {
@@ -692,7 +697,18 @@ public class P7Socket: NSObject {
             guard available else { continue }
 
             var temp = [UInt8](repeating: 0, count: size - buffer.count)
-            let bytesRead = recv(socket.fileDescriptor, &temp, temp.count, 0)
+            let bytesRead: Int
+            #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+            bytesRead = temp.withUnsafeMutableBytes { rawBuffer in
+                guard let base = rawBuffer.baseAddress else { return -1 }
+                return Darwin.recv(socket.fileDescriptor, base, rawBuffer.count, 0)
+            }
+            #else
+            bytesRead = temp.withUnsafeMutableBytes { rawBuffer in
+                guard let base = rawBuffer.baseAddress else { return -1 }
+                return Glibc.recv(socket.fileDescriptor, base, rawBuffer.count, 0)
+            }
+            #endif
 
             if bytesRead == 0 {
                 // Socket fermé proprement

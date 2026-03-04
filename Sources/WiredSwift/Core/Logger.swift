@@ -7,6 +7,11 @@
 //
 
 import Foundation
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+import Darwin
+#else
+import Glibc
+#endif
 
 public protocol LoggerDelegate: class {
     func loggerDidOutput(logger: Logger, output: String)
@@ -91,6 +96,13 @@ public class Logger {
     
     private static var shared = Logger()
     public static var delegate:LoggerDelegate? = nil
+    private let fileLock = NSRecursiveLock()
+    
+    private func withFileLock<T>(_ body: () -> T) -> T {
+        fileLock.lock()
+        defer { fileLock.unlock() }
+        return body()
+    }
     
     private var maxLevel: Int       = 6
     public lazy var fileName:String = targetName + ".log"
@@ -180,8 +192,9 @@ public class Logger {
             d.loggerDidOutput(logger: self, output: outputString)
         }
 
+        let currentOutputs = withFileLock { outputs }
         // managing different type of output (console or file)
-        for output in outputs {
+        for output in currentOutputs {
             switch output {
             case .Stdout:
                 consoleLog(message: outputString)
@@ -209,36 +222,37 @@ public class Logger {
 
      */
     public func fileLog(message: String) -> Bool {
-        if let fileURL = filePath {
+        fileLock.lock()
+        defer { fileLock.unlock() }
 
-            if getFileSize() > self.sizeLimit {
-                do {
-                    try FileManager.default.removeItem(at: fileURL)
-                }
-                catch {}
-            }
-            Logger.eraseFileByTime()
-
-            var isDirectory = ObjCBool(true)
-            // if file doesn't exist we create it
-            if !FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) {
-                FileManager.default.createFile(atPath: fileURL.path, contents: Data(), attributes: nil)
-            }
-
-            do {
-                if let fileHandle = FileHandle(forWritingAtPath: fileURL.path) {
-                    fileHandle.seekToEndOfFile()
-                    let data:Data = message.data(using: String.Encoding.utf8, allowLossyConversion: false)!
-                    fileHandle.write(data)
-                } else {
-                    try message.write(to: fileURL, atomically: false, encoding: .utf8)
-                }
-            }
-            catch {/* error handling here */}
-
-            return true
+        guard let fileURL = filePath else {
+            return false
         }
-        return false
+
+        let path = fileURL.path
+
+        if getFileSize(atPath: path) > self.sizeLimit {
+            do {
+                try FileManager.default.removeItem(at: fileURL)
+            }
+            catch {}
+        }
+
+        Logger.eraseFileByTime()
+
+        // Ensure the parent directory exists before opening the log file.
+        if let directoryPath = fileURL.deletingLastPathComponent().path as String? {
+            do {
+                try FileManager.default.createDirectory(
+                    atPath: directoryPath,
+                    withIntermediateDirectories: true
+                )
+            } catch {
+                return false
+            }
+        }
+
+        return appendLinePOSIX(path: path, message: message)
     }
 
 
@@ -250,9 +264,11 @@ public class Logger {
 
      */
     public static func setDestinations(_ destinations: [Output], filePath: String? = nil) {
-        shared.outputs = destinations
-        if let fileName:String = filePath {
-            shared.fileName = fileName
+        shared.withFileLock {
+            shared.outputs = destinations
+            if let fileName:String = filePath {
+                shared.fileName = fileName
+            }
         }
     }
 
@@ -269,10 +285,12 @@ public class Logger {
             return false
         }
 
-        if !path.contains(self.shared.fileName) {
-            path += "/" + self.shared.fileName
+        shared.withFileLock {
+            if !path.contains(self.shared.fileName) {
+                path += "/" + self.shared.fileName
+            }
+            shared.filePath = URL(fileURLWithPath: path)
         }
-        shared.filePath = URL(fileURLWithPath: path)
 
         return true
     }
@@ -290,21 +308,30 @@ public class Logger {
     }
 
     public static func setLimitLogSize(_ at: UInt64) {
-        shared.sizeLimit = at
+        shared.withFileLock {
+            shared.sizeLimit = at
+        }
     }
 
     public static func addDestination(_ dest: Output) {
-        shared.outputs.append(dest)
+        shared.withFileLock {
+            shared.outputs.append(dest)
+        }
     }
 
     public static func removeDestination(_ dest: Output) {
-        shared.outputs = shared.outputs.filter{$0 != dest}
+        shared.withFileLock {
+            shared.outputs = shared.outputs.filter{$0 != dest}
+        }
     }
 
     public static func setTimeLimit(_ at: TimeLimit) {
-        shared.timeLimit = at
-        shared.startDate = Date()/* the date is reset */
-        UserDefaults.standard.set(shared.startDate, forKey: "startDate")
+        let startDate = Date()
+        shared.withFileLock {
+            shared.timeLimit = at
+            shared.startDate = startDate /* the date is reset */
+        }
+        UserDefaults.standard.set(startDate, forKey: "startDate")
     }
 
     /**
@@ -312,10 +339,12 @@ public class Logger {
 
      */
     public static func eraseFileByTime() {
-        let range = -Int(shared.startDate.timeIntervalSinceNow)
+        let startDate = shared.withFileLock { shared.startDate }
+        let range = -Int(startDate.timeIntervalSinceNow)
         let t:Int
 
-        switch shared.timeLimit {
+        let timeLimit = shared.withFileLock { shared.timeLimit }
+        switch timeLimit {
         case .Minute:
             t = range / 60
         case .Hour:
@@ -327,9 +356,11 @@ public class Logger {
         }
 
         if t >= 1 {
-            if let path = shared.filePath {
+            if let path = shared.withFileLock({ shared.filePath }) {
                 Logger.removeLogFile(path)
-                shared.startDate = Date()
+                shared.withFileLock {
+                    shared.startDate = Date()
+                }
             }
         }
     }
@@ -351,32 +382,47 @@ public class Logger {
     /**/
 
 
-    private func getFileSize() -> UInt64 {
-        var fileSize : UInt64 = 0
-
-        do {
-            if let path = filePath?.path {
-                let attr = try FileManager.default.attributesOfItem(atPath: path)
-                fileSize = attr[FileAttributeKey.size] as! UInt64
-            }
-        } catch {
-            print("Error: \(error)")
+    private func getFileSize(atPath path: String) -> UInt64 {
+        var fileStat = stat()
+        let result = path.withCString { cString in
+            stat(cString, &fileStat)
         }
+        guard result == 0 else {
+            return 0
+        }
+        return UInt64(fileStat.st_size)
+    }
 
-        return fileSize
+    private func appendLinePOSIX(path: String, message: String) -> Bool {
+        let fd = path.withCString { cPath in
+            open(cPath, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+        }
+        guard fd >= 0 else {
+            return false
+        }
+        defer { close(fd) }
+
+        let bytes = Array(message.utf8)
+        let wrote = bytes.withUnsafeBytes { rawBuffer -> Int in
+            guard let base = rawBuffer.baseAddress else {
+                return 0
+            }
+            return write(fd, base, rawBuffer.count)
+        }
+        return wrote == bytes.count
     }
 
     public static func getSizeLimit() -> UInt64 {
-        return shared.sizeLimit
+        shared.withFileLock { shared.sizeLimit }
     }
 
 
     public static func getFileDestination() -> String? {
-        return shared.filePath?.path
+        shared.withFileLock { shared.filePath?.path }
     }
 
     public static func getTimeLimit() -> Int {
-        return shared.timeLimit.rawValue
+        shared.withFileLock { shared.timeLimit.rawValue }
     }
 
 

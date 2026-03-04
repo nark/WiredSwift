@@ -226,10 +226,14 @@ private enum LinuxCompressionCodec {
         let sizeOffset = 4
         let sizeEnd = sizeOffset + MemoryLayout<UInt32>.size
         let sizeData = input.subdata(in: sizeOffset..<sizeEnd)
-        let expectedSize = sizeData.withUnsafeBytes { rawBuffer -> Int in
-            let value = rawBuffer.load(as: UInt32.self)
-            return Int(UInt32(littleEndian: value))
-        }
+        let sizeBytes = Array(sizeData)
+        guard sizeBytes.count == 4 else { return nil }
+        let expectedSize = Int(
+            UInt32(sizeBytes[0]) |
+            (UInt32(sizeBytes[1]) << 8) |
+            (UInt32(sizeBytes[2]) << 16) |
+            (UInt32(sizeBytes[3]) << 24)
+        )
 
         let payloadStart = sizeEnd
         let payloadEnd = input.count - appleLZ4Footer.count

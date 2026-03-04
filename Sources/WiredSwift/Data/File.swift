@@ -6,6 +6,11 @@
 //
 
 import Foundation
+#if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+import Darwin
+#else
+import Glibc
+#endif
 
 
 public class File {
@@ -15,6 +20,39 @@ public class File {
     public static let wiredFileMetaLabels:String        = "/.wired/labels"
     
     public static let wiredPermissionsFieldSeparator    = "\u{1C}"
+    
+    fileprivate static func readData(atPath path: String) -> Data? {
+        let fd = path.withCString { open($0, O_RDONLY) }
+        guard fd >= 0 else {
+            return nil
+        }
+        defer { close(fd) }
+
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 16 * 1024)
+
+        while true {
+            let readCount: Int
+            #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+            readCount = buffer.withUnsafeMutableBytes { rawBuffer in
+                guard let base = rawBuffer.baseAddress else { return -1 }
+                return Darwin.read(fd, base, rawBuffer.count)
+            }
+            #else
+            readCount = buffer.withUnsafeMutableBytes { rawBuffer in
+                guard let base = rawBuffer.baseAddress else { return -1 }
+                return Glibc.read(fd, base, rawBuffer.count)
+            }
+            #endif
+            if readCount > 0 {
+                data.append(contentsOf: buffer.prefix(readCount))
+            } else if readCount == 0 {
+                return data
+            } else {
+                return nil
+            }
+        }
+    }
     
     public enum FileType: UInt32 {
         case file       = 0
@@ -88,7 +126,7 @@ public class File {
                 return type
             }
             
-            let typeData = FileManager.default.contents(atPath: typePath)
+            let typeData = File.readData(atPath: typePath)
             
             if  let typeString = typeData?.stringUTF8?.trimmingCharacters(in: .whitespacesAndNewlines),
                 let value = UInt32(typeString) {
@@ -200,7 +238,7 @@ public class FilePrivilege {
             return nil
         }
                 
-        guard let data = FileManager.default.contents(atPath: path.stringByAppendingPathComponent(path: File.wiredFileMetaPermissions)) else {
+        guard let data = File.readData(atPath: path.stringByAppendingPathComponent(path: File.wiredFileMetaPermissions)) else {
             return nil
         }
                 

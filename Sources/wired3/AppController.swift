@@ -30,6 +30,7 @@ public class AppController : DatabaseControllerDelegate {
     var clientsController:ClientsController!
     var usersController:UsersController!
     var chatsController:ChatsController!
+    var boardsController:BoardsController!
     var filesController:FilesController!
     var indexController:IndexController!
     var transfersController:TransfersController!
@@ -69,6 +70,7 @@ public class AppController : DatabaseControllerDelegate {
         self.filesController = FilesController(rootPath: self.rootPath)
         self.usersController = UsersController(databaseController: self.databaseController)
         self.chatsController = ChatsController(databaseController: self.databaseController)
+        self.boardsController = BoardsController(databasePath: self.databaseURL.path)
         self.indexController = IndexController(databaseController: self.databaseController,
                                                filesController: self.filesController)
         

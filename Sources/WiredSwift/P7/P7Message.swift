@@ -292,11 +292,11 @@ public class P7Message: NSObject {
                                     //}
                                 }
                             } else if specField.type == .uuid { // uuid (16)
-                                if let str = value as? String {
-                                    var buffer:Array<UInt8> = Array<UInt8>()
-                                    if let uuid = NSUUID(uuidString: str) {
-                                        uuid.getBytes(&buffer)
-                                        data.append(Data(bytes: &buffer, count: 16))
+                                if let str = value as? String,
+                                   let uuid = UUID(uuidString: str) {
+                                    var uuidValue = uuid.uuid
+                                    withUnsafeBytes(of: &uuidValue) { rawBytes in
+                                        data.append(rawBytes.bindMemory(to: UInt8.self))
                                     }
                                 }
                             } else if specField.type == .date { // date (8)

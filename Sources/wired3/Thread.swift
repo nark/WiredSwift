@@ -1,5 +1,5 @@
 //
-//  WiredPost.swift
+//  Thread.swift
 //  WiredSwift
 //
 //  Created by Rafael Warnault on 01/03/2020.
@@ -9,9 +9,10 @@
 import Foundation
 
 
-public class WiredPost {
+public class Thread {
     public var uuid: String
-    public var thread: String
+    public var board: String
+    public var subject: String
     public var text: String
     public var nick: String
     public var login: String
@@ -19,15 +20,35 @@ public class WiredPost {
     public var editDate: Date?
     public var icon: Data?
 
+    public var posts: [Post] = []
+
+    public var replies: Int {
+        return posts.count
+    }
+
+    public var latestReply: Post? {
+        return posts.last
+    }
+
+    public var latestReplyDate: Date? {
+        return posts.last?.postDate
+    }
+
+    public var latestReplyUUID: String? {
+        return posts.last?.uuid
+    }
+
     public init(uuid: String,
-                thread: String,
+                board: String,
+                subject: String,
                 text: String,
                 nick: String,
                 login: String,
                 postDate: Date,
                 icon: Data? = nil) {
         self.uuid     = uuid
-        self.thread   = thread
+        self.board    = board
+        self.subject  = subject
         self.text     = text
         self.nick     = nick
         self.login    = login

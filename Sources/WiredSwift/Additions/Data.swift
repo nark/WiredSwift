@@ -77,44 +77,53 @@ extension Data {
     
     public var uint16: UInt16? {
         get {
-            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
-                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt16.self).pointee
-                return CFSwapInt16HostToBig(pointer)
-            })
+            guard self.count >= MemoryLayout<UInt16>.size else { return nil }
+            var value: UInt16 = 0
+            _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
+                self.prefix(MemoryLayout<UInt16>.size).copyBytes(to: destination)
+            }
+            return CFSwapInt16HostToBig(value)
         }
     }
     
     public var uint32: UInt32? {
         get {
-            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
-                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt32.self).pointee
-                return CFSwapInt32HostToBig(pointer)
-            })
+            guard self.count >= MemoryLayout<UInt32>.size else { return nil }
+            var value: UInt32 = 0
+            _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
+                self.prefix(MemoryLayout<UInt32>.size).copyBytes(to: destination)
+            }
+            return CFSwapInt32HostToBig(value)
         }
     }
     
     public var uint64: UInt64? {
         get {
-            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
-                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt64.self).pointee
-                return CFSwapInt64HostToBig(pointer)
-            })
+            guard self.count >= MemoryLayout<UInt64>.size else { return nil }
+            var value: UInt64 = 0
+            _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
+                self.prefix(MemoryLayout<UInt64>.size).copyBytes(to: destination)
+            }
+            return CFSwapInt64HostToBig(value)
         }
     }
     
     public var double:Double? {
         get {
-            self.withUnsafeBytes( { (ptr : UnsafeRawBufferPointer) in
-                let pointer = ptr.baseAddress!.assumingMemoryBound(to: UInt64.self).pointee
-                return CFConvertDoubleSwappedToHost(CFSwappedFloat64(v: pointer))
-            })
+            guard self.count >= MemoryLayout<UInt64>.size else { return nil }
+            var bitPattern: UInt64 = 0
+            _ = Swift.withUnsafeMutableBytes(of: &bitPattern) { (destination: UnsafeMutableRawBufferPointer) in
+                self.prefix(MemoryLayout<UInt64>.size).copyBytes(to: destination)
+            }
+            return CFConvertDoubleSwappedToHost(CFSwappedFloat64(v: bitPattern))
         }
     }
         
     public var uuid: NSUUID? {
         get {
-            var bytes = [UInt8](repeating: 0, count: self.count)
-            self.copyBytes(to:&bytes, count: self.count * MemoryLayout<UInt32>.size)
+            guard self.count >= 16 else { return nil }
+            var bytes = [UInt8](repeating: 0, count: 16)
+            self.copyBytes(to: &bytes, count: 16)
             return NSUUID(uuidBytes: bytes)
         }
     }

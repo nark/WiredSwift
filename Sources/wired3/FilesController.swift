@@ -10,7 +10,7 @@ import WiredSwift
 
 public class FilesController {
     public var rootPath:String
-    private let subscriptionsLock = NSLock()
+    private let subscriptionsQueue = DispatchQueue(label: "wired3.files.subscriptions")
     private var subscribedRealPathsByClient:[UInt32:Set<String>] = [:]
     private var subscribedVirtualPathsByClient:[UInt32:[String:String]] = [:]
     
@@ -718,17 +718,15 @@ public class FilesController {
             return
         }
 
-        subscriptionsLock.lock()
-        if subscribedRealPathsByClient[client.userID] == nil {
-            subscribedRealPathsByClient[client.userID] = Set<String>()
-        }
-        subscribedRealPathsByClient[client.userID]?.insert(realPath)
+        subscriptionsQueue.sync {
+            var realPaths = subscribedRealPathsByClient[client.userID] ?? Set<String>()
+            realPaths.insert(realPath)
+            subscribedRealPathsByClient[client.userID] = realPaths
 
-        if subscribedVirtualPathsByClient[client.userID] == nil {
-            subscribedVirtualPathsByClient[client.userID] = [:]
+            var virtualPaths = subscribedVirtualPathsByClient[client.userID] ?? [:]
+            virtualPaths[realPath] = normalizedVirtualPath
+            subscribedVirtualPathsByClient[client.userID] = virtualPaths
         }
-        subscribedVirtualPathsByClient[client.userID]?[realPath] = normalizedVirtualPath
-        subscriptionsLock.unlock()
 
         App.serverController.replyOK(client: client, message: message)
     }
@@ -757,14 +755,14 @@ public class FilesController {
             return
         }
 
-        subscriptionsLock.lock()
-        let isSubscribed = subscribedRealPathsByClient[client.userID]?.contains(realPath) ?? false
-
-        if isSubscribed {
-            subscribedRealPathsByClient[client.userID]?.remove(realPath)
-            subscribedVirtualPathsByClient[client.userID]?[realPath] = nil
+        let isSubscribed = subscriptionsQueue.sync { () -> Bool in
+            let subscribed = subscribedRealPathsByClient[client.userID]?.contains(realPath) ?? false
+            if subscribed {
+                subscribedRealPathsByClient[client.userID]?.remove(realPath)
+                subscribedVirtualPathsByClient[client.userID]?[realPath] = nil
+            }
+            return subscribed
         }
-        subscriptionsLock.unlock()
 
         if !isSubscribed {
             App.serverController.replyError(client: client, error: "wired.error.not_subscribed", message: message)
@@ -775,10 +773,10 @@ public class FilesController {
     }
 
     public func unsubscribeAll(client: Client) {
-        subscriptionsLock.lock()
-        subscribedRealPathsByClient[client.userID] = nil
-        subscribedVirtualPathsByClient[client.userID] = nil
-        subscriptionsLock.unlock()
+        subscriptionsQueue.sync {
+            subscribedRealPathsByClient.removeValue(forKey: client.userID)
+            subscribedVirtualPathsByClient.removeValue(forKey: client.userID)
+        }
     }
 
     public func notifyDirectoryChanged(path: String) {
@@ -791,26 +789,36 @@ public class FilesController {
 
     private func notify(path: String, messageName: String, removeSubscriptionAfterNotify: Bool) {
         let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
-        var deliveries:[(Client, String)] = []
-
-        subscriptionsLock.lock()
-        for (userID, paths) in subscribedRealPathsByClient where paths.contains(realPath) {
-            if let virtualPath = subscribedVirtualPathsByClient[userID]?[realPath],
-               let client = App.clientsController.user(withID: userID),
-               client.state == .LOGGED_IN {
-                deliveries.append((client, virtualPath))
+        let targets: [(UInt32, String)] = subscriptionsQueue.sync {
+            var snapshot: [(UInt32, String)] = []
+            for (userID, paths) in subscribedRealPathsByClient where paths.contains(realPath) {
+                if let virtualPath = subscribedVirtualPathsByClient[userID]?[realPath] {
+                    snapshot.append((userID, virtualPath))
+                }
             }
+
+            if removeSubscriptionAfterNotify {
+                let userIDs = Array(subscribedRealPathsByClient.keys)
+                for userID in userIDs {
+                    subscribedRealPathsByClient[userID]?.remove(realPath)
+                    subscribedVirtualPathsByClient[userID]?[realPath] = nil
+                    
+                    if subscribedRealPathsByClient[userID]?.isEmpty == true {
+                        subscribedRealPathsByClient.removeValue(forKey: userID)
+                    }
+                    if subscribedVirtualPathsByClient[userID]?.isEmpty == true {
+                        subscribedVirtualPathsByClient.removeValue(forKey: userID)
+                    }
+                }
+            }
+            return snapshot
         }
 
-        if removeSubscriptionAfterNotify {
-            for userID in subscribedRealPathsByClient.keys {
-                subscribedRealPathsByClient[userID]?.remove(realPath)
-                subscribedVirtualPathsByClient[userID]?[realPath] = nil
+        for (userID, virtualPath) in targets {
+            guard let client = App.clientsController.user(withID: userID),
+                  client.state == .LOGGED_IN else {
+                continue
             }
-        }
-        subscriptionsLock.unlock()
-
-        for (client, virtualPath) in deliveries {
             let reply = P7Message(withName: messageName, spec: client.socket.spec)
             reply.addParameter(field: "wired.file.path", value: virtualPath)
             _ = App.serverController.send(message: reply, client: client)

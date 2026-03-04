@@ -2187,11 +2187,19 @@
             <p7:documentation>
                 TBD
             </p7:documentation>
+            <p7:parameter field="wired.board.board" version="2.0" />
             <p7:parameter field="wired.board.thread" use="required" version="2.0" />
             <p7:parameter field="wired.board.subject" use="required" version="2.0" />
             <p7:parameter field="wired.board.edit_date" version="2.0" />
             <p7:parameter field="wired.board.replies" use="required" version="2.0" />
+            <p7:parameter field="wired.board.latest_reply" version="2.0" />
             <p7:parameter field="wired.board.latest_reply_date" version="2.0" />
+            <p7:parameter field="wired.board.post" version="2.0" />
+            <p7:parameter field="wired.board.text" version="2.0" />
+            <p7:parameter field="wired.board.post_date" version="2.0" />
+            <p7:parameter field="wired.board.own_post" version="2.0" />
+            <p7:parameter field="wired.user.nick" version="2.0" />
+            <p7:parameter field="wired.user.icon" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.board.move_thread" id="6026" version="2.0">

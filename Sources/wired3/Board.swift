@@ -1,5 +1,5 @@
 //
-//  WiredBoard.swift
+//  Board.swift
 //  WiredSwift
 //
 //  Created by Rafael Warnault on 01/03/2020.
@@ -9,7 +9,7 @@
 import Foundation
 
 
-public class WiredBoard {
+public class Board {
     public var path: String
     public var owner: String
     public var group: String
@@ -20,7 +20,7 @@ public class WiredBoard {
     public var everyoneRead: Bool
     public var everyoneWrite: Bool
 
-    public var threads: [WiredThread] = []
+    public var threads: [Thread] = []
 
     public init(path: String,
                 owner: String = "",

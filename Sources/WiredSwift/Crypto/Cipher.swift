@@ -343,7 +343,12 @@ private struct HChaCha20 {
         ]
 
         func u32(_ bytes: ArraySlice<UInt8>) -> UInt32 {
-            UInt32(littleEndian: bytes.withUnsafeBytes { $0.load(as: UInt32.self) })
+            let chunk = Array(bytes)
+            guard chunk.count == 4 else { return 0 }
+            return UInt32(chunk[0]) |
+                   (UInt32(chunk[1]) << 8) |
+                   (UInt32(chunk[2]) << 16) |
+                   (UInt32(chunk[3]) << 24)
         }
 
         var state: [UInt32] = [
