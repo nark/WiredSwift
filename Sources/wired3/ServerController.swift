@@ -16,13 +16,6 @@ import Glibc
 
 
 
-let SERVER_COMPRESSION  = P7Socket.Compression.ALL
-let SERVER_CIPHER       = P7Socket.CipherType.ALL
-let SERVER_CHECKSUM     = P7Socket.Checksum.ALL
-    
-
-
-
 public protocol ServerDelegate: class {
     func clientDisconnected(client:Client)
     func disconnectClient(client:Client)
@@ -47,6 +40,9 @@ public class ServerController: ServerDelegate {
     public var trackers: [String] = []
     public var trackerEnabled: Bool = false
     public var trackerCategories: [String] = []
+    public var serverCompression: P7Socket.Compression = .ALL
+    public var serverCipher: P7Socket.CipherType = .ALL
+    public var serverChecksum: P7Socket.Checksum = .ALL
     
     private var socket:Socket!
     private let ecdh = ECDH()
@@ -105,6 +101,114 @@ public class ServerController: ServerDelegate {
 
         return result
     }
+
+    private func normalizedAdvancedToken(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+
+        let mappedScalars = trimmed.unicodeScalars.map { scalar -> Character in
+            if CharacterSet.alphanumerics.contains(scalar) {
+                return Character(String(scalar).uppercased())
+            }
+            return "_"
+        }
+
+        let normalized = String(mappedScalars)
+        return normalized
+            .replacingOccurrences(of: "__+", with: "_", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+    }
+
+    private func parseCompressionSetting(_ raw: String) -> P7Socket.Compression? {
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let intValue = UInt32(value), intValue > 0 {
+            let parsed = P7Socket.Compression(rawValue: intValue)
+            let allowedMask = P7Socket.Compression.ALL.rawValue
+            return (parsed.rawValue & ~allowedMask) == 0 ? parsed : nil
+        }
+
+        let normalized = normalizedAdvancedToken(value)
+        switch normalized {
+        case "NONE":
+            return .NONE
+        case "DEFLATE":
+            return .DEFLATE
+        case "LZFSE":
+            return .LZFSE
+        case "LZ4":
+            return .LZ4
+        case "COMPRESSION_ONLY":
+            return .COMPRESSION_ONLY
+        case "ALL":
+            return .ALL
+        default:
+            return nil
+        }
+    }
+
+    private func parseCipherSetting(_ raw: String) -> P7Socket.CipherType? {
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let intValue = UInt32(value), intValue > 0 {
+            let parsed = P7Socket.CipherType(rawValue: intValue)
+            let allowedMask = P7Socket.CipherType.ALL.rawValue
+            return (parsed.rawValue & ~allowedMask) == 0 ? parsed : nil
+        }
+
+        let normalized = normalizedAdvancedToken(value)
+        switch normalized {
+        case "NONE":
+            return .NONE
+        case "ECDH_AES256_SHA256", "ECDHE_ECDSA_AES256_SHA256":
+            return .ECDH_AES256_SHA256
+        case "ECDH_AES128_GCM", "ECDHE_ECDSA_AES128_GCM":
+            return .ECDH_AES128_GCM
+        case "ECDH_AES256_GCM", "ECDHE_ECDSA_AES256_GCM":
+            return .ECDH_AES256_GCM
+        case "ECDH_CHACHA20_POLY1305", "ECDHE_ECDSA_CHACHA20_POLY1305":
+            return .ECDH_CHACHA20_POLY1305
+        case "ECDH_XCHACHA20_POLY1305", "ECDHE_ECDSA_XCHACHA20_POLY1305":
+            return .ECDH_XCHACHA20_POLY1305
+        case "SECURE_ONLY":
+            return .SECURE_ONLY
+        case "ALL":
+            return .ALL
+        default:
+            return nil
+        }
+    }
+
+    private func parseChecksumSetting(_ raw: String) -> P7Socket.Checksum? {
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let intValue = UInt32(value), intValue > 0 {
+            let parsed = P7Socket.Checksum(rawValue: intValue)
+            let allowedMask = P7Socket.Checksum.ALL.rawValue
+            return (parsed.rawValue & ~allowedMask) == 0 ? parsed : nil
+        }
+
+        let normalized = normalizedAdvancedToken(value)
+        switch normalized {
+        case "NONE":
+            return .NONE
+        case "SHA2_256":
+            return .SHA2_256
+        case "SHA2_384":
+            return .SHA2_384
+        case "SHA3_256":
+            return .SHA3_256
+        case "SHA3_384":
+            return .SHA3_384
+        case "HMAC_256":
+            return .HMAC_256
+        case "HMAC_384":
+            return .HMAC_384
+        case "SECURE_ONLY":
+            return .SECURE_ONLY
+        case "ALL":
+            return .ALL
+        default:
+            return nil
+        }
+    }
     
     
     
@@ -112,8 +216,21 @@ public class ServerController: ServerDelegate {
         self.port = port
         self.spec = spec
 
+        func configRawString(_ section: String, _ key: String) -> String? {
+            if let value = App.config[section, key] as? String {
+                return value
+            }
+            if let value = App.config[section, key] as? Int {
+                return String(value)
+            }
+            if let value = App.config[section, key] as? UInt32 {
+                return String(value)
+            }
+            return nil
+        }
+
         func configString(_ section: String, _ key: String) -> String? {
-            App.config[section, key] as? String
+            configRawString(section, key)
         }
 
         func configUInt32(_ section: String, _ key: String) -> UInt32? {
@@ -216,6 +333,27 @@ public class ServerController: ServerDelegate {
         if let value = configStringList("tracker", "categories") {
             self.trackerCategories = value
         }
+
+        let compressionString = configRawString("advanced", "compression") ?? P7Socket.Compression.ALL.description
+        guard let parsedCompression = parseCompressionSetting(compressionString) else {
+            Logger.fatal("Invalid advanced.compression value '\(compressionString)'. Accepted values: ALL, COMPRESSION_ONLY, None, DEFLATE, LZFSE, LZ4")
+            exit(-1)
+        }
+        self.serverCompression = parsedCompression
+
+        let cipherString = configRawString("advanced", "cipher") ?? P7Socket.CipherType.SECURE_ONLY.description
+        guard let parsedCipher = parseCipherSetting(cipherString) else {
+            Logger.fatal("Invalid advanced.cipher value '\(cipherString)'. Accepted values: ALL, SECURE_ONLY, None or cipher descriptions")
+            exit(-1)
+        }
+        self.serverCipher = parsedCipher
+
+        let checksumString = configRawString("advanced", "checksum") ?? P7Socket.Checksum.SECURE_ONLY.description
+        guard let parsedChecksum = parseChecksumSetting(checksumString) else {
+            Logger.fatal("Invalid advanced.checksum value '\(checksumString)'. Accepted values: ALL, SECURE_ONLY, None or checksum descriptions")
+            exit(-1)
+        }
+        self.serverChecksum = parsedChecksum
             
         self.addDelegate(self)
     }
@@ -2620,9 +2758,9 @@ public class ServerController: ServerDelegate {
                 
                 do {
                     try p7Socket.accept(
-                        compression: SERVER_COMPRESSION,
-                        cipher:      SERVER_CIPHER,
-                        checksum:    SERVER_CHECKSUM
+                        compression: self.serverCompression,
+                        cipher:      self.serverCipher,
+                        checksum:    self.serverChecksum
                     )
                     
                     Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")

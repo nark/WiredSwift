@@ -159,9 +159,9 @@ port = 4871
 trackers = ["wired.read-write.fr"]
 
 [advanced]
-compression = 3
-cipher = 6
-checksum = 30
+compression = ALL
+cipher = SECURE_ONLY
+checksum = SECURE_ONLY
 """
 
         do {

@@ -177,16 +177,31 @@ You can configure the `Logger` class of WiredSwift as follow:
 ### Build
 
     swift build -v
-    
+
+### Build macOS .app (Wired Server UI)
+
+Build and package the new SwiftUI server wrapper as a macOS `.app` bundle:
+
+    ./Scripts/build-wired-server-app.sh release
+
+Output bundle:
+
+    dist/Wired Server.app
+
+Notes:
+
+* the app is ad-hoc signed for local usage
+* Gatekeeper may still reject it unless you sign/notarize with a Developer ID
+
 ### Run Tests
     
     swift test -v
     
 ### Xcode project
 
-You can (re)genrerate Xcode project by using:
+Open the package directly in Xcode:
 
-    swift package generate-xcodeproj
+    open Package.swift
     
 ## Contribute
 

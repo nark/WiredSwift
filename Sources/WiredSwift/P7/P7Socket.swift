@@ -74,6 +74,10 @@ public class P7Socket: NSObject {
                 return "LZFSE"
             case .LZ4:
                 return "LZ4"
+            case .COMPRESSION_ONLY:
+                return "COMPRESSION_ONLY"
+            case .ALL:
+                return "ALL"
             default:
                 return "None"
             }

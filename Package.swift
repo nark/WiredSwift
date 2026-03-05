@@ -58,6 +58,15 @@ targets.append(
         ]
     )
 )
+targets.append(
+    .target(
+        name: "WiredServerApp",
+        dependencies: [
+            .byName(name: "WiredSwift"),
+            .byName(name: "CryptoSwift")
+        ]
+    )
+)
 
 #if os(Linux)
 targets.append(
@@ -92,7 +101,10 @@ let package = Package(
         
         .executable(
             name: "wired3",
-            targets: ["wired3"])
+            targets: ["wired3"]),
+        .executable(
+            name: "WiredServerApp",
+            targets: ["WiredServerApp"])
     ],
     dependencies: dependencies,
     targets: targets
