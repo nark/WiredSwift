@@ -1,4 +1,4 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -64,6 +64,9 @@ targets.append(
         dependencies: [
             .byName(name: "WiredSwift"),
             .byName(name: "CryptoSwift")
+        ],
+        resources: [
+            .process("Resources")
         ]
     )
 )
@@ -93,6 +96,7 @@ targets.append(
 
 let package = Package(
     name: "WiredSwift",
+    defaultLocalization: "en",
     platforms: [.iOS(.v13), .macOS("13.0")],
     products: [
         .library(

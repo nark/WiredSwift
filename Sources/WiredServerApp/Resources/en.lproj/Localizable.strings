@@ -1,0 +1,97 @@
+"window.title" = "Wired Server";
+"alert.error.title" = "Error";
+"common.ok" = "OK";
+"common.choose" = "Choose";
+"common.select" = "Select";
+"common.save" = "Save";
+
+"pane.general" = "General";
+"pane.network" = "Network";
+"pane.files" = "Files";
+"pane.advanced" = "Advanced";
+"pane.logs" = "Logs";
+
+"general.installation.section" = "Installation";
+"general.install.install" = "Install";
+"general.install.uninstall" = "Uninstall";
+"general.install.state.installed" = "Installed";
+"general.install.state.uninstalled" = "Uninstalled";
+"general.install.directory" = "Install directory";
+"general.install.version" = "Version";
+
+"general.execution.section" = "Execution";
+"general.execution.running" = "Server is running";
+"general.execution.stopped" = "Server is not running";
+"general.execution.start" = "Start";
+"general.execution.stop" = "Stop";
+"general.execution.start_on_login" = "Automatically start on system startup";
+
+"network.section" = "Network";
+"network.port" = "Listening Port";
+"network.check" = "Check";
+"network.restart_required" = "Server must be restarted after port change.";
+"network.port_status.unknown" = "Unknown port status";
+"network.port_status.open" = "Port is open";
+"network.port_status.closed" = "Port is closed";
+
+"files.section" = "Files";
+"files.directory" = "Files directory";
+"files.index.section" = "Index";
+"files.index.every" = "Re-index server files every";
+"files.index.seconds" = "sec.";
+"files.index.now" = "Re-index";
+
+"advanced.admin.section" = "Admin account";
+"advanced.admin.password.placeholder" = "Admin password";
+"advanced.admin.set_password" = "Set Password";
+"advanced.admin.create_user" = "Create Admin User";
+"advanced.admin.status.unknown" = "Unknown";
+"advanced.admin.status.secured" = "Admin account is secured";
+"advanced.admin.status.no_password" = "Admin account has no password";
+"advanced.admin.status.missing" = "Admin account is missing";
+"advanced.admin.status.db_not_initialized" = "Database not initialized (start the server once)";
+"advanced.admin.status.unavailable" = "Admin account unavailable";
+
+"advanced.security.section" = "Security";
+"advanced.security.compression" = "Preferred Compression";
+"advanced.security.cipher" = "Preferred Cipher";
+"advanced.security.checksum" = "Preferred Checksum";
+"advanced.save" = "Save advanced settings";
+
+"logs.open" = "Open logs";
+"logs.empty" = "No logs yet";
+
+"status.installing" = "Installing...";
+"status.server_installed" = "Server installed";
+"status.server_uninstalled" = "Server uninstalled";
+"status.server_started" = "Server started";
+"status.server_stopped" = "Server stopped";
+"status.port_saved_restart_required" = "Port saved. Restart required.";
+"status.port_saved" = "Port saved";
+"status.files_settings_saved" = "Files settings saved";
+"status.reindex_on_next_start" = "Re-indexing will run on next start";
+"status.server_restarted_reindex" = "Server restarted, re-index triggered";
+"status.advanced_saved" = "Advanced settings saved";
+"status.admin_password_updated" = "Admin password updated";
+"status.admin_user_created" = "Admin user created";
+"status.building_binary" = "Building wired3 binary...";
+"status.partial_db_reinitialized" = "Partial database detected and reset (clean bootstrap on next start)";
+
+"error.launch_at_login_update_failed" = "Could not update start-at-login settings";
+"error.launch_at_login_change_failed" = "Could not change start-at-login setting";
+"error.install_failed" = "Installation failed";
+"error.uninstall_failed" = "Uninstallation failed";
+"error.start_failed" = "Start failed";
+"error.admin_password_empty" = "Password cannot be empty";
+"error.admin_password_set_failed" = "Could not set admin password";
+"error.admin_user_create_failed" = "Could not create admin user";
+"error.runtime_prepare_failed" = "Could not prepare runtime";
+"error.config_read_failed" = "Could not read configuration";
+"error.wired3_binary_missing" = "wired3 binary not found";
+"error.wired3_build_failed" = "wired3 binary build failed";
+"error.launch_agent_write_failed" = "Could not write startup LaunchAgent";
+"error.launchctl_failed" = "launchctl failed";
+"error.database_open_failed" = "Could not open database";
+"error.database_not_initialized" = "Database not initialized: start the server once first";
+"error.sql_prepare_failed" = "SQL prepare failed";
+"error.sql_execution_failed" = "SQL execution failed";

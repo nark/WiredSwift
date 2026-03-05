@@ -11,7 +11,7 @@ struct WiredServerApplication: App {
     @StateObject private var model = WiredServerViewModel()
 
     var body: some Scene {
-        WindowGroup("Wired Server") {
+        WindowGroup(L("window.title")) {
             ContentView()
                 .environmentObject(model)
                 .frame(width: 880, height: 440)

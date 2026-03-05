@@ -95,14 +95,14 @@ struct GeneralTabView: View {
     var body: some View {
         SettingsPane {
             Form {
-                Section("Installation") {
+                Section(L("general.installation.section")) {
                     HStack(spacing: 8) {
-                        Button("Install") {
+                        Button(L("general.install.install")) {
                             Task { await model.installServer() }
                         }
                         .disabled(model.isInstalled || model.isBusy)
 
-                        Button("Uninstall") {
+                        Button(L("general.install.uninstall")) {
                             model.uninstallServer()
                         }
                         .disabled(!model.isInstalled || model.isBusy || model.isRunning)
@@ -112,12 +112,12 @@ struct GeneralTabView: View {
                         Image(systemName: model.isInstalled ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundStyle(model.isInstalled ? .green : .secondary)
                         
-                        Text(model.isInstalled ? "Installed" : "Uninstalled")
+                        Text(model.isInstalled ? L("general.install.state.installed") : L("general.install.state.uninstalled"))
                             .foregroundStyle(model.isInstalled ? .green : .secondary)
                     }
                     
                     HStack(spacing: 8) {
-                        Text("Install directory")
+                        Text(L("general.install.directory"))
                             .bold()
                         
                         Text(model.workingDirectory)
@@ -135,14 +135,14 @@ struct GeneralTabView: View {
                         
                         Spacer(minLength: 0)
 
-                        Button("Choisir") {
+                        Button(L("common.choose")) {
                             model.chooseWorkingDirectory()
                         }
                         .disabled(model.isRunning)
                     }
 
                     HStack(spacing: 8) {
-                        Text("Version")
+                        Text(L("general.install.version"))
                             .bold()
                         
                         Spacer()
@@ -153,14 +153,14 @@ struct GeneralTabView: View {
                     }
                 }
                 
-                Section("Execution") {
+                Section(L("general.execution.section")) {
                     HStack {
                         StatusDot(color: model.isRunning ? .green : .red)
-                        Text(model.isRunning ? "Server is running" : "Server is not running")
+                        Text(model.isRunning ? L("general.execution.running") : L("general.execution.stopped"))
                         
                         Spacer()
                         
-                        Button(model.isRunning ? "Stop" : "Start") {
+                        Button(model.isRunning ? L("general.execution.stop") : L("general.execution.start")) {
                             if model.isRunning {
                                 model.stopServer()
                             } else {
@@ -169,7 +169,7 @@ struct GeneralTabView: View {
                         }
                     }
                     
-                    Toggle("Automatically start on system startup", isOn: Binding(
+                    Toggle(L("general.execution.start_on_login"), isOn: Binding(
                         get: { model.launchAtLogin },
                         set: { model.toggleLaunchAtLogin($0) }
                     ))
@@ -194,9 +194,9 @@ struct NetworkTabView: View {
     var body: some View {
         SettingsPane {
             Form {
-                Section("Network") {
+                Section(L("network.section")) {
                     HStack {
-                        Text("Listening Port")
+                        Text(L("network.port"))
                             .bold()
                         
                         Spacer()
@@ -205,7 +205,7 @@ struct NetworkTabView: View {
                             .textFieldStyle(.roundedBorder)
                             .frame(width: UIConstants.numberFieldWidth)
                         
-                        Button("Save") {
+                        Button(L("common.save")) {
                             model.saveNetworkSettings()
                         }
                     }
@@ -216,7 +216,7 @@ struct NetworkTabView: View {
                         
                         Spacer()
                         
-                        Button("Check") {
+                        Button(L("network.check")) {
                             model.checkPort()
                         }
                     }
@@ -224,7 +224,7 @@ struct NetworkTabView: View {
                 }
                 
                 Section {
-                    Text("Server must be restarted after port change.")
+                    Text(L("network.restart_required"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -252,9 +252,9 @@ struct FilesTabView: View {
     var body: some View {
         SettingsPane {
             Form {
-                Section("Files") {
+                Section(L("files.section")) {
                     HStack {
-                        Text("Files directory")
+                        Text(L("files.directory"))
                             .bold()
                         
                         Text(model.filesDirectory)
@@ -272,29 +272,29 @@ struct FilesTabView: View {
                         
                         Spacer()
                         
-                        Button("Choisir") {
+                        Button(L("common.choose")) {
                             model.chooseFilesDirectory()
                         }
                     }
                 }
                 
-                Section("Index") {
+                Section(L("files.index.section")) {
                     HStack {
-                        Text("Re-index server files every")
+                        Text(L("files.index.every"))
                         
                         TextField("", value: $model.filesReindexInterval, formatter: Formatters.integer)
                             .frame(width: UIConstants.numberFieldWidth)
                             .textFieldStyle(.roundedBorder)
                         
-                        Text("sec.")
+                        Text(L("files.index.seconds"))
 
                         Spacer(minLength: 0)
 
-                        Button("Save") {
+                        Button(L("common.save")) {
                             model.saveFilesSettings()
                         }
 
-                        Button("Re-index") {
+                        Button(L("files.index.now")) {
                             model.saveFilesSettings()
                             
                             Task { await model.reindexNow() }
@@ -314,42 +314,42 @@ struct AdvancedTabView: View {
     var body: some View {
         SettingsPane {
             Form {
-                Section("Admin account") {
+                Section(L("advanced.admin.section")) {
                     HStack {
                         StatusDot(color: model.hasAdminPassword ? .green : .red)
                         Text(model.adminStatus)
                     }
                     
                     HStack(spacing: 8) {
-                        SecureField("Mot de passe admin", text: $model.newAdminPassword)
+                        SecureField(L("advanced.admin.password.placeholder"), text: $model.newAdminPassword)
                             .frame(width: 260)
                         
                         Spacer()
 
-                        Button("Definir") {
+                        Button(L("advanced.admin.set_password")) {
                             model.setAdminPassword()
                         }
 
-                        Button("Creer admin") {
+                        Button(L("advanced.admin.create_user")) {
                             model.createAdminUser()
                         }
                     }
                 }
                 
-                Section("Security") {
-                    Picker("Preferred Compression", selection: $model.compressionMode) {
+                Section(L("advanced.security.section")) {
+                    Picker(L("advanced.security.compression"), selection: $model.compressionMode) {
                         ForEach(model.compressionOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
                     
-                    Picker("Preferred Cipher", selection: $model.cipherMode) {
+                    Picker(L("advanced.security.cipher"), selection: $model.cipherMode) {
                         ForEach(model.cipherOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
                     
-                    Picker("Preferred Checksum", selection: $model.checksumMode) {
+                    Picker(L("advanced.security.checksum"), selection: $model.checksumMode) {
                         ForEach(model.checksumOptions) { option in
                             Text(option.title).tag(option.id)
                         }
@@ -358,7 +358,7 @@ struct AdvancedTabView: View {
                 
                 HStack {
                     Spacer()
-                    Button("Enregistrer les parametres avances") {
+                    Button(L("advanced.save")) {
                         model.saveAdvancedSettings()
                     }
                 }
@@ -376,7 +376,7 @@ struct LogsTabView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Button("Ouvrir les logs") {
+                Button(L("logs.open")) {
                     model.openLogsInFinder()
                 }
                 Spacer()
@@ -385,7 +385,7 @@ struct LogsTabView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(model.logsText.isEmpty ? "Aucun log pour l'instant" : model.logsText)
+                        Text(model.logsText.isEmpty ? L("logs.empty") : model.logsText)
                             .font(.system(.caption, design: .monospaced))
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .topLeading)

@@ -37,8 +37,8 @@ struct ContentView: View {
         .onDisappear {
             model.stopPolling()
         }
-        .alert("Erreur", isPresented: $model.showErrorAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(L("alert.error.title"), isPresented: $model.showErrorAlert) {
+            Button(L("common.ok"), role: .cancel) {}
         } message: {
             Text(model.lastErrorMessage)
         }
@@ -73,11 +73,11 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .general: return "General"
-        case .network: return "Network"
-        case .files: return "Files"
-        case .advanced: return "Advanced"
-        case .logs: return "Logs"
+        case .general: return L("pane.general")
+        case .network: return L("pane.network")
+        case .files: return L("pane.files")
+        case .advanced: return L("pane.advanced")
+        case .logs: return L("pane.logs")
         }
     }
 

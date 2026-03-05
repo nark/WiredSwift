@@ -35,7 +35,7 @@ final class WiredServerViewModel: ObservableObject {
     @Published var cipherMode: String = P7Socket.CipherType.SECURE_ONLY.description
     @Published var checksumMode: String = P7Socket.Checksum.SECURE_ONLY.description
 
-    @Published var adminStatus: String = "Unknown"
+    @Published var adminStatus: String = L("advanced.admin.status.unknown")
     @Published var hasAdminPassword: Bool = false
     @Published var newAdminPassword: String = ""
 
@@ -162,7 +162,7 @@ final class WiredServerViewModel: ObservableObject {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
-        panel.prompt = "Choisir"
+        panel.prompt = L("common.choose")
 
         if panel.runModal() == .OK, let selected = panel.url?.path {
             workingDirectory = selected
@@ -172,7 +172,7 @@ final class WiredServerViewModel: ObservableObject {
                 do {
                     try configureLaunchAtLogin(enabled: true)
                 } catch {
-                    publishError("Impossible de mettre a jour le lancement a la connexion: \(error.localizedDescription)")
+                    publishError("\(L("error.launch_at_login_update_failed")): \(error.localizedDescription)")
                     launchAtLogin = isLaunchAtLoginEnabled()
                 }
             }
@@ -184,7 +184,7 @@ final class WiredServerViewModel: ObservableObject {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
-        panel.prompt = "Choisir"
+        panel.prompt = L("common.choose")
 
         if panel.runModal() == .OK, let selected = panel.url?.path {
             filesDirectory = selected
@@ -197,7 +197,7 @@ final class WiredServerViewModel: ObservableObject {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Selectionner"
+        panel.prompt = L("common.select")
 
         if panel.runModal() == .OK, let selected = panel.url?.path {
             binaryPath = selected
@@ -210,7 +210,7 @@ final class WiredServerViewModel: ObservableObject {
             try configureLaunchAtLogin(enabled: enabled)
             launchAtLogin = enabled
         } catch {
-            publishError("Impossible de changer l'ouverture a la connexion: \(error.localizedDescription)")
+            publishError("\(L("error.launch_at_login_change_failed")): \(error.localizedDescription)")
             launchAtLogin = isLaunchAtLoginEnabled()
         }
     }
@@ -227,15 +227,15 @@ final class WiredServerViewModel: ObservableObject {
 
         do {
             bootstrapRuntimeIfNeeded()
-            statusMessage = "Installation en cours..."
+            statusMessage = L("status.installing")
 
             let source = try await resolveInstallSourceBinary()
             try installBinary(from: source)
 
             refreshInstallStatus()
-            statusMessage = "Serveur installe"
+            statusMessage = L("status.server_installed")
         } catch {
-            publishError("Installation impossible: \(error.localizedDescription)")
+            publishError("\(L("error.install_failed")): \(error.localizedDescription)")
         }
     }
 
@@ -252,10 +252,10 @@ final class WiredServerViewModel: ObservableObject {
             if fileManager.fileExists(atPath: workingDirectory) {
                 try fileManager.removeItem(atPath: workingDirectory)
             }
-            statusMessage = "Serveur desinstalle"
+            statusMessage = L("status.server_uninstalled")
             refreshAll()
         } catch {
-            publishError("Desinstallation impossible: \(error.localizedDescription)")
+            publishError("\(L("error.uninstall_failed")): \(error.localizedDescription)")
         }
     }
 
@@ -300,16 +300,16 @@ final class WiredServerViewModel: ObservableObject {
             try task.run()
             process = task
             isRunning = true
-            statusMessage = "Serveur demarre"
+            statusMessage = L("status.server_started")
 
             task.terminationHandler = { [weak self] _ in
                 Task { @MainActor in
                     self?.isRunning = false
-                    self?.statusMessage = "Serveur arrete"
+                    self?.statusMessage = L("status.server_stopped")
                 }
             }
         } catch {
-            publishError("Demarrage impossible: \(error.localizedDescription)")
+            publishError("\(L("error.start_failed")): \(error.localizedDescription)")
         }
     }
 
@@ -341,7 +341,7 @@ final class WiredServerViewModel: ObservableObject {
 
         refreshRunningStatus()
         if !isRunning {
-            statusMessage = "Serveur arrete"
+            statusMessage = L("status.server_stopped")
         }
     }
 
@@ -351,9 +351,9 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         if isRunning {
-            statusMessage = "Port enregistre. Redemarrage requis."
+            statusMessage = L("status.port_saved_restart_required")
         } else {
-            statusMessage = "Port enregistre"
+            statusMessage = L("status.port_saved")
         }
     }
 
@@ -378,23 +378,23 @@ final class WiredServerViewModel: ObservableObject {
             do {
                 try configureLaunchAtLogin(enabled: true)
             } catch {
-                publishError("Impossible de mettre a jour le lancement a la connexion: \(error.localizedDescription)")
+                publishError("\(L("error.launch_at_login_update_failed")): \(error.localizedDescription)")
                 launchAtLogin = isLaunchAtLoginEnabled()
             }
         }
-        statusMessage = "Configuration fichiers enregistree"
+        statusMessage = L("status.files_settings_saved")
     }
 
     func reindexNow() async {
         guard isRunning else {
-            statusMessage = "La reindexation sera faite au prochain demarrage"
+            statusMessage = L("status.reindex_on_next_start")
             return
         }
 
         stopServer()
         try? await Task.sleep(nanoseconds: 700_000_000)
         await startServer()
-        statusMessage = "Serveur redemarre, reindexation relancee"
+        statusMessage = L("status.server_restarted_reindex")
     }
 
     func saveAdvancedSettings() {
@@ -415,13 +415,13 @@ final class WiredServerViewModel: ObservableObject {
             config["advanced", "checksum"] = checksumMode
         }
 
-        statusMessage = "Parametres avances enregistres"
+        statusMessage = L("status.advanced_saved")
     }
 
     func setAdminPassword() {
         let password = newAdminPassword.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !password.isEmpty else {
-            publishError("Le mot de passe ne peut pas etre vide")
+            publishError(L("error.admin_password_empty"))
             return
         }
 
@@ -433,9 +433,9 @@ final class WiredServerViewModel: ObservableObject {
             }
             newAdminPassword = ""
             refreshAdminStatus()
-            statusMessage = "Mot de passe admin mis a jour"
+            statusMessage = L("status.admin_password_updated")
         } catch {
-            publishError("Impossible de definir le mot de passe admin: \(error.localizedDescription)")
+            publishError("\(L("error.admin_password_set_failed")): \(error.localizedDescription)")
         }
     }
 
@@ -454,9 +454,9 @@ final class WiredServerViewModel: ObservableObject {
             }
 
             refreshAdminStatus()
-            statusMessage = "Compte admin cree"
+            statusMessage = L("status.admin_user_created")
         } catch {
-            publishError("Creation du compte admin impossible: \(error.localizedDescription)")
+            publishError("\(L("error.admin_user_create_failed")): \(error.localizedDescription)")
         }
     }
 
@@ -627,18 +627,18 @@ final class WiredServerViewModel: ObservableObject {
                 if let hash = passwordHash {
                     let emptyHash = sha256("")
                     hasAdminPassword = !(hash.isEmpty || hash == emptyHash)
-                    adminStatus = hasAdminPassword ? "Compte admin securise" : "Compte admin sans mot de passe"
+                    adminStatus = hasAdminPassword ? L("advanced.admin.status.secured") : L("advanced.admin.status.no_password")
                 } else {
                     hasAdminPassword = false
-                    adminStatus = "Compte admin absent"
+                    adminStatus = L("advanced.admin.status.missing")
                 }
             }
         } catch let error as WiredServerError where error == .databaseNotInitialized {
             hasAdminPassword = false
-            adminStatus = "Base non initialisee (demarre le serveur une fois)"
+            adminStatus = L("advanced.admin.status.db_not_initialized")
         } catch {
             hasAdminPassword = false
-            adminStatus = "Compte admin indisponible"
+            adminStatus = L("advanced.admin.status.unavailable")
         }
     }
 
@@ -726,7 +726,7 @@ final class WiredServerViewModel: ObservableObject {
                 fileManager.createFile(atPath: logPath, contents: Data())
             }
         } catch {
-            publishError("Preparation runtime impossible: \(error.localizedDescription)")
+            publishError("\(L("error.runtime_prepare_failed")): \(error.localizedDescription)")
         }
     }
 
@@ -753,7 +753,7 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     private func buildReleaseBinary() async throws -> String {
-        statusMessage = "Compilation du binaire wired3..."
+        statusMessage = L("status.building_binary")
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -802,7 +802,7 @@ final class WiredServerViewModel: ObservableObject {
     private func withConfig(_ body: (Config) -> Void) {
         let config = Config(withPath: configPath)
         guard config.load() else {
-            publishError("Impossible de lire la configuration")
+            publishError(L("error.config_read_failed"))
             return
         }
 
@@ -911,7 +911,7 @@ checksum = SECURE_ONLY
         }
 
         try removeDatabaseFiles()
-        statusMessage = "Base partielle detectee puis reinitialisee (bootstrap propre au prochain demarrage)"
+        statusMessage = L("status.partial_db_reinitialized")
     }
 
     private func removeDatabaseFiles() throws {
@@ -1221,11 +1221,11 @@ enum PortStatus {
     var description: String {
         switch self {
         case .unknown:
-            return "Unknown port status"
+            return L("network.port_status.unknown")
         case .open:
-            return "Port is open"
+            return L("network.port_status.open")
         case .closed:
-            return "Port is closed"
+            return L("network.port_status.closed")
         }
     }
 }
@@ -1243,21 +1243,21 @@ enum WiredServerError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .missingBinary:
-            return "Binaire wired3 introuvable"
+            return L("error.wired3_binary_missing")
         case .installBuildFailed:
-            return "La compilation du binaire wired3 a echoue"
+            return L("error.wired3_build_failed")
         case .launchAgentWriteFailed:
-            return "Impossible d'ecrire le LaunchAgent de demarrage"
+            return L("error.launch_agent_write_failed")
         case .launchAgentCommandFailed(let message):
-            return "Echec launchctl: \(message)"
+            return "\(L("error.launchctl_failed")): \(message)"
         case .databaseOpenFailed:
-            return "Impossible d'ouvrir la base de donnees"
+            return L("error.database_open_failed")
         case .databaseNotInitialized:
-            return "Base de donnees non initialisee: demarre le serveur une premiere fois"
+            return L("error.database_not_initialized")
         case .databaseStatementFailed(let sql):
-            return "Erreur SQL prepare: \(sql)"
+            return "\(L("error.sql_prepare_failed")): \(sql)"
         case .databaseExecutionFailed(let sql):
-            return "Erreur SQL execution: \(sql)"
+            return "\(L("error.sql_execution_failed")): \(sql)"
         }
     }
 }

@@ -1,0 +1,97 @@
+"window.title" = "Wired Server";
+"alert.error.title" = "Erreur";
+"common.ok" = "OK";
+"common.choose" = "Choisir";
+"common.select" = "Selectionner";
+"common.save" = "Enregistrer";
+
+"pane.general" = "General";
+"pane.network" = "Reseau";
+"pane.files" = "Fichiers";
+"pane.advanced" = "Avances";
+"pane.logs" = "Logs";
+
+"general.installation.section" = "Installation";
+"general.install.install" = "Installer";
+"general.install.uninstall" = "Desinstaller";
+"general.install.state.installed" = "Installe";
+"general.install.state.uninstalled" = "Non installe";
+"general.install.directory" = "Dossier d'installation";
+"general.install.version" = "Version";
+
+"general.execution.section" = "Execution";
+"general.execution.running" = "Serveur actif";
+"general.execution.stopped" = "Serveur arrete";
+"general.execution.start" = "Demarrer";
+"general.execution.stop" = "Arreter";
+"general.execution.start_on_login" = "Demarrer automatiquement a la connexion macOS";
+
+"network.section" = "Reseau";
+"network.port" = "Port en ecoute";
+"network.check" = "Verifier";
+"network.restart_required" = "Le serveur doit etre redemarre apres un changement de port.";
+"network.port_status.unknown" = "Statut du port inconnu";
+"network.port_status.open" = "Le port est ouvert";
+"network.port_status.closed" = "Le port est ferme";
+
+"files.section" = "Fichiers";
+"files.directory" = "Repertoire de fichiers";
+"files.index.section" = "Index";
+"files.index.every" = "Re-indexer les fichiers toutes les";
+"files.index.seconds" = "sec.";
+"files.index.now" = "Re-indexer";
+
+"advanced.admin.section" = "Compte admin";
+"advanced.admin.password.placeholder" = "Mot de passe admin";
+"advanced.admin.set_password" = "Definir";
+"advanced.admin.create_user" = "Creer admin";
+"advanced.admin.status.unknown" = "Inconnu";
+"advanced.admin.status.secured" = "Compte admin securise";
+"advanced.admin.status.no_password" = "Compte admin sans mot de passe";
+"advanced.admin.status.missing" = "Compte admin absent";
+"advanced.admin.status.db_not_initialized" = "Base non initialisee (demarrer le serveur une fois)";
+"advanced.admin.status.unavailable" = "Compte admin indisponible";
+
+"advanced.security.section" = "Securite";
+"advanced.security.compression" = "Compression preferee";
+"advanced.security.cipher" = "Chiffrement prefere";
+"advanced.security.checksum" = "Checksum prefere";
+"advanced.save" = "Enregistrer les parametres avances";
+
+"logs.open" = "Ouvrir les logs";
+"logs.empty" = "Aucun log pour l'instant";
+
+"status.installing" = "Installation en cours...";
+"status.server_installed" = "Serveur installe";
+"status.server_uninstalled" = "Serveur desinstalle";
+"status.server_started" = "Serveur demarre";
+"status.server_stopped" = "Serveur arrete";
+"status.port_saved_restart_required" = "Port enregistre. Redemarrage requis.";
+"status.port_saved" = "Port enregistre";
+"status.files_settings_saved" = "Configuration fichiers enregistree";
+"status.reindex_on_next_start" = "La reindexation sera faite au prochain demarrage";
+"status.server_restarted_reindex" = "Serveur redemarre, reindexation relancee";
+"status.advanced_saved" = "Parametres avances enregistres";
+"status.admin_password_updated" = "Mot de passe admin mis a jour";
+"status.admin_user_created" = "Compte admin cree";
+"status.building_binary" = "Compilation du binaire wired3...";
+"status.partial_db_reinitialized" = "Base partielle detectee puis reinitialisee (bootstrap propre au prochain demarrage)";
+
+"error.launch_at_login_update_failed" = "Impossible de mettre a jour le lancement a la connexion";
+"error.launch_at_login_change_failed" = "Impossible de changer l'ouverture a la connexion";
+"error.install_failed" = "Installation impossible";
+"error.uninstall_failed" = "Desinstallation impossible";
+"error.start_failed" = "Demarrage impossible";
+"error.admin_password_empty" = "Le mot de passe ne peut pas etre vide";
+"error.admin_password_set_failed" = "Impossible de definir le mot de passe admin";
+"error.admin_user_create_failed" = "Creation du compte admin impossible";
+"error.runtime_prepare_failed" = "Preparation runtime impossible";
+"error.config_read_failed" = "Impossible de lire la configuration";
+"error.wired3_binary_missing" = "Binaire wired3 introuvable";
+"error.wired3_build_failed" = "La compilation du binaire wired3 a echoue";
+"error.launch_agent_write_failed" = "Impossible d'ecrire le LaunchAgent de demarrage";
+"error.launchctl_failed" = "Echec launchctl";
+"error.database_open_failed" = "Impossible d'ouvrir la base de donnees";
+"error.database_not_initialized" = "Base de donnees non initialisee: demarre le serveur une premiere fois";
+"error.sql_prepare_failed" = "Erreur SQL prepare";
+"error.sql_execution_failed" = "Erreur SQL execution";
