@@ -63,13 +63,17 @@ cat > "$INFO_PLIST" <<PLIST
 </plist>
 PLIST
 
-# Optional icon from legacy project if present on this machine.
-LEGACY_ICON="$ROOT_DIR/../Wired 2020-2021/wired_all/WiredServer/Wired Server/WiredServer.icns"
-if [[ -f "$LEGACY_ICON" ]]; then
-  cp "$LEGACY_ICON" "$RESOURCES_DIR/WiredServer.icns"
-  /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string WiredServer" "$INFO_PLIST" >/dev/null 2>&1 || true
+# Bundle icon (tracked in this repository).
+ICON_SOURCE="$ROOT_DIR/Assets/WiredServer.icns"
+if [[ ! -f "$ICON_SOURCE" ]]; then
+  echo "Missing icon: $ICON_SOURCE"
+  exit 1
 fi
 
+cp "$ICON_SOURCE" "$RESOURCES_DIR/WiredServer.icns"
+if ! /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string WiredServer.icns" "$INFO_PLIST" >/dev/null 2>&1; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile WiredServer.icns" "$INFO_PLIST"
+fi
 echo "==> Ad-hoc signing"
 codesign --force --deep --sign - "$APP_DIR"
 
