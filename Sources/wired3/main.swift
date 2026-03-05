@@ -12,6 +12,13 @@ import WiredSwift
 public var App:AppController!
 
 struct Wired: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        abstract: "Wired 3 server"
+    )
+
+    @Flag(name: [.customLong("version")], help: "Print version and exit")
+    var showVersion = false
+
     @Flag(help: "Enable debug mode")
     var debugMode = false
 
@@ -34,6 +41,11 @@ struct Wired: ParsableCommand {
     var path: String?
     
     mutating func run() throws {
+        if showVersion {
+            print(WiredServerVersion.display)
+            return
+        }
+
         let resolved = try resolvePaths()
 
         ensureDefaultConfigExists(at: resolved.configPath)

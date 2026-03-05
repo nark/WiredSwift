@@ -94,31 +94,45 @@ struct GeneralTabView: View {
 
     var body: some View {
         SettingsPane {
-            SettingsSection(title: "Installation") {
-                HStack(spacing: 8) {
-                    Button("Installer") {
-                        Task { await model.installServer() }
-                    }
-                    .disabled(model.isBusy)
-
-                    Button("Desinstaller") {
-                        model.uninstallServer()
-                    }
-                    .disabled(model.isBusy || model.isRunning)
-
-                    Spacer()
-
-                    Text(model.isInstalled ? "Installe" : "Non installe")
-                        .foregroundStyle(model.isInstalled ? .green : .secondary)
-                }
-
-                KeyValueRow(title: "Dossier runtime") {
+            Form {
+                Section("Installation") {
                     HStack(spacing: 8) {
+                        Button("Install") {
+                            Task { await model.installServer() }
+                        }
+                        .disabled(model.isInstalled || model.isBusy)
+
+                        Button("Uninstall") {
+                            model.uninstallServer()
+                        }
+                        .disabled(!model.isInstalled || model.isBusy || model.isRunning)
+
+                        Spacer()
+                        
+                        Image(systemName: model.isInstalled ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundStyle(model.isInstalled ? .green : .secondary)
+                        
+                        Text(model.isInstalled ? "Installed" : "Uninstalled")
+                            .foregroundStyle(model.isInstalled ? .green : .secondary)
+                    }
+                    
+                    HStack(spacing: 8) {
+                        Text("Install directory")
+                            .bold()
+                        
                         Text(model.workingDirectory)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .textSelection(.enabled)
-
+                        
+                        Button {
+                            NSWorkspace.shared.open(URL(fileURLWithPath: model.workingDirectory))
+                        } label: {
+                            Image(systemName: "folder.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        
                         Spacer(minLength: 0)
 
                         Button("Choisir") {
@@ -126,56 +140,49 @@ struct GeneralTabView: View {
                         }
                         .disabled(model.isRunning)
                     }
-                }
 
-                KeyValueRow(title: "Binaire") {
                     HStack(spacing: 8) {
-                        Text(model.binaryPath)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
+                        Text("Version")
+                            .bold()
+                        
+                        Spacer()
+                        
+                        Text(model.installedServerVersion)
                             .textSelection(.enabled)
-
-                        Spacer(minLength: 0)
-
-                        Button("Choisir") {
-                            model.chooseBinaryPath()
-                        }
-                        .disabled(model.isRunning)
+                        
                     }
                 }
-            }
-
-            SettingsSection(title: "Execution") {
-                HStack {
-                    StatusDot(color: model.isRunning ? .green : .red)
-                    Text(model.isRunning ? "Serveur actif" : "Serveur arrete")
-                    Spacer()
-                    Button(model.isRunning ? "Arreter" : "Demarrer") {
-                        if model.isRunning {
-                            model.stopServer()
-                        } else {
-                            Task { await model.startServer() }
+                
+                Section("Execution") {
+                    HStack {
+                        StatusDot(color: model.isRunning ? .green : .red)
+                        Text(model.isRunning ? "Server is running" : "Server is not running")
+                        
+                        Spacer()
+                        
+                        Button(model.isRunning ? "Stop" : "Start") {
+                            if model.isRunning {
+                                model.stopServer()
+                            } else {
+                                Task { await model.startServer() }
+                            }
                         }
                     }
+                    
+                    Toggle("Automatically start on system startup", isOn: Binding(
+                        get: { model.launchAtLogin },
+                        set: { model.toggleLaunchAtLogin($0) }
+                    ))
                 }
-
-                Toggle("Demarrer le serveur a l'ouverture de l'app", isOn: Binding(
-                    get: { model.launchServerAtAppStart },
-                    set: { model.toggleLaunchAtAppStart($0) }
-                ))
-
-                Toggle("Demarrer a la connexion macOS", isOn: Binding(
-                    get: { model.launchAtLogin },
-                    set: { model.toggleLaunchAtLogin($0) }
-                ))
+                
+//                if !model.statusMessage.isEmpty {
+//                    Text(model.statusMessage)
+//                        .font(.footnote)
+//                        .foregroundStyle(.secondary)
+//                        .frame(maxWidth: .infinity, alignment: .leading)
+//                }
             }
-
-            if !model.statusMessage.isEmpty {
-                Text(model.statusMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            .formStyle(.grouped)
         }
     }
 }
@@ -186,32 +193,43 @@ struct NetworkTabView: View {
 
     var body: some View {
         SettingsPane {
-            SettingsSection(title: "Reseau") {
-                KeyValueRow(title: "Port en ecoute", labelWidth: UIConstants.smallLabelWidth) {
-                    HStack(spacing: 8) {
-                        TextField("Port", value: $model.serverPort, formatter: Formatters.integer)
+            Form {
+                Section("Network") {
+                    HStack {
+                        Text("Listening Port")
+                            .bold()
+                        
+                        Spacer()
+                        
+                        TextField("", value: $model.serverPort, formatter: Formatters.integer)
+                            .textFieldStyle(.roundedBorder)
                             .frame(width: UIConstants.numberFieldWidth)
-
-                        Button("Enregistrer") {
+                        
+                        Button("Save") {
                             model.saveNetworkSettings()
                         }
                     }
-                }
-
-                KeyValueRow(title: "Statut du port", labelWidth: UIConstants.smallLabelWidth) {
+                    
                     HStack(spacing: 8) {
                         StatusDot(color: color(for: model.portStatus))
                         Text(model.portStatus.description)
-                        Button("Verifier le port") {
+                        
+                        Spacer()
+                        
+                        Button("Check") {
                             model.checkPort()
                         }
                     }
+                    
                 }
-
-                Text("Le serveur doit etre redemarre apres un changement de port.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                
+                Section {
+                    Text("Server must be restarted after port change.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .formStyle(.grouped)
         }
     }
 
@@ -233,40 +251,58 @@ struct FilesTabView: View {
 
     var body: some View {
         SettingsPane {
-            SettingsSection(title: "Fichiers") {
-                KeyValueRow(title: "Repertoire de fichiers") {
-                    HStack(spacing: 8) {
+            Form {
+                Section("Files") {
+                    HStack {
+                        Text("Files directory")
+                            .bold()
+                        
                         Text(model.filesDirectory)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .textSelection(.enabled)
-
-                        Spacer(minLength: 0)
-
+                        
+                        Button {
+                            NSWorkspace.shared.open(URL(fileURLWithPath: model.filesDirectory))
+                        } label: {
+                            Image(systemName: "folder.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Spacer()
+                        
                         Button("Choisir") {
                             model.chooseFilesDirectory()
                         }
                     }
                 }
-
-                KeyValueRow(title: "Re-indexer toutes les") {
-                    HStack(spacing: 8) {
-                        TextField("Secondes", value: $model.filesReindexInterval, formatter: Formatters.integer)
+                
+                Section("Index") {
+                    HStack {
+                        Text("Re-index server files every")
+                        
+                        TextField("", value: $model.filesReindexInterval, formatter: Formatters.integer)
                             .frame(width: UIConstants.numberFieldWidth)
+                            .textFieldStyle(.roundedBorder)
+                        
                         Text("sec.")
 
                         Spacer(minLength: 0)
 
-                        Button("Enregistrer") {
+                        Button("Save") {
                             model.saveFilesSettings()
                         }
 
-                        Button("Re-indexer") {
+                        Button("Re-index") {
+                            model.saveFilesSettings()
+                            
                             Task { await model.reindexNow() }
                         }
                     }
                 }
             }
+            .formStyle(.grouped)
         }
     }
 }
@@ -277,16 +313,18 @@ struct AdvancedTabView: View {
 
     var body: some View {
         SettingsPane {
-            SettingsSection(title: "Compte admin") {
-                HStack {
-                    StatusDot(color: model.hasAdminPassword ? .green : .red)
-                    Text(model.adminStatus)
-                }
-
-                KeyValueRow(title: "Nouveau mot de passe") {
+            Form {
+                Section("Admin account") {
+                    HStack {
+                        StatusDot(color: model.hasAdminPassword ? .green : .red)
+                        Text(model.adminStatus)
+                    }
+                    
                     HStack(spacing: 8) {
                         SecureField("Mot de passe admin", text: $model.newAdminPassword)
                             .frame(width: 260)
+                        
+                        Spacer()
 
                         Button("Definir") {
                             model.setAdminPassword()
@@ -297,89 +335,35 @@ struct AdvancedTabView: View {
                         }
                     }
                 }
-            }
-
-            SettingsSection(title: "Serveur") {
-                KeyValueRow(title: "Nom du serveur") {
-                    TextField("", text: $model.serverName)
-                        .frame(width: 340)
-                }
-
-                KeyValueRow(title: "Description") {
-                    TextField("", text: $model.serverDescription)
-                        .frame(width: 340)
-                }
-            }
-
-            SettingsSection(title: "Transfers") {
-                KeyValueRow(title: "Telechargements simultanes") {
-                    TextField("", value: $model.transferDownloads, formatter: Formatters.integer)
-                        .frame(width: UIConstants.numberFieldWidth)
-                }
-
-                KeyValueRow(title: "Envois simultanes") {
-                    TextField("", value: $model.transferUploads, formatter: Formatters.integer)
-                        .frame(width: UIConstants.numberFieldWidth)
-                }
-
-                KeyValueRow(title: "Limite download (0 = illimite)") {
-                    TextField("", value: $model.downloadSpeed, formatter: Formatters.integer)
-                        .frame(width: UIConstants.numberFieldWidth)
-                }
-
-                KeyValueRow(title: "Limite upload (0 = illimite)") {
-                    TextField("", value: $model.uploadSpeed, formatter: Formatters.integer)
-                        .frame(width: UIConstants.numberFieldWidth)
-                }
-            }
-
-            SettingsSection(title: "Trackers") {
-                Toggle("Enregistrer sur trackers", isOn: $model.registerWithTrackers)
-
-                KeyValueRow(title: "Trackers (separes par virgule)") {
-                    TextField("", text: $model.trackers)
-                        .frame(minWidth: 360)
-                }
-            }
-
-            SettingsSection(title: "Crypto") {
-                KeyValueRow(title: "Compression") {
-                    Picker("", selection: $model.compressionMode) {
+                
+                Section("Security") {
+                    Picker("Preferred Compression", selection: $model.compressionMode) {
                         ForEach(model.compressionOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 320, alignment: .leading)
-                }
-
-                KeyValueRow(title: "Cipher") {
-                    Picker("", selection: $model.cipherMode) {
+                    
+                    Picker("Preferred Cipher", selection: $model.cipherMode) {
                         ForEach(model.cipherOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 420, alignment: .leading)
-                }
-
-                KeyValueRow(title: "Checksum") {
-                    Picker("", selection: $model.checksumMode) {
+                    
+                    Picker("Preferred Checksum", selection: $model.checksumMode) {
                         ForEach(model.checksumOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 320, alignment: .leading)
+                }
+                
+                HStack {
+                    Spacer()
+                    Button("Enregistrer les parametres avances") {
+                        model.saveAdvancedSettings()
+                    }
                 }
             }
-
-            HStack {
-                Spacer()
-                Button("Enregistrer les parametres avances") {
-                    model.saveAdvancedSettings()
-                }
-            }
+            .formStyle(.grouped)
         }
     }
 }
@@ -387,32 +371,49 @@ struct AdvancedTabView: View {
 @available(macOS 12.0, *)
 struct LogsTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
+    private let bottomAnchorID = "logs-bottom-anchor"
 
     var body: some View {
-        SettingsPane {
-            SettingsSection(title: "Logs") {
-                ScrollView {
-                    Text(model.logsText.isEmpty ? "Aucun log pour l'instant" : model.logsText)
-                        .font(.system(.body, design: .monospaced))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .padding(10)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Button("Ouvrir les logs") {
+                    model.openLogsInFinder()
                 }
-                .frame(minHeight: 280)
-                .background(Color(NSColor.textBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.35), lineWidth: 1)
-                )
+                Spacer()
+            }
 
-                HStack {
-                    Button("Ouvrir les logs") {
-                        model.openLogsInFinder()
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(model.logsText.isEmpty ? "Aucun log pour l'instant" : model.logsText)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            .padding(10)
+
+                        Color.clear
+                            .frame(height: 1)
+                            .id(bottomAnchorID)
                     }
-                    Spacer()
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+                .onAppear {
+                    proxy.scrollTo(bottomAnchorID, anchor: .bottom)
+                }
+                .onChange(of: model.logsText) { _ in
+                    proxy.scrollTo(bottomAnchorID, anchor: .bottom)
                 }
             }
+            .frame(minHeight: 280)
+            .background(Color(NSColor.textBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.35), lineWidth: 1)
+            )
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }

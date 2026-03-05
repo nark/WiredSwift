@@ -93,7 +93,7 @@ targets.append(
 
 let package = Package(
     name: "WiredSwift",
-    platforms: [.iOS(.v13), .macOS(.v10_15)],
+    platforms: [.iOS(.v13), .macOS("13.0")],
     products: [
         .library(
             name: "WiredSwift",

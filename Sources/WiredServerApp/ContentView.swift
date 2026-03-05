@@ -1,6 +1,6 @@
 import SwiftUI
 
-@available(macOS 13.0, *)
+@available(macOS 14.0, *)
 struct ContentView: View {
     @EnvironmentObject private var model: WiredServerViewModel
     @State private var selectedPane: SettingsPane = .general
@@ -13,6 +13,7 @@ struct ContentView: View {
             }
             .listStyle(.sidebar)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+            .toolbar(removing: .sidebarToggle)
         } detail: {
             Group {
                 if selectedPane == .logs {
@@ -60,7 +61,7 @@ struct ContentView: View {
     }
 }
 
-@available(macOS 13.0, *)
+@available(macOS 14.0, *)
 private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
     case general
     case network
@@ -73,9 +74,9 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .general: return "General"
-        case .network: return "Reseau"
-        case .files: return "Fichiers"
-        case .advanced: return "Avances"
+        case .network: return "Network"
+        case .files: return "Files"
+        case .advanced: return "Advanced"
         case .logs: return "Logs"
         }
     }

@@ -12,6 +12,7 @@ final class WiredServerViewModel: ObservableObject {
     @Published var binaryPath: String = ""
 
     @Published var isInstalled: Bool = false
+    @Published var installedServerVersion: String = "-"
     @Published var isRunning: Bool = false
     @Published var launchAtLogin: Bool = false
     @Published var launchServerAtAppStart: Bool = false
@@ -34,7 +35,7 @@ final class WiredServerViewModel: ObservableObject {
     @Published var cipherMode: String = P7Socket.CipherType.SECURE_ONLY.description
     @Published var checksumMode: String = P7Socket.Checksum.SECURE_ONLY.description
 
-    @Published var adminStatus: String = "Inconnu"
+    @Published var adminStatus: String = "Unknown"
     @Published var hasAdminPassword: Bool = false
     @Published var newAdminPassword: String = ""
 
@@ -51,8 +52,8 @@ final class WiredServerViewModel: ObservableObject {
     private var process: Process?
 
     private let userDefaults = UserDefaults.standard
-    private let launchAtLoginKey = "wiredswift.server.launchAtLogin"
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
+    private let launchAgentLabel = "fr.read-write.wired3.server"
 
     struct AdvancedOption: Identifiable, Hashable {
         let id: String
@@ -97,10 +98,9 @@ final class WiredServerViewModel: ObservableObject {
         self.launchServerAtAppStart = userDefaults.bool(forKey: launchAtAppStartKey)
 
         if #available(macOS 13.0, *) {
-            self.launchAtLogin = SMAppService.mainApp.status == .enabled
-        } else {
-            self.launchAtLogin = userDefaults.bool(forKey: launchAtLoginKey)
+            try? SMAppService.mainApp.unregister()
         }
+        self.launchAtLogin = isLaunchAtLoginEnabled()
 
         self.binaryPath = installedBinaryPath
 
@@ -148,6 +148,8 @@ final class WiredServerViewModel: ObservableObject {
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
         refreshInstallStatus()
+        refreshInstalledVersion()
+        launchAtLogin = isLaunchAtLoginEnabled()
         loadConfig()
         refreshRunningStatus()
         refreshAdminStatus()
@@ -166,6 +168,14 @@ final class WiredServerViewModel: ObservableObject {
             workingDirectory = selected
             binaryPath = installedBinaryPath
             refreshAll()
+            if launchAtLogin {
+                do {
+                    try configureLaunchAtLogin(enabled: true)
+                } catch {
+                    publishError("Impossible de mettre a jour le lancement a la connexion: \(error.localizedDescription)")
+                    launchAtLogin = isLaunchAtLoginEnabled()
+                }
+            }
         }
     }
 
@@ -196,21 +206,12 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func toggleLaunchAtLogin(_ enabled: Bool) {
-        if #available(macOS 13.0, *) {
-            do {
-                if enabled {
-                    try SMAppService.mainApp.register()
-                } else {
-                    try SMAppService.mainApp.unregister()
-                }
-                launchAtLogin = enabled
-            } catch {
-                publishError("Impossible de changer l'ouverture a la connexion: \(error.localizedDescription)")
-                launchAtLogin = SMAppService.mainApp.status == .enabled
-            }
-        } else {
-            userDefaults.set(enabled, forKey: launchAtLoginKey)
+        do {
+            try configureLaunchAtLogin(enabled: enabled)
             launchAtLogin = enabled
+        } catch {
+            publishError("Impossible de changer l'ouverture a la connexion: \(error.localizedDescription)")
+            launchAtLogin = isLaunchAtLoginEnabled()
         }
     }
 
@@ -244,6 +245,8 @@ final class WiredServerViewModel: ObservableObject {
         defer { isBusy = false }
 
         stopServer()
+        try? configureLaunchAtLogin(enabled: false)
+        launchAtLogin = false
 
         do {
             if fileManager.fileExists(atPath: workingDirectory) {
@@ -371,6 +374,14 @@ final class WiredServerViewModel: ObservableObject {
             config["server", "files"] = filesDirectory
             config["settings", "reindex_interval"] = String(filesReindexInterval)
         }
+        if launchAtLogin {
+            do {
+                try configureLaunchAtLogin(enabled: true)
+            } catch {
+                publishError("Impossible de mettre a jour le lancement a la connexion: \(error.localizedDescription)")
+                launchAtLogin = isLaunchAtLoginEnabled()
+            }
+        }
         statusMessage = "Configuration fichiers enregistree"
     }
 
@@ -463,6 +474,22 @@ final class WiredServerViewModel: ObservableObject {
         isInstalled = fileManager.isExecutableFile(atPath: installedBinaryPath) || fileManager.isExecutableFile(atPath: binaryPath)
     }
 
+    private func refreshInstalledVersion() {
+        let executableCandidates = [installedBinaryPath, binaryPath]
+        guard let executable = executableCandidates.first(where: { fileManager.isExecutableFile(atPath: $0) }) else {
+            installedServerVersion = "-"
+            return
+        }
+
+        let output = runCommand(executable, ["--version"])
+        let versionLine = output
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .first
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        installedServerVersion = versionLine ?? "-"
+    }
+
     private func refreshRunningStatus() {
         if let task = process {
             isRunning = task.isRunning
@@ -485,23 +512,112 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    private func runCommand(_ launchPath: String, _ arguments: [String]) -> String {
+    private var launchAgentPlistURL: URL {
+        fileManager.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/LaunchAgents", isDirectory: true)
+            .appendingPathComponent("\(launchAgentLabel).plist", isDirectory: false)
+    }
+
+    private var launchctlDomain: String {
+        "gui/\(getuid())"
+    }
+
+    private var launchctlService: String {
+        "\(launchctlDomain)/\(launchAgentLabel)"
+    }
+
+    private func isLaunchAtLoginEnabled() -> Bool {
+        guard fileManager.fileExists(atPath: launchAgentPlistURL.path) else {
+            return false
+        }
+
+        let result = runProcess("/bin/launchctl", ["print", launchctlService])
+        return result.status == 0
+    }
+
+    private func configureLaunchAtLogin(enabled: Bool) throws {
+        if enabled {
+            try writeLaunchAgentPlist()
+            _ = runProcess("/bin/launchctl", ["bootout", launchctlService])
+            _ = runProcess("/bin/launchctl", ["bootout", launchctlDomain, launchAgentPlistURL.path])
+
+            let bootstrap = runProcess("/bin/launchctl", ["bootstrap", launchctlDomain, launchAgentPlistURL.path])
+            guard bootstrap.status == 0 else {
+                throw WiredServerError.launchAgentCommandFailed(bootstrap.errorOutput.isEmpty ? bootstrap.output : bootstrap.errorOutput)
+            }
+        } else {
+            _ = runProcess("/bin/launchctl", ["bootout", launchctlService])
+            _ = runProcess("/bin/launchctl", ["bootout", launchctlDomain, launchAgentPlistURL.path])
+            if fileManager.fileExists(atPath: launchAgentPlistURL.path) {
+                try fileManager.removeItem(at: launchAgentPlistURL)
+            }
+        }
+    }
+
+    private func writeLaunchAgentPlist() throws {
+        bootstrapRuntimeIfNeeded()
+
+        let executableCandidates = [installedBinaryPath, binaryPath]
+        guard let executable = executableCandidates.first(where: { fileManager.isExecutableFile(atPath: $0) }) else {
+            throw WiredServerError.missingBinary
+        }
+
+        let launchAgentsDirectory = launchAgentPlistURL.deletingLastPathComponent()
+        try fileManager.createDirectory(at: launchAgentsDirectory, withIntermediateDirectories: true)
+
+        let plist: [String: Any] = [
+            "Label": launchAgentLabel,
+            "ProgramArguments": [
+                executable,
+                "--working-directory", workingDirectory,
+                "--db", databasePath,
+                "--config", configPath,
+                "--root", currentServerRootPath()
+            ],
+            "WorkingDirectory": workingDirectory,
+            "RunAtLoad": true,
+            "KeepAlive": false,
+            "StandardOutPath": logPath,
+            "StandardErrorPath": logPath
+        ]
+
+        guard (plist as NSDictionary).write(to: launchAgentPlistURL, atomically: true) else {
+            throw WiredServerError.launchAgentWriteFailed
+        }
+    }
+
+    private func currentServerRootPath() -> String {
+        let trimmed = filesDirectory.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? runtimeFilesPath : trimmed
+    }
+
+    private func runProcess(_ launchPath: String, _ arguments: [String]) -> (status: Int32, output: String, errorOutput: String) {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: launchPath)
         task.arguments = arguments
 
-        let pipe = Pipe()
-        task.standardOutput = pipe
-        task.standardError = Pipe()
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        task.standardOutput = outputPipe
+        task.standardError = errorPipe
 
         do {
             try task.run()
             task.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return String(data: data, encoding: .utf8) ?? ""
         } catch {
-            return ""
+            return (1, "", error.localizedDescription)
         }
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+
+        let output = String(data: outputData, encoding: .utf8) ?? ""
+        let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
+        return (task.terminationStatus, output, errorOutput)
+    }
+
+    private func runCommand(_ launchPath: String, _ arguments: [String]) -> String {
+        runProcess(launchPath, arguments).output
     }
 
     private func refreshAdminStatus() {
@@ -1105,11 +1221,11 @@ enum PortStatus {
     var description: String {
         switch self {
         case .unknown:
-            return "Inconnu"
+            return "Unknown port status"
         case .open:
-            return "Ouvert"
+            return "Port is open"
         case .closed:
-            return "Ferme"
+            return "Port is closed"
         }
     }
 }
@@ -1117,6 +1233,8 @@ enum PortStatus {
 enum WiredServerError: LocalizedError, Equatable {
     case missingBinary
     case installBuildFailed
+    case launchAgentWriteFailed
+    case launchAgentCommandFailed(String)
     case databaseOpenFailed
     case databaseNotInitialized
     case databaseStatementFailed(String)
@@ -1128,6 +1246,10 @@ enum WiredServerError: LocalizedError, Equatable {
             return "Binaire wired3 introuvable"
         case .installBuildFailed:
             return "La compilation du binaire wired3 a echoue"
+        case .launchAgentWriteFailed:
+            return "Impossible d'ecrire le LaunchAgent de demarrage"
+        case .launchAgentCommandFailed(let message):
+            return "Echec launchctl: \(message)"
         case .databaseOpenFailed:
             return "Impossible d'ouvrir la base de donnees"
         case .databaseNotInitialized:
