@@ -6,44 +6,35 @@ on:
       marketing_version:
         description: Marketing version (ex: 3.0)
         required: true
-        type: string
       build_number:
         description: Build number (ex: 4)
         required: true
-        type: string
       server_commit:
         description: Server commit SHA (optional)
         required: false
-        type: string
       release_tag:
         description: Release tag (ex: v3.0+4)
         required: true
-        type: string
       package_name:
         description: Debian package name
         required: true
         default: wired3
-        type: string
       maintainer:
         description: Debian maintainer field
         required: true
         default: Wired Team <team@example.com>
-        type: string
       depends:
         description: Debian depends field
         required: true
         default: libc6
-        type: string
       service_enable:
         description: Install systemd unit (1/0)
         required: true
         default: "1"
-        type: string
       debian_artifact_name:
         description: Final workflow artifact name
         required: false
         default: linux-deb-packages
-        type: string
 
 jobs:
   build-amd64:
