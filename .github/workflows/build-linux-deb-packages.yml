@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       marketing_version:
-        description: Marketing version (ex: 3.0)
+        description: "Marketing version (ex: 3.0)"
         required: true
       build_number:
-        description: Build number (ex: 4)
+        description: "Build number (ex: 4)"
         required: true
       server_commit:
         description: Server commit SHA (optional)
         required: false
       release_tag:
-        description: Release tag (ex: v3.0+4)
+        description: "Release tag (ex: v3.0+4)"
         required: true
       package_name:
         description: Debian package name
