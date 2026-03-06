@@ -64,8 +64,24 @@ SWIFT
 
 echo "==> Building $EXECUTABLE_NAME ($BUILD_CONFIG)"
 cd "$ROOT_DIR"
-swift build -c "$BUILD_CONFIG" --product "$EXECUTABLE_NAME"
-swift build -c "$BUILD_CONFIG" --product "$SERVER_BINARY_NAME"
+
+run_swift_build() {
+  swift build -c "$BUILD_CONFIG" --product "$EXECUTABLE_NAME"
+  swift build -c "$BUILD_CONFIG" --product "$SERVER_BINARY_NAME"
+}
+
+BUILD_LOG="$(mktemp)"
+if ! run_swift_build 2>&1 | tee "$BUILD_LOG"; then
+  if grep -q "PCH was compiled with module cache path" "$BUILD_LOG"; then
+    echo "==> Detected stale module cache path, cleaning .build and retrying once"
+    rm -rf "$ROOT_DIR/.build"
+    run_swift_build
+  else
+    echo "Build failed. See log: $BUILD_LOG" >&2
+    exit 1
+  fi
+fi
+rm -f "$BUILD_LOG"
 
 BIN_DIR="$(swift build -c "$BUILD_CONFIG" --show-bin-path)"
 BINARY_PATH="$BIN_DIR/$EXECUTABLE_NAME"
