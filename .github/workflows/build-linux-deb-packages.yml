@@ -72,6 +72,7 @@ jobs:
           swift build -c release --product wired3
           BIN_DIR="$(swift build -c release --show-bin-path)"
           BIN_PATH="$BIN_DIR/wired3"
+          SWIFT_LIB_DIR="/usr/lib/swift/linux"
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
           STAGE_DIR="$RUNNER_TEMP/deb-stage-$TARGET_ARCH"
           OUT_DIR="$RUNNER_TEMP/out-$TARGET_ARCH"
@@ -83,9 +84,18 @@ jobs:
           ldd "$BIN_PATH" || true
 
           rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
-          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$OUT_DIR" "$VERIFY_DIR"
+          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$OUT_DIR" "$VERIFY_DIR"
 
-          cp "$BIN_PATH" "$STAGE_DIR/usr/local/bin/wired3"
+          cp "$BIN_PATH" "$STAGE_DIR/usr/lib/wired3/wired3-bin"
+          chmod 0755 "$STAGE_DIR/usr/lib/wired3/wired3-bin"
+          cp "$SWIFT_LIB_DIR"/*.so "$STAGE_DIR/usr/lib/wired3/"
+
+          cat > "$STAGE_DIR/usr/local/bin/wired3" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          export LD_LIBRARY_PATH="/usr/lib/wired3:${LD_LIBRARY_PATH:-}"
+          exec /usr/lib/wired3/wired3-bin "$@"
+          EOF
           chmod 0755 "$STAGE_DIR/usr/local/bin/wired3"
 
           sed \
@@ -107,8 +117,8 @@ jobs:
 
           dpkg-deb --build --root-owner-group "$STAGE_DIR" "$OUT_DEB"
           dpkg-deb -x "$OUT_DEB" "$VERIFY_DIR"
-          file "$VERIFY_DIR/usr/local/bin/wired3"
-          file "$VERIFY_DIR/usr/local/bin/wired3" | grep -q "$FILE_ARCH_TOKEN"
+          file "$VERIFY_DIR/usr/lib/wired3/wired3-bin"
+          file "$VERIFY_DIR/usr/lib/wired3/wired3-bin" | grep -q "$FILE_ARCH_TOKEN"
 
       - name: Upload arch artifact
         uses: actions/upload-artifact@v4
@@ -152,6 +162,7 @@ jobs:
           swift build -c release --product wired3
           BIN_DIR="$(swift build -c release --show-bin-path)"
           BIN_PATH="$BIN_DIR/wired3"
+          SWIFT_LIB_DIR="/usr/lib/swift/linux"
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
           STAGE_DIR="$RUNNER_TEMP/deb-stage-$TARGET_ARCH"
           OUT_DIR="$RUNNER_TEMP/out-$TARGET_ARCH"
@@ -163,9 +174,18 @@ jobs:
           ldd "$BIN_PATH" || true
 
           rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
-          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$OUT_DIR" "$VERIFY_DIR"
+          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$OUT_DIR" "$VERIFY_DIR"
 
-          cp "$BIN_PATH" "$STAGE_DIR/usr/local/bin/wired3"
+          cp "$BIN_PATH" "$STAGE_DIR/usr/lib/wired3/wired3-bin"
+          chmod 0755 "$STAGE_DIR/usr/lib/wired3/wired3-bin"
+          cp "$SWIFT_LIB_DIR"/*.so "$STAGE_DIR/usr/lib/wired3/"
+
+          cat > "$STAGE_DIR/usr/local/bin/wired3" <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          export LD_LIBRARY_PATH="/usr/lib/wired3:${LD_LIBRARY_PATH:-}"
+          exec /usr/lib/wired3/wired3-bin "$@"
+          EOF
           chmod 0755 "$STAGE_DIR/usr/local/bin/wired3"
 
           sed \
@@ -187,8 +207,8 @@ jobs:
 
           dpkg-deb --build --root-owner-group "$STAGE_DIR" "$OUT_DEB"
           dpkg-deb -x "$OUT_DEB" "$VERIFY_DIR"
-          file "$VERIFY_DIR/usr/local/bin/wired3"
-          file "$VERIFY_DIR/usr/local/bin/wired3" | grep -q "$FILE_ARCH_TOKEN"
+          file "$VERIFY_DIR/usr/lib/wired3/wired3-bin"
+          file "$VERIFY_DIR/usr/lib/wired3/wired3-bin" | grep -q "$FILE_ARCH_TOKEN"
 
       - name: Upload arch artifact
         uses: actions/upload-artifact@v4
