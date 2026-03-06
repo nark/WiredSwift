@@ -56,15 +56,6 @@
         }
       },
       {
-        "package": "DataCompression",
-        "repositoryURL": "https://github.com/mw99/DataCompression.git",
-        "state": {
-          "branch": null,
-          "revision": "16f858982a077451ce3bdbd9144d3073ec85b6e4",
-          "version": "3.9.0"
-        }
-      },
-      {
         "package": "FileKit",
         "repositoryURL": "https://github.com/Kitura/FileKit.git",
         "state": {
