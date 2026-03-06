@@ -40,6 +40,8 @@ jobs:
   build-amd64:
     name: Build deb amd64
     runs-on: ubuntu-latest
+    container:
+      image: swift:6.0-jammy
     env:
       TARGET_ARCH: amd64
       FILE_ARCH_TOKEN: x86-64
@@ -56,8 +58,8 @@ jobs:
       - name: Install build dependencies
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          apt-get update
+          apt-get install -y --no-install-recommends \
             file \
             dpkg-dev \
             liblz4-dev \
@@ -74,9 +76,9 @@ jobs:
           BIN_PATH="$BIN_DIR/wired3"
           mapfile -t SWIFT_DEPS < <(ldd "$BIN_PATH" | awk '/=> \// {print $3}' | grep '/swift/' | sort -u)
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
-          STAGE_DIR="$RUNNER_TEMP/deb-stage-$TARGET_ARCH"
-          OUT_DIR="$RUNNER_TEMP/out-$TARGET_ARCH"
-          VERIFY_DIR="$RUNNER_TEMP/verify-$TARGET_ARCH"
+          STAGE_DIR="$GITHUB_WORKSPACE/.tmp/deb-stage-$TARGET_ARCH"
+          OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
+          VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
 
           file "$BIN_PATH"
@@ -129,12 +131,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deb-amd64
-          path: ${{ runner.temp }}/out-amd64/*.deb
+          path: out-amd64/*.deb
           if-no-files-found: error
 
   build-arm64:
     name: Build deb arm64
     runs-on: ubuntu-24.04-arm
+    container:
+      image: swift:6.0-jammy
     env:
       TARGET_ARCH: arm64
       FILE_ARCH_TOKEN: aarch64
@@ -151,8 +155,8 @@ jobs:
       - name: Install build dependencies
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
+          apt-get update
+          apt-get install -y --no-install-recommends \
             file \
             dpkg-dev \
             liblz4-dev \
@@ -169,9 +173,9 @@ jobs:
           BIN_PATH="$BIN_DIR/wired3"
           mapfile -t SWIFT_DEPS < <(ldd "$BIN_PATH" | awk '/=> \// {print $3}' | grep '/swift/' | sort -u)
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
-          STAGE_DIR="$RUNNER_TEMP/deb-stage-$TARGET_ARCH"
-          OUT_DIR="$RUNNER_TEMP/out-$TARGET_ARCH"
-          VERIFY_DIR="$RUNNER_TEMP/verify-$TARGET_ARCH"
+          STAGE_DIR="$GITHUB_WORKSPACE/.tmp/deb-stage-$TARGET_ARCH"
+          OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
+          VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
 
           file "$BIN_PATH"
@@ -224,7 +228,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deb-arm64
-          path: ${{ runner.temp }}/out-arm64/*.deb
+          path: out-arm64/*.deb
           if-no-files-found: error
 
   assemble-artifacts:
