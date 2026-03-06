@@ -1,6 +1,6 @@
 name: Build Linux Debian Packages
 
-'on':
+on:
   workflow_dispatch:
     inputs:
       marketing_version:
