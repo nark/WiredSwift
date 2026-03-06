@@ -11,7 +11,6 @@ var targets: [Target] = []
 
 dependencies.append(.package(name: "AEXML", url: "https://github.com/tadija/AEXML.git", from: "4.5.0"))
 dependencies.append(.package(name: "CryptoSwift", url: "https://github.com/krzyzanowskim/CryptoSwift.git", from: "1.9.0")) // 1.3.0
-dependencies.append(.package(path: "Vendor/SocketSwift"))
 dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBrancati/Queuer.git", from: "2.0.0"))
 #if !os(Linux)
 dependencies.append(.package(name: "DataCompression", url: "https://github.com/mw99/DataCompression.git", from: "3.9.0"))
@@ -36,6 +35,12 @@ targetDependencies.append(.product(name: "Crypto", package: "swift-crypto"))
 targetDependencies.append(.product(name: "Fluent", package: "fluent"))
 targetDependencies.append(.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"))
 
+targets.append(
+    .target(
+        name: "SocketSwift",
+        path: "Vendor/SocketSwift/Sources"
+    )
+)
 targets.append(
     .target(
         name: "WiredSwift",
