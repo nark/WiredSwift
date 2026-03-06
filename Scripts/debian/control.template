@@ -1,0 +1,9 @@
+Package: __PACKAGE_NAME__
+Version: __VERSION__
+Section: net
+Priority: optional
+Architecture: __ARCH__
+Maintainer: __MAINTAINER__
+Depends: __DEPENDS__
+Description: Wired 3 server daemon
+ Wired 3 server packaged for Debian/Ubuntu with optional systemd integration.

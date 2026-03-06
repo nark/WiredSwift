@@ -1,0 +1,12 @@
+[Unit]
+Description=Wired 3 server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/wired3
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
