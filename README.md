@@ -214,20 +214,20 @@ You should immediately:
 ### Add Dependency
 
 ```swift
-.package(name: "WiredSwift", url: "https://github.com/nark/WiredSwift", from: "1.0.7")
+.package(name: "WiredSwift", url: "https://github.com/nark/WiredSwift", exact: "3.0.0+4")
 ```
 
-### Versioning and Tags (Important)
+### Unified Versioning (Library + Server)
 
-This repository currently exposes two tag families:
+This repository now uses a single release line for all targets (`WiredSwift`, `wired3`, `WiredServerApp`):
 
-- Library-oriented tags: `1.0.x` (used naturally with SwiftPM `from:` semantics)
-- Server release tags: `v3.0+N` (used for packaged server/app releases, for example `v3.0+4`)
+- Git tag: `v3.0+N` (example: `v3.0+4`)
+- SwiftPM semantic version: `3.0.0+N` (example: `3.0.0+4`)
 
 Use the right one for your goal:
 
-- If you integrate `WiredSwift` as a dependency, prefer `1.0.x` tags in `Package.swift`
-- If you want to build exactly the same server/app code as a GitHub release, checkout the release tag first:
+- If you integrate `WiredSwift`, pin the matching SwiftPM version (`3.0.0+N`)
+- If you want to build exactly the same server/app code as a GitHub release, checkout the matching git tag:
 
 ```bash
 git checkout v3.0+4
