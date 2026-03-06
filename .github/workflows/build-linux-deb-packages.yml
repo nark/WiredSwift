@@ -42,6 +42,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: swift:6.0-jammy
+    defaults:
+      run:
+        shell: bash
     env:
       TARGET_ARCH: amd64
       FILE_ARCH_TOKEN: x86-64
@@ -142,6 +145,9 @@ jobs:
     runs-on: ubuntu-24.04-arm
     container:
       image: swift:6.0-jammy
+    defaults:
+      run:
+        shell: bash
     env:
       TARGET_ARCH: arm64
       FILE_ARCH_TOKEN: aarch64
