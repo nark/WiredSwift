@@ -2,7 +2,11 @@ import AppKit
 import Foundation
 import Network
 import ServiceManagement
+#if os(Linux)
+import CSQLite
+#else
 import SQLite3
+#endif
 import WiredSwift
 
 @MainActor

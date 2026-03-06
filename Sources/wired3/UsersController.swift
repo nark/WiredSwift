@@ -9,7 +9,11 @@ import Foundation
 import WiredSwift
 import Fluent
 import FluentSQLiteDriver
+#if os(Linux)
+import CSQLite
+#else
 import SQLite3
+#endif
 
 public class UsersController: TableController, SocketPasswordDelegate {
     //var connectedUsers:[UInt32:User] = [:]

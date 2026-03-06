@@ -72,15 +72,6 @@ targets.append(
 )
 
 #if os(Linux)
-if let wired3Index = targets.firstIndex(where: { $0.name == "wired3" }) {
-    targets[wired3Index].dependencies.append(.byName(name: "SQLite3"))
-}
-if let wiredServerAppIndex = targets.firstIndex(where: { $0.name == "WiredServerApp" }) {
-    targets[wiredServerAppIndex].dependencies.append(.byName(name: "SQLite3"))
-}
-#endif
-
-#if os(Linux)
 targets.append(
     .systemLibrary(
         name: "CZlib",
@@ -98,16 +89,6 @@ targets.append(
         providers: [
             .apt(["liblz4-dev"]),
             .brew(["lz4"])
-        ]
-    )
-)
-targets.append(
-    .systemLibrary(
-        name: "SQLite3",
-        pkgConfig: "sqlite3",
-        providers: [
-            .apt(["libsqlite3-dev"]),
-            .brew(["sqlite3"])
         ]
     )
 )
