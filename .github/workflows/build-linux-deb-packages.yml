@@ -72,7 +72,7 @@ jobs:
           swift build -c release --product wired3
           BIN_DIR="$(swift build -c release --show-bin-path)"
           BIN_PATH="$BIN_DIR/wired3"
-          SWIFT_LIB_DIR="/usr/lib/swift/linux"
+          SWIFT_LIB_DIR="$(dirname "$(ldd "$BIN_PATH" | awk '/libswiftCore\\.so/ {print $3; exit}')")"
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
           STAGE_DIR="$RUNNER_TEMP/deb-stage-$TARGET_ARCH"
           OUT_DIR="$RUNNER_TEMP/out-$TARGET_ARCH"
@@ -82,6 +82,7 @@ jobs:
           file "$BIN_PATH"
           file "$BIN_PATH" | grep -q "$FILE_ARCH_TOKEN"
           ldd "$BIN_PATH" || true
+          test -d "$SWIFT_LIB_DIR"
 
           rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
           mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$OUT_DIR" "$VERIFY_DIR"
@@ -162,7 +163,7 @@ jobs:
           swift build -c release --product wired3
           BIN_DIR="$(swift build -c release --show-bin-path)"
           BIN_PATH="$BIN_DIR/wired3"
-          SWIFT_LIB_DIR="/usr/lib/swift/linux"
+          SWIFT_LIB_DIR="$(dirname "$(ldd "$BIN_PATH" | awk '/libswiftCore\\.so/ {print $3; exit}')")"
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
           STAGE_DIR="$RUNNER_TEMP/deb-stage-$TARGET_ARCH"
           OUT_DIR="$RUNNER_TEMP/out-$TARGET_ARCH"
@@ -172,6 +173,7 @@ jobs:
           file "$BIN_PATH"
           file "$BIN_PATH" | grep -q "$FILE_ARCH_TOKEN"
           ldd "$BIN_PATH" || true
+          test -d "$SWIFT_LIB_DIR"
 
           rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
           mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$OUT_DIR" "$VERIFY_DIR"
