@@ -51,6 +51,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Mark workspace as safe for Git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Checkout requested commit
         if: ${{ inputs.server_commit != '' }}
         run: git checkout "${{ inputs.server_commit }}"
@@ -147,6 +150,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Mark workspace as safe for Git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Checkout requested commit
         if: ${{ inputs.server_commit != '' }}
