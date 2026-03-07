@@ -86,6 +86,9 @@ jobs:
           OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
+          DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/wired.xml"
+          DEFAULT_BANNER_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/banner.png"
+          DEFAULT_CONFIG_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/config.ini"
 
           file "$BIN_PATH"
           file "$BIN_PATH" | grep -q "$FILE_ARCH_TOKEN"
@@ -95,13 +98,19 @@ jobs:
             ldd "$BIN_PATH" || true
             exit 1
           fi
+          test -f "$DEFAULT_SPEC_SOURCE"
+          test -f "$DEFAULT_BANNER_SOURCE"
+          test -f "$DEFAULT_CONFIG_SOURCE"
 
           rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
-          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$OUT_DIR" "$VERIFY_DIR"
+          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$STAGE_DIR/usr/share/wired3" "$OUT_DIR" "$VERIFY_DIR"
 
           cp "$BIN_PATH" "$STAGE_DIR/usr/lib/wired3/wired3-bin"
           chmod 0755 "$STAGE_DIR/usr/lib/wired3/wired3-bin"
           cp "${SWIFT_DEPS[@]}" "$STAGE_DIR/usr/lib/wired3/"
+          cp "$DEFAULT_SPEC_SOURCE" "$STAGE_DIR/usr/share/wired3/wired.xml"
+          cp "$DEFAULT_BANNER_SOURCE" "$STAGE_DIR/usr/share/wired3/banner.png"
+          cp "$DEFAULT_CONFIG_SOURCE" "$STAGE_DIR/usr/share/wired3/config.ini.example"
 
           cat > "$STAGE_DIR/usr/local/bin/wired3" <<'EOF'
           #!/usr/bin/env bash
@@ -189,6 +198,9 @@ jobs:
           OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
+          DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/wired.xml"
+          DEFAULT_BANNER_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/banner.png"
+          DEFAULT_CONFIG_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/config.ini"
 
           file "$BIN_PATH"
           file "$BIN_PATH" | grep -q "$FILE_ARCH_TOKEN"
@@ -198,13 +210,19 @@ jobs:
             ldd "$BIN_PATH" || true
             exit 1
           fi
+          test -f "$DEFAULT_SPEC_SOURCE"
+          test -f "$DEFAULT_BANNER_SOURCE"
+          test -f "$DEFAULT_CONFIG_SOURCE"
 
           rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
-          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$OUT_DIR" "$VERIFY_DIR"
+          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$STAGE_DIR/usr/share/wired3" "$OUT_DIR" "$VERIFY_DIR"
 
           cp "$BIN_PATH" "$STAGE_DIR/usr/lib/wired3/wired3-bin"
           chmod 0755 "$STAGE_DIR/usr/lib/wired3/wired3-bin"
           cp "${SWIFT_DEPS[@]}" "$STAGE_DIR/usr/lib/wired3/"
+          cp "$DEFAULT_SPEC_SOURCE" "$STAGE_DIR/usr/share/wired3/wired.xml"
+          cp "$DEFAULT_BANNER_SOURCE" "$STAGE_DIR/usr/share/wired3/banner.png"
+          cp "$DEFAULT_CONFIG_SOURCE" "$STAGE_DIR/usr/share/wired3/config.ini.example"
 
           cat > "$STAGE_DIR/usr/local/bin/wired3" <<'EOF'
           #!/usr/bin/env bash

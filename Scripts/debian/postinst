@@ -17,6 +17,27 @@ if ! id -u wired3 >/dev/null 2>&1; then
 fi
 
 install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3
+install -d -m 0755 /etc/wired3
+
+DEFAULT_SPEC_SOURCE="/usr/share/wired3/wired.xml"
+DEFAULT_BANNER_SOURCE="/usr/share/wired3/banner.png"
+DEFAULT_CONFIG_SOURCE="/usr/share/wired3/config.ini.example"
+
+test -f "$DEFAULT_SPEC_SOURCE"
+test -f "$DEFAULT_BANNER_SOURCE"
+test -f "$DEFAULT_CONFIG_SOURCE"
+
+if [[ ! -f /var/lib/wired3/wired.xml ]]; then
+  install -m 0640 -o wired3 -g wired3 "$DEFAULT_SPEC_SOURCE" /var/lib/wired3/wired.xml
+fi
+
+if [[ ! -f /var/lib/wired3/banner.png ]]; then
+  install -m 0644 -o wired3 -g wired3 "$DEFAULT_BANNER_SOURCE" /var/lib/wired3/banner.png
+fi
+
+if [[ ! -f /etc/wired3/config.ini ]]; then
+  install -m 0640 -o root -g wired3 "$DEFAULT_CONFIG_SOURCE" /etc/wired3/config.ini
+fi
 
 if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload || true

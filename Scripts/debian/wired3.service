@@ -9,7 +9,7 @@ Group=wired3
 WorkingDirectory=/var/lib/wired3
 StateDirectory=wired3
 StateDirectoryMode=0750
-ExecStart=/usr/local/bin/wired3 --working-directory /var/lib/wired3
+ExecStart=/usr/local/bin/wired3 --working-directory /var/lib/wired3 --config /etc/wired3/config.ini --spec /var/lib/wired3/wired.xml
 Restart=on-failure
 RestartSec=5
 
