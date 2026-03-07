@@ -2,5 +2,7 @@
 set -euo pipefail
 
 if command -v systemctl >/dev/null 2>&1; then
+  systemctl stop wired3.service >/dev/null 2>&1 || true
+  systemctl disable wired3.service >/dev/null 2>&1 || true
   systemctl daemon-reload || true
 fi

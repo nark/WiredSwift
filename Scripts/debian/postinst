@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ! getent group wired3 >/dev/null 2>&1; then
+  groupadd --system wired3
+fi
+
+if ! id -u wired3 >/dev/null 2>&1; then
+  useradd \
+    --system \
+    --gid wired3 \
+    --home-dir /var/lib/wired3 \
+    --create-home \
+    --shell /usr/sbin/nologin \
+    --comment "Wired 3 service account" \
+    wired3
+fi
+
+install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3
+
 if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload || true
 fi
