@@ -1,69 +1,69 @@
 # WiredChatBot
 
-Un chatbot daemon entièrement configurable pour le protocole **Wired 3**, écrit en Swift compatible Linux. Le bot s'appuie sur des modèles LLM (Ollama, OpenAI, Anthropic) pour répondre aux messages, réagir aux événements du serveur et exécuter des commandes personnalisées.
+A fully configurable chatbot daemon for the **Wired 3** protocol, written in Linux-compatible Swift. The bot leverages LLM backends (Ollama, OpenAI, Anthropic) to respond to messages, react to server events, and execute custom commands.
 
-- Daemon POSIX complet (fork, PID file, SIGTERM/SIGHUP)
-- Configuration JSON, rechargeable sans recompilation
-- Trois backends LLM prêts à l'emploi (self-hosted ou cloud)
-- Triggers regex avec cooldowns, templates et dispatch LLM
-- Contexte de conversation par canal et par DM
-- Architecture modulaire préparée pour un wrapper SwiftUI macOS
+- Full POSIX daemon (fork, PID file, SIGTERM/SIGHUP)
+- JSON configuration, reloadable without recompilation
+- Three ready-to-use LLM backends (self-hosted or cloud)
+- Regex triggers with cooldowns, templates and LLM dispatch
+- Per-channel and per-DM conversation context
+- Modular architecture prepared for a macOS SwiftUI wrapper
 
 ---
 
-## Table des matières
+## Table of Contents
 
-1. [Prérequis](#prérequis)
-2. [Compilation](#compilation)
-3. [Utilisation CLI](#utilisation-cli)
-4. [Référence de configuration](#référence-de-configuration)
+1. [Requirements](#requirements)
+2. [Building](#building)
+3. [CLI Usage](#cli-usage)
+4. [Configuration Reference](#configuration-reference)
    - [server](#server)
    - [identity](#identity)
    - [llm](#llm)
    - [behavior](#behavior)
    - [triggers](#triggers)
    - [daemon](#daemon)
-5. [Providers LLM](#providers-llm)
+5. [LLM Providers](#llm-providers)
    - [Ollama (self-hosted)](#ollama)
    - [OpenAI-compatible](#openai-compatible-lm-studio-groq-)
    - [Anthropic Claude](#anthropic-claude)
-6. [Système de triggers](#système-de-triggers)
-7. [Variables de template](#variables-de-template)
-8. [Mode daemon Linux](#mode-daemon-linux)
+6. [Trigger System](#trigger-system)
+7. [Template Variables](#template-variables)
+8. [Linux Daemon Mode](#linux-daemon-mode)
 9. [Systemd](#systemd)
-10. [Wrapper SwiftUI macOS](#wrapper-swiftui-macos)
-11. [Dépannage](#dépannage)
+10. [macOS SwiftUI Wrapper](#macos-swiftui-wrapper)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
-## Prérequis
+## Requirements
 
 **Linux**
 - Swift 5.9+
 - `zlib1g-dev`, `liblz4-dev`
-- Pour le LLM self-hosted : [Ollama](https://ollama.com) ou tout autre serveur compatible OpenAI
+- For self-hosted LLM: [Ollama](https://ollama.com) or any OpenAI-compatible server
 
 **macOS**
-- Xcode 15+ ou Swift 5.9+ en ligne de commande
-- macOS 13+ recommandé pour `async/await` stable
+- Xcode 15+ or Swift 5.9+ command line tools
+- macOS 13+ recommended for stable `async/await`
 
 ---
 
-## Compilation
+## Building
 
 ```bash
-# Cloner le dépôt
+# Clone the repository
 git clone https://github.com/nark/WiredSwift.git
 cd WiredSwift
 
-# Compiler uniquement le bot
+# Build the bot only
 swift build --product WiredChatBot -c release
 
-# Le binaire se trouve dans
+# Binary is located at
 .build/release/WiredChatBot
 ```
 
-Copier le binaire et le fichier de spec du protocole :
+Copy the binary and the protocol spec file:
 
 ```bash
 sudo cp .build/release/WiredChatBot /usr/local/bin/wiredbot
@@ -73,40 +73,40 @@ sudo cp Sources/WiredSwift/wired.xml /usr/share/wiredbot/
 
 ---
 
-## Utilisation CLI
+## CLI Usage
 
 ```
-UTILISATION
-  wiredbot <sous-commande>
+USAGE
+  wiredbot <subcommand>
 
-SOUS-COMMANDES
-  run               Démarrer le chatbot (défaut)
-  generate-config   Écrire une configuration par défaut sur disque
+SUBCOMMANDS
+  run               Start the chatbot (default)
+  generate-config   Write a default configuration to disk
 
-OPTIONS GLOBALES
-  --help            Afficher l'aide
+GLOBAL OPTIONS
+  --help            Show help
 ```
 
 ### `wiredbot run`
 
 ```
 OPTIONS
-  -c, --config <path>   Fichier de configuration JSON         (défaut : wiredbot.json)
-  -s, --spec <path>     Chemin vers wired.xml                 (défaut : auto-détecté)
-  -f, --foreground      Forcer le mode premier plan            (défaut : false)
-      --verbose         Activer le niveau DEBUG                (défaut : false)
+  -c, --config <path>   JSON configuration file         (default: wiredbot.json)
+  -s, --spec <path>     Path to wired.xml               (default: auto-detected)
+  -f, --foreground      Force foreground mode            (default: false)
+      --verbose         Enable DEBUG level               (default: false)
 ```
 
-Exemples :
+Examples:
 
 ```bash
-# Démarrage simple (lit wiredbot.json dans le répertoire courant)
+# Simple start (reads wiredbot.json from current directory)
 wiredbot run
 
-# Configuration explicite, foreground pour Docker/debugging
+# Explicit config, foreground for Docker/debugging
 wiredbot run --config /etc/wiredbot/bot.json --spec /usr/share/wiredbot/wired.xml --foreground
 
-# Mode verbose pour diagnostiquer les problèmes de connexion
+# Verbose mode to diagnose connection issues
 wiredbot run --foreground --verbose
 ```
 
@@ -114,24 +114,24 @@ wiredbot run --foreground --verbose
 
 ```
 OPTIONS
-  -o, --output <path>   Fichier de sortie   (défaut : wiredbot.json)
+  -o, --output <path>   Output file   (default: wiredbot.json)
 ```
 
 ```bash
-# Génère un wiredbot.json avec toutes les valeurs par défaut commentées
+# Generates a wiredbot.json with all default values
 wiredbot generate-config --output /etc/wiredbot/wiredbot.json
 ```
 
 ---
 
-## Référence de configuration
+## Configuration Reference
 
-La configuration est un fichier **JSON** lu au démarrage. Exemple minimal :
+The configuration is a **JSON** file read at startup. Minimal example:
 
 ```json
 {
-  "server":   { "url": "wired://monbot:motdepasse@wired.exemple.fr:4871" },
-  "identity": { "nick": "MonBot" },
+  "server":   { "url": "wired://mybot:password@wired.example.com:4871" },
+  "identity": { "nick": "MyBot" },
   "llm":      { "provider": "ollama", "model": "llama3" },
   "behavior": {},
   "triggers": [],
@@ -139,25 +139,25 @@ La configuration est un fichier **JSON** lu au démarrage. Exemple minimal :
 }
 ```
 
-Toutes les clés non présentes prennent leur valeur par défaut.
+Any missing keys use their default value.
 
 ---
 
 ### `server`
 
-| Clé | Type | Défaut | Description |
-|-----|------|--------|-------------|
-| `url` | string | `"wired://guest@localhost:4871"` | URL complète du serveur Wired. Format : `wired://login:motdepasse@hote:port` |
-| `channels` | [uint] | `[1]` | IDs des canaux à rejoindre après connexion. `1` = chat public. |
-| `reconnectDelay` | float | `30.0` | Secondes d'attente entre deux tentatives de reconnexion. |
-| `maxReconnectAttempts` | int | `0` | Nombre max de tentatives. `0` = infini. |
-| `specPath` | string? | `null` | Chemin vers `wired.xml`. `null` = auto-détection (voir ci-dessous). |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `url` | string | `"wired://guest@localhost:4871"` | Full Wired server URL. Format: `wired://login:password@host:port` |
+| `channels` | [uint] | `[1]` | Channel IDs to join after connecting. `1` = public chat. |
+| `reconnectDelay` | float | `30.0` | Seconds to wait between reconnection attempts. |
+| `maxReconnectAttempts` | int | `0` | Max number of attempts. `0` = unlimited. |
+| `specPath` | string? | `null` | Path to `wired.xml`. `null` = auto-detection (see below). |
 
-**Auto-détection de `wired.xml`** — Le bot cherche dans cet ordre :
+**`wired.xml` auto-detection** — The bot searches in this order:
 
-1. Valeur de `specPath` dans la config
-2. Flag `--spec` en ligne de commande
-3. Même répertoire que le binaire
+1. `specPath` value in config
+2. `--spec` command-line flag
+3. Same directory as the binary
 4. `./wired.xml`, `./Resources/wired.xml`
 5. `/etc/wiredbot/wired.xml`
 6. `/usr/share/wiredbot/wired.xml`
@@ -165,7 +165,7 @@ Toutes les clés non présentes prennent leur valeur par défaut.
 
 ```json
 "server": {
-  "url": "wired://botaccount:s3cr3t@chat.monserveur.fr:4871",
+  "url": "wired://botaccount:s3cr3t@chat.myserver.com:4871",
   "channels": [1, 5, 12],
   "reconnectDelay": 15.0,
   "maxReconnectAttempts": 10,
@@ -177,12 +177,12 @@ Toutes les clés non présentes prennent leur valeur par défaut.
 
 ### `identity`
 
-| Clé | Type | Défaut | Description |
-|-----|------|--------|-------------|
-| `nick` | string | `"WiredBot"` | Pseudonyme du bot sur le serveur. |
-| `status` | string | `"Powered by AI"` | Message de statut visible dans la liste d'utilisateurs. |
-| `icon` | string? | `null` | Icône encodée en base64 (même format que Wired). `null` = icône par défaut. |
-| `idleTimeout` | float | `0` | Secondes avant de passer en mode absent. `0` = jamais. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `nick` | string | `"WiredBot"` | Bot nickname on the server. |
+| `status` | string | `"Powered by AI"` | Status message visible in the user list. |
+| `icon` | string? | `null` | Base64-encoded icon (same format as Wired). `null` = default icon. |
+| `idleTimeout` | float | `0` | Seconds before going idle. `0` = never. |
 
 ```json
 "identity": {
@@ -193,27 +193,27 @@ Toutes les clés non présentes prennent leur valeur par défaut.
 }
 ```
 
-Pour encoder une icône en base64 :
+To encode an icon in base64:
 
 ```bash
-base64 -w 0 mon-icone.png
+base64 -w 0 my-icon.png
 ```
 
 ---
 
 ### `llm`
 
-| Clé | Type | Défaut | Description |
-|-----|------|--------|-------------|
-| `provider` | string | `"ollama"` | Backend LLM : `"ollama"`, `"openai"`, `"anthropic"` |
-| `endpoint` | string | `"http://localhost:11434"` | URL de base de l'API (sans `/v1` ni `/api`). |
-| `apiKey` | string? | `null` | Clé API. Obligatoire pour `openai` et `anthropic`. |
-| `model` | string | `"llama3"` | Nom du modèle. Exemples : `"llama3"`, `"gpt-4o"`, `"claude-sonnet-4-6"` |
-| `systemPrompt` | string | *(voir défaut)* | Prompt système injecté en tête de chaque conversation. Supporte les variables `{nick}`, `{server}`. |
-| `temperature` | float | `0.7` | Créativité des réponses. `0.0` = déterministe, `1.0` = très créatif. |
-| `maxTokens` | int | `512` | Nombre maximum de tokens dans une réponse LLM. |
-| `contextMessages` | int | `10` | Nombre de tours de conversation mémorisés par canal/DM. |
-| `timeoutSeconds` | float | `30.0` | Délai d'expiration des requêtes HTTP vers le LLM. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `provider` | string | `"ollama"` | LLM backend: `"ollama"`, `"openai"`, `"anthropic"` |
+| `endpoint` | string | `"http://localhost:11434"` | API base URL (without `/v1` or `/api`). |
+| `apiKey` | string? | `null` | API key. Required for `openai` and `anthropic`. |
+| `model` | string | `"llama3"` | Model name. Examples: `"llama3"`, `"gpt-4o"`, `"claude-sonnet-4-6"` |
+| `systemPrompt` | string | *(see default)* | System prompt injected at the top of each conversation. Supports `{nick}`, `{server}` variables. |
+| `temperature` | float | `0.7` | Response creativity. `0.0` = deterministic, `1.0` = very creative. |
+| `maxTokens` | int | `512` | Maximum number of tokens in an LLM response. |
+| `contextMessages` | int | `10` | Number of conversation turns remembered per channel/DM. |
+| `timeoutSeconds` | float | `30.0` | HTTP request timeout for LLM calls. |
 
 ```json
 "llm": {
@@ -221,7 +221,7 @@ base64 -w 0 mon-icone.png
   "endpoint": "http://localhost:11434",
   "apiKey": null,
   "model": "mistral",
-  "systemPrompt": "Tu es un assistant serviable sur un serveur Wired. Sois concis, limite tes réponses à 2-3 phrases maximum. Pas de markdown — texte brut uniquement.",
+  "systemPrompt": "You are a helpful assistant on a Wired server. Be concise, limit your answers to 2-3 sentences. No markdown — plain text only.",
   "temperature": 0.5,
   "maxTokens": 256,
   "contextMessages": 8,
@@ -233,26 +233,26 @@ base64 -w 0 mon-icone.png
 
 ### `behavior`
 
-Contrôle quand et comment le bot réagit aux événements.
+Controls when and how the bot reacts to events.
 
-| Clé | Type | Défaut | Description |
-|-----|------|--------|-------------|
-| `respondToMentions` | bool | `true` | Répondre quand le nick du bot (ou un `mentionKeyword`) est détecté dans un message. |
-| `respondToAll` | bool | `false` | Répondre à **tous** les messages publics. À utiliser avec prudence et `rateLimitSeconds` élevé. |
-| `respondToPrivateMessages` | bool | `true` | Répondre aux messages privés (DM). |
-| `greetOnJoin` | bool | `true` | Envoyer un message de bienvenue quand un utilisateur rejoint un canal. |
-| `greetMessage` | string | `"Welcome, {nick}!"` | Template du message de bienvenue. Supporte `{nick}`, `{chatID}`. |
-| `farewellOnLeave` | bool | `false` | Envoyer un message d'au-revoir quand un utilisateur quitte. |
-| `farewellMessage` | string | `"Goodbye, {nick}!"` | Template du message d'au-revoir. |
-| `announceNewThreads` | bool | `true` | Annoncer les nouveaux posts dans les boards. |
-| `announceNewThreadMessage` | string | `"New board post: \"{subject}\" by {nick}"` | Template de l'annonce. Supporte `{nick}`, `{subject}`, `{board}`. |
-| `announceFileUploads` | bool | `false` | Annoncer les fichiers déposés sur le serveur. |
-| `announceFileMessage` | string | `"{nick} uploaded: {filename}"` | Template de l'annonce. Supporte `{nick}`, `{filename}`, `{path}`. |
-| `rateLimitSeconds` | float | `2.0` | Délai minimum (secondes) entre deux réponses du bot. Évite le spam. |
-| `maxResponseLength` | int | `500` | Longueur maximale d'une réponse (en caractères). Les réponses plus longues sont tronquées avec `…`. |
-| `ignoreOwnMessages` | bool | `true` | Ignorer les messages envoyés par le bot lui-même (évite les boucles). |
-| `ignoredNicks` | [string] | `[]` | Liste de pseudonymes qui seront toujours ignorés. |
-| `mentionKeywords` | [string] | `[]` | Mots-clés supplémentaires comptant comme une mention du bot (en plus du nick). |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `respondToMentions` | bool | `true` | Reply when the bot's nick (or a `mentionKeyword`) is detected in a message. |
+| `respondToAll` | bool | `false` | Reply to **all** public messages. Use with caution and a high `rateLimitSeconds`. |
+| `respondToPrivateMessages` | bool | `true` | Reply to private messages (DMs). |
+| `greetOnJoin` | bool | `true` | Send a welcome message when a user joins a channel. |
+| `greetMessage` | string | `"Welcome, {nick}!"` | Welcome message template. Supports `{nick}`, `{chatID}`. |
+| `farewellOnLeave` | bool | `false` | Send a farewell message when a user leaves. |
+| `farewellMessage` | string | `"Goodbye, {nick}!"` | Farewell message template. |
+| `announceNewThreads` | bool | `true` | Announce new board posts. |
+| `announceNewThreadMessage` | string | `"New board post: \"{subject}\" by {nick}"` | Announcement template. Supports `{nick}`, `{subject}`, `{board}`. |
+| `announceFileUploads` | bool | `false` | Announce files uploaded to the server. |
+| `announceFileMessage` | string | `"{nick} uploaded: {filename}"` | Announcement template. Supports `{nick}`, `{filename}`, `{path}`. |
+| `rateLimitSeconds` | float | `2.0` | Minimum delay (seconds) between two bot responses. Prevents spam. |
+| `maxResponseLength` | int | `500` | Maximum response length (characters). Longer responses are truncated with `…`. |
+| `ignoreOwnMessages` | bool | `true` | Ignore messages sent by the bot itself (prevents loops). |
+| `ignoredNicks` | [string] | `[]` | List of nicknames that will always be ignored. |
+| `mentionKeywords` | [string] | `[]` | Additional keywords that count as a bot mention (in addition to the nick). |
 
 ```json
 "behavior": {
@@ -260,13 +260,13 @@ Contrôle quand et comment le bot réagit aux événements.
   "respondToAll": false,
   "respondToPrivateMessages": true,
   "greetOnJoin": true,
-  "greetMessage": "Salut {nick}, bienvenue sur le serveur !",
+  "greetMessage": "Hey {nick}, welcome to the server!",
   "farewellOnLeave": true,
-  "farewellMessage": "À bientôt {nick} !",
+  "farewellMessage": "See you, {nick}!",
   "announceNewThreads": true,
-  "announceNewThreadMessage": "Nouveau post dans les boards : \"{subject}\" par {nick}",
+  "announceNewThreadMessage": "New board post: \"{subject}\" by {nick}",
   "announceFileUploads": false,
-  "announceFileMessage": "{nick} a déposé : {filename}",
+  "announceFileMessage": "{nick} uploaded: {filename}",
   "rateLimitSeconds": 3.0,
   "maxResponseLength": 400,
   "ignoreOwnMessages": true,
@@ -279,20 +279,20 @@ Contrôle quand et comment le bot réagit aux événements.
 
 ### `triggers`
 
-Tableau de déclencheurs personnalisés. Chaque trigger est un objet JSON.
+Array of custom triggers. Each trigger is a JSON object.
 
-| Clé | Type | Obligatoire | Description |
-|-----|------|-------------|-------------|
-| `name` | string | oui | Identifiant unique (utilisé pour les logs et les cooldowns). |
-| `pattern` | string | oui | Expression régulière (POSIX étendu) testée contre le texte du message. |
-| `eventTypes` | [string] | non | Types d'événements activants : `"chat"`, `"private"`, `"all"`. Défaut : `["chat", "private"]`. |
-| `response` | string? | non | Réponse statique. Prioritaire sur `useLLM`. Supporte les templates `{variable}`. |
-| `useLLM` | bool | non | Si `true` et `response` est absent, envoie l'entrée au LLM. Défaut : `false`. |
-| `llmPromptPrefix` | string? | non | Texte préfixé à l'entrée utilisateur avant envoi au LLM. |
-| `caseSensitive` | bool | non | La regex est-elle sensible à la casse ? Défaut : `false`. |
-| `cooldownSeconds` | float | non | Délai entre deux déclenchements du même trigger **par utilisateur**. `0` = pas de cooldown. |
+| Key | Type | Required | Description |
+|-----|------|----------|-------------|
+| `name` | string | yes | Unique identifier (used for logs and cooldowns). |
+| `pattern` | string | yes | Regular expression (POSIX extended) tested against the message text. |
+| `eventTypes` | [string] | no | Activating event types: `"chat"`, `"private"`, `"all"`. Default: `["chat", "private"]`. |
+| `response` | string? | no | Static response. Takes priority over `useLLM`. Supports `{variable}` templates. |
+| `useLLM` | bool | no | If `true` and `response` is absent, sends the input to the LLM. Default: `false`. |
+| `llmPromptPrefix` | string? | no | Text prepended to user input before sending to the LLM. |
+| `caseSensitive` | bool | no | Is the regex case-sensitive? Default: `false`. |
+| `cooldownSeconds` | float | no | Delay between two firings of the same trigger **per user**. `0` = no cooldown. |
 
-**Ordre de priorité :** Les triggers sont testés dans l'ordre du tableau. Le **premier match** gagne. Si aucun trigger ne correspond, le bot vérifie la mention avant d'appeler le LLM.
+**Priority order:** Triggers are tested in array order. The **first match** wins. If no trigger matches, the bot checks for a mention before calling the LLM.
 
 ```json
 "triggers": [
@@ -300,31 +300,31 @@ Tableau de déclencheurs personnalisés. Chaque trigger est un objet JSON.
     "name": "ping",
     "pattern": "^!ping$",
     "eventTypes": ["chat", "private"],
-    "response": "Pong !",
+    "response": "Pong!",
     "caseSensitive": false,
     "cooldownSeconds": 0
   },
   {
-    "name": "meteo",
-    "pattern": "^!météo (.+)",
+    "name": "weather",
+    "pattern": "^!weather (.+)",
     "eventTypes": ["chat"],
     "useLLM": true,
-    "llmPromptPrefix": "Donne la météo actuelle pour cette ville (réponse en 1-2 phrases) : ",
+    "llmPromptPrefix": "Give the current weather for this city (answer in 1-2 sentences): ",
     "cooldownSeconds": 10
   },
   {
-    "name": "blague",
-    "pattern": "^!blague",
+    "name": "joke",
+    "pattern": "^!joke",
     "eventTypes": ["chat", "private"],
     "useLLM": true,
-    "llmPromptPrefix": "Raconte une blague courte et drôle en français : ",
+    "llmPromptPrefix": "Tell a short, funny joke: ",
     "cooldownSeconds": 15
   },
   {
-    "name": "aide",
-    "pattern": "^!(help|aide|\\?)",
+    "name": "help",
+    "pattern": "^!(help|\\?)",
     "eventTypes": ["chat", "private"],
-    "response": "Commandes : !ping, !aide, !ask <question>, !blague | Mentionner le bot pour parler.",
+    "response": "Commands: !ping, !help, !ask <question>, !joke | Mention the bot to chat.",
     "cooldownSeconds": 5
   },
   {
@@ -341,12 +341,12 @@ Tableau de déclencheurs personnalisés. Chaque trigger est un objet JSON.
 
 ### `daemon`
 
-| Clé | Type | Défaut | Description |
-|-----|------|--------|-------------|
-| `foreground` | bool | `false` | Ne pas forker en arrière-plan. Utile pour Docker, systemd avec `Type=simple`, ou le debugging. |
-| `pidFile` | string | `"/tmp/wiredbot.pid"` | Chemin du fichier PID écrit au démarrage et supprimé à l'arrêt. |
-| `logFile` | string? | `null` | Chemin du fichier de log. `null` = sortie sur stdout uniquement. |
-| `logLevel` | string | `"INFO"` | Niveau de log : `"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`. |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `foreground` | bool | `false` | Do not fork into the background. Useful for Docker, systemd with `Type=simple`, or debugging. |
+| `pidFile` | string | `"/tmp/wiredbot.pid"` | Path of the PID file written at startup and removed at shutdown. |
+| `logFile` | string? | `null` | Log file path. `null` = stdout only. |
+| `logLevel` | string | `"INFO"` | Log level: `"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`. |
 
 ```json
 "daemon": {
@@ -357,18 +357,18 @@ Tableau de déclencheurs personnalisés. Chaque trigger est un objet JSON.
 }
 ```
 
-> **Note :** Le flag `--verbose` en ligne de commande force le niveau `DEBUG` indépendamment de `logLevel`.
+> **Note:** The `--verbose` command-line flag forces `DEBUG` level regardless of `logLevel`.
 
 ---
 
-## Providers LLM
+## LLM Providers
 
 ### Ollama
 
-Idéal pour un déploiement entièrement local. Aucune clé API requise.
+Ideal for a fully local deployment. No API key required.
 
 ```bash
-# Installer Ollama et télécharger un modèle
+# Install Ollama and pull a model
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull llama3
 ollama pull mistral
@@ -383,7 +383,7 @@ ollama pull gemma3
 }
 ```
 
-Ollama sur un autre hôte (ex. serveur dédié GPU) :
+Ollama on a remote host (e.g. dedicated GPU server):
 
 ```json
 "llm": {
@@ -397,7 +397,7 @@ Ollama sur un autre hôte (ex. serveur dédié GPU) :
 
 ### OpenAI-compatible (LM Studio, Groq…)
 
-Ce provider fonctionne avec **tout serveur exposant l'API `/v1/chat/completions`** : OpenAI officiel, [LM Studio](https://lmstudio.ai), [Groq](https://groq.com), [Mistral](https://mistral.ai), [Together AI](https://together.ai), etc.
+This provider works with **any server exposing the `/v1/chat/completions` API**: official OpenAI, [LM Studio](https://lmstudio.ai), [Groq](https://groq.com), [Mistral](https://mistral.ai), [Together AI](https://together.ai), etc.
 
 **OpenAI**
 ```json
@@ -409,7 +409,7 @@ Ce provider fonctionne avec **tout serveur exposant l'API `/v1/chat/completions`
 }
 ```
 
-**LM Studio** (local, pas de clé API)
+**LM Studio** (local, no API key)
 ```json
 "llm": {
   "provider": "openai",
@@ -418,7 +418,7 @@ Ce provider fonctionne avec **tout serveur exposant l'API `/v1/chat/completions`
 }
 ```
 
-**Groq** (ultra-rapide, gratuit avec limites)
+**Groq** (ultra-fast, free with limits)
 ```json
 "llm": {
   "provider": "openai",
@@ -451,116 +451,116 @@ Ce provider fonctionne avec **tout serveur exposant l'API `/v1/chat/completions`
 }
 ```
 
-> Le champ `endpoint` est ignoré pour Anthropic (l'URL est fixe : `https://api.anthropic.com/v1/messages`).
+> The `endpoint` field is ignored for Anthropic (the URL is fixed: `https://api.anthropic.com/v1/messages`).
 
-Modèles disponibles au moment de l'écriture :
-- `claude-opus-4-6` — Le plus puissant
-- `claude-sonnet-4-6` — Équilibre vitesse/qualité (recommandé)
-- `claude-haiku-4-5-20251001` — Le plus rapide et économique
+Available models:
+- `claude-opus-4-6` — Most powerful
+- `claude-sonnet-4-6` — Best speed/quality balance (recommended)
+- `claude-haiku-4-5-20251001` — Fastest and most economical
 
 ---
 
-## Système de triggers
+## Trigger System
 
-### Ordre d'exécution
+### Execution Order
 
-Pour chaque message reçu :
+For each received message:
 
 ```
-1. Le message est ignoré si l'expéditeur est dans ignoredNicks
-   ou si ignoreOwnMessages = true et c'est le bot lui-même
+1. Message is ignored if sender is in ignoredNicks
+   or if ignoreOwnMessages = true and it's the bot itself
    ↓
-2. Les triggers sont testés dans l'ordre du tableau JSON
-   → Premier match : réponse statique OU dispatch LLM avec préfixe
-   → Fin du traitement
+2. Triggers are tested in JSON array order
+   → First match: static response OR LLM dispatch with prefix
+   → Processing ends
    ↓
-3. Si respondToAll = true OU (respondToMentions = true ET mention détectée)
-   → Dispatch LLM avec le message complet
+3. If respondToAll = true OR (respondToMentions = true AND mention detected)
+   → LLM dispatch with full message
    ↓
-4. Sinon : silence
+4. Otherwise: silence
 ```
 
-### Expressions régulières
+### Regular Expressions
 
-Les patterns utilisent la syntaxe **POSIX étendue** (NSRegularExpression).
-Par défaut les patterns sont **insensibles à la casse** (`caseSensitive: false`).
+Patterns use **POSIX extended** syntax (NSRegularExpression).
+By default patterns are **case-insensitive** (`caseSensitive: false`).
 
-Ancres utiles :
-- `^` début du message, `$` fin
-- `(.+)` capture un ou plusieurs caractères
-- `\s` espace, `\w` alphanumérique
-- `(a|b)` alternative
+Useful anchors:
+- `^` start of message, `$` end
+- `(.+)` capture one or more characters
+- `\s` whitespace, `\w` alphanumeric
+- `(a|b)` alternation
 
-Exemples :
+Examples:
 
 ```json
-{ "pattern": "^!ping$" }                       // exactement "!ping"
-{ "pattern": "^!ask (.+)" }                    // commence par "!ask "
-{ "pattern": "bonjour|salut|hello" }           // n'importe où dans le message
-{ "pattern": "^!(help|aide|\\?)" }             // !help ou !aide ou !?
-{ "pattern": "\\bwired\\b" }                   // mot "wired" isolé
+{ "pattern": "^!ping$" }                       // exactly "!ping"
+{ "pattern": "^!ask (.+)" }                    // starts with "!ask "
+{ "pattern": "hello|hi|hey" }                  // anywhere in the message
+{ "pattern": "^!(help|\\?)" }                  // !help or !?
+{ "pattern": "\\bwired\\b" }                   // standalone word "wired"
 ```
 
 ### Cooldowns
 
-Le cooldown s'applique **par utilisateur** (pas globalement). Si `cooldownSeconds: 10` est défini sur un trigger `!blague`, chaque utilisateur peut déclencher ce trigger au plus une fois toutes les 10 secondes, mais plusieurs utilisateurs différents peuvent le faire simultanément.
+Cooldowns apply **per user** (not globally). If `cooldownSeconds: 10` is set on a `!joke` trigger, each user can fire that trigger at most once every 10 seconds, but multiple different users can fire it simultaneously.
 
-### Dispatch LLM avec préfixe
+### LLM Dispatch with Prefix
 
-`llmPromptPrefix` est concaténé au message de l'utilisateur **avant** envoi au LLM, mais le message original reste dans le contexte de conversation.
+`llmPromptPrefix` is concatenated to the user's message **before** sending to the LLM, but the original message remains in the conversation context.
 
 ```json
 {
-  "name": "resume",
-  "pattern": "^!résume (.+)",
+  "name": "summarize",
+  "pattern": "^!summarize (.+)",
   "useLLM": true,
-  "llmPromptPrefix": "Résume ce texte en une phrase : "
+  "llmPromptPrefix": "Summarize this text in one sentence: "
 }
 ```
 
-Si l'utilisateur envoie `!résume Lorem ipsum dolor sit amet...`, le LLM reçoit :
-`"Résume ce texte en une phrase : Lorem ipsum dolor sit amet..."`
+If the user sends `!summarize Lorem ipsum dolor sit amet...`, the LLM receives:
+`"Summarize this text in one sentence: Lorem ipsum dolor sit amet..."`
 
 ---
 
-## Variables de template
+## Template Variables
 
-Les templates `{variable}` sont disponibles dans `response`, `greetMessage`, `farewellMessage`, `announceNewThreadMessage` et `announceFileMessage`.
+`{variable}` templates are available in `response`, `greetMessage`, `farewellMessage`, `announceNewThreadMessage` and `announceFileMessage`.
 
-| Variable | Disponible dans | Description |
-|----------|----------------|-------------|
-| `{nick}` | tous | Pseudonyme de l'utilisateur concerné |
-| `{input}` | `response` | Texte original du message ayant déclenché le trigger |
-| `{chatID}` | `response`, `greetMessage`, `farewellMessage` | ID numérique du canal |
-| `{subject}` | `announceNewThreadMessage` | Sujet du nouveau thread |
-| `{board}` | `announceNewThreadMessage` | Nom du board |
-| `{filename}` | `announceFileMessage` | Nom du fichier (sans chemin) |
-| `{path}` | `announceFileMessage` | Chemin complet du fichier |
+| Variable | Available in | Description |
+|----------|-------------|-------------|
+| `{nick}` | all | Nickname of the user involved |
+| `{input}` | `response` | Original message text that triggered the trigger |
+| `{chatID}` | `response`, `greetMessage`, `farewellMessage` | Numeric channel ID |
+| `{subject}` | `announceNewThreadMessage` | Subject of the new thread |
+| `{board}` | `announceNewThreadMessage` | Board name |
+| `{filename}` | `announceFileMessage` | Filename (without path) |
+| `{path}` | `announceFileMessage` | Full file path |
 
 ---
 
-## Mode daemon Linux
+## Linux Daemon Mode
 
-En mode daemon (défaut quand `foreground: false`), le processus :
+In daemon mode (default when `foreground: false`), the process:
 
-1. Effectue un double `fork()` pour se détacher du terminal
-2. Crée une nouvelle session (`setsid`)
-3. Redirige stdin/stdout/stderr vers `/dev/null`
-4. Écrit son PID dans `pidFile`
+1. Performs a double `fork()` to detach from the terminal
+2. Creates a new session (`setsid`)
+3. Redirects stdin/stdout/stderr to `/dev/null`
+4. Writes its PID to `pidFile`
 
-**Signaux supportés :**
+**Supported signals:**
 
 | Signal | Action |
 |--------|--------|
-| `SIGTERM` | Arrêt propre : ferme la connexion, supprime le PID file |
-| `SIGINT` | Idem (Ctrl+C en mode foreground) |
-| `SIGHUP` | Notification de rechargement (log uniquement — un redémarrage est nécessaire pour appliquer les changements de config) |
+| `SIGTERM` | Clean shutdown: closes connection, removes PID file |
+| `SIGINT` | Same (Ctrl+C in foreground mode) |
+| `SIGHUP` | Reload notification (log only — a restart is required to apply config changes) |
 
 ```bash
-# Arrêter proprement
+# Clean shutdown
 kill $(cat /tmp/wiredbot.pid)
 
-# Signaler un rechargement
+# Signal a reload
 kill -HUP $(cat /tmp/wiredbot.pid)
 ```
 
@@ -568,49 +568,49 @@ kill -HUP $(cat /tmp/wiredbot.pid)
 
 ## Systemd
 
-Un fichier unit d'exemple est fourni dans `Examples/wiredbot.service`.
+A sample unit file is provided in `Examples/wiredbot.service`.
 
-Installation :
+Installation:
 
 ```bash
-# Créer l'utilisateur système dédié
+# Create a dedicated system user
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin wiredbot
 
-# Créer les répertoires nécessaires
+# Create required directories
 sudo mkdir -p /etc/wiredbot /var/log/wiredbot /var/run/wiredbot
 sudo chown wiredbot:wiredbot /var/log/wiredbot /var/run/wiredbot
 
-# Copier les fichiers
+# Copy files
 sudo cp .build/release/WiredChatBot /usr/local/bin/wiredbot
 sudo cp Sources/WiredSwift/wired.xml /usr/share/wiredbot/
 sudo cp Examples/wiredbot-example.json /etc/wiredbot/wiredbot.json
 sudo cp Examples/wiredbot.service /etc/systemd/system/
 
-# Adapter la configuration
+# Edit configuration
 sudo nano /etc/wiredbot/wiredbot.json
 
-# Activer et démarrer
+# Enable and start
 sudo systemctl daemon-reload
 sudo systemctl enable --now wiredbot
 
-# Vérifier l'état
+# Check status
 sudo systemctl status wiredbot
 sudo journalctl -u wiredbot -f
 ```
 
-Pour systemd, utiliser `Type=forking` avec le mode daemon activé, ou `Type=simple` avec `foreground: true` dans la config (et supprimer `PIDFile` de l'unit).
+For systemd, use `Type=forking` with daemon mode enabled, or `Type=simple` with `foreground: true` in the config (and remove `PIDFile` from the unit).
 
 ---
 
-## Wrapper SwiftUI macOS
+## macOS SwiftUI Wrapper
 
-`BotController` est conçu pour être facilement observable depuis SwiftUI :
+`BotController` is designed to be easily observable from SwiftUI:
 
 ```swift
 import SwiftUI
 import WiredSwift
 
-// Wrapping observable
+// Observable wrapper
 class BotViewModel: ObservableObject {
     @Published var isConnected: Bool = false
     @Published var lastMessage: String = ""
@@ -627,8 +627,8 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            Text(vm.isConnected ? "Connecté" : "Déconnecté")
-            Button("Démarrer") {
+            Text(vm.isConnected ? "Connected" : "Disconnected")
+            Button("Start") {
                 Task.detached {
                     try? vm.controller.start(specPath: specPath)
                 }
@@ -638,40 +638,40 @@ struct ContentView: View {
 }
 ```
 
-Toutes les mutations d'état dans `BotController` se font sur le `main queue` (les callbacks `ConnectionDelegate` y sont dispatché par WiredSwift), ce qui les rend compatibles avec `@Published` sans `DispatchQueue.main.async` supplémentaire.
+All state mutations in `BotController` happen on the main queue (`ConnectionDelegate` callbacks are dispatched there by WiredSwift), making them compatible with `@Published` without additional `DispatchQueue.main.async`.
 
 ---
 
-## Dépannage
+## Troubleshooting
 
-**Le bot ne trouve pas `wired.xml`**
+**Bot cannot find `wired.xml`**
 ```bash
-wiredbot run --spec /chemin/vers/wired.xml --foreground --verbose
+wiredbot run --spec /path/to/wired.xml --foreground --verbose
 ```
-Vérifier aussi `server.specPath` dans la config.
+Also check `server.specPath` in the config.
 
-**Connexion refusée**
-- Vérifier l'URL (`wired://login:password@host:port`)
-- Le compte doit exister sur le serveur et avoir les droits de connexion
-- Le port 4871 doit être ouvert (firewall, NAT)
+**Connection refused**
+- Check the URL (`wired://login:password@host:port`)
+- The account must exist on the server and have connection privileges
+- Port 4871 must be open (firewall, NAT)
 
-**Le LLM ne répond pas**
-- Tester l'endpoint manuellement :
+**LLM not responding**
+- Test the endpoint manually:
   ```bash
   curl http://localhost:11434/api/chat -d '{"model":"llama3","messages":[{"role":"user","content":"test"}],"stream":false}'
   ```
-- Augmenter `timeoutSeconds` si le modèle est lent
-- Vérifier `apiKey` pour les providers cloud
+- Increase `timeoutSeconds` if the model is slow
+- Check `apiKey` for cloud providers
 
-**Le bot répond en boucle**
-- S'assurer que `ignoreOwnMessages: true` (défaut)
-- Ajouter le nick du bot dans `ignoredNicks` sur les autres instances
+**Bot responds in a loop**
+- Make sure `ignoreOwnMessages: true` (default)
+- Add the bot's nick to `ignoredNicks` on other instances
 
 **Logs**
 ```bash
-# Voir les logs en temps réel (mode daemon)
+# Watch logs in real time (daemon mode)
 tail -f /tmp/wiredbot.log
 
-# Niveau DEBUG pour tout voir
+# DEBUG level to see everything
 wiredbot run --foreground --verbose
 ```
