@@ -88,7 +88,7 @@ struct RunCommand: ParsableCommand {
             BotLogger.info("Shutting down…")
             bot.stop()
             daemon.removePIDFile()
-            exit(0)
+            Foundation.exit(0)
         }
         SignalHandler.onReload = {
             BotLogger.info("Config reload requested (restart required for full effect)")

@@ -189,8 +189,8 @@ public final class BotController: NSObject {
 
     private func buildSystemPrompt() -> String {
         var prompt = config.llm.systemPrompt
-        if let info = connection?.serverInfo, let name = info.serverName {
-            prompt += "\n\nServer: \(name)"
+        if let info = connection?.serverInfo {
+            prompt += "\n\nServer: \(info.serverName)"
         }
         prompt += "\nYour nick: \(config.identity.nick)"
         return prompt
