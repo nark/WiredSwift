@@ -591,23 +591,32 @@ public class FilesController {
     
     // MARK: -
     private func initFilesSystem() {
-        if !FileManager.default.fileExists(atPath: rootPath) {
-            try? FileManager.default.createDirectory(atPath: rootPath, withIntermediateDirectories: true, attributes: nil)
-            
-            let uploads = rootPath.stringByAppendingPathComponent(path: "Uploads")
-            let dropboxes = rootPath.stringByAppendingPathComponent(path: "Drop Boxes")
-            let uploadsWiredDir = uploads.stringByAppendingPathComponent(path: ".wired")
-            let dropboxesWiredDir = dropboxes.stringByAppendingPathComponent(path: ".wired")
-            
-            try? FileManager.default.createDirectory(atPath: rootPath, withIntermediateDirectories: true, attributes: nil)
-            try? FileManager.default.createDirectory(atPath: uploadsWiredDir, withIntermediateDirectories: true, attributes: nil)
-            try? FileManager.default.createDirectory(atPath: dropboxesWiredDir, withIntermediateDirectories: true, attributes: nil)
-            
-            _ = File.FileType.set(type: .uploads, path: uploads)
-            _ = File.FileType.set(type: .dropbox, path: dropboxes)
-            
-            let privilege = FilePrivilege(owner: "admin", group: "", mode: .ownerRead)
-            _ = FilePrivilege.set(privileges: privilege, path: dropboxes)
+        try? FileManager.default.createDirectory(atPath: rootPath, withIntermediateDirectories: true, attributes: nil)
+
+        let upload = rootPath.stringByAppendingPathComponent(path: "Upload")
+        let dropbox = rootPath.stringByAppendingPathComponent(path: "DropBox")
+
+        ensureDefaultDirectory(path: upload, type: .uploads, privileges: nil)
+
+        // Restricted DropBox by default: admin read/write + everyone write only.
+        let dropboxPrivileges = FilePrivilege(owner: "admin", group: "", mode: [.ownerRead, .ownerWrite, .everyoneWrite])
+        ensureDefaultDirectory(path: dropbox, type: .dropbox, privileges: dropboxPrivileges)
+    }
+
+    private func ensureDefaultDirectory(path: String,
+                                        type: File.FileType,
+                                        privileges: FilePrivilege?) {
+        var isDirectory: ObjCBool = false
+        if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
+            try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o777])
+        } else if !isDirectory.boolValue {
+            return
+        }
+
+        _ = File.FileType.set(type: type, path: path)
+
+        if let privileges = privileges {
+            _ = FilePrivilege.set(privileges: privileges, path: path)
         }
     }
     

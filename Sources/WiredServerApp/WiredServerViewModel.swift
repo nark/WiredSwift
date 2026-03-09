@@ -729,6 +729,8 @@ final class WiredServerViewModel: ObservableObject {
             if !fileManager.fileExists(atPath: logPath) {
                 fileManager.createFile(atPath: logPath, contents: Data())
             }
+
+            copyBundledRuntimeAssetsIfNeeded()
         } catch {
             publishError("\(L("error.runtime_prepare_failed")): \(error.localizedDescription)")
         }
@@ -742,50 +744,19 @@ final class WiredServerViewModel: ObservableObject {
 
     private func resolveInstallSourceBinary() async throws -> String {
         let candidates = [
+            bundledServerBinaryPath(),
             binaryPath,
-            packageRoot().appendingPathComponent(".build/release/wired3").path,
-            packageRoot().appendingPathComponent(".build/debug/wired3").path,
             "/opt/homebrew/bin/wired3",
             "/usr/local/bin/wired3"
-        ].filter { !$0.isEmpty }
+        ]
+        .compactMap { $0 }
+        .filter { !$0.isEmpty }
 
         if let first = candidates.first(where: { fileManager.isExecutableFile(atPath: $0) }) {
             return first
         }
 
-        return try await buildReleaseBinary()
-    }
-
-    private func buildReleaseBinary() async throws -> String {
-        statusMessage = L("status.building_binary")
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.currentDirectoryURL = packageRoot()
-        process.arguments = ["swift", "build", "-c", "release", "--product", "wired3"]
-
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-
-        try process.run()
-        process.waitUntilExit()
-
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        if let output = String(data: data, encoding: .utf8), !output.isEmpty {
-            appendLog(output)
-        }
-
-        guard process.terminationStatus == 0 else {
-            throw WiredServerError.installBuildFailed
-        }
-
-        let builtBinary = packageRoot().appendingPathComponent(".build/release/wired3").path
-        guard fileManager.isExecutableFile(atPath: builtBinary) else {
-            throw WiredServerError.missingBinary
-        }
-
-        return builtBinary
+        throw WiredServerError.missingBinary
     }
 
     private func installBinary(from sourcePath: String) throws {
@@ -813,11 +784,42 @@ final class WiredServerViewModel: ObservableObject {
         body(config)
     }
 
-    private func packageRoot() -> URL {
-        URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
+    private func bundledServerBinaryPath() -> String? {
+        if let explicit = Bundle.main.path(forResource: "wired3", ofType: nil),
+           fileManager.isExecutableFile(atPath: explicit) {
+            return explicit
+        }
+
+        let fallback = Bundle.main.bundleURL
+            .appendingPathComponent("Contents/Resources/wired3")
+            .path
+        if fileManager.isExecutableFile(atPath: fallback) {
+            return fallback
+        }
+
+        return nil
+    }
+
+    private func copyBundledRuntimeAssetsIfNeeded() {
+        copyBundledFileIfMissing(named: "wired.xml", to: URL(fileURLWithPath: workingDirectory).appendingPathComponent("wired.xml").path)
+        copyBundledFileIfMissing(named: "banner.png", to: URL(fileURLWithPath: workingDirectory).appendingPathComponent("banner.png").path)
+    }
+
+    private func copyBundledFileIfMissing(named fileName: String, to destinationPath: String) {
+        guard !fileManager.fileExists(atPath: destinationPath) else { return }
+
+        let sourceCandidates = [
+            Bundle.main.path(forResource: fileName, ofType: nil),
+            Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/\(fileName)").path
+        ].compactMap { $0 }
+
+        guard let source = sourceCandidates.first(where: { fileManager.fileExists(atPath: $0) }) else {
+            return
+        }
+
+        let destinationDir = (destinationPath as NSString).deletingLastPathComponent
+        try? fileManager.createDirectory(atPath: destinationDir, withIntermediateDirectories: true)
+        try? fileManager.copyItem(atPath: source, toPath: destinationPath)
     }
 
     private func parseTrackers(_ value: String) -> String {
@@ -1236,7 +1238,6 @@ enum PortStatus {
 
 enum WiredServerError: LocalizedError, Equatable {
     case missingBinary
-    case installBuildFailed
     case launchAgentWriteFailed
     case launchAgentCommandFailed(String)
     case databaseOpenFailed
@@ -1248,8 +1249,6 @@ enum WiredServerError: LocalizedError, Equatable {
         switch self {
         case .missingBinary:
             return L("error.wired3_binary_missing")
-        case .installBuildFailed:
-            return L("error.wired3_build_failed")
         case .launchAgentWriteFailed:
             return L("error.launch_agent_write_failed")
         case .launchAgentCommandFailed(let message):
