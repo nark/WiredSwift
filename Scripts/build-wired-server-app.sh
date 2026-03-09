@@ -105,6 +105,14 @@ chmod 755 "$MACOS_DIR/$EXECUTABLE_NAME"
 cp "$SERVER_BINARY_PATH" "$DIST_SERVER_BINARY"
 chmod 755 "$DIST_SERVER_BINARY"
 
+# Embed wired3 inside the app so installation works on machines without source checkout.
+cp "$SERVER_BINARY_PATH" "$RESOURCES_DIR/$SERVER_BINARY_NAME"
+chmod 755 "$RESOURCES_DIR/$SERVER_BINARY_NAME"
+
+# Embed default runtime assets used by wired3 bootstrap.
+cp "$ROOT_DIR/Sources/wired3/wired.xml" "$RESOURCES_DIR/wired.xml"
+cp "$ROOT_DIR/Sources/wired3/banner.png" "$RESOURCES_DIR/banner.png"
+
 echo "==> Copying SwiftPM resource bundles"
 shopt -s nullglob
 for bundle in "$BIN_DIR"/*.bundle; do

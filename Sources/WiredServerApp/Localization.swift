@@ -52,14 +52,37 @@ private final class Localizer {
     }
 
     private static func loadTable(for language: AppLanguage) -> [String: String] {
-        guard
-            let path = Bundle.module.path(forResource: "Localizable", ofType: "strings", inDirectory: nil, forLocalization: language.rawValue),
-            let table = NSDictionary(contentsOfFile: path) as? [String: String]
-        else {
-            return [:]
+        for bundle in candidateBundles() {
+            guard
+                let path = bundle.path(
+                    forResource: "Localizable",
+                    ofType: "strings",
+                    inDirectory: nil,
+                    forLocalization: language.rawValue
+                ),
+                let table = NSDictionary(contentsOfFile: path) as? [String: String]
+            else {
+                continue
+            }
+
+            return table
         }
 
-        return table
+        return [:]
+    }
+
+    private static func candidateBundles() -> [Bundle] {
+        var bundles: [Bundle] = [Bundle.main]
+
+        if let resourceBundles = Bundle.main.urls(forResourcesWithExtension: "bundle", subdirectory: nil) {
+            for url in resourceBundles {
+                if let bundle = Bundle(url: url) {
+                    bundles.append(bundle)
+                }
+            }
+        }
+
+        return bundles
     }
 }
 

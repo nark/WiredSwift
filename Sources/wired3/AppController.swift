@@ -11,6 +11,9 @@ import WiredSwift
 
 
 public let DEFAULT_PORT = 4871
+private let defaultWelcomeBoardPath = "Welcome"
+private let defaultWelcomeThreadSubject = "Welcome to Wired Server 3"
+private let defaultWelcomeThreadBody = "You are running Wired Server version 3.x, this is an early alpha version, you are pleased to report any issue at : https://github.com/nark/WiredSwift/issues"
 
 
 
@@ -84,12 +87,45 @@ public class AppController : DatabaseControllerDelegate {
         self.usersController.backfillStableIdentitiesIfNeeded()
         
         self.chatsController.loadChats()
+        self.bootstrapDefaultContentIfNeeded()
         self.indexController.indexFiles()
         
         let port = self.config["server", "port"] as? Int
         
         self.serverController = ServerController(port: port ?? DEFAULT_PORT, spec: self.spec)
         self.serverController.listen()
+    }
+
+    private func bootstrapDefaultContentIfNeeded() {
+        if self.boardsController.getBoardInfo(path: defaultWelcomeBoardPath) == nil {
+            _ = self.boardsController.addBoard(
+                path: defaultWelcomeBoardPath,
+                owner: "admin",
+                group: "admin",
+                ownerRead: true,
+                ownerWrite: true,
+                groupRead: true,
+                groupWrite: true,
+                everyoneRead: true,
+                everyoneWrite: true
+            )
+        }
+
+        let existingThreads = self.boardsController.getThreads(forBoard: defaultWelcomeBoardPath)
+        let hasWelcomeThread = existingThreads.contains {
+            $0.subject == defaultWelcomeThreadSubject && $0.text == defaultWelcomeThreadBody
+        }
+
+        if !hasWelcomeThread {
+            _ = self.boardsController.addThread(
+                board: defaultWelcomeBoardPath,
+                subject: defaultWelcomeThreadSubject,
+                text: defaultWelcomeThreadBody,
+                nick: "Wired Server",
+                login: "admin",
+                icon: nil
+            )
+        }
     }
     
     
