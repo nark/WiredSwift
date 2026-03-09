@@ -1,4 +1,4 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.4
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -75,6 +75,16 @@ targets.append(
         ]
     )
 )
+targets.append(
+    .executableTarget(
+        name: "WiredChatBot",
+        dependencies: [
+            .byName(name: "WiredSwift"),
+            .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        ],
+        path: "Sources/WiredChatBot"
+    )
+)
 
 #if os(Linux)
 targets.append(
@@ -107,13 +117,18 @@ let package = Package(
         .library(
             name: "WiredSwift",
             targets: ["WiredSwift"]),
-        
+
         .executable(
             name: "wired3",
             targets: ["wired3"]),
+        
         .executable(
             name: "WiredServerApp",
-            targets: ["WiredServerApp"])
+            targets: ["WiredServerApp"]),
+        
+        .executable(
+            name: "WiredChatBot",
+            targets: ["WiredChatBot"])
     ],
     dependencies: dependencies,
     targets: targets
