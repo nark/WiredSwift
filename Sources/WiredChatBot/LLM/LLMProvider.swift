@@ -6,12 +6,15 @@ import Foundation
 // MARK: - Message model
 
 public struct LLMMessage {
-    public let role:    String  // "system" | "user" | "assistant"
-    public let content: String
+    public let role:      String  // "system" | "user" | "assistant"
+    public let content:   String
+    /// Wall-clock time when this message was added. Used for temporal expiry.
+    public let timestamp: Date
 
-    public init(role: String, content: String) {
-        self.role    = role
-        self.content = content
+    public init(role: String, content: String, timestamp: Date = Date()) {
+        self.role      = role
+        self.content   = content
+        self.timestamp = timestamp
     }
 }
 

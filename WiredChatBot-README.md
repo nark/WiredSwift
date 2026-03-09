@@ -212,8 +212,10 @@ base64 -w 0 my-icon.png
 | `systemPrompt` | string | *(see default)* | System prompt injected at the top of each conversation. Supports `{nick}`, `{server}` variables. |
 | `temperature` | float | `0.7` | Response creativity. `0.0` = deterministic, `1.0` = very creative. |
 | `maxTokens` | int | `512` | Maximum number of tokens in an LLM response. |
-| `contextMessages` | int | `10` | Number of conversation turns remembered per channel/DM. |
+| `contextMessages` | int | `10` | Number of conversation turns remembered per user conversation. |
 | `timeoutSeconds` | float | `30.0` | HTTP request timeout for LLM calls. |
+| `contextMaxAgeSeconds` | float | `7200.0` | Messages older than this (seconds) are excluded from context. `0` = keep all. Default: 2 hours. |
+| `enableSummarization` | bool | `false` | When the context window fills up, summarise the oldest half via LLM instead of silently dropping it. Costs one extra LLM call but gives the bot long-term memory. |
 
 ```json
 "llm": {
@@ -253,6 +255,10 @@ Controls when and how the bot reacts to events.
 | `ignoreOwnMessages` | bool | `true` | Ignore messages sent by the bot itself (prevents loops). |
 | `ignoredNicks` | [string] | `[]` | List of nicknames that will always be ignored. |
 | `mentionKeywords` | [string] | `[]` | Additional keywords that count as a bot mention (in addition to the nick). |
+| `threadTimeoutSeconds` | float | `300.0` | Seconds of silence after which the bot considers a new conversation has begun and injects a `--- New conversation after a break ---` separator into the context. `0` = disabled. |
+| `spontaneousReply` | bool | `false` | Allow the bot to join conversations naturally without being mentioned. The LLM itself decides whether to interject by replying `RESPOND: <msg>` or `SILENT`. |
+| `spontaneousCheckInterval` | int | `5` | Check for an interjection opportunity every N messages in a channel. Lower = more reactive, higher = quieter. |
+| `spontaneousCooldownSeconds` | float | `120.0` | Minimum seconds between two spontaneous replies in the same channel. Prevents the bot from dominating the conversation. |
 
 ```json
 "behavior": {
@@ -271,9 +277,50 @@ Controls when and how the bot reacts to events.
   "maxResponseLength": 400,
   "ignoreOwnMessages": true,
   "ignoredNicks": ["Spambot", "OldBot"],
-  "mentionKeywords": ["!bot", "@bot", "hey bot"]
+  "mentionKeywords": ["!bot", "@bot", "hey bot"],
+  "spontaneousReply": true,
+  "spontaneousCheckInterval": 6,
+  "spontaneousCooldownSeconds": 180.0
 }
 ```
+
+#### Context architecture
+
+Each user in a public channel gets their own isolated conversation context (keyed by stable `userID`, not nick). Two layers coexist:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  AWARENESS LAYER  (read-only, injected as system)   │
+│  Last 10 messages from everyone in the channel      │
+│  "[Alice] Anyone know a good Swift library?"        │
+│  "[Bob] I use Vapor for networking"                 │
+├─────────────────────────────────────────────────────┤
+│  CONVERSATION LAYER  (per user, bot↔user only)      │
+│  The actual dialogue between this user and the bot  │
+│  Keyed: "channel-<chatID>-<userID>"                 │
+└─────────────────────────────────────────────────────┘
+```
+
+This means Alice asking about Python and Bob asking about the weather don't pollute each other's context — but the bot still knows what's happening in the channel.
+
+**Thread timeout:** after `threadTimeoutSeconds` of silence from a user, the bot injects a separator marker so the LLM understands the previous topic is closed.
+
+**Context summarisation:** when `enableSummarization` is true and the context window fills up, the oldest half is summarised into a single compact entry instead of being discarded. This gives the bot effective long-term memory at the cost of one extra LLM call per overflow.
+
+**Temporal expiry:** messages older than `contextMaxAgeSeconds` are excluded at call time, so stale context from hours ago doesn't influence current replies.
+
+#### How spontaneous interjection works
+
+When `spontaneousReply` is enabled, the bot silently accumulates every public message in a rolling buffer (up to 20 messages). Every `spontaneousCheckInterval` messages — and only if `spontaneousCooldownSeconds` have elapsed since the last spontaneous reply — the bot sends the recent chat log to the LLM with this meta-prompt:
+
+> *"You are WiredBot, observing a public chat. Reply with RESPOND: \<your message\> or SILENT."*
+
+The LLM decides entirely on its own whether to join the conversation. No keyword, no trigger, no mention required. If the LLM replies `SILENT`, nothing is sent. This mechanism runs in addition to (not instead of) mentions and explicit triggers.
+
+**Tuning tips:**
+- `spontaneousCheckInterval: 3` + `spontaneousCooldownSeconds: 60` → chatty bot, joins frequently
+- `spontaneousCheckInterval: 10` + `spontaneousCooldownSeconds: 300` → reserved bot, only speaks when clearly relevant
+- Your LLM's system prompt influences how selective the bot is — add *"Only interject when you are confident you add value"* to keep it quiet.
 
 ---
 

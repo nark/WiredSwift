@@ -68,6 +68,11 @@ public struct LLMConfig: Codable {
     public var contextMessages: Int   = 10
     /// HTTP request timeout in seconds
     public var timeoutSeconds: Double = 30.0
+    /// Messages older than this (seconds) are excluded from context. 0 = no expiry.
+    public var contextMaxAgeSeconds: Double = 7200.0
+    /// When true, the oldest half of the context is summarised via LLM instead of
+    /// being silently dropped. Requires an extra LLM call when the context is full.
+    public var enableSummarization: Bool = false
 }
 
 // MARK: - Behavior
@@ -100,6 +105,20 @@ public struct BehaviorConfig: Codable {
     public var ignoredNicks:      [String] = []
     /// Additional words/phrases treated as a mention of the bot
     public var mentionKeywords:   [String] = []
+
+    // MARK: Thread detection
+    /// Seconds of silence after which the bot considers a new conversation has
+    /// started and injects a separator marker into the context. 0 = disabled.
+    public var threadTimeoutSeconds: Double = 300.0
+
+    // MARK: Spontaneous interjection
+    /// Allow the bot to join conversations without being explicitly mentioned.
+    /// The LLM decides whether to respond by replying "RESPOND: <msg>" or "SILENT".
+    public var spontaneousReply: Bool = false
+    /// Check for an interjection opportunity every N messages per channel.
+    public var spontaneousCheckInterval: Int = 5
+    /// Minimum seconds between two spontaneous replies in the same channel.
+    public var spontaneousCooldownSeconds: Double = 120.0
 }
 
 // MARK: - Trigger

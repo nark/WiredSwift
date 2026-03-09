@@ -49,6 +49,12 @@ public final class BotController: NSObject {
     // userID -> nick, per channel
     private var channelUsers: [UInt32: [UInt32: String]] = [:]
 
+    // Spontaneous interjection — passive channel log
+    private var channelMessageBuffer: [UInt32: [(nick: String, text: String)]] = [:]
+    private var channelMessageCount:  [UInt32: Int]  = [:]
+    private var lastSpontaneousDate:  [UInt32: Date] = [:]
+    private let maxPassiveBufferSize = 20
+
     // MARK: - Init
 
     public init(config: BotConfig) {
@@ -163,24 +169,67 @@ public final class BotController: NSObject {
     // MARK: - LLM dispatch
 
     /// Sends `input` to the LLM asynchronously and posts the reply to `chatID`.
-    public func dispatchLLM(input: String, nick: String, chatID: UInt32, isPrivate: Bool) {
+    ///
+    /// Context key scheme (stable, survives nick changes):
+    ///   - Public channel: `"channel-<chatID>-<userID>"`
+    ///   - Private DM:     `"private-<userID>"`
+    public func dispatchLLM(input: String, nick: String, userID: UInt32,
+                            chatID: UInt32, isPrivate: Bool) {
         guard let llm = llmProvider else {
             BotLogger.warning("No LLM provider configured; ignoring message")
             return
         }
 
-        let ctxKey  = isPrivate ? "private-\(nick)" : "channel-\(chatID)"
-        let ctx     = contextManager.context(for: ctxKey)
-        let system  = buildSystemPrompt()
+        let ctxKey   = isPrivate ? "private-\(userID)" : "channel-\(chatID)-\(userID)"
+        let ctx      = contextManager.context(for: ctxKey)
         let userTurn = "\(nick): \(input)"
-        let messages = ctx.buildMessages(systemPrompt: system, userInput: userTurn)
+        let llmCfg   = config.llm
+        let behCfg   = config.behavior
 
         Task {
             do {
-                let reply = try await llm.complete(messages: messages, config: self.config.llm)
+                // ── Step 1: Summarise oldest messages if the context window is full ──
+                if llmCfg.enableSummarization,
+                   let toSummarize = ctx.messagesForSummarization() {
+                    let excerpt = toSummarize
+                        .map { "\($0.role): \($0.content)" }
+                        .joined(separator: "\n")
+                    let summaryPrompt = [LLMMessage(
+                        role: "user",
+                        content: "Summarise this conversation excerpt in 2-3 sentences, " +
+                                 "keeping key facts and decisions:\n\n\(excerpt)"
+                    )]
+                    let summary = try await llm.complete(messages: summaryPrompt, config: llmCfg)
+                    ctx.applySummary(summary, replacing: toSummarize.count)
+                    BotLogger.debug("[\(ctxKey)] Context summarised (\(toSummarize.count) msgs → 1)")
+                }
+
+                // ── Step 2: Thread-timeout marker ──
+                if ctx.isNewThread(timeoutSeconds: behCfg.threadTimeoutSeconds) {
+                    ctx.add(role: "system", content: "--- New conversation after a break ---")
+                    BotLogger.debug("[\(ctxKey)] Thread timeout — injected separator")
+                }
+                ctx.updateLastInteraction()
+
+                // ── Step 3: Build system prompt + channel awareness layer ──
+                let system    = self.buildSystemPrompt()
+                let awareness = isPrivate ? nil : self.buildChannelAwareness(chatID: chatID,
+                                                                             excludingText: input)
+
+                // ── Step 4: Build message array with temporal filtering ──
+                let messages = ctx.buildMessages(
+                    systemPrompt:     system,
+                    channelAwareness: awareness,
+                    userInput:        userTurn,
+                    maxAgeSeconds:    llmCfg.contextMaxAgeSeconds
+                )
+
+                // ── Step 5: Call LLM ──
+                let reply = try await llm.complete(messages: messages, config: llmCfg)
                 ctx.add(role: "user", content: userTurn)
                 ctx.recordAssistantResponse(reply)
                 await MainActor.run { self.sendChat(reply, to: chatID) }
+
             } catch {
                 BotLogger.error("LLM error: \(error.localizedDescription)")
             }
@@ -196,6 +245,18 @@ public final class BotController: NSObject {
         return prompt
     }
 
+    /// Builds the recent channel log as a system-level awareness snippet.
+    /// Excludes the triggering message itself to avoid duplication.
+    private func buildChannelAwareness(chatID: UInt32, excludingText: String) -> String? {
+        guard let buf = channelMessageBuffer[chatID], buf.count > 1 else { return nil }
+        // Drop the last entry (the current message that triggered dispatchLLM)
+        let log = buf.dropLast()
+            .suffix(10)
+            .map { "[\($0.nick)] \($0.text)" }
+            .joined(separator: "\n")
+        return "Recent channel activity (context only — do not repeat or summarise this):\n\(log)"
+    }
+
     // MARK: - User tracking
 
     public func setNick(_ nick: String, forUser userID: UInt32, in chatID: UInt32) {
@@ -209,6 +270,85 @@ public final class BotController: NSObject {
 
     public func nick(ofUser userID: UInt32, in chatID: UInt32) -> String? {
         channelUsers[chatID]?[userID]
+    }
+
+    // MARK: - Spontaneous interjection
+
+    /// Passively records every visible message in a channel.
+    /// Every `spontaneousCheckInterval` messages (and once the cooldown has elapsed),
+    /// asks the LLM whether it wants to interject naturally into the conversation.
+    public func trackMessage(nick: String, text: String, chatID: UInt32) {
+        let cfg = config.behavior
+        guard cfg.spontaneousReply else { return }
+
+        // Accumulate in rolling buffer
+        var buf = channelMessageBuffer[chatID] ?? []
+        buf.append((nick: nick, text: text))
+        if buf.count > maxPassiveBufferSize { buf.removeFirst() }
+        channelMessageBuffer[chatID] = buf
+
+        // Increment per-channel counter
+        let count = (channelMessageCount[chatID] ?? 0) + 1
+        channelMessageCount[chatID] = count
+
+        // Only check every N messages
+        guard count % cfg.spontaneousCheckInterval == 0 else { return }
+
+        // Respect per-channel cooldown
+        let lastDate = lastSpontaneousDate[chatID] ?? .distantPast
+        guard Date().timeIntervalSince(lastDate) >= cfg.spontaneousCooldownSeconds else { return }
+
+        checkSpontaneousInterjection(chatID: chatID, buffer: buf)
+    }
+
+    /// Sends the recent channel log to the LLM with a meta-prompt asking whether
+    /// it should join the conversation. Expects "RESPOND: <msg>" or "SILENT".
+    private func checkSpontaneousInterjection(chatID: UInt32,
+                                              buffer: [(nick: String, text: String)]) {
+        guard let llm = llmProvider else { return }
+
+        let botNick = config.identity.nick
+        let chatLog = buffer.map { "[\($0.nick)] \($0.text)" }.joined(separator: "\n")
+
+        let metaPrompt = """
+        You are \(botNick), observing a public chat. Read the recent messages below \
+        and decide if you have something genuinely useful, interesting, or fun to contribute.
+
+        Reply with exactly one of:
+        - RESPOND: <your message>
+        - SILENT
+
+        Only interject if you can add real value. Stay quiet if the conversation \
+        doesn't need you or if you have nothing meaningful to say.
+
+        Recent chat:
+        \(chatLog)
+        """
+
+        let messages = [LLMMessage(role: "user", content: metaPrompt)]
+
+        Task {
+            do {
+                let reply = try await llm.complete(messages: messages, config: self.config.llm)
+                let trimmed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard trimmed.uppercased().hasPrefix("RESPOND:") else { return }
+
+                let text = String(trimmed.dropFirst("RESPOND:".count))
+                    .trimmingCharacters(in: .whitespaces)
+                guard !text.isEmpty else { return }
+
+                BotLogger.debug("[\(chatID)] Spontaneous interjection: \(text)")
+                await MainActor.run {
+                    self.lastSpontaneousDate[chatID] = Date()
+                    self.sendChat(text, to: chatID)
+                }
+                // Record so future context is aware of what the bot said
+                let ctx = self.contextManager.context(for: "channel-\(chatID)")
+                ctx.recordAssistantResponse(text)
+            } catch {
+                BotLogger.error("Spontaneous LLM check error: \(error.localizedDescription)")
+            }
+        }
     }
 
     // MARK: - Filtering helpers
