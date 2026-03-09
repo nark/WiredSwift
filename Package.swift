@@ -58,6 +58,16 @@ targets.append(
         ]
     )
 )
+targets.append(
+    .executableTarget(
+        name: "WiredChatBot",
+        dependencies: [
+            .byName(name: "WiredSwift"),
+            .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        ],
+        path: "Sources/WiredChatBot"
+    )
+)
 
 #if os(Linux)
 targets.append(
@@ -89,10 +99,14 @@ let package = Package(
         .library(
             name: "WiredSwift",
             targets: ["WiredSwift"]),
-        
+
         .executable(
             name: "wired3",
-            targets: ["wired3"])
+            targets: ["wired3"]),
+
+        .executable(
+            name: "WiredChatBot",
+            targets: ["WiredChatBot"]),
     ],
     dependencies: dependencies,
     targets: targets
