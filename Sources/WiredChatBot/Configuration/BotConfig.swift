@@ -125,6 +125,10 @@ public struct BehaviorConfig: Codable {
     /// Continue responding to a user who already has an active conversation with
     /// the bot (within threadTimeoutSeconds), even without a new mention.
     public var respondToConversation:    Bool     = false
+    /// After the bot posts a message in a channel, respond to anyone in that
+    /// channel (within threadTimeoutSeconds) without requiring an explicit mention.
+    /// Useful for following up on board announcements naturally.
+    public var respondAfterBotPost:      Bool     = false
 
     public var greetOnJoin:     Bool   = true
     public var greetMessage:    String = "Welcome, {nick}!"
@@ -173,6 +177,7 @@ public struct BehaviorConfig: Codable {
         respondToAll             = try c.decodeIfPresent(Bool.self,     forKey: .respondToAll)             ?? false
         respondToPrivateMessages = try c.decodeIfPresent(Bool.self,     forKey: .respondToPrivateMessages) ?? true
         respondToConversation    = try c.decodeIfPresent(Bool.self,     forKey: .respondToConversation)    ?? false
+        respondAfterBotPost      = try c.decodeIfPresent(Bool.self,     forKey: .respondAfterBotPost)      ?? false
         greetOnJoin              = try c.decodeIfPresent(Bool.self,     forKey: .greetOnJoin)              ?? true
         greetMessage             = try c.decodeIfPresent(String.self,   forKey: .greetMessage)             ?? "Welcome, {nick}!"
         farewellOnLeave          = try c.decodeIfPresent(Bool.self,     forKey: .farewellOnLeave)          ?? false

@@ -62,6 +62,10 @@ public final class BotController: NSObject {
     }
     private var boardContextByChannel: [UInt32: [BoardEntry]] = [:]
 
+    // Tracks the last time the bot itself posted in each channel.
+    // Used by respondAfterBotPost to keep the conversation open.
+    private var lastBotPostByChannel: [UInt32: Date] = [:]
+
     // MARK: - Init
 
     public init(config: BotConfig) {
@@ -187,6 +191,7 @@ public final class BotController: NSObject {
         msg.addParameter(field: "wired.chat.say", value: body)
         _ = connection.send(message: msg)
         lastResponseDate = Date()
+        lastBotPostByChannel[chatID] = Date()
         BotLogger.debug("[\(chatID)] Sent: \(body.prefix(80))\(body.count > 80 ? "…" : "")")
     }
 
@@ -460,6 +465,14 @@ public final class BotController: NSObject {
     }
 
     // MARK: - Filtering helpers
+
+    /// Returns true if the bot posted in `chatID` within `threadTimeoutSeconds`.
+    /// Used to keep a channel conversation open after a bot-initiated message.
+    public func hasBotRecentlyPosted(in chatID: UInt32) -> Bool {
+        guard let last = lastBotPostByChannel[chatID] else { return false }
+        let timeout = config.behavior.threadTimeoutSeconds
+        return timeout > 0 && Date().timeIntervalSince(last) < timeout
+    }
 
     public func hasActiveConversation(userID: UInt32, chatID: UInt32) -> Bool {
         let key = "channel-\(chatID)-\(userID)"

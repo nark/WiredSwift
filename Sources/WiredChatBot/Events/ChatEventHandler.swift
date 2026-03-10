@@ -46,16 +46,19 @@ public final class ChatEventHandler {
         }
 
         // 2. LLM response on mention / respondToAll / active conversation
-        let mentioned        = bot.isMentioned(in: text)
-        let cfg              = bot.config.behavior
-        let inConversation   = cfg.respondToConversation &&
-                               bot.hasActiveConversation(userID: userID, chatID: chatID)
-        let willRespond      = cfg.respondToAll || (cfg.respondToMentions && mentioned) || inConversation
+        let mentioned          = bot.isMentioned(in: text)
+        let cfg                = bot.config.behavior
+        let inConversation     = cfg.respondToConversation &&
+                                 bot.hasActiveConversation(userID: userID, chatID: chatID)
+        let botInitiated       = cfg.respondAfterBotPost &&
+                                 bot.hasBotRecentlyPosted(in: chatID)
+        let willRespond        = cfg.respondToAll || (cfg.respondToMentions && mentioned)
+                                 || inConversation || botInitiated
 
         BotLogger.debug(
             "[\(chatID)] Routing: mentioned=\(mentioned) respondToAll=\(cfg.respondToAll)" +
             " respondToMentions=\(cfg.respondToMentions) inConversation=\(inConversation)" +
-            " → \(willRespond ? "LLM dispatch" : "no response")"
+            " botInitiated=\(botInitiated) → \(willRespond ? "LLM dispatch" : "no response")"
         )
 
         if willRespond {
