@@ -16,9 +16,21 @@ public final class BoardEventHandler {
 
         guard let match = bot.triggerEngine.matchBoardEvent(
             eventType: "thread_added", subject: subject, text: "", nick: nick, board: board)
-        else { return }
+        else {
+            BotLogger.debug("[board] thread_added: no matching trigger for '\(subject)'")
+            return
+        }
 
-        fire(match: match, nick: nick, subject: subject, board: board, text: "", bot: bot)
+        if match.trigger.useLLM {
+            let prefix = match.trigger.llmPromptPrefix ?? ""
+            let input  = prefix.isEmpty ? subject : "\(prefix)\(subject)"
+            let chatID = bot.config.server.channels.first ?? 1
+            BotLogger.debug("[board] Dispatching LLM for new thread '\(subject)' by \(nick)")
+            bot.dispatchLLM(input: input, nick: nick, userID: 0,
+                            chatID: chatID, isPrivate: false)
+        } else {
+            fire(match: match, nick: nick, subject: subject, board: board, text: "", bot: bot)
+        }
     }
 
     public func handleNewPost(message: P7Message, bot: BotController) {
@@ -32,7 +44,10 @@ public final class BoardEventHandler {
 
         guard let match = bot.triggerEngine.matchBoardEvent(
             eventType: "thread_changed", subject: subject, text: text, nick: nick, board: board)
-        else { return }
+        else {
+            BotLogger.debug("[board] thread_changed: no matching trigger for '\(subject)'")
+            return
+        }
 
         if match.trigger.useLLM {
             let prefix = match.trigger.llmPromptPrefix ?? ""
