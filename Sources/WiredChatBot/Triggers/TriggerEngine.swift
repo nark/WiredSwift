@@ -3,7 +3,7 @@
 
 import Foundation
 
-// MARK: - Match result
+// MARK: - Match results
 
 public struct TriggerMatch {
     public let trigger:   TriggerConfig
@@ -11,6 +11,15 @@ public struct TriggerMatch {
     public let nick:      String
     public let chatID:    UInt32
     public let isPrivate: Bool
+}
+
+/// Result returned when a board-post trigger fires.
+public struct BoardPostTriggerMatch {
+    public let trigger:  TriggerConfig
+    public let subject:  String   // thread subject
+    public let text:     String   // body of the new post
+    public let nick:     String   // author
+    public let board:    String   // board path
 }
 
 // MARK: - Engine
@@ -65,6 +74,45 @@ public final class TriggerEngine {
 
             return TriggerMatch(trigger: trigger, input: input, nick: nick,
                                 chatID: chatID, isPrivate: isPrivate)
+        }
+        return nil
+    }
+
+    /// Returns the first trigger whose `eventTypes` contains `"board_post"` (or `"all"`)
+    /// and whose pattern matches `subject + " " + text`.
+    ///
+    /// Available template variables in `response`: {nick}, {subject}, {board}, {text}
+    public func matchBoardPost(subject: String, text: String,
+                               nick: String, board: String) -> BoardPostTriggerMatch? {
+        let combined = "\(subject) \(text)"
+        for trigger in triggers {
+            let types = trigger.eventTypes
+            guard types.contains("board_post") || types.contains("all") else { continue }
+
+            // Cooldown — keyed globally per trigger (board events have no per-user key)
+            if trigger.cooldownSeconds > 0 {
+                let key = "\(trigger.name)|board"
+                lock.lock()
+                let last = cooldowns[key]
+                lock.unlock()
+                if let last, Date().timeIntervalSince(last) < trigger.cooldownSeconds { continue }
+            }
+
+            let options: NSRegularExpression.Options = trigger.caseSensitive ? [] : .caseInsensitive
+            guard let regex = try? NSRegularExpression(pattern: trigger.pattern, options: options)
+            else { continue }
+            let range = NSRange(combined.startIndex..., in: combined)
+            guard regex.firstMatch(in: combined, range: range) != nil else { continue }
+
+            if trigger.cooldownSeconds > 0 {
+                let key = "\(trigger.name)|board"
+                lock.lock()
+                cooldowns[key] = Date()
+                lock.unlock()
+            }
+
+            return BoardPostTriggerMatch(trigger: trigger, subject: subject,
+                                        text: text, nick: nick, board: board)
         }
         return nil
     }

@@ -227,6 +227,24 @@ public struct TriggerConfig: Codable {
         TriggerConfig(name: "tldr",    pattern: "^!tldr (.+)", eventTypes: ["chat"],
                       useLLM: true, llmPromptPrefix: "Summarize this in one sentence: ",
                       cooldownSeconds: 5),
+
+        // ── Board post triggers ────────────────────────────────────────────────
+        // Fired when a reply is added to any thread in any board.
+        // Available variables: {nick}, {subject}, {board}, {text}
+        //
+        // Example 1 — static announcement in all configured channels:
+        TriggerConfig(name: "board-post-announce", pattern: ".*",
+                      eventTypes: ["board_post"],
+                      response: "New reply by {nick} in \"{subject}\" [{board}]",
+                      cooldownSeconds: 0),
+
+        // Example 2 — forward the post body to the LLM and summarise it:
+        // (disabled by default; remove the leading comment to enable)
+        // TriggerConfig(name: "board-post-summary", pattern: ".*",
+        //               eventTypes: ["board_post"],
+        //               useLLM: true,
+        //               llmPromptPrefix: "Summarise this board post in one sentence: ",
+        //               cooldownSeconds: 30),
     ]
 
     // Memberwise init for static defaults
