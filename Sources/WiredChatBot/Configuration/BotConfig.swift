@@ -39,6 +39,15 @@ public struct ServerConfig: Codable {
 
     public init() {}
 
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(url,                  forKey: .url)
+        try c.encode(channels,             forKey: .channels)
+        try c.encode(reconnectDelay,       forKey: .reconnectDelay)
+        try c.encode(maxReconnectAttempts, forKey: .maxReconnectAttempts)
+        try c.encode(specPath,             forKey: .specPath)   // null when nil
+    }
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         url                 = try c.decodeIfPresent(String.self,   forKey: .url)                 ?? "wired://guest@localhost:4871"
@@ -66,6 +75,15 @@ public struct IdentityConfig: Codable {
     public var identityPreamble: String? = nil
 
     public init() {}
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(nick,             forKey: .nick)
+        try c.encode(status,           forKey: .status)
+        try c.encode(icon,             forKey: .icon)             // null when nil
+        try c.encode(idleTimeout,      forKey: .idleTimeout)
+        try c.encode(identityPreamble, forKey: .identityPreamble) // null when nil
+    }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -106,13 +124,28 @@ public struct LLMConfig: Codable {
 
     public init() {}
 
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(provider,             forKey: .provider)
+        try c.encode(endpoint,             forKey: .endpoint)
+        try c.encode(apiKey,               forKey: .apiKey)    // null when nil
+        try c.encode(model,                forKey: .model)
+        try c.encode(systemPrompt,         forKey: .systemPrompt)
+        try c.encode(temperature,          forKey: .temperature)
+        try c.encode(maxTokens,            forKey: .maxTokens)
+        try c.encode(contextMessages,      forKey: .contextMessages)
+        try c.encode(timeoutSeconds,       forKey: .timeoutSeconds)
+        try c.encode(contextMaxAgeSeconds, forKey: .contextMaxAgeSeconds)
+        try c.encode(enableSummarization,  forKey: .enableSummarization)
+    }
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         provider             = try c.decodeIfPresent(String.self,  forKey: .provider)             ?? "ollama"
         endpoint             = try c.decodeIfPresent(String.self,  forKey: .endpoint)             ?? "http://localhost:11434"
         apiKey               = try c.decodeIfPresent(String.self,  forKey: .apiKey)
         model                = try c.decodeIfPresent(String.self,  forKey: .model)                ?? "llama3"
-        systemPrompt         = try c.decodeIfPresent(String.self,  forKey: .systemPrompt)         ?? "You are WiredBot, a helpful and friendly AI chatbot on a Wired server. Be concise and keep responses under 300 characters when possible."
+        systemPrompt         = try c.decodeIfPresent(String.self,  forKey: .systemPrompt)         ?? "Be helpful, concise and friendly. Keep responses under 300 characters when possible."
         temperature          = try c.decodeIfPresent(Double.self,  forKey: .temperature)          ?? 0.7
         maxTokens            = try c.decodeIfPresent(Int.self,     forKey: .maxTokens)            ?? 512
         contextMessages      = try c.decodeIfPresent(Int.self,     forKey: .contextMessages)      ?? 10
@@ -279,6 +312,18 @@ public struct TriggerConfig: Codable {
         self.cooldownSeconds = cooldownSeconds
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(name,            forKey: .name)
+        try c.encode(pattern,         forKey: .pattern)
+        try c.encode(eventTypes,      forKey: .eventTypes)
+        try c.encode(response,        forKey: .response)        // null when nil
+        try c.encode(useLLM,          forKey: .useLLM)
+        try c.encode(llmPromptPrefix, forKey: .llmPromptPrefix) // null when nil
+        try c.encode(caseSensitive,   forKey: .caseSensitive)
+        try c.encode(cooldownSeconds, forKey: .cooldownSeconds)
+    }
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         // Required fields — fail fast if absent
@@ -306,6 +351,14 @@ public struct DaemonConfig: Codable {
     public var logLevel:   String = "INFO"
 
     public init() {}
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(foreground, forKey: .foreground)
+        try c.encode(pidFile,    forKey: .pidFile)
+        try c.encode(logFile,    forKey: .logFile)  // null when nil
+        try c.encode(logLevel,   forKey: .logLevel)
+    }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
