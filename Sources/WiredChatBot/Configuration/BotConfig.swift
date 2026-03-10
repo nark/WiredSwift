@@ -37,6 +37,8 @@ public struct ServerConfig: Codable {
     /// Path to wired.xml protocol spec (nil = auto-detect)
     public var specPath: String? = nil
 
+    public init() {}
+
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         url                 = try c.decodeIfPresent(String.self,   forKey: .url)                 ?? "wired://guest@localhost:4871"
@@ -56,6 +58,8 @@ public struct IdentityConfig: Codable {
     public var icon:   String? = nil
     /// Seconds before the bot sets itself as idle (0 = never)
     public var idleTimeout: Double = 0
+
+    public init() {}
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -90,6 +94,8 @@ public struct LLMConfig: Codable {
     /// When true, the oldest half of the context is summarised via LLM instead of
     /// being silently dropped. Requires an extra LLM call when the context is full.
     public var enableSummarization: Bool = false
+
+    public init() {}
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -157,6 +163,8 @@ public struct BehaviorConfig: Codable {
     public var spontaneousCheckInterval: Int = 5
     /// Minimum seconds between two spontaneous replies in the same channel.
     public var spontaneousCooldownSeconds: Double = 120.0
+
+    public init() {}
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -256,6 +264,8 @@ public struct DaemonConfig: Codable {
     public var logFile:    String? = nil
     /// VERBOSE | DEBUG | INFO | WARNING | ERROR
     public var logLevel:   String = "INFO"
+
+    public init() {}
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
