@@ -278,6 +278,11 @@ public final class BotController: NSObject {
             prompt += "\n\nServer: \(info.serverName)"
         }
         prompt += "\nYour nick: \(config.identity.nick)"
+        if config.behavior.respondInUserLanguage {
+            prompt += "\nIMPORTANT: Always reply in the exact same language the user writes in. " +
+                      "Detect it from each message and never switch languages unless the user does."
+        }
+        BotLogger.debug("[prompt] respondInUserLanguage=\(config.behavior.respondInUserLanguage)")
         return prompt
     }
 

@@ -111,6 +111,12 @@ public struct BehaviorConfig: Codable {
     /// started and injects a separator marker into the context. 0 = disabled.
     public var threadTimeoutSeconds: Double = 300.0
 
+    // MARK: Language
+    /// When true, the bot detects the language of each user message and always
+    /// replies in the same language. The instruction is injected into the system
+    /// prompt so the LLM handles detection natively.
+    public var respondInUserLanguage: Bool = true
+
     // MARK: Spontaneous interjection
     /// Allow the bot to join conversations without being explicitly mentioned.
     /// The LLM decides whether to respond by replying "RESPOND: <msg>" or "SILENT".
