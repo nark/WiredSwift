@@ -22,9 +22,11 @@ public final class BoardEventHandler {
         }
 
         if match.trigger.useLLM {
-            let prefix = match.trigger.llmPromptPrefix ?? ""
-            let input  = prefix.isEmpty ? subject : "\(prefix)\(subject)"
-            let chatID = bot.config.server.channels.first ?? 1
+            let vars: [String: String] = ["nick": nick, "subject": subject, "board": board]
+            let rawPrefix = match.trigger.llmPromptPrefix ?? ""
+            let prefix    = rawPrefix.isEmpty ? "" : bot.triggerEngine.format(rawPrefix, with: vars)
+            let input     = prefix.isEmpty ? subject : "\(prefix)\n\(subject)"
+            let chatID    = bot.config.server.channels.first ?? 1
             BotLogger.debug("[board] Dispatching LLM for new thread '\(subject)' by \(nick)")
             bot.dispatchLLM(input: input, nick: nick, userID: 0,
                             chatID: chatID, isPrivate: false)
@@ -50,9 +52,11 @@ public final class BoardEventHandler {
         }
 
         if match.trigger.useLLM {
-            let prefix = match.trigger.llmPromptPrefix ?? ""
-            let input  = prefix.isEmpty ? text : "\(prefix)\(text)"
-            let chatID = bot.config.server.channels.first ?? 1
+            let vars: [String: String] = ["nick": nick, "subject": subject, "board": board, "text": text]
+            let rawPrefix = match.trigger.llmPromptPrefix ?? ""
+            let prefix    = rawPrefix.isEmpty ? "" : bot.triggerEngine.format(rawPrefix, with: vars)
+            let input     = prefix.isEmpty ? text : "\(prefix)\n\(text)"
+            let chatID    = bot.config.server.channels.first ?? 1
             BotLogger.debug("[board] Dispatching LLM for reply by \(nick) in '\(subject)'")
             bot.dispatchLLM(input: input, nick: nick, userID: userID,
                             chatID: chatID, isPrivate: false)
