@@ -295,46 +295,55 @@ public final class BotController: NSObject {
         let id  = config.identity
         let llm = config.llm
         let beh = config.behavior
+        let serverName = connection?.serverInfo?.serverName ?? ""
 
-        // ── Identity preamble (always injected, regardless of custom systemPrompt) ──
-        var lines: [String] = []
-        lines.append("You are \(id.nick), an AI chatbot connected to a Wired chat server.")
-        if let info = connection?.serverInfo, !info.serverName.isEmpty {
-            lines.append("Server: \(info.serverName)")
+        // ── Identity preamble ──────────────────────────────────────────────────
+        let preamble: String
+        if let custom = id.identityPreamble, !custom.isEmpty {
+            // User-defined preamble: substitute placeholders
+            let vars: [String: String] = [
+                "nick": id.nick, "model": llm.model, "provider": llm.provider,
+                "status": id.status, "server": serverName
+            ]
+            preamble = vars.reduce(custom) { result, pair in
+                result.replacingOccurrences(of: "{\(pair.key)}", with: pair.value)
+            }
+        } else {
+            // Auto-generated preamble
+            var lines: [String] = []
+            lines.append("You are \(id.nick), an AI chatbot connected to a Wired chat server.")
+            if !serverName.isEmpty { lines.append("Server: \(serverName)") }
+            lines.append("Your nick: \(id.nick)")
+            if !id.status.isEmpty  { lines.append("Your status: \(id.status)") }
+            lines.append("You are powered by \(llm.model) (\(llm.provider)).")
+            lines.append("""
+                Your capabilities:
+                - Chat with users on public channels and in private messages
+                - Monitor board threads and announce or summarise new posts
+                - Respond to commands such as !ping, !help, !ask, !tldr
+                - Maintain conversation context across multiple messages
+                """)
+            lines.append("""
+                Self-awareness rules (always follow these):
+                - You KNOW you are an AI bot. Never deny or be uncertain about your nature.
+                - Always answer questions about yourself accurately (your name, purpose, model).
+                - When asked how you feel, you may answer creatively but always acknowledge \
+                you are an AI without human emotions.
+                """)
+            preamble = lines.joined(separator: "\n")
         }
-        lines.append("Your nick: \(id.nick)")
-        if !id.status.isEmpty {
-            lines.append("Your status: \(id.status)")
-        }
-        lines.append("You are powered by \(llm.model) (\(llm.provider)).")
-        lines.append("""
-            Your capabilities:
-            - Chat with users on public channels and in private messages
-            - Monitor board threads and announce or summarise new posts
-            - Respond to commands such as !ping, !help, !ask, !tldr
-            - Maintain conversation context across multiple messages
-            """)
-        lines.append("""
-            Self-awareness rules (always follow these):
-            - You KNOW you are an AI bot. Never deny or be uncertain about your nature.
-            - Always answer questions about yourself accurately (your name, purpose, model).
-            - When asked how you feel, you may answer creatively but always acknowledge \
-            you are an AI without human emotions.
-            """)
 
         // ── User-defined system prompt (personality, tone, extra instructions) ──
-        if !llm.systemPrompt.isEmpty {
-            lines.append(llm.systemPrompt)
-        }
-
+        var parts = [preamble]
+        if !llm.systemPrompt.isEmpty { parts.append(llm.systemPrompt) }
         if beh.respondInUserLanguage {
-            lines.append(
+            parts.append(
                 "IMPORTANT: Always reply in the exact same language the user writes in. " +
                 "Detect it from each message and never switch languages unless the user does."
             )
         }
         BotLogger.debug("[prompt] respondInUserLanguage=\(beh.respondInUserLanguage)")
-        return lines.joined(separator: "\n")
+        return parts.joined(separator: "\n")
     }
 
     /// Records a board thread or reply so the bot can discuss it in subsequent

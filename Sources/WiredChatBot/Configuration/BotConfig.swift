@@ -58,15 +58,22 @@ public struct IdentityConfig: Codable {
     public var icon:   String? = nil
     /// Seconds before the bot sets itself as idle (0 = never)
     public var idleTimeout: Double = 0
+    /// Custom identity preamble injected at the very start of every system prompt,
+    /// before the user's `llm.systemPrompt`. Supports {nick}, {model}, {provider},
+    /// {status}, {server} placeholders.
+    /// nil = use the auto-generated preamble (name, server, capabilities,
+    /// self-awareness rules).
+    public var identityPreamble: String? = nil
 
     public init() {}
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        nick        = try c.decodeIfPresent(String.self, forKey: .nick)        ?? "WiredBot"
-        status      = try c.decodeIfPresent(String.self, forKey: .status)      ?? "Powered by AI"
-        icon        = try c.decodeIfPresent(String.self, forKey: .icon)
-        idleTimeout = try c.decodeIfPresent(Double.self, forKey: .idleTimeout) ?? 0
+        nick             = try c.decodeIfPresent(String.self, forKey: .nick)             ?? "WiredBot"
+        status           = try c.decodeIfPresent(String.self, forKey: .status)           ?? "Powered by AI"
+        icon             = try c.decodeIfPresent(String.self, forKey: .icon)
+        idleTimeout      = try c.decodeIfPresent(Double.self, forKey: .idleTimeout)      ?? 0
+        identityPreamble = try c.decodeIfPresent(String.self, forKey: .identityPreamble)
     }
 }
 
