@@ -3,6 +3,9 @@
 // Docs: https://docs.anthropic.com/en/api/messages
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public class AnthropicProvider: LLMProvider {
     public let name = "Anthropic"

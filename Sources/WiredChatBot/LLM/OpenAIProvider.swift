@@ -4,6 +4,9 @@
 // Set `endpoint` to the base URL (e.g. http://localhost:1234 for LM Studio).
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public class OpenAIProvider: LLMProvider {
     public let name = "OpenAI-compatible"

@@ -3,6 +3,9 @@
 // API docs: https://github.com/ollama/ollama/blob/main/docs/api.md
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public class OllamaProvider: LLMProvider {
     public let name = "Ollama"
