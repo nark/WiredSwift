@@ -81,8 +81,10 @@ public struct LLMConfig: Codable {
     public var apiKey:        String? = nil
     /// Model name, e.g. "llama3", "gpt-4o", "claude-sonnet-4-6"
     public var model:         String  = "llama3"
-    /// System prompt injected at the start of every conversation
-    public var systemPrompt:  String  = "You are WiredBot, a helpful and friendly AI chatbot on a Wired server. Be concise and keep responses under 300 characters when possible."
+    /// Additional personality/tone instructions appended after the auto-generated
+    /// identity preamble. The preamble already covers name, server, model and
+    /// self-awareness rules — use this for tone, language style, or domain focus.
+    public var systemPrompt:  String  = "Be helpful, concise and friendly. Keep responses under 300 characters when possible."
     public var temperature:   Double  = 0.7
     public var maxTokens:     Int     = 512
     /// Number of previous messages to keep per conversation context

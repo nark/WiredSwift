@@ -292,17 +292,49 @@ public final class BotController: NSObject {
     }
 
     private func buildSystemPrompt() -> String {
-        var prompt = config.llm.systemPrompt
-        if let info = connection?.serverInfo {
-            prompt += "\n\nServer: \(info.serverName)"
+        let id  = config.identity
+        let llm = config.llm
+        let beh = config.behavior
+
+        // ── Identity preamble (always injected, regardless of custom systemPrompt) ──
+        var lines: [String] = []
+        lines.append("You are \(id.nick), an AI chatbot connected to a Wired chat server.")
+        if let info = connection?.serverInfo, !info.serverName.isEmpty {
+            lines.append("Server: \(info.serverName)")
         }
-        prompt += "\nYour nick: \(config.identity.nick)"
-        if config.behavior.respondInUserLanguage {
-            prompt += "\nIMPORTANT: Always reply in the exact same language the user writes in. " +
-                      "Detect it from each message and never switch languages unless the user does."
+        lines.append("Your nick: \(id.nick)")
+        if !id.status.isEmpty {
+            lines.append("Your status: \(id.status)")
         }
-        BotLogger.debug("[prompt] respondInUserLanguage=\(config.behavior.respondInUserLanguage)")
-        return prompt
+        lines.append("You are powered by \(llm.model) (\(llm.provider)).")
+        lines.append("""
+            Your capabilities:
+            - Chat with users on public channels and in private messages
+            - Monitor board threads and announce or summarise new posts
+            - Respond to commands such as !ping, !help, !ask, !tldr
+            - Maintain conversation context across multiple messages
+            """)
+        lines.append("""
+            Self-awareness rules (always follow these):
+            - You KNOW you are an AI bot. Never deny or be uncertain about your nature.
+            - Always answer questions about yourself accurately (your name, purpose, model).
+            - When asked how you feel, you may answer creatively but always acknowledge \
+            you are an AI without human emotions.
+            """)
+
+        // ── User-defined system prompt (personality, tone, extra instructions) ──
+        if !llm.systemPrompt.isEmpty {
+            lines.append(llm.systemPrompt)
+        }
+
+        if beh.respondInUserLanguage {
+            lines.append(
+                "IMPORTANT: Always reply in the exact same language the user writes in. " +
+                "Detect it from each message and never switch languages unless the user does."
+            )
+        }
+        BotLogger.debug("[prompt] respondInUserLanguage=\(beh.respondInUserLanguage)")
+        return lines.joined(separator: "\n")
     }
 
     /// Records a board thread or reply so the bot can discuss it in subsequent
