@@ -111,6 +111,13 @@ public final class BotController: NSObject {
             BotLogger.info("Joining channel \(chatID)…")
             _ = connection.joinChat(chatID: chatID)
         }
+        // Subscribe to board broadcasts so the server sends wired.board.post_added
+        // and wired.board.thread_added to this connection.
+        if let spec = self.spec {
+            let sub = P7Message(withName: "wired.board.subscribe_boards", spec: spec)
+            _ = connection.send(message: sub)
+            BotLogger.info("Subscribed to board broadcasts")
+        }
     }
 
     public func handleDisconnect(error: Error?) {
