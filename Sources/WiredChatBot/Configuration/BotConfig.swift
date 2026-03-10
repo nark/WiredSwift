@@ -36,6 +36,15 @@ public struct ServerConfig: Codable {
     public var maxReconnectAttempts: Int = 0
     /// Path to wired.xml protocol spec (nil = auto-detect)
     public var specPath: String? = nil
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        url                 = try c.decodeIfPresent(String.self,   forKey: .url)                 ?? "wired://guest@localhost:4871"
+        channels            = try c.decodeIfPresent([UInt32].self, forKey: .channels)            ?? [1]
+        reconnectDelay      = try c.decodeIfPresent(Double.self,   forKey: .reconnectDelay)      ?? 30.0
+        maxReconnectAttempts = try c.decodeIfPresent(Int.self,     forKey: .maxReconnectAttempts) ?? 0
+        specPath            = try c.decodeIfPresent(String.self,   forKey: .specPath)
+    }
 }
 
 // MARK: - Identity
@@ -47,6 +56,14 @@ public struct IdentityConfig: Codable {
     public var icon:   String? = nil
     /// Seconds before the bot sets itself as idle (0 = never)
     public var idleTimeout: Double = 0
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        nick        = try c.decodeIfPresent(String.self, forKey: .nick)        ?? "WiredBot"
+        status      = try c.decodeIfPresent(String.self, forKey: .status)      ?? "Powered by AI"
+        icon        = try c.decodeIfPresent(String.self, forKey: .icon)
+        idleTimeout = try c.decodeIfPresent(Double.self, forKey: .idleTimeout) ?? 0
+    }
 }
 
 // MARK: - LLM
@@ -73,6 +90,21 @@ public struct LLMConfig: Codable {
     /// When true, the oldest half of the context is summarised via LLM instead of
     /// being silently dropped. Requires an extra LLM call when the context is full.
     public var enableSummarization: Bool = false
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        provider             = try c.decodeIfPresent(String.self,  forKey: .provider)             ?? "ollama"
+        endpoint             = try c.decodeIfPresent(String.self,  forKey: .endpoint)             ?? "http://localhost:11434"
+        apiKey               = try c.decodeIfPresent(String.self,  forKey: .apiKey)
+        model                = try c.decodeIfPresent(String.self,  forKey: .model)                ?? "llama3"
+        systemPrompt         = try c.decodeIfPresent(String.self,  forKey: .systemPrompt)         ?? "You are WiredBot, a helpful and friendly AI chatbot on a Wired server. Be concise and keep responses under 300 characters when possible."
+        temperature          = try c.decodeIfPresent(Double.self,  forKey: .temperature)          ?? 0.7
+        maxTokens            = try c.decodeIfPresent(Int.self,     forKey: .maxTokens)            ?? 512
+        contextMessages      = try c.decodeIfPresent(Int.self,     forKey: .contextMessages)      ?? 10
+        timeoutSeconds       = try c.decodeIfPresent(Double.self,  forKey: .timeoutSeconds)       ?? 30.0
+        contextMaxAgeSeconds = try c.decodeIfPresent(Double.self,  forKey: .contextMaxAgeSeconds) ?? 7200.0
+        enableSummarization  = try c.decodeIfPresent(Bool.self,    forKey: .enableSummarization)  ?? false
+    }
 }
 
 // MARK: - Behavior
@@ -125,6 +157,31 @@ public struct BehaviorConfig: Codable {
     public var spontaneousCheckInterval: Int = 5
     /// Minimum seconds between two spontaneous replies in the same channel.
     public var spontaneousCooldownSeconds: Double = 120.0
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        respondToMentions        = try c.decodeIfPresent(Bool.self,     forKey: .respondToMentions)        ?? true
+        respondToAll             = try c.decodeIfPresent(Bool.self,     forKey: .respondToAll)             ?? false
+        respondToPrivateMessages = try c.decodeIfPresent(Bool.self,     forKey: .respondToPrivateMessages) ?? true
+        greetOnJoin              = try c.decodeIfPresent(Bool.self,     forKey: .greetOnJoin)              ?? true
+        greetMessage             = try c.decodeIfPresent(String.self,   forKey: .greetMessage)             ?? "Welcome, {nick}!"
+        farewellOnLeave          = try c.decodeIfPresent(Bool.self,     forKey: .farewellOnLeave)          ?? false
+        farewellMessage          = try c.decodeIfPresent(String.self,   forKey: .farewellMessage)          ?? "Goodbye, {nick}!"
+        announceNewThreads       = try c.decodeIfPresent(Bool.self,     forKey: .announceNewThreads)       ?? true
+        announceNewThreadMessage = try c.decodeIfPresent(String.self,   forKey: .announceNewThreadMessage) ?? "New board post: \"{subject}\" by {nick}"
+        announceFileUploads      = try c.decodeIfPresent(Bool.self,     forKey: .announceFileUploads)      ?? false
+        announceFileMessage      = try c.decodeIfPresent(String.self,   forKey: .announceFileMessage)      ?? "{nick} uploaded: {filename}"
+        rateLimitSeconds         = try c.decodeIfPresent(Double.self,   forKey: .rateLimitSeconds)         ?? 2.0
+        maxResponseLength        = try c.decodeIfPresent(Int.self,      forKey: .maxResponseLength)        ?? 500
+        ignoreOwnMessages        = try c.decodeIfPresent(Bool.self,     forKey: .ignoreOwnMessages)        ?? true
+        ignoredNicks             = try c.decodeIfPresent([String].self, forKey: .ignoredNicks)             ?? []
+        mentionKeywords          = try c.decodeIfPresent([String].self, forKey: .mentionKeywords)          ?? []
+        threadTimeoutSeconds     = try c.decodeIfPresent(Double.self,   forKey: .threadTimeoutSeconds)     ?? 300.0
+        respondInUserLanguage    = try c.decodeIfPresent(Bool.self,     forKey: .respondInUserLanguage)    ?? true
+        spontaneousReply         = try c.decodeIfPresent(Bool.self,     forKey: .spontaneousReply)         ?? false
+        spontaneousCheckInterval = try c.decodeIfPresent(Int.self,      forKey: .spontaneousCheckInterval) ?? 5
+        spontaneousCooldownSeconds = try c.decodeIfPresent(Double.self, forKey: .spontaneousCooldownSeconds) ?? 120.0
+    }
 }
 
 // MARK: - Trigger
@@ -173,6 +230,20 @@ public struct TriggerConfig: Codable {
         self.caseSensitive   = caseSensitive
         self.cooldownSeconds = cooldownSeconds
     }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        // Required fields — fail fast if absent
+        name    = try c.decode(String.self, forKey: .name)
+        pattern = try c.decode(String.self, forKey: .pattern)
+        // Optional / defaulted fields
+        eventTypes      = try c.decodeIfPresent([String].self, forKey: .eventTypes)      ?? ["chat", "private"]
+        response        = try c.decodeIfPresent(String.self,   forKey: .response)
+        useLLM          = try c.decodeIfPresent(Bool.self,     forKey: .useLLM)          ?? false
+        llmPromptPrefix = try c.decodeIfPresent(String.self,   forKey: .llmPromptPrefix)
+        caseSensitive   = try c.decodeIfPresent(Bool.self,     forKey: .caseSensitive)   ?? false
+        cooldownSeconds = try c.decodeIfPresent(Double.self,   forKey: .cooldownSeconds) ?? 0
+    }
 }
 
 // MARK: - Daemon
@@ -185,4 +256,12 @@ public struct DaemonConfig: Codable {
     public var logFile:    String? = nil
     /// VERBOSE | DEBUG | INFO | WARNING | ERROR
     public var logLevel:   String = "INFO"
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        foreground = try c.decodeIfPresent(Bool.self,   forKey: .foreground) ?? false
+        pidFile    = try c.decodeIfPresent(String.self, forKey: .pidFile)    ?? "/tmp/wiredbot.pid"
+        logFile    = try c.decodeIfPresent(String.self, forKey: .logFile)
+        logLevel   = try c.decodeIfPresent(String.self, forKey: .logLevel)   ?? "INFO"
+    }
 }
