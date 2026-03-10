@@ -214,10 +214,12 @@ if [[ -n "$SIGNING_IDENTITY" ]]; then
   echo "==> Using signing identity: $SIGNING_IDENTITY"
 
   sign_file "$SIGNING_IDENTITY" "$DIST_SERVER_BINARY"
+  sign_file "$SIGNING_IDENTITY" "$RESOURCES_DIR/$SERVER_BINARY_NAME"
   sign_app_bundle "$SIGNING_IDENTITY" "$APP_DIR"
 else
   echo "==> No Developer ID identity found, using ad-hoc signing"
   codesign --force --sign - "$DIST_SERVER_BINARY"
+  codesign --force --sign - "$RESOURCES_DIR/$SERVER_BINARY_NAME"
   codesign --force --deep --sign - "$APP_DIR"
 fi
 
@@ -266,6 +268,7 @@ fi
 
 echo "==> Verifying signatures"
 codesign --verify --deep --strict --verbose=2 "$DIST_SERVER_BINARY"
+codesign --verify --strict --verbose=2 "$RESOURCES_DIR/$SERVER_BINARY_NAME"
 codesign --verify --deep --strict --verbose=2 "$APP_DIR"
 
 if [[ "$SIGNING_MODE" == "developer-id" ]]; then
