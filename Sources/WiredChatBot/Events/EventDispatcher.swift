@@ -76,8 +76,12 @@ public final class EventDispatcher: NSObject, ConnectionDelegate {
         // Boards
         case "wired.board.thread_added":
             bot.boardHandler.handleNewThread(message: message, bot: bot)
-        case "wired.board.post_added":
-            bot.boardHandler.handleNewPost(message: message, bot: bot)
+        case "wired.board.thread_changed":
+            // Only treat as a new post when the message carries an appended reply
+            // (identified by the presence of the wired.board.post field).
+            if message.string(forField: "wired.board.post") != nil {
+                bot.boardHandler.handleNewPost(message: message, bot: bot)
+            }
 
         // Transfers / files
         case "wired.transfer.upload_file", "wired.transfer.upload":
