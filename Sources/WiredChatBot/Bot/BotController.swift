@@ -55,6 +55,13 @@ public final class BotController: NSObject {
     private var lastSpontaneousDate:  [UInt32: Date] = [:]
     private let maxPassiveBufferSize = 20
 
+    // Board thread context — injected into chat LLM calls so users can
+    // discuss recently announced threads without an explicit mention.
+    private struct BoardEntry {
+        let nick: String; let subject: String; let text: String; let date: Date
+    }
+    private var boardContextByChannel: [UInt32: [BoardEntry]] = [:]
+
     // MARK: - Init
 
     public init(config: BotConfig) {
@@ -293,16 +300,50 @@ public final class BotController: NSObject {
         return prompt
     }
 
+    /// Records a board thread or reply so the bot can discuss it in subsequent
+    /// chat conversations. Call this for every board event that was announced.
+    public func recordBoardActivity(nick: String, subject: String, text: String) {
+        let entry = BoardEntry(nick: nick, subject: subject, text: text, date: Date())
+        let maxAge = config.llm.contextMaxAgeSeconds > 0 ? config.llm.contextMaxAgeSeconds : 3600
+        let cutoff = Date().addingTimeInterval(-maxAge)
+        for chatID in config.server.channels {
+            var entries = (boardContextByChannel[chatID] ?? [])
+                .filter { $0.date > cutoff }
+            entries.append(entry)
+            boardContextByChannel[chatID] = entries
+        }
+    }
+
     /// Builds the recent channel log as a system-level awareness snippet.
     /// Excludes the triggering message itself to avoid duplication.
     private func buildChannelAwareness(chatID: UInt32, excludingText: String) -> String? {
-        guard let buf = channelMessageBuffer[chatID], buf.count > 1 else { return nil }
-        // Drop the last entry (the current message that triggered dispatchLLM)
-        let log = buf.dropLast()
-            .suffix(10)
-            .map { "[\($0.nick)] \($0.text)" }
-            .joined(separator: "\n")
-        return "Recent channel activity (context only — do not repeat or summarise this):\n\(log)"
+        var parts: [String] = []
+
+        // Recent chat messages
+        if let buf = channelMessageBuffer[chatID], buf.count > 1 {
+            let log = buf.dropLast()
+                .suffix(10)
+                .map { "[\($0.nick)] \($0.text)" }
+                .joined(separator: "\n")
+            parts.append("Recent channel activity (context only — do not repeat or summarise this):\n\(log)")
+        }
+
+        // Recent board threads — lets users ask follow-up questions about them
+        let maxAge = config.llm.contextMaxAgeSeconds > 0 ? config.llm.contextMaxAgeSeconds : 3600
+        let cutoff = Date().addingTimeInterval(-maxAge)
+        if let entries = boardContextByChannel[chatID] {
+            let recent = entries.filter { $0.date > cutoff }
+            if !recent.isEmpty {
+                let boardLog = recent.map { e -> String in
+                    var line = "Thread by \(e.nick): \"\(e.subject)\""
+                    if !e.text.isEmpty { line += "\nContent: \(e.text)" }
+                    return line
+                }.joined(separator: "\n---\n")
+                parts.append("Recently announced board threads (user may ask follow-up questions about these):\n\(boardLog)")
+            }
+        }
+
+        return parts.isEmpty ? nil : parts.joined(separator: "\n\n")
     }
 
     // MARK: - User tracking

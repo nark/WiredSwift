@@ -21,6 +21,9 @@ public final class BoardEventHandler {
             return
         }
 
+        // Store in board context so the bot can discuss the thread in follow-up chat
+        bot.recordBoardActivity(nick: nick, subject: subject, text: "")
+
         if match.trigger.useLLM {
             let vars: [String: String] = ["nick": nick, "subject": subject, "board": board]
             let rawPrefix = match.trigger.llmPromptPrefix ?? ""
@@ -50,6 +53,9 @@ public final class BoardEventHandler {
             BotLogger.debug("[board] thread_changed: no matching trigger for '\(subject)'")
             return
         }
+
+        // Store in board context so the bot can discuss the reply in follow-up chat
+        bot.recordBoardActivity(nick: nick, subject: subject, text: text)
 
         if match.trigger.useLLM {
             let vars: [String: String] = ["nick": nick, "subject": subject, "board": board, "text": text]
