@@ -336,6 +336,9 @@ public final class BotController: NSObject {
         // ── User-defined system prompt (personality, tone, extra instructions) ──
         var parts = [preamble]
         if !llm.systemPrompt.isEmpty { parts.append(llm.systemPrompt) }
+        // Chat context uses "nick: message" format so the LLM knows who is speaking.
+        // Explicitly forbid it from echoing that format back in responses.
+        parts.append("IMPORTANT: Never start your responses with a nick prefix like \"Name:\" or \"Name: \". Reply directly without any name prefix.")
         if beh.respondInUserLanguage {
             parts.append(
                 "IMPORTANT: Always reply in the exact same language the user writes in. " +
