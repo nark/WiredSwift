@@ -131,8 +131,6 @@ public struct BehaviorConfig: Codable {
     public var farewellOnLeave: Bool   = false
     public var farewellMessage: String = "Goodbye, {nick}!"
 
-    public var announceNewThreads:        Bool   = true
-    public var announceNewThreadMessage:  String = "New board post: \"{subject}\" by {nick}"
     public var announceFileUploads:       Bool   = false
     public var announceFileMessage:       String = "{nick} uploaded: {filename}"
 
@@ -179,8 +177,6 @@ public struct BehaviorConfig: Codable {
         greetMessage             = try c.decodeIfPresent(String.self,   forKey: .greetMessage)             ?? "Welcome, {nick}!"
         farewellOnLeave          = try c.decodeIfPresent(Bool.self,     forKey: .farewellOnLeave)          ?? false
         farewellMessage          = try c.decodeIfPresent(String.self,   forKey: .farewellMessage)          ?? "Goodbye, {nick}!"
-        announceNewThreads       = try c.decodeIfPresent(Bool.self,     forKey: .announceNewThreads)       ?? true
-        announceNewThreadMessage = try c.decodeIfPresent(String.self,   forKey: .announceNewThreadMessage) ?? "New board post: \"{subject}\" by {nick}"
         announceFileUploads      = try c.decodeIfPresent(Bool.self,     forKey: .announceFileUploads)      ?? false
         announceFileMessage      = try c.decodeIfPresent(String.self,   forKey: .announceFileMessage)      ?? "{nick} uploaded: {filename}"
         rateLimitSeconds         = try c.decodeIfPresent(Double.self,   forKey: .rateLimitSeconds)         ?? 2.0
@@ -228,20 +224,28 @@ public struct TriggerConfig: Codable {
                       useLLM: true, llmPromptPrefix: "Summarize this in one sentence: ",
                       cooldownSeconds: 5),
 
-        // ── Board post triggers ────────────────────────────────────────────────
-        // Fired when a reply is added to any thread in any board.
-        // Available variables: {nick}, {subject}, {board}, {text}
+        // ── Board triggers ─────────────────────────────────────────────────────
+        // thread_added  : a new thread was created
+        //   variables   : {nick}, {subject}, {board}
+        // thread_changed: a reply was appended to an existing thread
+        //   variables   : {nick}, {subject}, {board}, {text}
         //
-        // Example 1 — static announcement in all configured channels:
-        TriggerConfig(name: "board-post-announce", pattern: ".*",
-                      eventTypes: ["board_post"],
+        // Announce new threads in all configured channels:
+        TriggerConfig(name: "board-thread-announce", pattern: ".*",
+                      eventTypes: ["thread_added"],
+                      response: "New thread by {nick}: \"{subject}\" [{board}]",
+                      cooldownSeconds: 0),
+
+        // Announce new replies in all configured channels:
+        TriggerConfig(name: "board-reply-announce", pattern: ".*",
+                      eventTypes: ["thread_changed"],
                       response: "New reply by {nick} in \"{subject}\" [{board}]",
                       cooldownSeconds: 0),
 
-        // Example 2 — forward the post body to the LLM and summarise it:
-        // (disabled by default; remove the leading comment to enable)
-        // TriggerConfig(name: "board-post-summary", pattern: ".*",
-        //               eventTypes: ["board_post"],
+        // Example — forward reply body to the LLM and summarise it:
+        // (disabled by default; uncomment to enable)
+        // TriggerConfig(name: "board-reply-summary", pattern: ".*",
+        //               eventTypes: ["thread_changed"],
         //               useLLM: true,
         //               llmPromptPrefix: "Summarise this board post in one sentence: ",
         //               cooldownSeconds: 30),

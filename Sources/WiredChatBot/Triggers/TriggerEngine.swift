@@ -13,11 +13,11 @@ public struct TriggerMatch {
     public let isPrivate: Bool
 }
 
-/// Result returned when a board-post trigger fires.
-public struct BoardPostTriggerMatch {
+/// Result returned when a board trigger fires (thread_added or thread_changed).
+public struct BoardTriggerMatch {
     public let trigger:  TriggerConfig
     public let subject:  String   // thread subject
-    public let text:     String   // body of the new post
+    public let text:     String   // body of the new post (empty for thread_added)
     public let nick:     String   // author
     public let board:    String   // board path
 }
@@ -78,16 +78,19 @@ public final class TriggerEngine {
         return nil
     }
 
-    /// Returns the first trigger whose `eventTypes` contains `"board_post"` (or `"all"`)
+    /// Returns the first trigger whose `eventTypes` contains `eventType` (or `"all"`)
     /// and whose pattern matches `subject + " " + text`.
     ///
+    /// - Parameters:
+    ///   - eventType: `"thread_added"` or `"thread_changed"`
+    ///
     /// Available template variables in `response`: {nick}, {subject}, {board}, {text}
-    public func matchBoardPost(subject: String, text: String,
-                               nick: String, board: String) -> BoardPostTriggerMatch? {
-        let combined = "\(subject) \(text)"
+    public func matchBoardEvent(eventType: String, subject: String, text: String,
+                                nick: String, board: String) -> BoardTriggerMatch? {
+        let combined = text.isEmpty ? subject : "\(subject) \(text)"
         for trigger in triggers {
             let types = trigger.eventTypes
-            guard types.contains("board_post") || types.contains("all") else { continue }
+            guard types.contains(eventType) || types.contains("all") else { continue }
 
             // Cooldown — keyed globally per trigger (board events have no per-user key)
             if trigger.cooldownSeconds > 0 {
@@ -111,8 +114,8 @@ public final class TriggerEngine {
                 lock.unlock()
             }
 
-            return BoardPostTriggerMatch(trigger: trigger, subject: subject,
-                                        text: text, nick: nick, board: board)
+            return BoardTriggerMatch(trigger: trigger, subject: subject,
+                                    text: text, nick: nick, board: board)
         }
         return nil
     }
