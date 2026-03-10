@@ -242,6 +242,8 @@ Controls when and how the bot reacts to events.
 | `respondToMentions` | bool | `true` | Reply when the bot's nick (or a `mentionKeyword`) is detected in a message. |
 | `respondToAll` | bool | `false` | Reply to **all** public messages. Use with caution and a high `rateLimitSeconds`. |
 | `respondToPrivateMessages` | bool | `true` | Reply to private messages (DMs). |
+| `respondToConversation` | bool | `false` | Once a user has started a conversation (by mention or trigger), keep replying to their subsequent messages **without requiring a new mention**, as long as the silence gap is below `threadTimeoutSeconds`. |
+| `respondInUserLanguage` | bool | `true` | Detect the language of each user message and always reply in the same language. The instruction is injected into the system prompt so the LLM handles detection natively. |
 | `greetOnJoin` | bool | `true` | Send a welcome message when a user joins a channel. |
 | `greetMessage` | string | `"Welcome, {nick}!"` | Welcome message template. Supports `{nick}`, `{chatID}`. |
 | `farewellOnLeave` | bool | `false` | Send a farewell message when a user leaves. |
@@ -265,6 +267,8 @@ Controls when and how the bot reacts to events.
   "respondToMentions": true,
   "respondToAll": false,
   "respondToPrivateMessages": true,
+  "respondToConversation": true,
+  "respondInUserLanguage": true,
   "greetOnJoin": true,
   "greetMessage": "Hey {nick}, welcome to the server!",
   "farewellOnLeave": true,
@@ -521,7 +525,9 @@ For each received message:
    → First match: static response OR LLM dispatch with prefix
    → Processing ends
    ↓
-3. If respondToAll = true OR (respondToMentions = true AND mention detected)
+3. If respondToAll = true
+   OR (respondToMentions = true AND mention detected)
+   OR (respondToConversation = true AND user has an active context)
    → LLM dispatch with full message
    ↓
 4. Otherwise: silence
