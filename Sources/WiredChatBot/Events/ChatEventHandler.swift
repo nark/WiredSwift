@@ -17,9 +17,12 @@ public final class ChatEventHandler {
                 ?? message.string(forField: "wired.user.nick")
                 ?? "User\(userID)"
 
-        guard !bot.shouldIgnore(nick: nick) else { return }
+        guard !bot.shouldIgnore(nick: nick) else {
+            BotLogger.debug("[\(chatID)] Ignored message from '\(nick)' (ignoredNicks or self)")
+            return
+        }
 
-        BotLogger.debug("[\(chatID)] <\(nick)> \(text)")
+        BotLogger.debug("[\(chatID)] <\(nick)/\(userID)> \(text)")
 
         // Always feed the passive buffer (enables spontaneous interjection)
         bot.trackMessage(nick: nick, text: text, chatID: chatID)
@@ -30,18 +33,29 @@ public final class ChatEventHandler {
             let vars = ["nick": nick, "input": text, "chatID": "\(chatID)"]
             if match.trigger.useLLM {
                 let prefix = match.trigger.llmPromptPrefix ?? ""
+                BotLogger.debug("[\(chatID)] Trigger '\(match.trigger.pattern)' matched → LLM dispatch (prefix='\(prefix.prefix(30))')")
                 bot.dispatchLLM(input: prefix + text, nick: nick, userID: userID,
                                 chatID: chatID, isPrivate: false)
             } else if let tpl = match.trigger.response {
+                BotLogger.debug("[\(chatID)] Trigger '\(match.trigger.pattern)' matched → static reply")
                 bot.sendChat(bot.triggerEngine.format(tpl, with: vars), to: chatID)
+            } else {
+                BotLogger.debug("[\(chatID)] Trigger '\(match.trigger.pattern)' matched but has no action")
             }
             return
         }
 
         // 2. LLM response on mention / respondToAll
-        let mentioned = bot.isMentioned(in: text)
-        let cfg = bot.config.behavior
-        if cfg.respondToAll || (cfg.respondToMentions && mentioned) {
+        let mentioned      = bot.isMentioned(in: text)
+        let cfg            = bot.config.behavior
+        let willRespond    = cfg.respondToAll || (cfg.respondToMentions && mentioned)
+
+        BotLogger.debug(
+            "[\(chatID)] Routing: mentioned=\(mentioned) respondToAll=\(cfg.respondToAll)" +
+            " respondToMentions=\(cfg.respondToMentions) → \(willRespond ? "LLM dispatch" : "no response")"
+        )
+
+        if willRespond {
             bot.dispatchLLM(input: text, nick: nick, userID: userID,
                             chatID: chatID, isPrivate: false)
         }

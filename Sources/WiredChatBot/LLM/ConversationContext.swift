@@ -23,7 +23,11 @@ public final class ConversationContext {
         history.append(LLMMessage(role: role, content: content))
         // Hard cap at 2× maxMessages so memory never grows unbounded even if
         // summarisation is disabled. Summarisation replaces this eviction.
-        while history.count > maxMessages * 2 { history.removeFirst() }
+        var evicted = 0
+        while history.count > maxMessages * 2 { history.removeFirst(); evicted += 1 }
+        if evicted > 0 {
+            BotLogger.debug("[ctx] Hard-cap eviction: dropped \(evicted) message(s) (cap=\(maxMessages * 2))")
+        }
     }
 
     public func recordAssistantResponse(_ text: String) {
@@ -58,8 +62,12 @@ public final class ConversationContext {
     /// or nil when no summarisation is needed yet.
     public func messagesForSummarization() -> [LLMMessage]? {
         lock.lock(); defer { lock.unlock() }
-        guard history.count >= maxMessages else { return nil }
+        guard history.count >= maxMessages else {
+            BotLogger.debug("[ctx] Summarisation check: \(history.count)/\(maxMessages) msgs — not needed")
+            return nil
+        }
         let count = maxMessages / 2
+        BotLogger.debug("[ctx] Summarisation needed: \(history.count) msgs ≥ \(maxMessages) — will summarise oldest \(count)")
         return Array(history.prefix(count))
     }
 
@@ -67,13 +75,17 @@ public final class ConversationContext {
     /// No-op if history has fewer than `count` entries (race-condition guard).
     public func applySummary(_ summary: String, replacing count: Int) {
         lock.lock(); defer { lock.unlock() }
-        guard history.count >= count else { return }
+        guard history.count >= count else {
+            BotLogger.debug("[ctx] applySummary: skipped (only \(history.count) msgs, needed \(count))")
+            return
+        }
         history.removeFirst(count)
         history.insert(
             LLMMessage(role: "system",
                        content: "[Earlier conversation summary]: \(summary)"),
             at: 0
         )
+        BotLogger.debug("[ctx] Summary applied — \(count) msgs → 1 summary entry, history now \(history.count) msgs")
     }
 
     // MARK: - Building the message array for LLM calls
@@ -94,17 +106,30 @@ public final class ConversationContext {
 
         var msgs = [LLMMessage(role: "system", content: systemPrompt)]
 
-        if let awareness = channelAwareness, !awareness.isEmpty {
-            msgs.append(LLMMessage(role: "system", content: awareness))
+        let hasAwareness = channelAwareness.map { !$0.isEmpty } ?? false
+        if hasAwareness {
+            msgs.append(LLMMessage(role: "system", content: channelAwareness!))
         }
 
         let cutoff: Date = maxAgeSeconds > 0
             ? Date().addingTimeInterval(-maxAgeSeconds)
             : .distantPast
 
+        let total    = history.count
         let filtered = history.filter { $0.timestamp > cutoff }
+        let dropped  = total - filtered.count
         msgs += filtered
         msgs.append(LLMMessage(role: "user", content: userInput))
+
+        BotLogger.debug(
+            "[ctx] buildMessages → \(msgs.count) msg(s) total " +
+            "(system=\(hasAwareness ? 2 : 1), history=\(filtered.count)" +
+            (dropped > 0 ? " [\(dropped) expired]" : "") +
+            ", user=1" +
+            (maxAgeSeconds > 0 ? ", maxAge=\(Int(maxAgeSeconds))s" : "") +
+            ")"
+        )
+
         return msgs
     }
 }
@@ -130,6 +155,7 @@ public final class ConversationContextManager {
         if let ctx = contexts[key] { return ctx }
         let ctx = ConversationContext(maxMessages: maxMessages)
         contexts[key] = ctx
+        BotLogger.debug("[ctx] New context created for key '\(key)' (maxMessages=\(maxMessages))")
         return ctx
     }
 

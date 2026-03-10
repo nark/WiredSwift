@@ -145,7 +145,9 @@ public final class BotController: NSObject {
         let limit   = config.behavior.rateLimitSeconds
 
         if elapsed < limit {
-            DispatchQueue.main.asyncAfter(deadline: .now() + (limit - elapsed)) { [weak self] in
+            let wait = limit - elapsed
+            BotLogger.debug("[\(chatID)] Rate-limited: waiting \(String(format: "%.1f", wait))s before sending")
+            DispatchQueue.main.asyncAfter(deadline: .now() + wait) { [weak self] in
                 self?.sendChatNow(text, to: chatID)
             }
         } else {
@@ -154,16 +156,24 @@ public final class BotController: NSObject {
     }
 
     private func sendChatNow(_ text: String, to chatID: UInt32) {
-        guard let connection, let spec, connection.isConnected() else { return }
+        guard let connection, let spec, connection.isConnected() else {
+            BotLogger.warning("[\(chatID)] sendChatNow: not connected — message dropped")
+            return
+        }
 
-        let maxLen = config.behavior.maxResponseLength
-        let body   = text.count > maxLen ? String(text.prefix(maxLen - 1)) + "…" : text
+        let maxLen   = config.behavior.maxResponseLength
+        let truncated = text.count > maxLen
+        let body     = truncated ? String(text.prefix(maxLen - 1)) + "…" : text
+        if truncated {
+            BotLogger.debug("[\(chatID)] Response truncated: \(text.count) → \(body.count) chars (maxResponseLength=\(maxLen))")
+        }
 
         let msg = P7Message(withName: "wired.chat.send_say", spec: spec)
         msg.addParameter(field: "wired.chat.id",  value: chatID)
         msg.addParameter(field: "wired.chat.say", value: body)
         _ = connection.send(message: msg)
         lastResponseDate = Date()
+        BotLogger.debug("[\(chatID)] Sent: \(body.prefix(80))\(body.count > 80 ? "…" : "")")
     }
 
     // MARK: - LLM dispatch
@@ -186,11 +196,15 @@ public final class BotController: NSObject {
         let llmCfg   = config.llm
         let behCfg   = config.behavior
 
+        BotLogger.debug("[\(ctxKey)] dispatchLLM → nick='\(nick)' userID=\(userID) isPrivate=\(isPrivate)")
+        BotLogger.debug("[\(ctxKey)] Input: \(input.prefix(120))\(input.count > 120 ? "…" : "")")
+
         Task {
             do {
                 // ── Step 1: Summarise oldest messages if the context window is full ──
                 if llmCfg.enableSummarization,
                    let toSummarize = ctx.messagesForSummarization() {
+                    BotLogger.debug("[\(ctxKey)] Summarisation: calling LLM to compress \(toSummarize.count) old messages…")
                     let excerpt = toSummarize
                         .map { "\($0.role): \($0.content)" }
                         .joined(separator: "\n")
@@ -199,15 +213,22 @@ public final class BotController: NSObject {
                         content: "Summarise this conversation excerpt in 2-3 sentences, " +
                                  "keeping key facts and decisions:\n\n\(excerpt)"
                     )]
+                    let t0 = Date()
                     let summary = try await llm.complete(messages: summaryPrompt, config: llmCfg)
+                    let elapsed = Date().timeIntervalSince(t0)
                     ctx.applySummary(summary, replacing: toSummarize.count)
-                    BotLogger.debug("[\(ctxKey)] Context summarised (\(toSummarize.count) msgs → 1)")
+                    BotLogger.debug("[\(ctxKey)] Summarisation done in \(String(format: "%.2f", elapsed))s — preview: \(summary.prefix(80))")
+                } else if !llmCfg.enableSummarization {
+                    BotLogger.debug("[\(ctxKey)] Summarisation disabled (enableSummarization=false)")
                 }
 
                 // ── Step 2: Thread-timeout marker ──
-                if ctx.isNewThread(timeoutSeconds: behCfg.threadTimeoutSeconds) {
+                let threadTimeout = behCfg.threadTimeoutSeconds
+                if ctx.isNewThread(timeoutSeconds: threadTimeout) {
                     ctx.add(role: "system", content: "--- New conversation after a break ---")
-                    BotLogger.debug("[\(ctxKey)] Thread timeout — injected separator")
+                    BotLogger.debug("[\(ctxKey)] Thread gap > \(Int(threadTimeout))s — separator injected")
+                } else if threadTimeout > 0 {
+                    BotLogger.debug("[\(ctxKey)] Thread still active (timeout=\(Int(threadTimeout))s)")
                 }
                 ctx.updateLastInteraction()
 
@@ -215,6 +236,12 @@ public final class BotController: NSObject {
                 let system    = self.buildSystemPrompt()
                 let awareness = isPrivate ? nil : self.buildChannelAwareness(chatID: chatID,
                                                                              excludingText: input)
+                if let aw = awareness {
+                    let lineCount = aw.components(separatedBy: "\n").count - 1 // subtract header
+                    BotLogger.debug("[\(ctxKey)] Channel awareness: \(lineCount) recent message(s) injected")
+                } else {
+                    BotLogger.debug("[\(ctxKey)] Channel awareness: none (private=\(isPrivate) or empty buffer)")
+                }
 
                 // ── Step 4: Build message array with temporal filtering ──
                 let messages = ctx.buildMessages(
@@ -225,13 +252,22 @@ public final class BotController: NSObject {
                 )
 
                 // ── Step 5: Call LLM ──
+                let provider = type(of: llm)
+                BotLogger.debug("[\(ctxKey)] → LLM call (\(provider)) with \(messages.count) message(s)…")
+                let t0    = Date()
                 let reply = try await llm.complete(messages: messages, config: llmCfg)
+                let elapsed = Date().timeIntervalSince(t0)
+
+                BotLogger.debug(
+                    "[\(ctxKey)] ← LLM replied in \(String(format: "%.2f", elapsed))s" +
+                    " (\(reply.count) chars): \(reply.prefix(100))\(reply.count > 100 ? "…" : "")"
+                )
                 ctx.add(role: "user", content: userTurn)
                 ctx.recordAssistantResponse(reply)
                 await MainActor.run { self.sendChat(reply, to: chatID) }
 
             } catch {
-                BotLogger.error("LLM error: \(error.localizedDescription)")
+                BotLogger.error("[\(ctxKey)] LLM error: \(error.localizedDescription)")
             }
         }
     }
@@ -290,14 +326,21 @@ public final class BotController: NSObject {
         // Increment per-channel counter
         let count = (channelMessageCount[chatID] ?? 0) + 1
         channelMessageCount[chatID] = count
+        BotLogger.debug("[\(chatID)] Passive buffer: \(buf.count)/\(maxPassiveBufferSize) msgs, counter=\(count)/\(cfg.spontaneousCheckInterval)")
 
         // Only check every N messages
         guard count % cfg.spontaneousCheckInterval == 0 else { return }
 
         // Respect per-channel cooldown
-        let lastDate = lastSpontaneousDate[chatID] ?? .distantPast
-        guard Date().timeIntervalSince(lastDate) >= cfg.spontaneousCooldownSeconds else { return }
+        let lastDate    = lastSpontaneousDate[chatID] ?? .distantPast
+        let sinceLastS  = Date().timeIntervalSince(lastDate)
+        let cooldown    = cfg.spontaneousCooldownSeconds
+        guard sinceLastS >= cooldown else {
+            BotLogger.debug("[\(chatID)] Spontaneous: cooldown active (\(String(format: "%.0f", sinceLastS))s / \(Int(cooldown))s)")
+            return
+        }
 
+        BotLogger.debug("[\(chatID)] Spontaneous: check triggered (every \(cfg.spontaneousCheckInterval) msgs, cooldown OK)")
         checkSpontaneousInterjection(chatID: chatID, buffer: buf)
     }
 
@@ -329,15 +372,27 @@ public final class BotController: NSObject {
 
         Task {
             do {
+                BotLogger.debug("[\(chatID)] Spontaneous: → LLM decision call (\(buffer.count) msgs in log)…")
+                let t0    = Date()
                 let reply = try await llm.complete(messages: messages, config: self.config.llm)
+                let elapsed = Date().timeIntervalSince(t0)
                 let trimmed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard trimmed.uppercased().hasPrefix("RESPOND:") else { return }
+
+                BotLogger.debug("[\(chatID)] Spontaneous: ← LLM answered in \(String(format: "%.2f", elapsed))s — \(trimmed.prefix(60))")
+
+                guard trimmed.uppercased().hasPrefix("RESPOND:") else {
+                    BotLogger.debug("[\(chatID)] Spontaneous: SILENT — bot chose not to interject")
+                    return
+                }
 
                 let text = String(trimmed.dropFirst("RESPOND:".count))
                     .trimmingCharacters(in: .whitespaces)
-                guard !text.isEmpty else { return }
+                guard !text.isEmpty else {
+                    BotLogger.debug("[\(chatID)] Spontaneous: RESPOND prefix found but message was empty — ignored")
+                    return
+                }
 
-                BotLogger.debug("[\(chatID)] Spontaneous interjection: \(text)")
+                BotLogger.debug("[\(chatID)] Spontaneous: RESPOND — interjecting: \(text.prefix(80))")
                 await MainActor.run {
                     self.lastSpontaneousDate[chatID] = Date()
                     self.sendChat(text, to: chatID)
@@ -346,7 +401,7 @@ public final class BotController: NSObject {
                 let ctx = self.contextManager.context(for: "channel-\(chatID)")
                 ctx.recordAssistantResponse(text)
             } catch {
-                BotLogger.error("Spontaneous LLM check error: \(error.localizedDescription)")
+                BotLogger.error("[\(chatID)] Spontaneous LLM check error: \(error.localizedDescription)")
             }
         }
     }
