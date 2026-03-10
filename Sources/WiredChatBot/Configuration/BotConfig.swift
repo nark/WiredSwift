@@ -39,6 +39,10 @@ public struct ServerConfig: Codable {
 
     public init() {}
 
+    enum CodingKeys: String, CodingKey {
+        case url, channels, reconnectDelay, maxReconnectAttempts, specPath
+    }
+
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(url,                  forKey: .url)
@@ -75,6 +79,10 @@ public struct IdentityConfig: Codable {
     public var identityPreamble: String? = nil
 
     public init() {}
+
+    enum CodingKeys: String, CodingKey {
+        case nick, status, icon, idleTimeout, identityPreamble
+    }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -123,6 +131,11 @@ public struct LLMConfig: Codable {
     public var enableSummarization: Bool = false
 
     public init() {}
+
+    enum CodingKeys: String, CodingKey {
+        case provider, endpoint, apiKey, model, systemPrompt, temperature, maxTokens
+        case contextMessages, timeoutSeconds, contextMaxAgeSeconds, enableSummarization
+    }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -312,6 +325,10 @@ public struct TriggerConfig: Codable {
         self.cooldownSeconds = cooldownSeconds
     }
 
+    enum CodingKeys: String, CodingKey {
+        case name, pattern, eventTypes, response, useLLM, llmPromptPrefix, caseSensitive, cooldownSeconds
+    }
+
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(name,            forKey: .name)
@@ -351,6 +368,10 @@ public struct DaemonConfig: Codable {
     public var logLevel:   String = "INFO"
 
     public init() {}
+
+    enum CodingKeys: String, CodingKey {
+        case foreground, pidFile, logFile, logLevel
+    }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
