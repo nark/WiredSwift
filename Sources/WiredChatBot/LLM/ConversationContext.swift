@@ -159,6 +159,15 @@ public final class ConversationContextManager {
         return ctx
     }
 
+    /// Returns true when the context for `key` exists AND its last interaction
+    /// is recent enough that `isNewThread` would return false.
+    /// Does NOT create a context if none exists.
+    public func hasActiveConversation(for key: String, timeoutSeconds: Double) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        guard let ctx = contexts[key] else { return false }
+        return !ctx.isNewThread(timeoutSeconds: timeoutSeconds)
+    }
+
     public func clearContext(for key: String) {
         lock.lock(); defer { lock.unlock() }
         contexts.removeValue(forKey: key)

@@ -413,6 +413,12 @@ public final class BotController: NSObject {
 
     // MARK: - Filtering helpers
 
+    public func hasActiveConversation(userID: UInt32, chatID: UInt32) -> Bool {
+        let key = "channel-\(chatID)-\(userID)"
+        return contextManager.hasActiveConversation(for: key,
+                                                    timeoutSeconds: config.behavior.threadTimeoutSeconds)
+    }
+
     public func isMentioned(in text: String) -> Bool {
         let lower   = text.lowercased()
         let botNick = config.identity.nick.lowercased()
