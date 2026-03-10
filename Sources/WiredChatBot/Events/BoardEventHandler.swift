@@ -29,7 +29,7 @@ public final class BoardEventHandler {
             let chatID    = bot.config.server.channels.first ?? 1
             BotLogger.debug("[board] Dispatching LLM for new thread '\(subject)' by \(nick)")
             bot.dispatchLLM(input: input, nick: nick, userID: 0,
-                            chatID: chatID, isPrivate: false)
+                            chatID: chatID, isPrivate: false, prependNick: false)
         } else {
             fire(match: match, nick: nick, subject: subject, board: board, text: "", bot: bot)
         }
@@ -59,7 +59,7 @@ public final class BoardEventHandler {
             let chatID    = bot.config.server.channels.first ?? 1
             BotLogger.debug("[board] Dispatching LLM for reply by \(nick) in '\(subject)'")
             bot.dispatchLLM(input: input, nick: nick, userID: userID,
-                            chatID: chatID, isPrivate: false)
+                            chatID: chatID, isPrivate: false, prependNick: false)
         } else {
             fire(match: match, nick: nick, subject: subject, board: board, text: text, bot: bot)
         }

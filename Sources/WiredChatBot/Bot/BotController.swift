@@ -191,7 +191,7 @@ public final class BotController: NSObject {
     ///   - Public channel: `"channel-<chatID>-<userID>"`
     ///   - Private DM:     `"private-<userID>"`
     public func dispatchLLM(input: String, nick: String, userID: UInt32,
-                            chatID: UInt32, isPrivate: Bool) {
+                            chatID: UInt32, isPrivate: Bool, prependNick: Bool = true) {
         guard let llm = llmProvider else {
             BotLogger.warning("No LLM provider configured; ignoring message")
             return
@@ -199,7 +199,7 @@ public final class BotController: NSObject {
 
         let ctxKey   = isPrivate ? "private-\(userID)" : "channel-\(chatID)-\(userID)"
         let ctx      = contextManager.context(for: ctxKey)
-        let userTurn = "\(nick): \(input)"
+        let userTurn = prependNick ? "\(nick): \(input)" : input
         let llmCfg   = config.llm
         let behCfg   = config.behavior
 
