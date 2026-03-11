@@ -19,7 +19,7 @@ private let defaultWelcomeThreadBody = "You are running Wired Server version 3.x
 
 
 
-public class AppController : DatabaseControllerDelegate {
+public class AppController {
     var workingDirectoryPath:String
     var rootPath:String
     var configPath:String
@@ -67,8 +67,7 @@ public class AppController : DatabaseControllerDelegate {
     
     public func start() {
         self.databaseController = DatabaseController(baseURL: self.databaseURL, spec: self.spec)
-        self.databaseController.delegate = self
-        
+
         self.clientsController = ClientsController()
         self.filesController = FilesController(rootPath: self.rootPath)
         self.usersController = UsersController(databaseController: self.databaseController)
@@ -80,12 +79,17 @@ public class AppController : DatabaseControllerDelegate {
         self.transfersController = TransfersController(filesController: filesController)
         
         if !self.databaseController.initDatabase() {
-            Logger.error("Error while initializing databasse")
+            Logger.error("Error while initializing database")
         }
 
+        // Seed initial data (only on first run — no-op if data already exists)
+        self.usersController.seedDefaultDataIfNeeded()
+        self.chatsController.seedDefaultDataIfNeeded()
+
+        // Legacy schema migrations (no-op on fresh GRDB databases)
         self.usersController.migrateLegacyPrivilegesSchemaIfNeeded()
         self.usersController.backfillStableIdentitiesIfNeeded()
-        
+
         self.chatsController.loadChats()
         self.bootstrapDefaultContentIfNeeded()
         self.indexController.indexFiles()
@@ -130,10 +134,4 @@ public class AppController : DatabaseControllerDelegate {
     
     
     
-    // MARK: - DatabaseControllerDelegate
-    public func createTables() {
-        self.usersController.createTables()
-        self.chatsController.createTables()
-        self.indexController.createTables()
-    }
 }

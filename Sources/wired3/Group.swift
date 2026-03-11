@@ -7,30 +7,40 @@
 
 import Foundation
 import WiredSwift
-import Fluent
-import FluentSQLiteDriver
+import GRDB
 
 
-public class Group: Model {
-    public static var schema: String = "groups"
-    
-    @ID(key: .id)
-    public var id:UUID?
-    
-//    @Field(key: "group_id")
-//    public var groupID:UInt32!
-    
-    @Field(key: "name")
-    public var name:String?
+public class Group: Codable, FetchableRecord, PersistableRecord {
+    public static let databaseTableName = "groups"
 
-    @OptionalField(key: "color")
+    // GRDB association
+    public static let privileges = hasMany(GroupPrivilege.self)
+
+    public var id: Int64?
+    public var name: String?
     public var color: String?
 
-    @Children(for: \.$group)
-    public var privileges: [GroupPrivilege]
-    
+    /// Privileges chargés à la demande (non persisté en DB)
+    public var privileges: [GroupPrivilege] = []
+
+    public enum CodingKeys: String, CodingKey {
+        case id, name, color
+        // `privileges` intentionnellement absent
+    }
+
+    public required init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id    = try c.decodeIfPresent(Int64.self, forKey: .id)
+        name  = try c.decodeIfPresent(String.self, forKey: .name)
+        color = try c.decodeIfPresent(String.self, forKey: .color)
+    }
+
+    public func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
+    }
+
     public required init() { }
-    
+
     public init(name: String) {
         self.name = name
     }

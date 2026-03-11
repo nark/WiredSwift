@@ -6,8 +6,6 @@
 //
 
 import Foundation
-import Fluent
-import FluentSQLiteDriver
 
 //class Privilege: Model {
 //    static var schema: String = "privileges"

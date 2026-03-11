@@ -16,8 +16,7 @@ dependencies.append(.package(name: "Queuer", url: "https://github.com/FabrizioBr
 dependencies.append(.package(name: "DataCompression", url: "https://github.com/mw99/DataCompression.git", from: "3.9.0"))
 #endif
 dependencies.append(.package(url: "https://github.com/apple/swift-argument-parser", from: "0.4.0"))
-dependencies.append(.package(url: "https://github.com/vapor/fluent.git", from: "4.13.0"))
-dependencies.append(.package(url: "https://github.com/vapor/fluent-sqlite-driver.git", from: "4.8.1"))
+dependencies.append(.package(url: "https://github.com/groue/GRDB.swift.git", from: "6.0.0"))
 dependencies.append(.package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"))
 dependencies.append(.package(url: "https://github.com/Kitura/Configuration.git", from: "3.0.200"))
 
@@ -32,8 +31,7 @@ targetDependencies.append(.byName(name: "CZlib"))
 targetDependencies.append(.byName(name: "CLZ4"))
 #endif
 targetDependencies.append(.product(name: "Crypto", package: "swift-crypto"))
-targetDependencies.append(.product(name: "Fluent", package: "fluent"))
-targetDependencies.append(.product(name: "FluentSQLiteDriver", package: "fluent-sqlite-driver"))
+// Note: GRDB is added directly to the wired3 target below, not to WiredSwift lib
 
 targets.append(
     .target(
@@ -59,7 +57,8 @@ targets.append(
         dependencies: [
             .byName(name: "WiredSwift"),
             .byName(name: "Configuration"),
-            .product(name: "ArgumentParser", package: "swift-argument-parser")
+            .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            .product(name: "GRDB", package: "GRDB.swift"),
         ]
     )
 )

@@ -6,34 +6,28 @@
 //
 
 import Foundation
-import Fluent
-import FluentSQLiteDriver
+import GRDB
 
-public class GroupPrivilege: Model {
-    public static var schema: String = "group_privileges"
-    
-    @ID(key: .id)
-    public var id:UUID?
-    
-    @Field(key: "name")
-    public var name:String?
-    
-    @Field(key: "value")
-    public var value:Bool?
-    
-    @Parent(key: "group_id")
-    var group: Group
+public struct GroupPrivilege: Codable, FetchableRecord, MutablePersistableRecord {
+    public static let databaseTableName = "group_privileges"
 
-    public required init() { }
-    
-    public init(name: String, value: Bool) {
-        self.name = name
-        self.value = value
+    public var id: Int64?
+    public var name: String?
+    public var value: Bool?
+    public var groupId: Int64
+
+    public enum CodingKeys: String, CodingKey {
+        case id, name, value
+        case groupId = "group_id"
     }
-    
-    public init(name: String, value: Bool, group:Group) {
-        self.name       = name
-        self.value      = value
-        self.$group.id  = group.id!
+
+    public mutating func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
+    }
+
+    public init(name: String, value: Bool, groupId: Int64) {
+        self.name    = name
+        self.value   = value
+        self.groupId = groupId
     }
 }

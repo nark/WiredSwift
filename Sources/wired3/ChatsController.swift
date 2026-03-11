@@ -7,6 +7,7 @@
 
 import Foundation
 import WiredSwift
+import GRDB
 
 private extension ChatsController {
     // MARK: - Privates
@@ -131,9 +132,9 @@ public class ChatsController : TableController {
         
         do {
             let newChat = Chat(chatID: self.nextChatID(), name: name, client: client)
-            
-            try newChat.create(on: databaseController.pool).wait()
-            
+
+            try databaseController.dbQueue.write { db in try newChat.insert(db) }
+
             self.add(chat: newChat)
             
             let reply = P7Message(withName: "wired.chat.public_chat_created", spec: message.spec)
@@ -182,8 +183,8 @@ public class ChatsController : TableController {
             App.clientsController.broadcast(message: reply)
             
             self.remove(chat: publicChat)
-            
-            try publicChat.delete(on: databaseController.pool).wait()
+
+            try databaseController.dbQueue.write { db in try publicChat.delete(db) }
 
         } catch let error {
             Logger.error("Cannot delete public chat: \(error)")
@@ -207,7 +208,7 @@ public class ChatsController : TableController {
         self.add(chat: newPrivateChat)
         
         let reply = P7Message(withName: "wired.chat.chat_created", spec: message.spec)
-        reply.addParameter(field: "wired.chat.id", value: newPrivateChat.chatID!)
+        reply.addParameter(field: "wired.chat.id", value: newPrivateChat.chatID)
         App.serverController.reply(client: client, reply: reply, message: message)
     }
     
@@ -457,8 +458,8 @@ public class ChatsController : TableController {
             chat.topic = topic
             chat.topicNick = client.nick!
             chat.topicTime = Date()
-            
-            try chat.update(on: self.databaseController.pool).wait()
+
+            try databaseController.dbQueue.write { db in try chat.update(db) }
             
             // reply okay msg
             App.serverController.replyOK(client: client, message: message)
@@ -483,49 +484,29 @@ public class ChatsController : TableController {
     }
     
     
-    public override func createTables() {
+    /// Seed le chat public si la table est vide (remplace createTables)
+    public func seedDefaultDataIfNeeded() {
         do {
-            try self.databaseController.pool
-                    .schema("chats")
-                    .id()
-                    .field("chatID", .uint32, .required)
-                    .field("name", .string, .required)
-                    .field("topic", .string, .required)
-                    .field("topicNick", .string, .required)
-                    .field("topicTime", .datetime, .required)
-                    .field("creationNick", .string, .required)
-                    .field("creationTime", .datetime, .required)
-                    .create().wait()
-            
-            // init main public chat
-            self.publicChat = Chat(chatID: UInt32(1), name: "Public Chat", client: nil)
-            
-            try self.publicChat.create(on: self.databaseController.pool).wait()
-            
-            self.add(chat: self.publicChat)
-            
-        } catch let error {
-            Logger.error("Cannot create tables")
-            Logger.error("\(error)")
+            let count = try databaseController.dbQueue.read { db in try Chat.fetchCount(db) }
+            guard count == 0 else { return }
+
+            let chat = Chat(chatID: 1, name: "Public Chat", client: nil)
+            try databaseController.dbQueue.write { db in try chat.insert(db) }
+            self.add(chat: chat)
+            self.publicChat = chat
+        } catch {
+            Logger.error("Cannot seed default public chat: \(error)")
         }
     }
     
     
     
     public func loadChats() {
-        do {
-            let chats = try Chat.query(on: databaseController.pool).all().wait()
-
-            for chat in chats {
-                self.add(chat: chat)
-
-                // ref the public chat
-                if chat.chatID == 1 {
-                    self.publicChat = chat
-                }
-
-                lastChatID = chat.chatID
-            }
-        } catch {  }
+        let chats = (try? databaseController.dbQueue.read { db in try Chat.fetchAll(db) }) ?? []
+        for chat in chats {
+            self.add(chat: chat)
+            if chat.chatID == 1 { self.publicChat = chat }
+            lastChatID = chat.chatID
+        }
     }
 }

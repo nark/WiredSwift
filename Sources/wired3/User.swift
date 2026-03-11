@@ -7,172 +7,148 @@
 
 import Foundation
 import WiredSwift
-import Fluent
-import FluentSQLiteDriver
+import GRDB
 
 
+// PersistableRecord (non-MutablePersistableRecord) fournit des méthodes non-mutating
+// adaptées aux classes (reference types). Les structs utilisent MutablePersistableRecord.
+public class User: Codable, FetchableRecord, PersistableRecord {
+    public static let databaseTableName = "users"
 
-public class User: Model {    
-    public static var schema: String = "users"
-    
-    public enum State:UInt32 {
+    // GRDB association
+    public static let privileges = hasMany(UserPrivilege.self)
+
+    public enum State: UInt32 {
         case CONNECTED          = 0
         case GAVE_CLIENT_INFO
         case LOGGED_IN
         case DISCONNECTED
     }
-    
-    @ID(key: .id)
-    public var id:UUID?
 
-    @Field(key: "username")
-    public var username:String?
-    
-    @Field(key: "password")
-    public var password:String?
-
-    @OptionalField(key: "full_name")
+    public var id: Int64?
+    public var username: String?
+    public var password: String?
     public var fullName: String?
-
-    @OptionalField(key: "identity")
     public var identity: String?
-
-    @OptionalField(key: "comment")
     public var comment: String?
-
-    @OptionalField(key: "creation_time")
     public var creationTime: Date?
-
-    @OptionalField(key: "modification_time")
     public var modificationTime: Date?
-
-    @OptionalField(key: "login_time")
     public var loginTime: Date?
-
-    @OptionalField(key: "edited_by")
     public var editedBy: String?
-
-    @OptionalField(key: "downloads")
     public var downloads: Int64?
-
-    @OptionalField(key: "download_transferred")
     public var downloadTransferred: Int64?
-
-    @OptionalField(key: "uploads")
     public var uploads: Int64?
-
-    @OptionalField(key: "upload_transferred")
     public var uploadTransferred: Int64?
-
-    @OptionalField(key: "group")
     public var group: String?
-
-    @OptionalField(key: "groups")
     public var groups: String?
-
-    @OptionalField(key: "color")
     public var color: String?
-
-    @OptionalField(key: "files")
     public var files: String?
-    
-    @Children(for: \.$user)
-    public var privileges: [UserPrivilege]
-        
-    required public init() { }
-    
+
+    /// Privileges chargés à la demande (non persisté en DB)
+    public var privileges: [UserPrivilege] = []
+
+    public enum CodingKeys: String, CodingKey {
+        case id
+        case username
+        case password
+        case fullName = "full_name"
+        case identity
+        case comment
+        case creationTime = "creation_time"
+        case modificationTime = "modification_time"
+        case loginTime = "login_time"
+        case editedBy = "edited_by"
+        case downloads
+        case downloadTransferred = "download_transferred"
+        case uploads
+        case uploadTransferred = "upload_transferred"
+        case group
+        case groups
+        case color
+        case files
+        // `privileges` intentionnellement absent → non encodé vers la DB
+    }
+
+    public required init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id                  = try c.decodeIfPresent(Int64.self, forKey: .id)
+        username            = try c.decodeIfPresent(String.self, forKey: .username)
+        password            = try c.decodeIfPresent(String.self, forKey: .password)
+        fullName            = try c.decodeIfPresent(String.self, forKey: .fullName)
+        identity            = try c.decodeIfPresent(String.self, forKey: .identity)
+        comment             = try c.decodeIfPresent(String.self, forKey: .comment)
+        creationTime        = try c.decodeIfPresent(Date.self, forKey: .creationTime)
+        modificationTime    = try c.decodeIfPresent(Date.self, forKey: .modificationTime)
+        loginTime           = try c.decodeIfPresent(Date.self, forKey: .loginTime)
+        editedBy            = try c.decodeIfPresent(String.self, forKey: .editedBy)
+        downloads           = try c.decodeIfPresent(Int64.self, forKey: .downloads)
+        downloadTransferred = try c.decodeIfPresent(Int64.self, forKey: .downloadTransferred)
+        uploads             = try c.decodeIfPresent(Int64.self, forKey: .uploads)
+        uploadTransferred   = try c.decodeIfPresent(Int64.self, forKey: .uploadTransferred)
+        group               = try c.decodeIfPresent(String.self, forKey: .group)
+        groups              = try c.decodeIfPresent(String.self, forKey: .groups)
+        color               = try c.decodeIfPresent(String.self, forKey: .color)
+        files               = try c.decodeIfPresent(String.self, forKey: .files)
+    }
+
+    public func didInsert(_ inserted: InsertionSuccess) {
+        id = inserted.rowID
+    }
+
     public init(username: String, password: String) {
         self.username = username
         self.password = password
     }
-    
-    public func hasGroup(string:String) -> Bool {
-        if self.group == string {
+
+    public func hasGroup(string: String) -> Bool {
+        if self.group == string { return true }
+        if let arr = self.groups?.split(separator: ",")
+                        .map({ String($0.replacingOccurrences(of: " ", with: "")) }),
+           arr.firstIndex(of: string) != nil {
             return true
         }
-        
-        if let groupsArray = self.groups?.split(separator: ",").map({ String($0.replacingOccurrences(of: " ", with: "")) }) {
-            if (groupsArray.firstIndex(of: string) != nil) {
-                return true
-            }
-        }
-        
         return false
     }
-    
 
-    
-    public func hasPrivilege(name:String) -> Bool {
-        var success:Bool = false
-        
-        do {
-            if let up = try $privileges.query(on: App.databaseController.pool).filter(\.$name == name).first().wait() {
-                success = up.value == true ? true : false
-            }
-        } catch {  }
-
-        return success
-    }
-    
-    
-    public func hasPermission(toRead privilege:FilePrivilege) -> Bool {
-        // user can read all dropboxes (bypass)
-        if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") {
-            return true
+    public func hasPrivilege(name: String) -> Bool {
+        // Vérification en mémoire si les privileges sont déjà chargés
+        if !privileges.isEmpty {
+            return privileges.first(where: { $0.name == name })?.value == true
         }
-        
+        // Sinon requête GRDB
+        guard let userId = id else { return false }
+        return (try? App.databaseController.dbQueue.read { db in
+            try UserPrivilege
+                .filter(Column("user_id") == userId && Column("name") == name)
+                .fetchOne(db)
+        })?.value == true
+    }
+
+    public func hasPermission(toRead privilege: FilePrivilege) -> Bool {
+        if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
         if let mode = privilege.mode {
-            // everyone can read this privilege
-            if mode.contains(File.FilePermissions.everyoneRead) {
-                return true
-            }
-            
-            // user can read has group
-            if let group = privilege.group, group.count > 0, mode.contains(File.FilePermissions.groupRead) {
-                if self.hasGroup(string: group) {
-                    return true
-                }
-            }
-            
-            // user can read
-            if let owner = privilege.owner, owner.count > 0, mode.contains(File.FilePermissions.ownerRead) {
-                if self.username == owner {
-                    return true
-                }
-            }
+            if mode.contains(File.FilePermissions.everyoneRead) { return true }
+            if let g = privilege.group, g.count > 0,
+               mode.contains(File.FilePermissions.groupRead),
+               self.hasGroup(string: g) { return true }
+            if let o = privilege.owner, o.count > 0,
+               mode.contains(File.FilePermissions.ownerRead),
+               self.username == o { return true }
         }
-               
         return false
     }
 
-    
-     public func hasPermission(toWrite privilege:FilePrivilege) -> Bool {
-         // user can read all dropboxes (bypass)
-         if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") {
-             return true
-         }
-         
-         if let mode = privilege.mode {
-             // everyone can read this privilege
-             if mode.contains(File.FilePermissions.everyoneWrite) {
-                 return true
-             }
-             
-             // user can read has group
-             if let group = privilege.group, group.count > 0, mode.contains(File.FilePermissions.groupWrite) {
-                 if self.hasGroup(string: group) {
-                     return true
-                 }
-             }
-             
-             // user can read
-             if let owner = privilege.owner, owner.count > 0, mode.contains(File.FilePermissions.ownerWrite) {
-                 if self.username == owner {
-                     return true
-                 }
-             }
-         }
-        
-         return false
+    public func hasPermission(toWrite privilege: FilePrivilege) -> Bool {
+        if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
+        if let mode = privilege.mode {
+            if mode.contains(File.FilePermissions.everyoneWrite) { return true }
+            if let g = privilege.group, g.count > 0,
+               mode.contains(File.FilePermissions.groupWrite),
+               self.hasGroup(string: g) { return true }
+            if let o = privilege.owner, o.count > 0,
+               mode.contains(File.FilePermissions.ownerWrite),
+               self.username == o { return true }
+        }
+        return false
     }
 }
