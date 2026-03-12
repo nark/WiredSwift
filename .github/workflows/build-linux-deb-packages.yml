@@ -19,6 +19,18 @@ on:
         description: Debian package name
         required: true
         default: wired3
+      rpm_package_name:
+        description: RPM package name
+        required: false
+        default: wired3
+      rpm_version:
+        description: RPM version base (without build number)
+        required: false
+        default: "3.0"
+      rpm_release:
+        description: RPM release number
+        required: false
+        default: "1"
       maintainer:
         description: Debian maintainer field
         required: true
@@ -35,6 +47,14 @@ on:
         description: Final workflow artifact name
         required: false
         default: linux-deb-packages
+      rpm_enable:
+        description: Build RPM packages (1/0)
+        required: false
+        default: "0"
+      rpm_artifact_name:
+        description: Final RPM workflow artifact name
+        required: false
+        default: linux-rpm-packages
 
 jobs:
   build-amd64:
@@ -68,6 +88,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             file \
             dpkg-dev \
+            rpm \
             liblz4-dev \
             libsqlite3-dev \
             libssl-dev \
@@ -84,10 +105,13 @@ jobs:
           BIN_PATH="$BIN_DIR/wired3"
           mapfile -t SWIFT_DEPS < <(ldd "$BIN_PATH" | awk '/=> \// {print $3}' | grep '/swift/' | sort -u)
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
+          RPM_ARCH="x86_64"
+          RPM_NAME="${{ inputs.rpm_package_name }}-${{ inputs.rpm_version }}+${{ inputs.build_number }}-${{ inputs.rpm_release }}.${RPM_ARCH}.rpm"
           STAGE_DIR="$GITHUB_WORKSPACE/.tmp/deb-stage-$TARGET_ARCH"
           OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
+          OUT_RPM="$OUT_DIR/$RPM_NAME"
           DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/wired.xml"
           DEFAULT_BANNER_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/banner.png"
           DEFAULT_CONFIG_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/config.ini"
@@ -144,11 +168,127 @@ jobs:
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin"
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin" | grep -q "$FILE_ARCH_TOKEN"
 
+          if [[ "${{ inputs.rpm_enable }}" == "1" ]]; then
+            RPM_ROOT="$GITHUB_WORKSPACE/.tmp/rpm-root-$TARGET_ARCH"
+            RPMBUILD_DIR="$GITHUB_WORKSPACE/.tmp/rpmbuild-$TARGET_ARCH"
+            RPM_SOURCES_DIR="$RPMBUILD_DIR/SOURCES"
+            RPM_SPECS_DIR="$RPMBUILD_DIR/SPECS"
+            RPM_BUILDROOT_DIR="$RPMBUILD_DIR/BUILDROOT"
+            SPEC_PATH="$RPM_SPECS_DIR/${{ inputs.rpm_package_name }}.spec"
+
+            rm -rf "$RPM_ROOT" "$RPMBUILD_DIR"
+            mkdir -p "$RPM_ROOT/usr/local/bin" "$RPM_ROOT/usr/lib/wired3" "$RPM_ROOT/usr/share/wired3" "$RPM_ROOT/usr/lib/systemd/system"
+            mkdir -p "$RPMBUILD_DIR/BUILD" "$RPMBUILD_DIR/RPMS" "$RPMBUILD_DIR/SRPMS" "$RPM_SOURCES_DIR" "$RPM_SPECS_DIR" "$RPM_BUILDROOT_DIR"
+
+            cp "$STAGE_DIR/usr/local/bin/wired3" "$RPM_ROOT/usr/local/bin/wired3"
+            cp -a "$STAGE_DIR/usr/lib/wired3/." "$RPM_ROOT/usr/lib/wired3/"
+            cp "$STAGE_DIR/usr/share/wired3/wired.xml" "$RPM_ROOT/usr/share/wired3/wired.xml"
+            cp "$STAGE_DIR/usr/share/wired3/banner.png" "$RPM_ROOT/usr/share/wired3/banner.png"
+            cp "$STAGE_DIR/usr/share/wired3/config.ini.example" "$RPM_ROOT/usr/share/wired3/config.ini.example"
+            cp "$GITHUB_WORKSPACE/Scripts/debian/wired3.service" "$RPM_ROOT/usr/lib/systemd/system/wired3.service"
+
+            tar -C "$RPM_ROOT" -czf "$RPM_SOURCES_DIR/rootfs.tar.gz" .
+
+            cat > "$RPM_SOURCES_DIR/post.sh" <<'EOF'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            if ! getent group wired3 >/dev/null 2>&1; then
+              groupadd --system wired3
+            fi
+            if ! id -u wired3 >/dev/null 2>&1; then
+              useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin --comment "Wired 3 service account" wired3
+            fi
+            install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3
+            install -d -m 0755 /etc/wired3
+            [[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml
+            [[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png
+            [[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini
+            if command -v systemctl >/dev/null 2>&1; then
+              systemctl daemon-reload || true
+            fi
+            EOF
+            chmod 0755 "$RPM_SOURCES_DIR/post.sh"
+
+            cat > "$RPM_SOURCES_DIR/preun.sh" <<'EOF'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            if command -v systemctl >/dev/null 2>&1; then
+              systemctl stop wired3.service >/dev/null 2>&1 || true
+              systemctl disable wired3.service >/dev/null 2>&1 || true
+            fi
+            EOF
+            chmod 0755 "$RPM_SOURCES_DIR/preun.sh"
+
+            cat > "$RPM_SOURCES_DIR/postun.sh" <<'EOF'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            if command -v systemctl >/dev/null 2>&1; then
+              systemctl daemon-reload || true
+            fi
+            EOF
+            chmod 0755 "$RPM_SOURCES_DIR/postun.sh"
+
+            cat > "$SPEC_PATH" <<EOF
+            Name:           ${{ inputs.rpm_package_name }}
+            Version:        ${{ inputs.rpm_version }}+${{ inputs.build_number }}
+            Release:        ${{ inputs.rpm_release }}
+            Summary:        Wired 3 server daemon
+            License:        Proprietary
+            BuildArch:      ${RPM_ARCH}
+            Source0:        rootfs.tar.gz
+            Source1:        post.sh
+            Source2:        preun.sh
+            Source3:        postun.sh
+
+            %description
+            Wired 3 server packaged for RPM-based distributions.
+
+            %prep
+            %setup -q -c -T
+            tar -xzf %{SOURCE0} -C .
+
+            %build
+
+            %install
+            mkdir -p %{buildroot}
+            cp -a . %{buildroot}/
+
+            %post -p /bin/bash
+            %{SOURCE1}
+
+            %preun -p /bin/bash
+            %{SOURCE2}
+
+            %postun -p /bin/bash
+            %{SOURCE3}
+
+            %files
+            /usr/local/bin/wired3
+            /usr/lib/wired3
+            /usr/share/wired3
+            /usr/lib/systemd/system/wired3.service
+            EOF
+
+            rpmbuild -bb "$SPEC_PATH" \
+              --define "_topdir $RPMBUILD_DIR" \
+              --define "dist %{nil}"
+            cp "$RPMBUILD_DIR/RPMS/$RPM_ARCH/"*.rpm "$OUT_RPM"
+            file "$OUT_RPM" | grep -q "x86-64"
+          fi
+
       - name: Upload arch artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-amd64
           path: out-amd64/*.deb
+          if-no-files-found: error
+
+      - name: Upload RPM arch artifact
+        if: ${{ inputs.rpm_enable == '1' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-amd64
+          path: out-amd64/*.rpm
           if-no-files-found: error
 
   build-arm64:
@@ -182,6 +322,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             file \
             dpkg-dev \
+            rpm \
             liblz4-dev \
             libsqlite3-dev \
             libssl-dev \
@@ -198,10 +339,13 @@ jobs:
           BIN_PATH="$BIN_DIR/wired3"
           mapfile -t SWIFT_DEPS < <(ldd "$BIN_PATH" | awk '/=> \// {print $3}' | grep '/swift/' | sort -u)
           DEB_NAME="${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_${TARGET_ARCH}.deb"
+          RPM_ARCH="aarch64"
+          RPM_NAME="${{ inputs.rpm_package_name }}-${{ inputs.rpm_version }}+${{ inputs.build_number }}-${{ inputs.rpm_release }}.${RPM_ARCH}.rpm"
           STAGE_DIR="$GITHUB_WORKSPACE/.tmp/deb-stage-$TARGET_ARCH"
           OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
+          OUT_RPM="$OUT_DIR/$RPM_NAME"
           DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/wired.xml"
           DEFAULT_BANNER_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/banner.png"
           DEFAULT_CONFIG_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/config.ini"
@@ -258,11 +402,127 @@ jobs:
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin"
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin" | grep -q "$FILE_ARCH_TOKEN"
 
+          if [[ "${{ inputs.rpm_enable }}" == "1" ]]; then
+            RPM_ROOT="$GITHUB_WORKSPACE/.tmp/rpm-root-$TARGET_ARCH"
+            RPMBUILD_DIR="$GITHUB_WORKSPACE/.tmp/rpmbuild-$TARGET_ARCH"
+            RPM_SOURCES_DIR="$RPMBUILD_DIR/SOURCES"
+            RPM_SPECS_DIR="$RPMBUILD_DIR/SPECS"
+            RPM_BUILDROOT_DIR="$RPMBUILD_DIR/BUILDROOT"
+            SPEC_PATH="$RPM_SPECS_DIR/${{ inputs.rpm_package_name }}.spec"
+
+            rm -rf "$RPM_ROOT" "$RPMBUILD_DIR"
+            mkdir -p "$RPM_ROOT/usr/local/bin" "$RPM_ROOT/usr/lib/wired3" "$RPM_ROOT/usr/share/wired3" "$RPM_ROOT/usr/lib/systemd/system"
+            mkdir -p "$RPMBUILD_DIR/BUILD" "$RPMBUILD_DIR/RPMS" "$RPMBUILD_DIR/SRPMS" "$RPM_SOURCES_DIR" "$RPM_SPECS_DIR" "$RPM_BUILDROOT_DIR"
+
+            cp "$STAGE_DIR/usr/local/bin/wired3" "$RPM_ROOT/usr/local/bin/wired3"
+            cp -a "$STAGE_DIR/usr/lib/wired3/." "$RPM_ROOT/usr/lib/wired3/"
+            cp "$STAGE_DIR/usr/share/wired3/wired.xml" "$RPM_ROOT/usr/share/wired3/wired.xml"
+            cp "$STAGE_DIR/usr/share/wired3/banner.png" "$RPM_ROOT/usr/share/wired3/banner.png"
+            cp "$STAGE_DIR/usr/share/wired3/config.ini.example" "$RPM_ROOT/usr/share/wired3/config.ini.example"
+            cp "$GITHUB_WORKSPACE/Scripts/debian/wired3.service" "$RPM_ROOT/usr/lib/systemd/system/wired3.service"
+
+            tar -C "$RPM_ROOT" -czf "$RPM_SOURCES_DIR/rootfs.tar.gz" .
+
+            cat > "$RPM_SOURCES_DIR/post.sh" <<'EOF'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            if ! getent group wired3 >/dev/null 2>&1; then
+              groupadd --system wired3
+            fi
+            if ! id -u wired3 >/dev/null 2>&1; then
+              useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin --comment "Wired 3 service account" wired3
+            fi
+            install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3
+            install -d -m 0755 /etc/wired3
+            [[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml
+            [[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png
+            [[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini
+            if command -v systemctl >/dev/null 2>&1; then
+              systemctl daemon-reload || true
+            fi
+            EOF
+            chmod 0755 "$RPM_SOURCES_DIR/post.sh"
+
+            cat > "$RPM_SOURCES_DIR/preun.sh" <<'EOF'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            if command -v systemctl >/dev/null 2>&1; then
+              systemctl stop wired3.service >/dev/null 2>&1 || true
+              systemctl disable wired3.service >/dev/null 2>&1 || true
+            fi
+            EOF
+            chmod 0755 "$RPM_SOURCES_DIR/preun.sh"
+
+            cat > "$RPM_SOURCES_DIR/postun.sh" <<'EOF'
+            #!/usr/bin/env bash
+            set -euo pipefail
+            if command -v systemctl >/dev/null 2>&1; then
+              systemctl daemon-reload || true
+            fi
+            EOF
+            chmod 0755 "$RPM_SOURCES_DIR/postun.sh"
+
+            cat > "$SPEC_PATH" <<EOF
+            Name:           ${{ inputs.rpm_package_name }}
+            Version:        ${{ inputs.rpm_version }}+${{ inputs.build_number }}
+            Release:        ${{ inputs.rpm_release }}
+            Summary:        Wired 3 server daemon
+            License:        Proprietary
+            BuildArch:      ${RPM_ARCH}
+            Source0:        rootfs.tar.gz
+            Source1:        post.sh
+            Source2:        preun.sh
+            Source3:        postun.sh
+
+            %description
+            Wired 3 server packaged for RPM-based distributions.
+
+            %prep
+            %setup -q -c -T
+            tar -xzf %{SOURCE0} -C .
+
+            %build
+
+            %install
+            mkdir -p %{buildroot}
+            cp -a . %{buildroot}/
+
+            %post -p /bin/bash
+            %{SOURCE1}
+
+            %preun -p /bin/bash
+            %{SOURCE2}
+
+            %postun -p /bin/bash
+            %{SOURCE3}
+
+            %files
+            /usr/local/bin/wired3
+            /usr/lib/wired3
+            /usr/share/wired3
+            /usr/lib/systemd/system/wired3.service
+            EOF
+
+            rpmbuild -bb "$SPEC_PATH" \
+              --define "_topdir $RPMBUILD_DIR" \
+              --define "dist %{nil}"
+            cp "$RPMBUILD_DIR/RPMS/$RPM_ARCH/"*.rpm "$OUT_RPM"
+            file "$OUT_RPM" | grep -q "aarch64"
+          fi
+
       - name: Upload arch artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-arm64
           path: out-arm64/*.deb
+          if-no-files-found: error
+
+      - name: Upload RPM arch artifact
+        if: ${{ inputs.rpm_enable == '1' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-arm64
+          path: out-arm64/*.rpm
           if-no-files-found: error
 
   assemble-artifacts:
@@ -284,16 +544,42 @@ jobs:
           name: deb-arm64
           path: out
 
+      - name: Download amd64 RPM artifact
+        if: ${{ inputs.rpm_enable == '1' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-amd64
+          path: out
+
+      - name: Download arm64 RPM artifact
+        if: ${{ inputs.rpm_enable == '1' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: rpm-arm64
+          path: out
+
       - name: Verify expected filenames
         run: |
           set -euo pipefail
           ls -la out
           test -f "out/${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_amd64.deb"
           test -f "out/${{ inputs.package_name }}_${{ inputs.marketing_version }}+${{ inputs.build_number }}_arm64.deb"
+          if [[ "${{ inputs.rpm_enable }}" == "1" ]]; then
+            test -f "out/${{ inputs.rpm_package_name }}-${{ inputs.rpm_version }}+${{ inputs.build_number }}-${{ inputs.rpm_release }}.x86_64.rpm"
+            test -f "out/${{ inputs.rpm_package_name }}-${{ inputs.rpm_version }}+${{ inputs.build_number }}-${{ inputs.rpm_release }}.aarch64.rpm"
+          fi
 
       - name: Upload final artifact bundle
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.debian_artifact_name }}
           path: out/*.deb
+          if-no-files-found: error
+
+      - name: Upload final RPM artifact bundle
+        if: ${{ inputs.rpm_enable == '1' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.rpm_artifact_name }}
+          path: out/*.rpm
           if-no-files-found: error
