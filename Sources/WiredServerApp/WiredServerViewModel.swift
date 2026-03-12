@@ -769,26 +769,36 @@ final class WiredServerViewModel: ObservableObject {
 
     private func installBinary(from sourcePath: String) throws {
         let expectedSHA256 = try normalizedSHA256ForFile(at: sourcePath)
+        appendRuntimeLog("binary-update: manual install requested from \(sourcePath)")
         try installBinaryWithStagingRollback(from: sourcePath, expectedSHA256: expectedSHA256)
+        appendRuntimeLog("binary-update: manual install completed")
     }
 
     @discardableResult
     private func synchronizeInstalledBinaryIfNeeded() throws -> Bool {
+        appendRuntimeLog("binary-update: synchronization check started")
         guard let bundledBinary = bundledServerBinaryPath() else {
+            appendRuntimeLog("binary-update: no bundled wired3 found, skipping synchronization")
             return false
         }
 
         let expectedSHA256 = try bundledBinaryExpectedSHA256() ?? normalizedSHA256ForFile(at: bundledBinary)
+        appendRuntimeLog("binary-update: expected bundled hash \(expectedSHA256)")
 
         if fileManager.isExecutableFile(atPath: installedBinaryPath) {
             let installedSHA256 = try normalizedSHA256ForFile(at: installedBinaryPath)
             if installedSHA256 == expectedSHA256 {
                 binaryPath = installedBinaryPath
+                appendRuntimeLog("binary-update: installed binary is up-to-date")
                 return false
             }
+            appendRuntimeLog("binary-update: hash mismatch detected (installed: \(installedSHA256))")
+        } else {
+            appendRuntimeLog("binary-update: no installed binary found, provisioning from bundled binary")
         }
 
         try installBinaryWithStagingRollback(from: bundledBinary, expectedSHA256: expectedSHA256)
+        appendRuntimeLog("binary-update: synchronization completed successfully")
         return true
     }
 
@@ -800,6 +810,7 @@ final class WiredServerViewModel: ObservableObject {
         let stagingURL = updatesDirectory.appendingPathComponent("wired3.staged.\(token)", isDirectory: false)
         let backupURL = updatesDirectory.appendingPathComponent("wired3.backup.\(token)", isDirectory: false)
 
+        appendRuntimeLog("binary-update: staging install from \(sourcePath)")
         try fileManager.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: updatesDirectory, withIntermediateDirectories: true)
 
@@ -808,12 +819,15 @@ final class WiredServerViewModel: ObservableObject {
         }
         try fileManager.copyItem(atPath: sourcePath, toPath: stagingURL.path)
         try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: stagingURL.path)
+        appendRuntimeLog("binary-update: staged candidate at \(stagingURL.path)")
 
         let stagedHash = try normalizedSHA256ForFile(at: stagingURL.path)
         guard stagedHash == expectedSHA256 else {
             try? fileManager.removeItem(at: stagingURL)
+            appendRuntimeLog("binary-update: staging hash mismatch, aborting update")
             throw WiredServerError.binaryIntegrityCheckFailed("staging hash mismatch")
         }
+        appendRuntimeLog("binary-update: staging hash verified")
 
         if fileManager.fileExists(atPath: backupURL.path) {
             try? fileManager.removeItem(at: backupURL)
@@ -824,21 +838,27 @@ final class WiredServerViewModel: ObservableObject {
         do {
             if destinationExists {
                 try fileManager.moveItem(at: destinationURL, to: backupURL)
+                appendRuntimeLog("binary-update: existing binary moved to backup \(backupURL.path)")
             }
             try fileManager.moveItem(at: stagingURL, to: destinationURL)
             try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destinationURL.path)
+            appendRuntimeLog("binary-update: staged binary promoted to \(destinationURL.path)")
 
             let installedHash = try normalizedSHA256ForFile(at: destinationURL.path)
             guard installedHash == expectedSHA256 else {
+                appendRuntimeLog("binary-update: post-install hash mismatch, rolling back")
                 throw WiredServerError.binaryIntegrityCheckFailed("installed hash mismatch")
             }
 
             if fileManager.fileExists(atPath: backupURL.path) {
                 try fileManager.removeItem(at: backupURL)
+                appendRuntimeLog("binary-update: backup removed after successful update")
             }
 
             binaryPath = destinationURL.path
+            appendRuntimeLog("binary-update: update completed")
         } catch {
+            appendRuntimeLog("binary-update: update failed (\(error.localizedDescription)), attempting rollback")
             if fileManager.fileExists(atPath: destinationURL.path) {
                 try? fileManager.removeItem(at: destinationURL)
             }
@@ -846,7 +866,9 @@ final class WiredServerViewModel: ObservableObject {
             if fileManager.fileExists(atPath: backupURL.path) {
                 do {
                     try fileManager.moveItem(at: backupURL, to: destinationURL)
+                    appendRuntimeLog("binary-update: rollback restored previous binary")
                 } catch {
+                    appendRuntimeLog("binary-update: rollback failed (\(error.localizedDescription))")
                     throw WiredServerError.binaryRollbackFailed(error.localizedDescription)
                 }
             }
@@ -890,6 +912,27 @@ final class WiredServerViewModel: ObservableObject {
 
     private func isValidSHA256Hex(_ value: String) -> Bool {
         value.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil
+    }
+
+    private func appendRuntimeLog(_ message: String) {
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let line = "[\(timestamp)] [WiredServerApp] \(message)\n"
+        let data = Data(line.utf8)
+
+        if !fileManager.fileExists(atPath: logPath) {
+            fileManager.createFile(atPath: logPath, contents: Data())
+        }
+
+        do {
+            let handle = try FileHandle(forWritingTo: URL(fileURLWithPath: logPath))
+            defer { try? handle.close() }
+            try handle.seekToEnd()
+            try handle.write(contentsOf: data)
+        } catch {
+            return
+        }
+
+        appendLog(line)
     }
 
     private func withConfig(_ body: (Config) -> Void) {
