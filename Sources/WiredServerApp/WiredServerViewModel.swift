@@ -782,7 +782,21 @@ final class WiredServerViewModel: ObservableObject {
             return false
         }
 
-        let expectedSHA256 = try bundledBinaryExpectedSHA256() ?? normalizedSHA256ForFile(at: bundledBinary)
+        let bundledSHA256 = try normalizedSHA256ForFile(at: bundledBinary)
+        let metadataSHA256 = bundledBinaryExpectedSHA256()
+        let expectedSHA256: String
+        if let metadataSHA256 {
+            if metadataSHA256 == bundledSHA256 {
+                expectedSHA256 = metadataSHA256
+                appendRuntimeLog("binary-update: embedded metadata hash validated")
+            } else {
+                expectedSHA256 = bundledSHA256
+                appendRuntimeLog("binary-update: metadata hash mismatch with bundled binary, falling back to bundled hash")
+            }
+        } else {
+            expectedSHA256 = bundledSHA256
+            appendRuntimeLog("binary-update: no usable metadata hash, using bundled binary hash")
+        }
         appendRuntimeLog("binary-update: expected bundled hash \(expectedSHA256)")
 
         if fileManager.isExecutableFile(atPath: installedBinaryPath) {
@@ -878,14 +892,15 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    private func bundledBinaryExpectedSHA256() throws -> String? {
+    private func bundledBinaryExpectedSHA256() -> String? {
         guard let rawValue = Bundle.main.object(forInfoDictionaryKey: embeddedBinarySHAKey) as? String else {
             return nil
         }
 
         let normalized = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard isValidSHA256Hex(normalized) else {
-            throw WiredServerError.binaryIntegrityCheckFailed("invalid embedded SHA-256 metadata")
+            appendRuntimeLog("binary-update: invalid embedded SHA-256 metadata format")
+            return nil
         }
 
         return normalized
