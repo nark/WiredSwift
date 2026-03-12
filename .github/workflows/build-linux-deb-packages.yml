@@ -189,85 +189,85 @@ jobs:
 
             tar -C "$RPM_ROOT" -czf "$RPM_SOURCES_DIR/rootfs.tar.gz" .
 
-            cat > "$RPM_SOURCES_DIR/post.sh" <<'EOF'
-            #!/usr/bin/env bash
-            set -euo pipefail
-            if ! getent group wired3 >/dev/null 2>&1; then
-              groupadd --system wired3
-            fi
-            if ! id -u wired3 >/dev/null 2>&1; then
-              useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin --comment "Wired 3 service account" wired3
-            fi
-            install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3
-            install -d -m 0755 /etc/wired3
-            [[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml
-            [[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png
-            [[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini
-            if command -v systemctl >/dev/null 2>&1; then
-              systemctl daemon-reload || true
-            fi
-            EOF
+            printf '%s\n' \
+              '#!/usr/bin/env bash' \
+              'set -euo pipefail' \
+              'if ! getent group wired3 >/dev/null 2>&1; then' \
+              '  groupadd --system wired3' \
+              'fi' \
+              'if ! id -u wired3 >/dev/null 2>&1; then' \
+              '  useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin --comment "Wired 3 service account" wired3' \
+              'fi' \
+              'install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3' \
+              'install -d -m 0755 /etc/wired3' \
+              '[[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml' \
+              '[[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png' \
+              '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
+              'if command -v systemctl >/dev/null 2>&1; then' \
+              '  systemctl daemon-reload || true' \
+              'fi' \
+              > "$RPM_SOURCES_DIR/post.sh"
             chmod 0755 "$RPM_SOURCES_DIR/post.sh"
 
-            cat > "$RPM_SOURCES_DIR/preun.sh" <<'EOF'
-            #!/usr/bin/env bash
-            set -euo pipefail
-            if command -v systemctl >/dev/null 2>&1; then
-              systemctl stop wired3.service >/dev/null 2>&1 || true
-              systemctl disable wired3.service >/dev/null 2>&1 || true
-            fi
-            EOF
+            printf '%s\n' \
+              '#!/usr/bin/env bash' \
+              'set -euo pipefail' \
+              'if command -v systemctl >/dev/null 2>&1; then' \
+              '  systemctl stop wired3.service >/dev/null 2>&1 || true' \
+              '  systemctl disable wired3.service >/dev/null 2>&1 || true' \
+              'fi' \
+              > "$RPM_SOURCES_DIR/preun.sh"
             chmod 0755 "$RPM_SOURCES_DIR/preun.sh"
 
-            cat > "$RPM_SOURCES_DIR/postun.sh" <<'EOF'
-            #!/usr/bin/env bash
-            set -euo pipefail
-            if command -v systemctl >/dev/null 2>&1; then
-              systemctl daemon-reload || true
-            fi
-            EOF
+            printf '%s\n' \
+              '#!/usr/bin/env bash' \
+              'set -euo pipefail' \
+              'if command -v systemctl >/dev/null 2>&1; then' \
+              '  systemctl daemon-reload || true' \
+              'fi' \
+              > "$RPM_SOURCES_DIR/postun.sh"
             chmod 0755 "$RPM_SOURCES_DIR/postun.sh"
 
-            cat > "$SPEC_PATH" <<EOF
-            Name:           ${{ inputs.rpm_package_name }}
-            Version:        ${{ inputs.rpm_version }}+${{ inputs.build_number }}
-            Release:        ${{ inputs.rpm_release }}
-            Summary:        Wired 3 server daemon
-            License:        Proprietary
-            BuildArch:      ${RPM_ARCH}
-            Source0:        rootfs.tar.gz
-            Source1:        post.sh
-            Source2:        preun.sh
-            Source3:        postun.sh
-
-            %description
-            Wired 3 server packaged for RPM-based distributions.
-
-            %prep
-            %setup -q -c -T
-            tar -xzf %{SOURCE0} -C .
-
-            %build
-
-            %install
-            mkdir -p %{buildroot}
-            cp -a . %{buildroot}/
-
-            %post -p /bin/bash
-            %{SOURCE1}
-
-            %preun -p /bin/bash
-            %{SOURCE2}
-
-            %postun -p /bin/bash
-            %{SOURCE3}
-
-            %files
-            /usr/local/bin/wired3
-            /usr/lib/wired3
-            /usr/share/wired3
-            /usr/lib/systemd/system/wired3.service
-            EOF
+            printf '%s\n' \
+              "Name:           ${{ inputs.rpm_package_name }}" \
+              "Version:        ${{ inputs.rpm_version }}+${{ inputs.build_number }}" \
+              "Release:        ${{ inputs.rpm_release }}" \
+              "Summary:        Wired 3 server daemon" \
+              "License:        Proprietary" \
+              "BuildArch:      ${RPM_ARCH}" \
+              "Source0:        rootfs.tar.gz" \
+              "Source1:        post.sh" \
+              "Source2:        preun.sh" \
+              "Source3:        postun.sh" \
+              "" \
+              "%description" \
+              "Wired 3 server packaged for RPM-based distributions." \
+              "" \
+              "%prep" \
+              "%setup -q -c -T" \
+              "tar -xzf %{SOURCE0} -C ." \
+              "" \
+              "%build" \
+              "" \
+              "%install" \
+              "mkdir -p %{buildroot}" \
+              "cp -a . %{buildroot}/" \
+              "" \
+              "%post -p /bin/bash" \
+              "%{SOURCE1}" \
+              "" \
+              "%preun -p /bin/bash" \
+              "%{SOURCE2}" \
+              "" \
+              "%postun -p /bin/bash" \
+              "%{SOURCE3}" \
+              "" \
+              "%files" \
+              "/usr/local/bin/wired3" \
+              "/usr/lib/wired3" \
+              "/usr/share/wired3" \
+              "/usr/lib/systemd/system/wired3.service" \
+              > "$SPEC_PATH"
 
             rpmbuild -bb "$SPEC_PATH" \
               --define "_topdir $RPMBUILD_DIR" \
@@ -423,85 +423,85 @@ jobs:
 
             tar -C "$RPM_ROOT" -czf "$RPM_SOURCES_DIR/rootfs.tar.gz" .
 
-            cat > "$RPM_SOURCES_DIR/post.sh" <<'EOF'
-            #!/usr/bin/env bash
-            set -euo pipefail
-            if ! getent group wired3 >/dev/null 2>&1; then
-              groupadd --system wired3
-            fi
-            if ! id -u wired3 >/dev/null 2>&1; then
-              useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin --comment "Wired 3 service account" wired3
-            fi
-            install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3
-            install -d -m 0755 /etc/wired3
-            [[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml
-            [[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png
-            [[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini
-            if command -v systemctl >/dev/null 2>&1; then
-              systemctl daemon-reload || true
-            fi
-            EOF
+            printf '%s\n' \
+              '#!/usr/bin/env bash' \
+              'set -euo pipefail' \
+              'if ! getent group wired3 >/dev/null 2>&1; then' \
+              '  groupadd --system wired3' \
+              'fi' \
+              'if ! id -u wired3 >/dev/null 2>&1; then' \
+              '  useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin --comment "Wired 3 service account" wired3' \
+              'fi' \
+              'install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3' \
+              'install -d -m 0755 /etc/wired3' \
+              '[[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml' \
+              '[[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png' \
+              '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
+              'if command -v systemctl >/dev/null 2>&1; then' \
+              '  systemctl daemon-reload || true' \
+              'fi' \
+              > "$RPM_SOURCES_DIR/post.sh"
             chmod 0755 "$RPM_SOURCES_DIR/post.sh"
 
-            cat > "$RPM_SOURCES_DIR/preun.sh" <<'EOF'
-            #!/usr/bin/env bash
-            set -euo pipefail
-            if command -v systemctl >/dev/null 2>&1; then
-              systemctl stop wired3.service >/dev/null 2>&1 || true
-              systemctl disable wired3.service >/dev/null 2>&1 || true
-            fi
-            EOF
+            printf '%s\n' \
+              '#!/usr/bin/env bash' \
+              'set -euo pipefail' \
+              'if command -v systemctl >/dev/null 2>&1; then' \
+              '  systemctl stop wired3.service >/dev/null 2>&1 || true' \
+              '  systemctl disable wired3.service >/dev/null 2>&1 || true' \
+              'fi' \
+              > "$RPM_SOURCES_DIR/preun.sh"
             chmod 0755 "$RPM_SOURCES_DIR/preun.sh"
 
-            cat > "$RPM_SOURCES_DIR/postun.sh" <<'EOF'
-            #!/usr/bin/env bash
-            set -euo pipefail
-            if command -v systemctl >/dev/null 2>&1; then
-              systemctl daemon-reload || true
-            fi
-            EOF
+            printf '%s\n' \
+              '#!/usr/bin/env bash' \
+              'set -euo pipefail' \
+              'if command -v systemctl >/dev/null 2>&1; then' \
+              '  systemctl daemon-reload || true' \
+              'fi' \
+              > "$RPM_SOURCES_DIR/postun.sh"
             chmod 0755 "$RPM_SOURCES_DIR/postun.sh"
 
-            cat > "$SPEC_PATH" <<EOF
-            Name:           ${{ inputs.rpm_package_name }}
-            Version:        ${{ inputs.rpm_version }}+${{ inputs.build_number }}
-            Release:        ${{ inputs.rpm_release }}
-            Summary:        Wired 3 server daemon
-            License:        Proprietary
-            BuildArch:      ${RPM_ARCH}
-            Source0:        rootfs.tar.gz
-            Source1:        post.sh
-            Source2:        preun.sh
-            Source3:        postun.sh
-
-            %description
-            Wired 3 server packaged for RPM-based distributions.
-
-            %prep
-            %setup -q -c -T
-            tar -xzf %{SOURCE0} -C .
-
-            %build
-
-            %install
-            mkdir -p %{buildroot}
-            cp -a . %{buildroot}/
-
-            %post -p /bin/bash
-            %{SOURCE1}
-
-            %preun -p /bin/bash
-            %{SOURCE2}
-
-            %postun -p /bin/bash
-            %{SOURCE3}
-
-            %files
-            /usr/local/bin/wired3
-            /usr/lib/wired3
-            /usr/share/wired3
-            /usr/lib/systemd/system/wired3.service
-            EOF
+            printf '%s\n' \
+              "Name:           ${{ inputs.rpm_package_name }}" \
+              "Version:        ${{ inputs.rpm_version }}+${{ inputs.build_number }}" \
+              "Release:        ${{ inputs.rpm_release }}" \
+              "Summary:        Wired 3 server daemon" \
+              "License:        Proprietary" \
+              "BuildArch:      ${RPM_ARCH}" \
+              "Source0:        rootfs.tar.gz" \
+              "Source1:        post.sh" \
+              "Source2:        preun.sh" \
+              "Source3:        postun.sh" \
+              "" \
+              "%description" \
+              "Wired 3 server packaged for RPM-based distributions." \
+              "" \
+              "%prep" \
+              "%setup -q -c -T" \
+              "tar -xzf %{SOURCE0} -C ." \
+              "" \
+              "%build" \
+              "" \
+              "%install" \
+              "mkdir -p %{buildroot}" \
+              "cp -a . %{buildroot}/" \
+              "" \
+              "%post -p /bin/bash" \
+              "%{SOURCE1}" \
+              "" \
+              "%preun -p /bin/bash" \
+              "%{SOURCE2}" \
+              "" \
+              "%postun -p /bin/bash" \
+              "%{SOURCE3}" \
+              "" \
+              "%files" \
+              "/usr/local/bin/wired3" \
+              "/usr/lib/wired3" \
+              "/usr/share/wired3" \
+              "/usr/lib/systemd/system/wired3.service" \
+              > "$SPEC_PATH"
 
             rpmbuild -bb "$SPEC_PATH" \
               --define "_topdir $RPMBUILD_DIR" \
