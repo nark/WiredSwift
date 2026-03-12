@@ -65,35 +65,64 @@ SWIFT
 echo "==> Building $EXECUTABLE_NAME ($BUILD_CONFIG)"
 cd "$ROOT_DIR"
 
-run_swift_build() {
-  swift build -c "$BUILD_CONFIG" --product "$EXECUTABLE_NAME"
-  swift build -c "$BUILD_CONFIG" --product "$SERVER_BINARY_NAME"
+TARGET_ARCHS=("arm64" "x86_64")
+UNIVERSAL_BIN_DIR="$ROOT_DIR/.build/universal/$BUILD_CONFIG"
+mkdir -p "$UNIVERSAL_BIN_DIR"
+
+build_for_arch() {
+  local arch="$1"
+  local scratch_path="$ROOT_DIR/.build/$BUILD_CONFIG-$arch"
+
+  swift build -c "$BUILD_CONFIG" --arch "$arch" --scratch-path "$scratch_path" --product "$EXECUTABLE_NAME"
+  swift build -c "$BUILD_CONFIG" --arch "$arch" --scratch-path "$scratch_path" --product "$SERVER_BINARY_NAME"
 }
 
-BUILD_LOG="$(mktemp)"
-if ! run_swift_build 2>&1 | tee "$BUILD_LOG"; then
-  if grep -q "PCH was compiled with module cache path" "$BUILD_LOG"; then
-    echo "==> Detected stale module cache path, cleaning .build and retrying once"
-    rm -rf "$ROOT_DIR/.build"
-    run_swift_build
-  else
-    echo "Build failed. See log: $BUILD_LOG" >&2
+declare -a EXEC_SLICES=()
+declare -a SERVER_SLICES=()
+
+for arch in "${TARGET_ARCHS[@]}"; do
+  echo "==> Building $EXECUTABLE_NAME ($BUILD_CONFIG, $arch)"
+  BUILD_LOG="$(mktemp)"
+  if ! build_for_arch "$arch" 2>&1 | tee "$BUILD_LOG"; then
+    if grep -q "PCH was compiled with module cache path" "$BUILD_LOG"; then
+      echo "==> Detected stale module cache path for $arch, cleaning and retrying once"
+      rm -rf "$ROOT_DIR/.build/$BUILD_CONFIG-$arch"
+      build_for_arch "$arch"
+    else
+      echo "Build failed for arch $arch. See log: $BUILD_LOG" >&2
+      exit 1
+    fi
+  fi
+  rm -f "$BUILD_LOG"
+
+  ARCH_BIN_DIR="$ROOT_DIR/.build/$BUILD_CONFIG-$arch/$BUILD_CONFIG"
+  ARCH_EXECUTABLE="$ARCH_BIN_DIR/$EXECUTABLE_NAME"
+  ARCH_SERVER_BINARY="$ARCH_BIN_DIR/$SERVER_BINARY_NAME"
+
+  if [[ ! -x "$ARCH_EXECUTABLE" ]]; then
+    echo "Binary not found: $ARCH_EXECUTABLE"
     exit 1
   fi
-fi
-rm -f "$BUILD_LOG"
+  if [[ ! -x "$ARCH_SERVER_BINARY" ]]; then
+    echo "Binary not found: $ARCH_SERVER_BINARY"
+    exit 1
+  fi
 
-BIN_DIR="$(swift build -c "$BUILD_CONFIG" --show-bin-path)"
-BINARY_PATH="$BIN_DIR/$EXECUTABLE_NAME"
-SERVER_BINARY_PATH="$BIN_DIR/$SERVER_BINARY_NAME"
-if [[ ! -x "$BINARY_PATH" ]]; then
-  echo "Binary not found: $BINARY_PATH"
-  exit 1
-fi
-if [[ ! -x "$SERVER_BINARY_PATH" ]]; then
-  echo "Binary not found: $SERVER_BINARY_PATH"
-  exit 1
-fi
+  EXEC_SLICES+=("$ARCH_EXECUTABLE")
+  SERVER_SLICES+=("$ARCH_SERVER_BINARY")
+done
+
+BINARY_PATH="$UNIVERSAL_BIN_DIR/$EXECUTABLE_NAME"
+SERVER_BINARY_PATH="$UNIVERSAL_BIN_DIR/$SERVER_BINARY_NAME"
+
+echo "==> Creating universal binaries (arm64 + x86_64)"
+lipo -create "${EXEC_SLICES[@]}" -output "$BINARY_PATH"
+lipo -create "${SERVER_SLICES[@]}" -output "$SERVER_BINARY_PATH"
+chmod 755 "$BINARY_PATH" "$SERVER_BINARY_PATH"
+
+echo "==> Universal binary info"
+lipo -info "$BINARY_PATH"
+lipo -info "$SERVER_BINARY_PATH"
 
 echo "==> Creating app bundle at $APP_DIR"
 rm -rf "$APP_DIR"
@@ -114,8 +143,9 @@ cp "$ROOT_DIR/Sources/wired3/wired.xml" "$RESOURCES_DIR/wired.xml"
 cp "$ROOT_DIR/Sources/wired3/banner.png" "$RESOURCES_DIR/banner.png"
 
 echo "==> Copying SwiftPM resource bundles"
+BUNDLE_SOURCE_DIR="$ROOT_DIR/.build/$BUILD_CONFIG-${TARGET_ARCHS[0]}/$BUILD_CONFIG"
 shopt -s nullglob
-for bundle in "$BIN_DIR"/*.bundle; do
+for bundle in "$BUNDLE_SOURCE_DIR"/*.bundle; do
   cp -R "$bundle" "$RESOURCES_DIR/"
 done
 shopt -u nullglob
