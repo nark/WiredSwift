@@ -266,8 +266,8 @@ public class UsersController: TableController, SocketPasswordDelegate {
         ]
 
         for statement in statements {
-            if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
-                _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+            if sqliteExec(db: db, statement) != SQLITE_OK {
+                _ = sqliteExec(db: db, "ROLLBACK;")
                 if let message = sqlite3_errmsg(db) {
                     WiredSwift.Logger.error("Could not migrate \(table): \(String(cString: message))")
                 }
@@ -281,7 +281,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
         guard let schema = readSchema(db: db, table: "groups") else { return }
         guard !schema.contains("\"color\"") else { return }
         let statement = "ALTER TABLE \"groups\" ADD COLUMN \"color\" TEXT;"
-        if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+        if sqliteExec(db: db, statement) != SQLITE_OK {
             if let message = sqlite3_errmsg(db) {
                 WiredSwift.Logger.error("Could not add groups.color column: \(String(cString: message))")
             }
@@ -299,7 +299,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
             ("offline_crypto",    "ALTER TABLE \"users\" ADD COLUMN \"offline_crypto\" TEXT;")
         ]
         for (column, statement) in columnStatements where !schema.contains("\"\(column)\"") {
-            if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+            if sqliteExec(db: db, statement) != SQLITE_OK {
                 if let message = sqlite3_errmsg(db) {
                     WiredSwift.Logger.error("Could not add users.\(column) column: \(String(cString: message))")
                 }
@@ -308,7 +308,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
             }
         }
         let uniqueIndex = "CREATE UNIQUE INDEX IF NOT EXISTS \"users_identity_unique\" ON \"users\"(\"identity\");"
-        if sqlite3_exec(db, uniqueIndex, nil, nil, nil) != SQLITE_OK {
+        if sqliteExec(db: db, uniqueIndex) != SQLITE_OK {
             if let message = sqlite3_errmsg(db) {
                 WiredSwift.Logger.error("Could not create users.identity unique index: \(String(cString: message))")
             }
@@ -332,7 +332,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
           "acked_at" DATETIME
         );
         """
-        if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+        if sqliteExec(db: db, statement) != SQLITE_OK {
             if let message = sqlite3_errmsg(db) {
                 WiredSwift.Logger.error("Could not create offline_messages table: \(String(cString: message))")
             }
@@ -342,7 +342,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
             "CREATE INDEX IF NOT EXISTS \"offline_messages_recipient_index\" ON \"offline_messages\"(\"recipient_identity\");",
             "CREATE INDEX IF NOT EXISTS \"offline_messages_expires_index\" ON \"offline_messages\"(\"expires_at\");"
         ] {
-            if sqlite3_exec(db, idx, nil, nil, nil) != SQLITE_OK {
+            if sqliteExec(db: db, idx) != SQLITE_OK {
                 if let message = sqlite3_errmsg(db) {
                     WiredSwift.Logger.error("Could not create offline_messages index: \(String(cString: message))")
                 }
@@ -353,11 +353,23 @@ public class UsersController: TableController, SocketPasswordDelegate {
     private func readSchema(db: OpaquePointer, table: String) -> String? {
         let query = "SELECT sql FROM sqlite_master WHERE type='table' AND name='\(table)' LIMIT 1;"
         var statement: OpaquePointer?
-        guard sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK, let statement else { return nil }
+        guard sqlitePrepare(db: db, query: query, statement: &statement) == SQLITE_OK, let statement else { return nil }
         defer { sqlite3_finalize(statement) }
         guard sqlite3_step(statement) == SQLITE_ROW,
               let cString = sqlite3_column_text(statement, 0) else { return nil }
         return String(cString: cString)
+    }
+
+    private func sqliteExec(db: OpaquePointer, _ statement: String) -> Int32 {
+        let callback: sqlite3_callback? = nil
+        let context: UnsafeMutableRawPointer? = nil
+        let errorMessage: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>? = nil
+        return sqlite3_exec(db, statement, callback, context, errorMessage)
+    }
+
+    private func sqlitePrepare(db: OpaquePointer, query: String, statement: inout OpaquePointer?) -> Int32 {
+        let tail: UnsafeMutablePointer<UnsafePointer<CChar>?>? = nil
+        return sqlite3_prepare_v2(db, query, -1, &statement, tail)
     }
 
 
