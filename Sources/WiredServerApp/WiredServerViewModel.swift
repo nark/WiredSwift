@@ -58,6 +58,7 @@ final class WiredServerViewModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
     private let launchAgentLabel = "fr.read-write.wired3.server"
+    private let embeddedBinarySHAKey = "Wired3EmbeddedSHA256"
 
     struct AdvancedOption: Identifiable, Hashable {
         let id: String
@@ -151,6 +152,11 @@ final class WiredServerViewModel: ObservableObject {
 
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
+        do {
+            _ = try synchronizeInstalledBinaryIfNeeded()
+        } catch {
+            publishError("\(L("error.install_failed")): \(error.localizedDescription)")
+        }
         refreshInstallStatus()
         refreshInstalledVersion()
         launchAtLogin = isLaunchAtLoginEnabled()
@@ -269,6 +275,7 @@ final class WiredServerViewModel: ObservableObject {
 
         do {
             bootstrapRuntimeIfNeeded()
+            _ = try synchronizeInstalledBinaryIfNeeded()
             try repairPartiallyInitializedDatabaseIfNeeded()
             if !fileManager.isExecutableFile(atPath: installedBinaryPath) {
                 try await installServerIfNeeded()
@@ -560,6 +567,7 @@ final class WiredServerViewModel: ObservableObject {
 
     private func writeLaunchAgentPlist() throws {
         bootstrapRuntimeIfNeeded()
+        _ = try synchronizeInstalledBinaryIfNeeded()
 
         let executableCandidates = [installedBinaryPath, binaryPath]
         guard let executable = executableCandidates.first(where: { fileManager.isExecutableFile(atPath: $0) }) else {
@@ -760,18 +768,128 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     private func installBinary(from sourcePath: String) throws {
-        let destination = installedBinaryPath
-        let destinationDir = URL(fileURLWithPath: destination).deletingLastPathComponent().path
-        try fileManager.createDirectory(atPath: destinationDir, withIntermediateDirectories: true)
+        let expectedSHA256 = try normalizedSHA256ForFile(at: sourcePath)
+        try installBinaryWithStagingRollback(from: sourcePath, expectedSHA256: expectedSHA256)
+    }
 
-        if fileManager.fileExists(atPath: destination) {
-            try fileManager.removeItem(atPath: destination)
+    @discardableResult
+    private func synchronizeInstalledBinaryIfNeeded() throws -> Bool {
+        guard let bundledBinary = bundledServerBinaryPath() else {
+            return false
         }
 
-        try fileManager.copyItem(atPath: sourcePath, toPath: destination)
-        try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destination)
+        let expectedSHA256 = try bundledBinaryExpectedSHA256() ?? normalizedSHA256ForFile(at: bundledBinary)
 
-        binaryPath = destination
+        if fileManager.isExecutableFile(atPath: installedBinaryPath) {
+            let installedSHA256 = try normalizedSHA256ForFile(at: installedBinaryPath)
+            if installedSHA256 == expectedSHA256 {
+                binaryPath = installedBinaryPath
+                return false
+            }
+        }
+
+        try installBinaryWithStagingRollback(from: bundledBinary, expectedSHA256: expectedSHA256)
+        return true
+    }
+
+    private func installBinaryWithStagingRollback(from sourcePath: String, expectedSHA256: String) throws {
+        let destinationURL = URL(fileURLWithPath: installedBinaryPath)
+        let destinationDirectory = destinationURL.deletingLastPathComponent()
+        let updatesDirectory = destinationDirectory.appendingPathComponent(".updates", isDirectory: true)
+        let token = UUID().uuidString.lowercased()
+        let stagingURL = updatesDirectory.appendingPathComponent("wired3.staged.\(token)", isDirectory: false)
+        let backupURL = updatesDirectory.appendingPathComponent("wired3.backup.\(token)", isDirectory: false)
+
+        try fileManager.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: updatesDirectory, withIntermediateDirectories: true)
+
+        if fileManager.fileExists(atPath: stagingURL.path) {
+            try fileManager.removeItem(at: stagingURL)
+        }
+        try fileManager.copyItem(atPath: sourcePath, toPath: stagingURL.path)
+        try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: stagingURL.path)
+
+        let stagedHash = try normalizedSHA256ForFile(at: stagingURL.path)
+        guard stagedHash == expectedSHA256 else {
+            try? fileManager.removeItem(at: stagingURL)
+            throw WiredServerError.binaryIntegrityCheckFailed("staging hash mismatch")
+        }
+
+        if fileManager.fileExists(atPath: backupURL.path) {
+            try? fileManager.removeItem(at: backupURL)
+        }
+
+        let destinationExists = fileManager.fileExists(atPath: destinationURL.path)
+
+        do {
+            if destinationExists {
+                try fileManager.moveItem(at: destinationURL, to: backupURL)
+            }
+            try fileManager.moveItem(at: stagingURL, to: destinationURL)
+            try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destinationURL.path)
+
+            let installedHash = try normalizedSHA256ForFile(at: destinationURL.path)
+            guard installedHash == expectedSHA256 else {
+                throw WiredServerError.binaryIntegrityCheckFailed("installed hash mismatch")
+            }
+
+            if fileManager.fileExists(atPath: backupURL.path) {
+                try fileManager.removeItem(at: backupURL)
+            }
+
+            binaryPath = destinationURL.path
+        } catch {
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try? fileManager.removeItem(at: destinationURL)
+            }
+
+            if fileManager.fileExists(atPath: backupURL.path) {
+                do {
+                    try fileManager.moveItem(at: backupURL, to: destinationURL)
+                } catch {
+                    throw WiredServerError.binaryRollbackFailed(error.localizedDescription)
+                }
+            }
+
+            try? fileManager.removeItem(at: stagingURL)
+            throw error
+        }
+    }
+
+    private func bundledBinaryExpectedSHA256() throws -> String? {
+        guard let rawValue = Bundle.main.object(forInfoDictionaryKey: embeddedBinarySHAKey) as? String else {
+            return nil
+        }
+
+        let normalized = rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard isValidSHA256Hex(normalized) else {
+            throw WiredServerError.binaryIntegrityCheckFailed("invalid embedded SHA-256 metadata")
+        }
+
+        return normalized
+    }
+
+    private func normalizedSHA256ForFile(at path: String) throws -> String {
+        let result = runProcess("/usr/bin/shasum", ["-a", "256", path])
+        guard result.status == 0 else {
+            let message = result.errorOutput.isEmpty ? result.output : result.errorOutput
+            throw WiredServerError.binaryHashFailed(message.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
+        guard let hashToken = result.output.split(separator: " ", omittingEmptySubsequences: true).first else {
+            throw WiredServerError.binaryHashFailed("missing SHA-256 output")
+        }
+
+        let normalized = String(hashToken).trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard isValidSHA256Hex(normalized) else {
+            throw WiredServerError.binaryHashFailed("invalid SHA-256 output format")
+        }
+
+        return normalized
+    }
+
+    private func isValidSHA256Hex(_ value: String) -> Bool {
+        value.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil
     }
 
     private func withConfig(_ body: (Config) -> Void) {
@@ -1240,6 +1358,9 @@ enum WiredServerError: LocalizedError, Equatable {
     case missingBinary
     case launchAgentWriteFailed
     case launchAgentCommandFailed(String)
+    case binaryHashFailed(String)
+    case binaryIntegrityCheckFailed(String)
+    case binaryRollbackFailed(String)
     case databaseOpenFailed
     case databaseNotInitialized
     case databaseStatementFailed(String)
@@ -1253,6 +1374,12 @@ enum WiredServerError: LocalizedError, Equatable {
             return L("error.launch_agent_write_failed")
         case .launchAgentCommandFailed(let message):
             return "\(L("error.launchctl_failed")): \(message)"
+        case .binaryHashFailed(let message):
+            return "Unable to compute wired3 binary hash: \(message)"
+        case .binaryIntegrityCheckFailed(let message):
+            return "wired3 binary integrity check failed: \(message)"
+        case .binaryRollbackFailed(let message):
+            return "wired3 binary rollback failed: \(message)"
         case .databaseOpenFailed:
             return L("error.database_open_failed")
         case .databaseNotInitialized:

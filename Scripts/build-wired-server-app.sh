@@ -120,6 +120,12 @@ lipo -create "${EXEC_SLICES[@]}" -output "$BINARY_PATH"
 lipo -create "${SERVER_SLICES[@]}" -output "$SERVER_BINARY_PATH"
 chmod 755 "$BINARY_PATH" "$SERVER_BINARY_PATH"
 
+SERVER_BINARY_SHA256="$(/usr/bin/shasum -a 256 "$SERVER_BINARY_PATH" | awk '{print $1}')"
+if [[ -z "$SERVER_BINARY_SHA256" ]]; then
+  echo "Failed to compute SHA-256 for $SERVER_BINARY_PATH"
+  exit 1
+fi
+
 echo "==> Universal binary info"
 lipo -info "$BINARY_PATH"
 lipo -info "$SERVER_BINARY_PATH"
@@ -180,6 +186,8 @@ cat > "$INFO_PLIST" <<PLIST
   <string>$GIT_COMMIT</string>
   <key>WiredBuildMetadata</key>
   <string>$MARKETING_VERSION ($BUILD_NUMBER+$GIT_COMMIT)</string>
+  <key>Wired3EmbeddedSHA256</key>
+  <string>$SERVER_BINARY_SHA256</string>
   <key>LSMinimumSystemVersion</key>
   <string>14.0</string>
   <key>NSHighResolutionCapable</key>
