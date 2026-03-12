@@ -2275,7 +2275,7 @@ public class ServerController: ServerDelegate {
             account.comment = comment
         }
         if let password = message.string(forField: "wired.account.password"), !password.isEmpty {
-            account.password = password
+            account.password = normalizedPasswordForStorage(password)
         }
         if let group = message.string(forField: "wired.account.group") {
             account.group = group
@@ -2478,6 +2478,11 @@ public class ServerController: ServerDelegate {
         }
 
         return reply
+    }
+
+    private func normalizedPasswordForStorage(_ password: String) -> String {
+        let isHexSHA256 = password.range(of: "^[0-9a-fA-F]{64}$", options: .regularExpression) != nil
+        return isHexSHA256 ? password.lowercased() : password.sha256()
     }
 
     private func accountPrivilegesMessage(for account: User) -> P7Message {
