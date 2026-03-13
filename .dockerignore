@@ -1,0 +1,10 @@
+.git
+.github
+.build
+.swiftpm
+dist
+run
+WiredSwift.xcodeproj
+WiredChatBot-README.md
+.DS_Store
+**/.DS_Store

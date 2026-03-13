@@ -1,0 +1,121 @@
+# syntax=docker/dockerfile:1.4
+FROM swift:6.0-jammy AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG WIRED_MARKETING_VERSION=3.0
+ARG WIRED_BUILD_NUMBER=0
+ARG WIRED_GIT_COMMIT=unknown
+SHELL ["/bin/bash", "-lc"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    liblz4-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    zlib1g-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Cache-friendly copy of Swift manifests first.
+COPY Package.swift Package.resolved ./
+COPY Vendor ./Vendor
+
+# Copy full sources once dependency resolution is cached.
+COPY . .
+
+RUN cat > /src/Sources/wired3/Version.swift <<SWIFT
+import Foundation
+
+enum WiredServerVersion {
+    static let marketingVersion = "${WIRED_MARKETING_VERSION}"
+    static let buildNumber = "${WIRED_BUILD_NUMBER}"
+    static let commit = "${WIRED_GIT_COMMIT}"
+    static let number = marketingVersion
+    static let display = "wired3 \\(marketingVersion) (\\(buildNumber)+\\(commit))"
+}
+SWIFT
+
+RUN swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
+
+RUN set -euo pipefail; \
+  BIN_DIR="$(swift build -c release --show-bin-path)"; \
+  BIN_PATH="$BIN_DIR/wired3"; \
+  mkdir -p /out/usr/local/bin /out/usr/lib/wired3 /out/usr/share/wired3; \
+  cp "$BIN_PATH" /out/usr/lib/wired3/wired3-bin; \
+  chmod 0755 /out/usr/lib/wired3/wired3-bin; \
+  mapfile -t SWIFT_DEPS < <(ldd "$BIN_PATH" | awk '/=> \// {print $3}' | grep '/swift/' | sort -u); \
+  if [[ "${#SWIFT_DEPS[@]}" -eq 0 ]]; then \
+    echo "No Swift runtime dependencies found in ldd output"; \
+    ldd "$BIN_PATH" || true; \
+    exit 1; \
+  fi; \
+  cp "${SWIFT_DEPS[@]}" /out/usr/lib/wired3/; \
+  cp /src/Sources/wired3/wired.xml /out/usr/share/wired3/wired.xml; \
+  cp /src/Sources/wired3/banner.png /out/usr/share/wired3/banner.png; \
+  cp /src/Sources/wired3/config.ini /out/usr/share/wired3/config.ini.example
+
+FROM ubuntu:22.04 AS runtime
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libcurl4 \
+    liblz4-1 \
+    libsqlite3-0 \
+    libssl3 \
+    libxml2 \
+    tzdata \
+    zlib1g \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --system wired3 \
+  && useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin wired3 \
+  && install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3
+
+COPY --from=builder /out/usr/lib/wired3 /usr/lib/wired3
+COPY --from=builder /out/usr/share/wired3 /usr/share/wired3
+
+RUN cat > /usr/local/bin/wired3 <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+export LD_LIBRARY_PATH="/usr/lib/wired3:${LD_LIBRARY_PATH:-}"
+exec /usr/lib/wired3/wired3-bin "$@"
+EOF
+
+RUN cat > /usr/local/bin/docker-entrypoint.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+install -d -m 0750 /var/lib/wired3
+install -d -m 0755 /var/lib/wired3/etc
+install -d -m 0755 /var/lib/wired3/files
+
+if [[ ! -f /var/lib/wired3/wired.xml ]]; then
+  install -m 0640 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml
+fi
+if [[ ! -f /var/lib/wired3/banner.png ]]; then
+  install -m 0644 /usr/share/wired3/banner.png /var/lib/wired3/banner.png
+fi
+if [[ ! -f /var/lib/wired3/etc/config.ini ]]; then
+  install -m 0640 /usr/share/wired3/config.ini.example /var/lib/wired3/etc/config.ini
+fi
+
+exec /usr/local/bin/wired3 \
+  --working-directory /var/lib/wired3 \
+  --config /var/lib/wired3/etc/config.ini \
+  --db /var/lib/wired3/wired3.db \
+  --root /var/lib/wired3/files \
+  --spec /var/lib/wired3/wired.xml \
+  "$@"
+EOF
+
+RUN chmod 0755 /usr/local/bin/wired3 /usr/local/bin/docker-entrypoint.sh
+
+ENV LD_LIBRARY_PATH=/usr/lib/wired3
+EXPOSE 4871
+VOLUME ["/var/lib/wired3"]
+
+USER wired3
+WORKDIR /var/lib/wired3
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
