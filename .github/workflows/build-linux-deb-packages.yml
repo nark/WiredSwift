@@ -273,7 +273,7 @@ jobs:
               --define "_topdir $RPMBUILD_DIR" \
               --define "dist %{nil}"
             cp "$RPMBUILD_DIR/RPMS/$RPM_ARCH/"*.rpm "$OUT_RPM"
-            file "$OUT_RPM" | grep -q "x86-64"
+            file "$OUT_RPM" | grep -Eq "x86_64|x86-64"
           fi
 
       - name: Upload arch artifact
