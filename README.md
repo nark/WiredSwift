@@ -107,7 +107,7 @@ Build:
 ```bash
 git clone https://github.com/nark/WiredSwift.git
 cd WiredSwift
-swift build -c release --product wired3
+swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
 ```
 
 Run binary:
@@ -237,7 +237,7 @@ Use the right one for your goal:
 
 ```bash
 git checkout v3.0+4
-swift build -c release --product wired3
+swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
 ```
 
 ### Core Concepts
@@ -391,6 +391,7 @@ swift build -v
 As of March 6, 2026:
 
 - `swift build -c release --product wired3` succeeds locally
+- Linux CI build command: `swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE`
 - Some tests still target an older `Connection.connect` API shape and currently fail to compile
 
 If you submit a PR touching networking APIs, include test updates when signatures change.
