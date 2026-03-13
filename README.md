@@ -87,7 +87,72 @@ wired3 --version
 wired3 --help
 ```
 
-### Option C: Linux from source
+### Option C: Linux with `.rpm` package
+
+Requirements:
+
+- RPM-based distro (Fedora, RHEL, Rocky, Alma, etc.)
+- Matching architecture (`x86_64` or `aarch64`)
+
+Install:
+
+```bash
+sudo dnf install ./wired3-<version>-<release>.<arch>.rpm
+```
+
+If your distro does not use `dnf`:
+
+```bash
+sudo rpm -Uvh wired3-<version>-<release>.<arch>.rpm
+```
+
+Installed artifacts:
+
+- Binary: `/usr/local/bin/wired3`
+- Service unit: `/usr/lib/systemd/system/wired3.service`
+
+Verify:
+
+```bash
+wired3 --version
+wired3 --help
+```
+
+### Option D: Docker
+
+You can run `wired3` in a container using the published image.
+
+Pull:
+
+```bash
+docker pull ghcr.io/nark/wired3:<tag>
+```
+
+Run:
+
+```bash
+docker run -d \
+  --name wired3 \
+  -p 4871:4871 \
+  -v wired3-data:/var/lib/wired3 \
+  ghcr.io/nark/wired3:<tag>
+```
+
+Notes:
+
+- Runtime data is stored under `/var/lib/wired3` (persist with a volume).
+- The container bootstraps `wired.xml`, `banner.png`, and `config.ini` automatically on first run.
+- To run a specific architecture locally, add `--platform linux/amd64` or `--platform linux/arm64`.
+- Release automation publishes multiple tags (version/build, release tag, commit, and optionally `latest` on stable).
+
+Verify:
+
+```bash
+docker logs -f wired3
+docker exec wired3 wired3 --version
+```
+
+### Option E: Linux from source
 
 Install dependencies (Debian/Ubuntu):
 
@@ -239,6 +304,45 @@ Use the right one for your goal:
 git checkout v3.0+4
 swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
 ```
+
+### Build Docker Image (Developer)
+
+Local image build (single arch):
+
+```bash
+cd WiredSwift
+docker buildx build \
+  --platform linux/amd64 \
+  -f Dockerfile \
+  --target runtime \
+  --build-arg WIRED_MARKETING_VERSION=3.0 \
+  --build-arg WIRED_BUILD_NUMBER=12 \
+  --build-arg WIRED_GIT_COMMIT=$(git rev-parse --short HEAD) \
+  --load \
+  -t wired3:dev .
+```
+
+Quick check:
+
+```bash
+docker run --rm --platform linux/amd64 wired3:dev --version
+```
+
+Multi-arch publish (example):
+
+```bash
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -f Dockerfile \
+  --target runtime \
+  --build-arg WIRED_MARKETING_VERSION=3.0 \
+  --build-arg WIRED_BUILD_NUMBER=12 \
+  --build-arg WIRED_GIT_COMMIT=$(git rev-parse --short HEAD) \
+  --push \
+  -t ghcr.io/nark/wired3:3.0-12 .
+```
+
+If you use the release automation, `Scripts/distribute.sh --prepare --phase docker` and `--upload --phase docker` generate/publish Docker tags and metadata automatically.
 
 ### Core Concepts
 
