@@ -357,6 +357,8 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func saveNetworkSettings() {
+        serverPort = max(1, min(serverPort, 65_535))
+
         withConfig { config in
             config["server", "port"] = String(serverPort)
         }

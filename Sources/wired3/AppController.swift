@@ -94,10 +94,27 @@ public class AppController {
         self.bootstrapDefaultContentIfNeeded()
         self.indexController.indexFiles()
         
-        let port = self.config["server", "port"] as? Int
-        
-        self.serverController = ServerController(port: port ?? DEFAULT_PORT, spec: self.spec)
+        let port = resolvedServerPort()
+
+        self.serverController = ServerController(port: port, spec: self.spec)
         self.serverController.listen()
+    }
+
+    private func resolvedServerPort() -> Int {
+        if let value = self.config["server", "port"] as? Int, (1...65535).contains(value) {
+            return value
+        }
+
+        if let raw = self.config["server", "port"] as? String {
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let parsed = Int(trimmed), (1...65535).contains(parsed) {
+                return parsed
+            }
+            Logger.warning("Invalid server.port value '\(raw)'. Falling back to default port \(DEFAULT_PORT).")
+            return DEFAULT_PORT
+        }
+
+        return DEFAULT_PORT
     }
 
     private func bootstrapDefaultContentIfNeeded() {

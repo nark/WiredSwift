@@ -12,9 +12,11 @@ private enum UIConstants {
 private enum Formatters {
     static let integer: NumberFormatter = {
         let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
+        formatter.numberStyle = .none
         formatter.allowsFloats = false
-        formatter.minimum = 0
+        formatter.usesGroupingSeparator = false
+        formatter.minimum = 1
+        formatter.maximum = 65_535
         return formatter
     }()
 }
