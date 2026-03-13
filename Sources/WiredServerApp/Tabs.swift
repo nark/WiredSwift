@@ -297,8 +297,6 @@ struct FilesTabView: View {
                         }
 
                         Button(L("files.index.now")) {
-                            model.saveFilesSettings()
-                            
                             Task { await model.reindexNow() }
                         }
                     }

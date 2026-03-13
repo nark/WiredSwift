@@ -68,6 +68,13 @@ public class AppController {
     public func start() {
         self.databaseController = DatabaseController(baseURL: self.databaseURL, spec: self.spec)
 
+        // Open the database and run pending migrations FIRST so that dbQueue
+        // is valid before any controller that queries it (e.g. IndexController
+        // calls detectFTS5() in its init via dbQueue.read).
+        if !self.databaseController.initDatabase() {
+            Logger.error("Error while initializing database")
+        }
+
         self.clientsController = ClientsController()
         self.filesController = FilesController(rootPath: self.rootPath)
         self.usersController = UsersController(databaseController: self.databaseController)
@@ -75,12 +82,8 @@ public class AppController {
         self.boardsController = BoardsController(databasePath: self.databaseURL.path)
         self.indexController = IndexController(databaseController: self.databaseController,
                                                filesController: self.filesController)
-        
+
         self.transfersController = TransfersController(filesController: filesController)
-        
-        if !self.databaseController.initDatabase() {
-            Logger.error("Error while initializing database")
-        }
 
         // Seed initial data (only on first run — no-op if data already exists)
         self.usersController.seedDefaultDataIfNeeded()
@@ -92,8 +95,16 @@ public class AppController {
 
         self.chatsController.loadChats()
         self.bootstrapDefaultContentIfNeeded()
+
+        if !self.indexController.hasFTS5 {
+            Logger.warning("SQLite FTS5 extension is not available on this system.")
+            Logger.warning("File search will work but will use slower LIKE-based queries.")
+            Logger.warning("Install a SQLite build with SQLITE_ENABLE_FTS5 for full-text search.")
+        }
+
         self.indexController.indexFiles()
-        
+        self.indexController.configure(reindexInterval: resolvedReindexInterval())
+
         let port = resolvedServerPort()
 
         self.serverController = ServerController(port: port, spec: self.spec)
@@ -133,7 +144,36 @@ public class AppController {
             }
         }
 
+        // Re-arm the periodic reindex timer if the interval changed.
+        self.indexController.configure(reindexInterval: resolvedReindexInterval())
+
         self.serverController.reloadConfig()
+    }
+
+    /// Read the reindex interval from config.
+    /// Reads `[settings] reindex_interval` (the key written by WiredServerApp)
+    /// with a fallback to `[index] interval` for backward compatibility.
+    /// Returns the default (3600 s) if neither key is present or parseable.
+    /// Minimum enforced value: 60 seconds; 0 means disabled.
+    private func resolvedReindexInterval() -> TimeInterval {
+        let defaultInterval: TimeInterval = 3600
+
+        // Primary key — written by WiredServerApp FilesTabView.
+        let primaryKeys: [(String, String)] = [("settings", "reindex_interval"), ("index", "interval")]
+
+        for (section, key) in primaryKeys {
+            if let value = self.config[section, key] as? Int {
+                return value == 0 ? 0 : max(60, TimeInterval(value))
+            }
+            if let raw = self.config[section, key] as? String {
+                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let parsed = Int(trimmed) {
+                    return parsed == 0 ? 0 : max(60, TimeInterval(parsed))
+                }
+                Logger.warning("Invalid \(section).\(key) value '\(raw)'. Trying next key.")
+            }
+        }
+        return defaultInterval
     }
 
     private func bootstrapDefaultContentIfNeeded() {

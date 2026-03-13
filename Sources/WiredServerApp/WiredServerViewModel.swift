@@ -408,10 +408,16 @@ final class WiredServerViewModel: ObservableObject {
             return
         }
 
-        stopServer()
-        try? await Task.sleep(nanoseconds: 700_000_000)
-        await startServer()
-        statusMessage = L("status.server_restarted_reindex")
+        if sendIndexSignal() {
+            statusMessage = L("status.reindex_triggered")
+        } else {
+            // PID file not found or signal failed — fall back to a server restart
+            // so the reindex always happens even in degraded environments.
+            stopServer()
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            await startServer()
+            statusMessage = L("status.server_restarted_reindex")
+        }
     }
 
     func saveAdvancedSettings() {
@@ -967,6 +973,19 @@ final class WiredServerViewModel: ObservableObject {
 
     @discardableResult
     private func sendReloadSignal() -> Bool {
+        sendSignal(SIGHUP)
+    }
+
+    /// Send SIGUSR1 to the running wired3 process to trigger a full file reindex
+    /// (cancels any rebuild in progress and starts a fresh one immediately).
+    @discardableResult
+    private func sendIndexSignal() -> Bool {
+        sendSignal(SIGUSR1)
+    }
+
+    /// Read the PID file and send `signal` to the running wired3 process.
+    @discardableResult
+    private func sendSignal(_ signal: Int32) -> Bool {
         let pidPath = URL(fileURLWithPath: workingDirectory)
             .appendingPathComponent("wired3.pid").path
         guard let pidString = try? String(contentsOfFile: pidPath, encoding: .utf8) else {
@@ -974,7 +993,7 @@ final class WiredServerViewModel: ObservableObject {
         }
         let trimmed = pidString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let pid = pid_t(trimmed) else { return false }
-        return kill(pid, SIGHUP) == 0
+        return kill(pid, signal) == 0
     }
 
     private func withConfig(_ body: (Config) -> Void) {

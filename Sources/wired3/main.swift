@@ -27,6 +27,9 @@ struct Wired: ParsableCommand {
     @Flag(name: [.customLong("reload"), .customShort("r")], help: "Send reload signal to running wired3 instance")
     var reload = false
 
+    @Flag(name: [.customLong("index"), .customShort("i")], help: "Trigger a full file index (cancels any rebuild in progress) on a running wired3 instance")
+    var index = false
+
     @Flag(help: "Enable debug mode")
     var debugMode = false
 
@@ -61,6 +64,11 @@ struct Wired: ParsableCommand {
             return
         }
 
+        if index {
+            handleIndex(pidPath: resolved.pidPath)
+            return
+        }
+
         ensureDefaultConfigExists(at: resolved.configPath)
         bootstrapRuntimeFiles(using: resolved)
         configureLogger(logFilePath: resolved.logPath)
@@ -84,9 +92,20 @@ struct Wired: ParsableCommand {
         }
         sighupSource.resume()
 
+        // Install SIGUSR1 handler for on-demand file reindex.
+        // forceReindex() cancels any running traversal and starts a fresh one.
+        signal(SIGUSR1, SIG_IGN)
+        let sigusr1Source = DispatchSource.makeSignalSource(signal: SIGUSR1, queue: DispatchQueue.global())
+        sigusr1Source.setEventHandler {
+            Logger.info("SIGUSR1 received, triggering full file reindex...")
+            App.indexController.forceReindex()
+        }
+        sigusr1Source.resume()
+
         App.start()
 
         sighupSource.cancel()
+        sigusr1Source.cancel()
         try? FileManager.default.removeItem(atPath: resolved.pidPath)
     }
 
@@ -97,6 +116,31 @@ struct Wired: ParsableCommand {
         } catch {
             Logger.warning("Could not write PID file at \(path): \(error.localizedDescription)")
         }
+    }
+
+    private func handleIndex(pidPath: String) {
+        let candidates = pidFileCandidates(primary: pidPath)
+        guard let foundPath = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
+            fputs("wired3: cannot find PID file. Tried:\n", stderr)
+            candidates.forEach { fputs("  \($0)\n", stderr) }
+            fputs("Is wired3 running? You can also use: wired3 -i -w <working-directory>\n", stderr)
+            Foundation.exit(1)
+        }
+        guard let pidString = try? String(contentsOfFile: foundPath, encoding: .utf8) else {
+            fputs("wired3: cannot read PID file at \(foundPath)\n", stderr)
+            Foundation.exit(1)
+        }
+        let trimmed = pidString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let pid = pid_t(trimmed) else {
+            fputs("wired3: invalid PID '\(trimmed)' in \(foundPath)\n", stderr)
+            Foundation.exit(1)
+        }
+        guard kill(pid, SIGUSR1) == 0 else {
+            let errStr = String(cString: strerror(errno))
+            fputs("wired3: failed to send index signal to process \(pid): \(errStr)\n", stderr)
+            Foundation.exit(1)
+        }
+        print("wired3: index signal sent to process \(pid)")
     }
 
     private func handleReload(pidPath: String) {
@@ -245,6 +289,7 @@ port = 4871
 
 [settings]
 trackers = ["wired.read-write.fr"]
+reindex_interval = 3600
 
 [advanced]
 compression = ALL
@@ -263,6 +308,10 @@ checksum = SECURE_ONLY
     private func configureLogger(logFilePath: String) {
         Logger.setDestinations([.Stdout, .File], filePath: "wired.log")
         _ = Logger.setFileDestination(logFilePath)
+        // Rotate at most once per day (not every minute, which is the default).
+        Logger.setTimeLimit(.Day)
+        // Allow up to 50 MB before size-based rotation.
+        Logger.setLimitLogSize(50 * 1024 * 1024)
     }
 
     private func configuredFilesRoot(fromConfigAt configPath: String) -> String? {

@@ -71,6 +71,7 @@
 "status.files_settings_saved" = "Files settings saved";
 "status.files_settings_saved_reloaded" = "Files settings saved and applied";
 "status.reindex_on_next_start" = "Re-indexing will run on next start";
+"status.reindex_triggered" = "Re-index triggered";
 "status.server_restarted_reindex" = "Server restarted, re-index triggered";
 "status.advanced_saved" = "Advanced settings saved";
 "status.advanced_saved_reloaded" = "Advanced settings saved and applied";

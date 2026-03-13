@@ -71,6 +71,7 @@
 "status.files_settings_saved" = "Configuration fichiers enregistree";
 "status.files_settings_saved_reloaded" = "Configuration fichiers enregistree et appliquee";
 "status.reindex_on_next_start" = "La reindexation sera faite au prochain demarrage";
+"status.reindex_triggered" = "Reindexation lancee";
 "status.server_restarted_reindex" = "Serveur redemarre, reindexation relancee";
 "status.advanced_saved" = "Parametres avances enregistres";
 "status.advanced_saved_reloaded" = "Parametres avances enregistres et appliques";

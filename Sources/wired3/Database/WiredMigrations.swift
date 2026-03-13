@@ -11,8 +11,69 @@ enum WiredMigrations {
         migrator.registerMigration("v1_initial_schema") { db in
             try WiredMigrations.v1(db)
         }
-        // Futures migrations :
-        // migrator.registerMigration("v2_add_column_X") { db in ... }
+        migrator.registerMigration("v2_fts5_file_search") { db in
+            try WiredMigrations.v2(db)
+        }
+    }
+
+    static func v2(_ db: Database) throws {
+        // Add generation_id to "index" table for race-free full rebuilds.
+        // Each rebuild stamps a new generation; old-generation rows are deleted
+        // only after all new rows are inserted, so readers always see valid data.
+        try db.alter(table: "index") { t in
+            t.add(column: "generation_id", .integer).notNull().defaults(to: 0)
+        }
+
+        // FTS5 virtual table backed by the "index" content table.
+        // Tokenizer: unicode61 with diacritic removal for accent-insensitive search.
+        // Will fail gracefully on SQLite builds without FTS5 (e.g. some Linux distros).
+        do {
+            try db.execute(sql: """
+                CREATE VIRTUAL TABLE IF NOT EXISTS file_search
+                USING fts5(
+                    name,
+                    virtual_path,
+                    content='index',
+                    content_rowid='id',
+                    tokenize='unicode61 remove_diacritics 2'
+                )
+            """)
+
+            // Populate FTS5 from existing rows.
+            try db.execute(sql: """
+                INSERT INTO file_search(rowid, name, virtual_path)
+                SELECT id, name, virtual_path FROM "index"
+            """)
+
+            // Synchronisation triggers: keep FTS5 in sync with the "index" table.
+            try db.execute(sql: """
+                CREATE TRIGGER IF NOT EXISTS index_ai
+                AFTER INSERT ON "index" BEGIN
+                    INSERT INTO file_search(rowid, name, virtual_path)
+                    VALUES (new.id, new.name, new.virtual_path);
+                END
+            """)
+            try db.execute(sql: """
+                CREATE TRIGGER IF NOT EXISTS index_ad
+                AFTER DELETE ON "index" BEGIN
+                    INSERT INTO file_search(file_search, rowid, name, virtual_path)
+                    VALUES ('delete', old.id, old.name, old.virtual_path);
+                END
+            """)
+            try db.execute(sql: """
+                CREATE TRIGGER IF NOT EXISTS index_au
+                AFTER UPDATE ON "index" BEGIN
+                    INSERT INTO file_search(file_search, rowid, name, virtual_path)
+                    VALUES ('delete', old.id, old.name, old.virtual_path);
+                    INSERT INTO file_search(rowid, name, virtual_path)
+                    VALUES (new.id, new.name, new.virtual_path);
+                END
+            """)
+        } catch {
+            // FTS5 not compiled into this SQLite build.
+            // IndexController detects this at runtime and falls back to LIKE-based search.
+            print("[WiredMigrations] FTS5 unavailable — file search will use LIKE queries (\(error))")
+        }
     }
 
     // swiftlint:disable:next function_body_length
@@ -90,6 +151,14 @@ enum WiredMigrations {
             t.column("real_path", .text).notNull()
             t.column("alias", .boolean).notNull()
         }
+
+        // ── index (B-tree, real_path lookup) ────────────────────────────────
+        try db.create(
+            index: "index_real_path",
+            on: "index",
+            columns: ["real_path"],
+            ifNotExists: true
+        )
 
         // ── offline_messages ────────────────────────────────────────────────
         try db.create(table: "offline_messages", ifNotExists: true) { t in

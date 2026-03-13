@@ -675,6 +675,13 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.file.unsubscribe_directory" {
             App.filesController.unsubscribeDirectory(client: client, message: message)
         }
+        else if message.name == "wired.file.search" {
+            guard let query = message.string(forField: "wired.file.query") else {
+                self.replyError(client: client, error: "wired.error.invalid_message", message: message)
+                return
+            }
+            App.indexController.search(query: query, client: client, message: message)
+        }
         else if message.name == "wired.transfer.download_file" {
             self.receiveDownloadFile(client, message)
         }
