@@ -2682,9 +2682,9 @@ public class ServerController: ServerDelegate {
     private func serverInfoMessage() -> P7Message {
         let message = P7Message(withName: "wired.server_info", spec: self.spec)
         
-        message.addParameter(field: "wired.info.application.name", value: "Wired Server")
-        message.addParameter(field: "wired.info.application.version", value: "3.0")
-        message.addParameter(field: "wired.info.application.build", value: "alpha")
+        message.addParameter(field: "wired.info.application.name", value: "Wired Server 3")
+        message.addParameter(field: "wired.info.application.version", value: WiredServerVersion.marketingVersion)
+        message.addParameter(field: "wired.info.application.build", value: WiredServerVersion.buildNumber)
         
         #if os(iOS)
         message.addParameter(field: "wired.info.os.name", value: "iOS")
