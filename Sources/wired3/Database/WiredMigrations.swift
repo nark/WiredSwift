@@ -14,6 +14,9 @@ enum WiredMigrations {
         migrator.registerMigration("v2_fts5_file_search") { db in
             try WiredMigrations.v2(db)
         }
+        migrator.registerMigration("v3_add_search_files_privilege") { db in
+            try WiredMigrations.v3(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -74,6 +77,29 @@ enum WiredMigrations {
             // IndexController detects this at runtime and falls back to LIKE-based search.
             print("[WiredMigrations] FTS5 unavailable — file search will use LIKE queries (\(error))")
         }
+    }
+
+    static func v3(_ db: Database) throws {
+        // wired.account.file.search_files was defined in the spec but omitted from the
+        // wired.account.privileges collection, so it was never seeded or synced for any
+        // account. Backfill it now for every user and group, inheriting the value of
+        // wired.account.file.get_info (the neighbouring privilege).
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO user_privileges (name, value, user_id)
+            SELECT 'wired.account.file.search_files', COALESCE(ref.value, 0), u.id
+            FROM users u
+            LEFT JOIN user_privileges ref
+                ON ref.user_id = u.id AND ref.name = 'wired.account.file.get_info'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO group_privileges (name, value, group_id)
+            SELECT 'wired.account.file.search_files', COALESCE(ref.value, 0), g.id
+            FROM groups g
+            LEFT JOIN group_privileges ref
+                ON ref.group_id = g.id AND ref.name = 'wired.account.file.get_info'
+        """)
     }
 
     // swiftlint:disable:next function_body_length

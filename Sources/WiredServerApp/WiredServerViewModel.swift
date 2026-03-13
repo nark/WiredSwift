@@ -1023,8 +1023,42 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     private func copyBundledRuntimeAssetsIfNeeded() {
-        copyBundledFileIfMissing(named: "wired.xml", to: URL(fileURLWithPath: workingDirectory).appendingPathComponent("wired.xml").path)
+        syncBundledSpec(named: "wired.xml", to: URL(fileURLWithPath: workingDirectory).appendingPathComponent("wired.xml").path)
         copyBundledFileIfMissing(named: "banner.png", to: URL(fileURLWithPath: workingDirectory).appendingPathComponent("banner.png").path)
+    }
+
+    /// Syncs wired.xml from the app bundle to the working directory.
+    /// Unlike banner.png, the spec is not user-editable — it is a protocol definition
+    /// shipped with the binary. Always overwrite when the bundled version differs.
+    private func syncBundledSpec(named fileName: String, to destinationPath: String) {
+        let sourceCandidates = [
+            Bundle.main.path(forResource: fileName, ofType: nil),
+            Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/\(fileName)").path
+        ].compactMap { $0 }
+
+        guard let source = sourceCandidates.first(where: { fileManager.fileExists(atPath: $0) }) else {
+            return
+        }
+
+        let destinationDir = (destinationPath as NSString).deletingLastPathComponent
+        try? fileManager.createDirectory(atPath: destinationDir, withIntermediateDirectories: true)
+
+        if !fileManager.fileExists(atPath: destinationPath) {
+            try? fileManager.copyItem(atPath: source, toPath: destinationPath)
+            appendRuntimeLog("spec-update: bootstrapped \(fileName)")
+            return
+        }
+
+        guard
+            let bundledData = fileManager.contents(atPath: source),
+            let installedData = fileManager.contents(atPath: destinationPath)
+        else { return }
+
+        guard bundledData != installedData else { return }
+
+        try? fileManager.removeItem(atPath: destinationPath)
+        try? fileManager.copyItem(atPath: source, toPath: destinationPath)
+        appendRuntimeLog("spec-update: \(fileName) updated from bundle (content changed)")
     }
 
     private func copyBundledFileIfMissing(named fileName: String, to destinationPath: String) {

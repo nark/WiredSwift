@@ -1370,6 +1370,7 @@
             <p7:member field="wired.account.board.delete_all_threads_and_posts" />
             <p7:member field="wired.account.file.list_files" />
             <p7:member field="wired.account.file.get_info" />
+            <p7:member field="wired.account.file.search_files" />
             <p7:member field="wired.account.file.create_directories" />
             <p7:member field="wired.account.file.create_links" />
             <p7:member field="wired.account.file.move_files" />
