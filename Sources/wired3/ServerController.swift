@@ -212,96 +212,64 @@ public class ServerController: ServerDelegate {
     
     
     
+    private func configRawString(_ section: String, _ key: String) -> String? {
+        if let value = App.config[section, key] as? String { return value }
+        if let value = App.config[section, key] as? Int { return String(value) }
+        if let value = App.config[section, key] as? UInt32 { return String(value) }
+        return nil
+    }
+
+    private func configUInt32(_ section: String, _ key: String) -> UInt32? {
+        if let value = App.config[section, key] as? UInt32 { return value }
+        if let value = App.config[section, key] as? Int, value >= 0 { return UInt32(value) }
+        if let s = configRawString(section, key),
+           let value = UInt32(s.trimmingCharacters(in: .whitespacesAndNewlines)) { return value }
+        return nil
+    }
+
+    private func configBool(_ section: String, _ key: String) -> Bool? {
+        if let value = App.config[section, key] as? Bool { return value }
+        if let s = configRawString(section, key)?
+            .trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            if ["1", "true", "yes", "on"].contains(s) { return true }
+            if ["0", "false", "no", "off"].contains(s) { return false }
+        }
+        return nil
+    }
+
+    private func configStringList(_ section: String, _ key: String) -> [String]? {
+        if let value = App.config[section, key] as? [String] {
+            return value.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        }
+        if let value = configRawString(section, key)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !value.isEmpty {
+            if value.hasPrefix("["),
+               let data = value.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [Any] {
+                let parsed = json
+                    .compactMap { $0 as? String }
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+                if !parsed.isEmpty { return parsed }
+            }
+            return value
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .trimmingCharacters(in: CharacterSet(charactersIn: "[]\"")) }
+                .filter { !$0.isEmpty }
+        }
+        return nil
+    }
+
     public init(port: Int, spec: P7Spec) {
         self.port = port
         self.spec = spec
 
-        func configRawString(_ section: String, _ key: String) -> String? {
-            if let value = App.config[section, key] as? String {
-                return value
-            }
-            if let value = App.config[section, key] as? Int {
-                return String(value)
-            }
-            if let value = App.config[section, key] as? UInt32 {
-                return String(value)
-            }
-            return nil
-        }
-
-        func configString(_ section: String, _ key: String) -> String? {
-            configRawString(section, key)
-        }
-
-        func configUInt32(_ section: String, _ key: String) -> UInt32? {
-            if let value = App.config[section, key] as? UInt32 {
-                return value
-            }
-            if let value = App.config[section, key] as? Int, value >= 0 {
-                return UInt32(value)
-            }
-            if let string = configString(section, key),
-               let value = UInt32(string.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                return value
-            }
-            return nil
-        }
-
-        func configBool(_ section: String, _ key: String) -> Bool? {
-            if let value = App.config[section, key] as? Bool {
-                return value
-            }
-            if let string = configString(section, key)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased() {
-                if ["1", "true", "yes", "on"].contains(string) {
-                    return true
-                }
-                if ["0", "false", "no", "off"].contains(string) {
-                    return false
-                }
-            }
-            return nil
-        }
-
-        func configStringList(_ section: String, _ key: String) -> [String]? {
-            if let value = App.config[section, key] as? [String] {
-                return value
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty }
-            }
-            if let value = configString(section, key)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-               !value.isEmpty {
-                if value.hasPrefix("["),
-                   let data = value.data(using: .utf8),
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [Any] {
-                    let parsed = json
-                        .compactMap { $0 as? String }
-                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                        .filter { !$0.isEmpty }
-                    if !parsed.isEmpty {
-                        return parsed
-                    }
-                }
-
-                return value
-                    .split(separator: ",")
-                    .map { token in
-                        token
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                            .trimmingCharacters(in: CharacterSet(charactersIn: "[]\""))
-                    }
-                    .filter { !$0.isEmpty }
-            }
-            return nil
-        }
-        
-        if let string = configString("server", "name") {
+        if let string = configRawString("server", "name") {
             self.serverName = string
         }
         
-        if let string = configString("server", "description") {
+        if let string = configRawString("server", "description") {
             self.serverDescription = string
         }
         
@@ -388,6 +356,62 @@ public class ServerController: ServerDelegate {
     }
     
     
+    /// Reloads all hot-reloadable parameters from `App.config`.
+    /// The server listening port is intentionally excluded — it requires a full restart.
+    public func reloadConfig() {
+        var changes: [String] = []
+
+        func apply<T: Equatable>(_ label: String, current: inout T, new: T?) {
+            guard let new = new, new != current else { return }
+            Logger.info("  \(label): \(current) → \(new)")
+            changes.append(label)
+            current = new
+        }
+
+        apply("server.name",        current: &serverName,           new: configRawString("server", "name"))
+        apply("server.description", current: &serverDescription,    new: configRawString("server", "description"))
+        apply("transfers.downloads",    current: &downloads,        new: configUInt32("transfers", "downloads"))
+        apply("transfers.uploads",      current: &uploads,          new: configUInt32("transfers", "uploads"))
+        apply("transfers.downloadSpeed", current: &downloadSpeed,   new: configUInt32("transfers", "downloadSpeed"))
+        apply("transfers.uploadSpeed",   current: &uploadSpeed,     new: configUInt32("transfers", "uploadSpeed"))
+        apply("settings.register_with_trackers", current: &registerWithTrackers, new: configBool("settings", "register_with_trackers"))
+        apply("settings.trackers",      current: &trackers,         new: configStringList("settings", "trackers"))
+        apply("tracker.tracker",        current: &trackerEnabled,   new: configBool("tracker", "tracker"))
+        apply("tracker.categories",     current: &trackerCategories, new: configStringList("tracker", "categories"))
+
+        let compressionString = configRawString("advanced", "compression") ?? P7Socket.Compression.ALL.description
+        if let parsed = parseCompressionSetting(compressionString) {
+            apply("advanced.compression", current: &serverCompression, new: parsed)
+        } else {
+            Logger.warning("  advanced.compression: invalid value '\(compressionString)', keeping current.")
+        }
+
+        let cipherString = configRawString("advanced", "cipher") ?? P7Socket.CipherType.SECURE_ONLY.description
+        if let parsed = parseCipherSetting(cipherString) {
+            apply("advanced.cipher", current: &serverCipher, new: parsed)
+        } else {
+            Logger.warning("  advanced.cipher: invalid value '\(cipherString)', keeping current.")
+        }
+
+        let checksumString = configRawString("advanced", "checksum") ?? P7Socket.Checksum.SECURE_ONLY.description
+        if let parsed = parseChecksumSetting(checksumString) {
+            apply("advanced.checksum", current: &serverChecksum, new: parsed)
+        } else {
+            Logger.warning("  advanced.checksum: invalid value '\(checksumString)', keeping current.")
+        }
+
+        // Warn if port was changed — it cannot be applied without restarting.
+        if let newPort = configUInt32("server", "port"), Int(newPort) != self.port {
+            Logger.warning("  server.port: \(self.port) → \(newPort) (requires restart to take effect)")
+        }
+
+        if changes.isEmpty {
+            Logger.info("Configuration reloaded — no changes detected.")
+        } else {
+            Logger.info("Configuration reloaded — \(changes.count) value(s) updated.")
+        }
+    }
+
     public func addDelegate(_ delegate:ServerDelegate) {
         self.delegates.append(delegate)
     }

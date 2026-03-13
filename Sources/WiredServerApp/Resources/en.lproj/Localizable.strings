@@ -69,9 +69,11 @@
 "status.port_saved_restart_required" = "Port saved. Restart required.";
 "status.port_saved" = "Port saved";
 "status.files_settings_saved" = "Files settings saved";
+"status.files_settings_saved_reloaded" = "Files settings saved and applied";
 "status.reindex_on_next_start" = "Re-indexing will run on next start";
 "status.server_restarted_reindex" = "Server restarted, re-index triggered";
 "status.advanced_saved" = "Advanced settings saved";
+"status.advanced_saved_reloaded" = "Advanced settings saved and applied";
 "status.admin_password_updated" = "Admin password updated";
 "status.admin_user_created" = "Admin user created";
 "status.building_binary" = "Building wired3 binary...";

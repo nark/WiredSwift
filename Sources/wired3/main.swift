@@ -8,6 +8,11 @@
 import Foundation
 import ArgumentParser
 import WiredSwift
+#if canImport(Darwin)
+import Darwin
+#else
+import Glibc
+#endif
 
 public var App:AppController!
 
@@ -18,6 +23,9 @@ struct Wired: ParsableCommand {
 
     @Flag(name: [.customLong("version")], help: "Print version and exit")
     var showVersion = false
+
+    @Flag(name: [.customLong("reload"), .customShort("r")], help: "Send reload signal to running wired3 instance")
+    var reload = false
 
     @Flag(help: "Enable debug mode")
     var debugMode = false
@@ -48,6 +56,11 @@ struct Wired: ParsableCommand {
 
         let resolved = try resolvePaths()
 
+        if reload {
+            handleReload(pidPath: resolved.pidPath)
+            return
+        }
+
         ensureDefaultConfigExists(at: resolved.configPath)
         bootstrapRuntimeFiles(using: resolved)
         configureLogger(logFilePath: resolved.logPath)
@@ -59,8 +72,70 @@ struct Wired: ParsableCommand {
             configPath: resolved.configPath,
             workingDirectoryPath: resolved.workingDirectoryPath
         )
-        
+
+        writePID(to: resolved.pidPath)
+
+        // Install SIGHUP handler for live config reload.
+        signal(SIGHUP, SIG_IGN)
+        let sighupSource = DispatchSource.makeSignalSource(signal: SIGHUP, queue: DispatchQueue.global())
+        sighupSource.setEventHandler {
+            Logger.info("SIGHUP received, reloading configuration...")
+            App.reloadConfig()
+        }
+        sighupSource.resume()
+
         App.start()
+
+        sighupSource.cancel()
+        try? FileManager.default.removeItem(atPath: resolved.pidPath)
+    }
+
+    private func writePID(to path: String) {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        do {
+            try "\(pid)\n".write(toFile: path, atomically: true, encoding: .utf8)
+        } catch {
+            Logger.warning("Could not write PID file at \(path): \(error.localizedDescription)")
+        }
+    }
+
+    private func handleReload(pidPath: String) {
+        let candidates = pidFileCandidates(primary: pidPath)
+        guard let foundPath = candidates.first(where: { FileManager.default.fileExists(atPath: $0) }) else {
+            fputs("wired3: cannot find PID file. Tried:\n", stderr)
+            candidates.forEach { fputs("  \($0)\n", stderr) }
+            fputs("Is wired3 running? You can also use: wired3 -r -w <working-directory>\n", stderr)
+            Foundation.exit(1)
+        }
+        guard let pidString = try? String(contentsOfFile: foundPath, encoding: .utf8) else {
+            fputs("wired3: cannot read PID file at \(foundPath)\n", stderr)
+            Foundation.exit(1)
+        }
+        let trimmed = pidString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let pid = pid_t(trimmed) else {
+            fputs("wired3: invalid PID '\(trimmed)' in \(foundPath)\n", stderr)
+            Foundation.exit(1)
+        }
+        guard kill(pid, SIGHUP) == 0 else {
+            let errStr = String(cString: strerror(errno))
+            fputs("wired3: failed to send reload signal to process \(pid): \(errStr)\n", stderr)
+            Foundation.exit(1)
+        }
+        print("wired3: reload signal sent to process \(pid)")
+    }
+
+    private func pidFileCandidates(primary: String) -> [String] {
+        var candidates = [primary]
+        if let execPath = CommandLine.arguments.first {
+            let execDir = URL(fileURLWithPath: execPath).resolvingSymlinksInPath()
+                .deletingLastPathComponent()
+            // bin/wired3 layout → working dir is one level up
+            candidates.append(execDir.deletingLastPathComponent()
+                .appendingPathComponent("wired3.pid").path)
+            // wired3 directly in working dir
+            candidates.append(execDir.appendingPathComponent("wired3.pid").path)
+        }
+        return candidates
     }
 
     private func resolvePaths() throws -> ResolvedPaths {
@@ -132,7 +207,8 @@ struct Wired: ParsableCommand {
             filesRootPath: resolvedFilesRoot,
             specPath: resolvedSpec,
             logPath: resolvedLogPath,
-            shouldBootstrapSpec: (spec == nil && inferredSpec == nil)
+            shouldBootstrapSpec: (spec == nil && inferredSpec == nil),
+            pidPath: resolvedWorkingDirectory.stringByAppendingPathComponent(path: "wired3.pid")
         )
     }
 
@@ -348,6 +424,7 @@ private struct ResolvedPaths {
     let specPath: String
     let logPath: String
     let shouldBootstrapSpec: Bool
+    let pidPath: String
 }
 
 // ignore writing to closed socket

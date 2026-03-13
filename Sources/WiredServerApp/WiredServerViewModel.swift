@@ -395,7 +395,11 @@ final class WiredServerViewModel: ObservableObject {
                 launchAtLogin = isLaunchAtLoginEnabled()
             }
         }
-        statusMessage = L("status.files_settings_saved")
+        if isRunning && sendReloadSignal() {
+            statusMessage = L("status.files_settings_saved_reloaded")
+        } else {
+            statusMessage = L("status.files_settings_saved")
+        }
     }
 
     func reindexNow() async {
@@ -428,7 +432,11 @@ final class WiredServerViewModel: ObservableObject {
             config["advanced", "checksum"] = checksumMode
         }
 
-        statusMessage = L("status.advanced_saved")
+        if isRunning && sendReloadSignal() {
+            statusMessage = L("status.advanced_saved_reloaded")
+        } else {
+            statusMessage = L("status.advanced_saved")
+        }
     }
 
     func setAdminPassword() {
@@ -955,6 +963,18 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         appendLog(line)
+    }
+
+    @discardableResult
+    private func sendReloadSignal() -> Bool {
+        let pidPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired3.pid").path
+        guard let pidString = try? String(contentsOfFile: pidPath, encoding: .utf8) else {
+            return false
+        }
+        let trimmed = pidString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let pid = pid_t(trimmed) else { return false }
+        return kill(pid, SIGHUP) == 0
     }
 
     private func withConfig(_ body: (Config) -> Void) {

@@ -69,9 +69,11 @@
 "status.port_saved_restart_required" = "Port enregistre. Redemarrage requis.";
 "status.port_saved" = "Port enregistre";
 "status.files_settings_saved" = "Configuration fichiers enregistree";
+"status.files_settings_saved_reloaded" = "Configuration fichiers enregistree et appliquee";
 "status.reindex_on_next_start" = "La reindexation sera faite au prochain demarrage";
 "status.server_restarted_reindex" = "Serveur redemarre, reindexation relancee";
 "status.advanced_saved" = "Parametres avances enregistres";
+"status.advanced_saved_reloaded" = "Parametres avances enregistres et appliques";
 "status.admin_password_updated" = "Mot de passe admin mis a jour";
 "status.admin_user_created" = "Compte admin cree";
 "status.building_binary" = "Compilation du binaire wired3...";

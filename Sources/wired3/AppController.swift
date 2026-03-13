@@ -117,6 +117,25 @@ public class AppController {
         return DEFAULT_PORT
     }
 
+    public func reloadConfig() {
+        Logger.info("Reloading configuration from \(self.configPath)...")
+        guard self.config.load() else {
+            Logger.error("Failed to reload config from \(self.configPath)")
+            return
+        }
+
+        if let raw = self.config["server", "files"] as? String {
+            let newPath = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !newPath.isEmpty && newPath != self.rootPath {
+                Logger.info("  server.files: \(self.rootPath) → \(newPath)")
+                self.rootPath = newPath
+                self.filesController.rootPath = newPath
+            }
+        }
+
+        self.serverController.reloadConfig()
+    }
+
     private func bootstrapDefaultContentIfNeeded() {
         if self.boardsController.getBoardInfo(path: defaultWelcomeBoardPath) == nil {
             _ = self.boardsController.addBoard(
