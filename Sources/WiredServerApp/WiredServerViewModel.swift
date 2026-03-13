@@ -153,7 +153,7 @@ final class WiredServerViewModel: ObservableObject {
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
         do {
-            _ = try synchronizeInstalledBinaryIfNeeded()
+            _ = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
         } catch {
             publishError("\(L("error.install_failed")): \(error.localizedDescription)")
         }
@@ -567,7 +567,7 @@ final class WiredServerViewModel: ObservableObject {
 
     private func writeLaunchAgentPlist() throws {
         bootstrapRuntimeIfNeeded()
-        _ = try synchronizeInstalledBinaryIfNeeded()
+        _ = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
 
         let executableCandidates = [installedBinaryPath, binaryPath]
         guard let executable = executableCandidates.first(where: { fileManager.isExecutableFile(atPath: $0) }) else {
@@ -775,7 +775,7 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     @discardableResult
-    private func synchronizeInstalledBinaryIfNeeded() throws -> Bool {
+    private func synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: Bool = true) throws -> Bool {
         appendRuntimeLog("binary-update: synchronization check started")
         guard let bundledBinary = bundledServerBinaryPath() else {
             appendRuntimeLog("binary-update: no bundled wired3 found, skipping synchronization")
@@ -808,7 +808,12 @@ final class WiredServerViewModel: ObservableObject {
             }
             appendRuntimeLog("binary-update: hash mismatch detected (installed: \(installedSHA256))")
         } else {
-            appendRuntimeLog("binary-update: no installed binary found, provisioning from bundled binary")
+            appendRuntimeLog("binary-update: no installed binary found")
+            if !allowInstallIfMissing {
+                appendRuntimeLog("binary-update: auto-install disabled for this flow, skipping synchronization")
+                return false
+            }
+            appendRuntimeLog("binary-update: provisioning from bundled binary")
         }
 
         try installBinaryWithStagingRollback(from: bundledBinary, expectedSHA256: expectedSHA256)
