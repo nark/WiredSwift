@@ -2,6 +2,7 @@
 FROM swift:6.0-jammy AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG WIRED_XML_UPDATE_IF_DIFFERENT=1
 ARG WIRED_MARKETING_VERSION=3.0
 ARG WIRED_BUILD_NUMBER=0
 ARG WIRED_GIT_COMMIT=unknown
@@ -93,6 +94,8 @@ install -d -m 0755 /var/lib/wired3/files
 
 if [[ ! -f /var/lib/wired3/wired.xml ]]; then
   install -m 0640 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml
+elif [[ "${WIRED_XML_UPDATE_IF_DIFFERENT:-1}" =~ ^(1|true|TRUE|yes|YES)$ ]] && ! cmp -s /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml; then
+  install -m 0640 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml
 fi
 if [[ ! -f /var/lib/wired3/banner.png ]]; then
   install -m 0644 /usr/share/wired3/banner.png /var/lib/wired3/banner.png
@@ -113,6 +116,7 @@ EOF
 RUN chmod 0755 /usr/local/bin/wired3 /usr/local/bin/docker-entrypoint.sh
 
 ENV LD_LIBRARY_PATH=/usr/lib/wired3
+ENV WIRED_XML_UPDATE_IF_DIFFERENT=${WIRED_XML_UPDATE_IF_DIFFERENT}
 EXPOSE 4871
 VOLUME ["/var/lib/wired3"]
 

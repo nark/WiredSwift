@@ -43,6 +43,10 @@ on:
         description: Install systemd unit (1/0)
         required: true
         default: "1"
+      wired_xml_update_if_different:
+        description: "Update /var/lib/wired3/wired.xml when package copy differs (1/0)"
+        required: false
+        default: "1"
       debian_artifact_name:
         description: Final workflow artifact name
         required: false
@@ -200,7 +204,7 @@ jobs:
               'fi' \
               'install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3' \
               'install -d -m 0755 /etc/wired3' \
-              '[[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml' \
+              'if [[ ! -f /var/lib/wired3/wired.xml ]] || ([[ "${{ inputs.wired_xml_update_if_different }}" == "1" ]] && ! cmp -s /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml); then install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml; fi' \
               '[[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png' \
               '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
               'if command -v systemctl >/dev/null 2>&1; then' \
@@ -434,7 +438,7 @@ jobs:
               'fi' \
               'install -d -m 0750 -o wired3 -g wired3 /var/lib/wired3' \
               'install -d -m 0755 /etc/wired3' \
-              '[[ -f /var/lib/wired3/wired.xml ]] || install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml' \
+              'if [[ ! -f /var/lib/wired3/wired.xml ]] || ([[ "${{ inputs.wired_xml_update_if_different }}" == "1" ]] && ! cmp -s /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml); then install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml; fi' \
               '[[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png' \
               '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
               'if command -v systemctl >/dev/null 2>&1; then' \

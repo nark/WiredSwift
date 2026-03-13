@@ -27,7 +27,7 @@ test -f "$DEFAULT_SPEC_SOURCE"
 test -f "$DEFAULT_BANNER_SOURCE"
 test -f "$DEFAULT_CONFIG_SOURCE"
 
-if [[ ! -f /var/lib/wired3/wired.xml ]]; then
+if [[ ! -f /var/lib/wired3/wired.xml ]] || ! cmp -s "$DEFAULT_SPEC_SOURCE" /var/lib/wired3/wired.xml; then
   install -m 0640 -o wired3 -g wired3 "$DEFAULT_SPEC_SOURCE" /var/lib/wired3/wired.xml
 fi
 
