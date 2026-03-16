@@ -1909,8 +1909,8 @@ public class ServerController: ServerDelegate {
         // Normalize path (consistent with other file handlers)
         let normalizedPath = NSString(string: path).standardizingPath
 
-        // file privileges
-        if let privilege = FilePrivilege(path: App.filesController.real(path: normalizedPath)) {
+        // file privileges (use dropbox-aware lookup on normalized virtual path)
+        if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
             if !user.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
@@ -2067,7 +2067,7 @@ public class ServerController: ServerDelegate {
         }
 
         do {
-            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o777])
+            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o755])
         } catch {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return

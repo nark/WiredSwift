@@ -674,7 +674,7 @@ public class FilesController {
                                         privileges: FilePrivilege?) {
         var isDirectory: ObjCBool = false
         if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
-            try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o777])
+            try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o755])
         } else if !isDirectory.boolValue {
             return
         }
@@ -698,7 +698,7 @@ public class FilesController {
         }
 
         do {
-            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o777])
+            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o755])
         } catch {
             return false
         }
