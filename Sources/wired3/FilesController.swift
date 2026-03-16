@@ -365,6 +365,13 @@ public class FilesController {
             return
         }
 
+        // F_013: prevent deletion of root directory
+        let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedPath.isEmpty || trimmedPath == "/" {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
         // sanitize checks
         if !File.isValid(path: path) {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
