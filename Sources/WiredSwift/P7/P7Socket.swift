@@ -795,10 +795,7 @@ public class P7Socket: NSObject {
         
         var messageData = data
         let originalData = messageData
-        var lengthData = Data()
-        
-        lengthData.append(uint32: UInt32(messageData.count))
-                                        
+
         // deflate
         if self.compressionEnabled {
             messageData = try self.compress(messageData)
@@ -807,10 +804,11 @@ public class P7Socket: NSObject {
         // encryption
         if self.encryptionEnabled {
             messageData = try self.sslCipher.encrypt(data: messageData)
-
-            lengthData = Data()
-            lengthData.append(uint32: UInt32(messageData.count))
         }
+
+        // SECURITY (FINDING_P_008): compute length AFTER compression/encryption
+        var lengthData = Data()
+        lengthData.append(uint32: UInt32(messageData.count))
                 
         let wroteLength = self.write(Array(lengthData), maxLength: lengthData.count, timeout: timeout, enforceDeadline: true)
         guard wroteLength == lengthData.count else {
