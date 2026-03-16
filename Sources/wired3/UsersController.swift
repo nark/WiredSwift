@@ -16,10 +16,12 @@ import SQLite3
 
 public class UsersController: TableController, SocketPasswordDelegate {
     var lastUserID: UInt32 = 0
-    var lastUserIDLock: Lock = Lock()
+    var lastUserIDLock: NSLock = NSLock()
 
     // MARK: - Public
     public func nextUserID() -> UInt32 {
+        lastUserIDLock.lock()
+        defer { lastUserIDLock.unlock() }
         self.lastUserID += 1
         return self.lastUserID
     }
