@@ -286,7 +286,31 @@ public class P7Spec: NSObject, XMLParserDelegate {
     - Returns: A boolean set to `true` if compatible
     */
     public func isCompatibleWithProtocol(withName name:String, version: String) -> Bool {
-        // TODO: check compatibility
+        // Verify protocol name matches
+        guard let localName = self.protocolName, localName == name else {
+            Logger.error("Protocol name mismatch: local=\(self.protocolName ?? "nil") remote=\(name)")
+            return false
+        }
+
+        // Compare major version numbers for compatibility
+        guard let localVersion = self.protocolVersion else {
+            Logger.error("Local protocol version is nil")
+            return false
+        }
+
+        let remoteMajor = version.split(separator: ".").first.flatMap { Int($0) }
+        let localMajor = localVersion.split(separator: ".").first.flatMap { Int($0) }
+
+        guard let rMajor = remoteMajor, let lMajor = localMajor else {
+            Logger.error("Cannot parse version: local=\(localVersion) remote=\(version)")
+            return false
+        }
+
+        if rMajor != lMajor {
+            Logger.error("Incompatible major version: local=\(lMajor) remote=\(rMajor)")
+            return false
+        }
+
         return true
     }
     
