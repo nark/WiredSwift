@@ -281,7 +281,11 @@ public class P7Message: NSObject {
                                 data.append(uint64: self.coerceUInt64(value), bigEndian: true)
                                 
                             } else if specField.type == .double { // double (4)
-                                data.append(double: value as! Double, bigEndian: true)
+                                if let doubleValue = value as? Double {
+                                    data.append(double: doubleValue, bigEndian: true)
+                                } else {
+                                    Logger.error("WARNING: Expected Double for field '\(field)', skipping")
+                                }
                                 
                             } else if specField.type == .string { // string (x)
                                 if let str = value as? String {
@@ -557,7 +561,11 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData.double)
                         }
                         else if specField.type == .string {
-                            self.addParameter(field: specField.name, value: String(bytes: fieldData, encoding: .utf8))
+                            if let str = String(bytes: fieldData, encoding: .utf8) {
+                                self.addParameter(field: specField.name, value: str)
+                            } else {
+                                Logger.error("WARNING: Invalid UTF-8 in field '\(specField.name)' — field rejected")
+                            }
                         }
                         else if specField.type == .uuid {
                             self.addParameter(field: specField.name, value: NSUUID(uuidBytes: Array(fieldData)).uuidString)
