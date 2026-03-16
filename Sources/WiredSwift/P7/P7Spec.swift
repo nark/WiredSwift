@@ -426,7 +426,8 @@ public class P7Spec: NSObject, XMLParserDelegate {
             self.parser.delegate = self
             self.parser.parse()
             
-            Logger.debug("Loaded spec \(self.protocolName!) version \(self.protocolVersion!)")
+            // SECURITY (FINDING_P_011): nil-coalescing instead of force unwrap
+            Logger.debug("Loaded spec \(self.protocolName ?? "unknown") version \(self.protocolVersion ?? "unknown")")
             
         } catch let e {
             Logger.error("Cannot load spec at URL: \(e.localizedDescription)")
