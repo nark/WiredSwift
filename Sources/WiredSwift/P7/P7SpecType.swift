@@ -25,11 +25,12 @@ public enum P7SpecType : UInt32 {
     case list    = 13
     
     
-    public static func specType(forString: String) -> P7SpecType {
+    // SECURITY (FINDING_P_017): return nil for unknown type strings instead of silent .uint32 default
+    public static func specType(forString: String) -> P7SpecType? {
         switch forString {
         case "bool":
             return .bool
-        case "enum32":
+        case "enum", "enum32":
             return .enum32
         case "int32":
             return .int32
@@ -54,7 +55,8 @@ public enum P7SpecType : UInt32 {
         case "list":
             return .list
         default:
-            return .uint32
+            Logger.error("WARNING: Unknown P7 spec type '\(forString)' — field will have nil type")
+            return nil
         }
     }
     
