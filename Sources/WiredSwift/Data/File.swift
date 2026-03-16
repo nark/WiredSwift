@@ -271,8 +271,12 @@ public class FilePrivilege {
         }
         
         let components = string.split(separator: Character(File.wiredPermissionsFieldSeparator), omittingEmptySubsequences: false)
-                
-        self.owner  = String(components.first!)
+
+        guard components.count >= 3 else {
+            return nil
+        }
+
+        self.owner  = String(components[0])
         self.group  = String(components[1])
         self.mode   = File.FilePermissions(rawValue: UInt32(String(components[2])) ?? 0)
     }
