@@ -393,8 +393,12 @@ public class P7Spec: NSObject, XMLParserDelegate {
     private func loadFile(at url:URL) -> Bool {
         do {
             self.xml = try String(contentsOf: url, encoding: .utf8)
-            
-            self.parser = XMLParser(contentsOf: url)!
+
+            guard let xmlParser = XMLParser(contentsOf: url) else {
+                Logger.error("Cannot create XML parser for URL: \(url)")
+                return false
+            }
+            self.parser = xmlParser
             self.parser.delegate = self
             self.parser.parse()
             
