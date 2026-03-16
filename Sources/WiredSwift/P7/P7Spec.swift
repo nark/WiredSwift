@@ -250,7 +250,9 @@ public class P7Spec: NSObject, XMLParserDelegate {
         if let p = path {
             self.loadFile(path: p)
         } else {
-            if let p = Bundle(identifier: "fr.read-write.WiredSwift")!.path(forResource: "wired", ofType: "xml") {
+            // SECURITY (FINDING_P_010): safe unwrap — Bundle(identifier:) returns nil on Linux
+            if let bundle = Bundle(identifier: "fr.read-write.WiredSwift"),
+               let p = bundle.path(forResource: "wired", ofType: "xml") {
                 self.loadFile(path: p)
             }
         }
@@ -361,8 +363,9 @@ public class P7Spec: NSObject, XMLParserDelegate {
             }
         }
         else if elementName == "p7:member" {
-            if accountPrivilegesLock {
-                accountPrivileges?.append(attributeDict["field"]!)
+            // SECURITY (FINDING_P_015): guard against missing "field" attribute
+            if accountPrivilegesLock, let fieldName = attributeDict["field"] {
+                accountPrivileges?.append(fieldName)
             }
         }
         else if elementName == "p7:parameter" {
