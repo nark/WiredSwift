@@ -161,13 +161,22 @@ public class ServerController: ServerDelegate {
         if let intValue = UInt32(value), intValue > 0 {
             let parsed = P7Socket.CipherType(rawValue: intValue)
             let allowedMask = P7Socket.CipherType.ALL.rawValue
-            return (parsed.rawValue & ~allowedMask) == 0 ? parsed : nil
+            guard (parsed.rawValue & ~allowedMask) == 0 else { return nil }
+            // SECURITY (FINDING_A_015): reject NONE cipher to prevent plaintext credentials
+            let withoutNone = P7Socket.CipherType(rawValue: parsed.rawValue & ~P7Socket.CipherType.NONE.rawValue)
+            if withoutNone.rawValue == 0 {
+                Logger.warning("Cipher NONE rejected — credentials must be encrypted")
+                return nil
+            }
+            return withoutNone
         }
 
         let normalized = normalizedAdvancedToken(value)
         switch normalized {
+        // SECURITY (FINDING_A_015): reject NONE cipher to prevent plaintext credentials
         case "NONE":
-            return .NONE
+            Logger.warning("Cipher NONE rejected — credentials must be encrypted")
+            return nil
         case "ECDH_AES256_SHA256", "ECDHE_ECDSA_AES256_SHA256":
             return .ECDH_AES256_SHA256
         case "ECDH_AES128_GCM", "ECDHE_ECDSA_AES128_GCM":
