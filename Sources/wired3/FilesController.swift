@@ -30,6 +30,13 @@ public class FilesController {
     public func virtual(path:String) -> String {
         return "/" + path.deletingPrefix(self.rootPath)
     }
+
+    /// Returns true if the resolved path is safely within the root jail.
+    private func isWithinJail(_ resolvedPath: String) -> Bool {
+        let canonicalRoot = URL(fileURLWithPath: rootPath).resolvingSymlinksInPath().path
+        let suffixed = canonicalRoot.hasSuffix("/") ? canonicalRoot : canonicalRoot + "/"
+        return resolvedPath == canonicalRoot || resolvedPath.hasPrefix(suffixed)
+    }
     
     public func listDirectory(client:Client, message:P7Message) {
         var recursive = false
@@ -84,6 +91,11 @@ public class FilesController {
 
         let normalizedPath = NSString(string: path).standardizingPath
         let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
+
+        guard isWithinJail(realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
 
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) else {
@@ -169,7 +181,15 @@ public class FilesController {
         }
 
         let normalizedPath = NSString(string: path).standardizingPath
-        let realPath = self.real(path: normalizedPath)
+        // Resolve parent symlinks for jail check (target dir does not exist yet)
+        let rawRealPath = self.real(path: normalizedPath)
+        let parentResolved = URL(fileURLWithPath: rawRealPath).deletingLastPathComponent().resolvingSymlinksInPath().path
+        let realPath = parentResolved.stringByAppendingPathComponent(path: URL(fileURLWithPath: rawRealPath).lastPathComponent)
+
+        guard isWithinJail(parentResolved) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
             if !user.hasPermission(toWrite: privilege) {
@@ -275,6 +295,12 @@ public class FilesController {
 
         let normalizedPath = NSString(string: path).standardizingPath
         let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
+
+        guard isWithinJail(realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
         var isDirectory: ObjCBool = false
 
         if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) || !isDirectory.boolValue {
@@ -415,8 +441,13 @@ public class FilesController {
     
     
     private func delete(path:String, client:Client, message:P7Message) -> Bool {
-        let realPath = self.real(path: path)
+        let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
         let parentPath = path.stringByDeletingLastPathComponent
+
+        guard isWithinJail(realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
         let isDirectory = File.FileType.type(path: realPath) != .file
         
         do {
@@ -446,6 +477,11 @@ public class FilesController {
         let sourceParentPath = sourcePath.stringByDeletingLastPathComponent
         let destinationParentPath = destinationPath.stringByDeletingLastPathComponent
 
+        guard isWithinJail(sourceRealPath), isWithinJail(destinationRealPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
+
         do {
             try FileManager.default.moveItem(atPath: sourceRealPath, toPath: destinationRealPath)
         } catch {
@@ -466,7 +502,14 @@ public class FilesController {
     
     private func replyList(_ path:String, _ recursive:Bool, _ client:Client, _ message:P7Message) {
         DispatchQueue.global(qos: .default).async {
-            let realPath: String = (path == "/") ? self.rootPath : self.real(path: path)
+            let rawRealPath: String = (path == "/") ? self.rootPath : self.real(path: path)
+            let realPath = URL(fileURLWithPath: rawRealPath).resolvingSymlinksInPath().path
+
+            guard self.isWithinJail(realPath) else {
+                App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+                return
+            }
+
             var isDir: ObjCBool = false
 
             if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir) || !isDir.boolValue {
@@ -637,8 +680,16 @@ public class FilesController {
     }
     
     private func createPath(_ path: String, type: File.FileType, user: User, message: P7Message) -> Bool {
-        let realPath = self.real(path: path)
-        
+        // Resolve the parent directory's symlinks to check jail containment,
+        // since the target directory does not exist yet.
+        let rawRealPath = self.real(path: path)
+        let parentDir = URL(fileURLWithPath: rawRealPath).deletingLastPathComponent().resolvingSymlinksInPath().path
+        let realPath = parentDir.stringByAppendingPathComponent(path: URL(fileURLWithPath: rawRealPath).lastPathComponent)
+
+        guard isWithinJail(parentDir) else {
+            return false
+        }
+
         do {
             try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o777])
         } catch {
@@ -669,6 +720,12 @@ public class FilesController {
 
     private func setType(path: String, type: File.FileType, client: Client, message: P7Message) -> Bool {
         let canonicalPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+
+        guard isWithinJail(canonicalPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
+
         var isDirectory: ObjCBool = false
 
         if !FileManager.default.fileExists(atPath: canonicalPath, isDirectory: &isDirectory) || !isDirectory.boolValue {
