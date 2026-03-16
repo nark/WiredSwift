@@ -2198,7 +2198,7 @@ public class ServerController: ServerDelegate {
                 .split(separator: ",")
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty } ?? [])
-            reply.addParameter(field: "wired.account.password", value: listedUser.password ?? "")
+            // SECURITY: password hash intentionally omitted (FINDING_A_003)
             reply.addParameter(field: "wired.account.color", value: UInt32(listedUser.color ?? "") ?? 0)
 
             self.reply(client: client, reply: reply, message: message)
@@ -2483,7 +2483,7 @@ public class ServerController: ServerDelegate {
         reply.addParameter(field: "wired.account.name", value: account.username ?? "")
         reply.addParameter(field: "wired.account.full_name", value: account.fullName ?? "")
         reply.addParameter(field: "wired.account.comment", value: account.comment ?? "")
-        reply.addParameter(field: "wired.account.password", value: account.password ?? "")
+        // SECURITY: password hash intentionally omitted (FINDING_A_003)
         reply.addParameter(field: "wired.account.group", value: account.group ?? "")
         reply.addParameter(field: "wired.account.groups", value: account.groups?
             .split(separator: ",")
