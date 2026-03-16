@@ -45,6 +45,11 @@ public class P7Message: NSObject {
             self.id             = specMessage.attributes["id"] as? String
             self.name           = name
             self.spec           = spec
+        } else {
+            // SECURITY (FINDING_P_009): Log warning when message name not found in spec
+            Logger.error("WARNING: Message name '\(name)' not found in spec — message will have nil properties")
+            self.name = name
+            self.spec = spec
         }
     }
 
