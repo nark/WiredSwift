@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_006",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "Race condition in nextUserID generation",
+  "file": "Sources/wired3/UsersController.swift",
+  "line": 22,
+  "description": "The nextUserID() method increments lastUserID without synchronization. Although lastUserIDLock exists as a property (line 19), it is never used in the nextUserID() function. Multiple concurrent acceptThread() calls from ServerController.swift:2792 can call nextUserID() simultaneously, resulting in two clients receiving the same userID. This can lead to one client hijacking another's session in the connectedClients dictionary, or cause authentication state confusion.",
+  "vulnerable_code": "var lastUserID: UInt32 = 0\nvar lastUserIDLock: Lock = Lock()\n\npublic func nextUserID() -> UInt32 {\n    self.lastUserID += 1\n    return self.lastUserID\n}",
+  "recommendation": "Use the existing lastUserIDLock to protect the increment: return lastUserIDLock.exclusivelyWrite { lastUserID += 1; return lastUserID }. Alternatively, use OSAtomicIncrement32 or Swift's actor isolation.",
+  "status": "patched"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_A_009",
+  "attempt": 1,
+  "status": "needs_human_review",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "date": "2026-03-16",
+  "description": "Architectural change required: TOFU/certificate pinning requires persistent key storage on the client side, a new fingerprint verification protocol, and changes to both P7Socket key exchange and the client UI. Cannot be fixed with a minimal patch.",
+  "reason": "Implementing TOFU requires: (1) persistent storage for server key fingerprints, (2) client-side UI for fingerprint verification/trust decisions, (3) protocol-level changes to key exchange messages. This is a design-level change, not a code-level fix."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_A_012",
+  "attempt": 1,
+  "status": "needs_human_review",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "date": "2026-03-16",
+  "description": "Architectural change required: adding replay protection (sequence numbers, nonces, timestamps) requires changes to the P7 message framing protocol and both client/server state machines. GCM/ChaCha20-Poly1305 modes already provide per-message uniqueness, but the base AES-256-SHA256 mode does not.",
+  "reason": "Adding sequence numbers or nonce tracking requires protocol-level changes to the P7 binary format and synchronization on both client and server. This cannot be done with a minimal patch without breaking wire compatibility."
+}

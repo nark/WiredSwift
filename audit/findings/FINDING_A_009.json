@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_009",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "No TOFU (Trust On First Use) or certificate pinning for server identity",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 1214,
+  "description": "The ECDH key exchange in acceptKeyExchange and connectKeyExchange does not implement any form of server identity verification or certificate pinning. The client receives the server's ECDH public key and trusts it blindly without any verification against a stored identity. This makes the protocol vulnerable to man-in-the-middle attacks: an attacker can intercept the connection, present their own ECDH public key, and relay traffic between the real client and server while decrypting all messages. The ECDSA signature verification at line 1347 only proves the client knows the password, but the server's key itself is not authenticated.",
+  "vulnerable_code": "// In acceptKeyExchange - server generates a fresh ECDH keypair every time\nself.ecdh = ECDH()\n...\nguard let serverPublicKey = self.ecdh.publicKeyData() else { ... }\nmessage.addParameter(field: \"p7.encryption.public_key\", value: serverPublicKey)\n// No persistent identity, no certificate, no pinning",
+  "recommendation": "Implement TOFU: on first connection, the client should store the server's public key fingerprint and warn/reject on subsequent connections if the key changes. Alternatively, implement a proper certificate-based identity system where the server has a persistent signing key that clients can verify.",
+  "status": "needs_human_review"
+}

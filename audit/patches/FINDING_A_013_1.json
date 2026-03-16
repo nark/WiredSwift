@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_A_013",
+  "attempt": 1,
+  "status": "needs_human_review",
+  "file": "Sources/wired3/ServerController.swift",
+  "date": "2026-03-16",
+  "description": "Pass-the-hash mitigation requires the same salted-hash DB migration as FINDING_A_004. Since A_004 was marked needs_human_review (requires schema migration, client protocol changes, and backward compatibility handling), this finding inherits the same dependency.",
+  "reason": "Fix requires: (1) salted hash storage (same as A_004 DB migration), (2) challenge-response protocol for login, (3) client-side changes. Depends on A_004 being resolved first."
+}

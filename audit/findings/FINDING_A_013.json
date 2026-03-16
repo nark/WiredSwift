@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_013",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "Login password sent as SHA-256 hash without server challenge (pass-the-hash)",
+  "file": "Sources/WiredSwift/Network/Connection.swift",
+  "line": 493,
+  "description": "The client-side login() function sends the password as a SHA-256 hash: password = self.url!.password.sha256(). On the server side in receiveSendLogin (ServerController.swift:1798), the password hash is compared directly against the stored hash via user(withUsername: login, password: password). This means the SHA-256 hash IS the effective credential. If an attacker obtains the hash (e.g., via FINDING_A_003 where hashes are leaked to clients with list_accounts privilege), they can authenticate directly without knowing the plaintext password -- a classic pass-the-hash attack.",
+  "vulnerable_code": "// Client side (Connection.swift:493-496):\nvar password = \"\".sha256()\nif self.url?.password != nil && self.url?.password != \"\" {\n    password = self.url!.password.sha256()\n}\nmessage.addParameter(field: \"wired.user.password\", value: password)\n\n// Server side (ServerController.swift:1798):\nguard let user = App.usersController.user(withUsername: login, password: password) else { ... }",
+  "recommendation": "Implement a challenge-response mechanism: the server sends a random nonce, the client computes HMAC(password_hash, nonce) and sends the result. The server performs the same computation and compares. This prevents pass-the-hash attacks because the nonce changes each time. Note: the ECDH key exchange already provides some protection when encryption is enabled, but the wired.send_login message itself uses a simple hash comparison.",
+  "status": "needs_human_review"
+}
