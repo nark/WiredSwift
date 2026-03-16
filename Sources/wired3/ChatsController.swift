@@ -63,6 +63,26 @@ private extension ChatsController {
     
     
     private func receiveChat(string:String, _ client:Client, _ message:P7Message, isSay:Bool) {
+        // SECURITY (FINDING_C_006): Rate limit chat messages (max 10/s per client)
+        let now = Date()
+        let exceeded: Bool = {
+            self.chatRateLock.lock()
+            defer { self.chatRateLock.unlock() }
+            var timestamps = self.chatMessageTimestamps[client.userID] ?? []
+            let cutoff = now.addingTimeInterval(-1.0)
+            timestamps = timestamps.filter { $0 > cutoff }
+            if timestamps.count >= Self.chatRateLimitPerSecond {
+                return true
+            }
+            timestamps.append(now)
+            self.chatMessageTimestamps[client.userID] = timestamps
+            return false
+        }()
+        if exceeded {
+            Logger.warning("Chat rate limit exceeded for user \(client.userID)")
+            return
+        }
+
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
@@ -98,8 +118,13 @@ public class ChatsController : TableController {
     var privateChats:[Chat] = []
     var chatsLock:Lock = Lock()
     var publicChat:Chat!
-    
+
     private var lastChatID:UInt32 = 1
+
+    // SECURITY (FINDING_C_006): Rate limiting for chat messages per client
+    private static let chatRateLimitPerSecond: Int = 10
+    private var chatMessageTimestamps: [UInt32: [Date]] = [:]
+    private let chatRateLock = NSLock()
     
     public override init(databaseController: DatabaseController) {
         super.init(databaseController: databaseController)
@@ -133,12 +158,15 @@ public class ChatsController : TableController {
             return
         }
         
-        guard let name = message.string(forField: "wired.chat.name") else {
+        guard let name = message.string(forField: "wired.chat.name"),
+              // SECURITY (FINDING_C_013): Reject empty/whitespace-only or oversized chat names
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              name.count <= 255 else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
-                
+
             return
         }
-        
+
         do {
             let newChat = Chat(chatID: self.nextChatID(), name: name, client: client)
 
@@ -439,19 +467,25 @@ public class ChatsController : TableController {
     }
     
     public func receiveChatSay(_ client:Client, _ message:P7Message) {
-        guard let say = message.string(forField: "wired.chat.say") else {
+        guard let say = message.string(forField: "wired.chat.say"),
+              // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
+              !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         self.receiveChat(string: say, client, message, isSay: true)
     }
-    
-    
+
+
     public func receiveChatMe(_ client:Client, _ message:P7Message) {
-        guard let say = message.string(forField: "wired.chat.me") else {
+        guard let say = message.string(forField: "wired.chat.me"),
+              // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
+              !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         self.receiveChat(string: say, client, message, isSay: false)
     }
     
