@@ -194,7 +194,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 try adminGroup.insert(db)
 
                 // Utilisateurs par défaut
-                let admin = User(username: "admin", password: "admin".sha256())
+                // SECURITY (FINDING_A_005): Generate random password instead of hardcoded 'admin'
+                let generatedPassword = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(16)
+                let admin = User(username: "admin", password: String(generatedPassword).sha256())
+                WiredSwift.Logger.info("=== INITIAL ADMIN PASSWORD: \(generatedPassword) === (change it immediately)")
                 admin.color = "1"
                 try admin.insert(db)
 
