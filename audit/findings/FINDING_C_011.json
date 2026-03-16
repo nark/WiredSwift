@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_011",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "SQL injection via string interpolation in readSchema",
+  "file": "Sources/wired3/UsersController.swift",
+  "line": 354,
+  "description": "The readSchema method (line 354) constructs a SQL query using string interpolation with the table parameter. While in the current code the table name comes from hardcoded strings within the class itself, this is a dangerous pattern. If any caller were to pass a user-controlled value (or if the function were refactored), it would be directly exploitable for SQL injection. The same file uses proper parameterized queries via GRDB elsewhere but falls back to raw SQLite here.",
+  "vulnerable_code": "private func readSchema(db: OpaquePointer, table: String) -> String? {\n    let query = \"SELECT sql FROM sqlite_master WHERE type='table' AND name='\\(table)' LIMIT 1;\"\n}",
+  "recommendation": "Use sqlite3_prepare_v2 with a parameterized query: SELECT sql FROM sqlite_master WHERE type='table' AND name=? LIMIT 1, and bind the table parameter via sqlite3_bind_text.",
+  "status": "patched"
+}

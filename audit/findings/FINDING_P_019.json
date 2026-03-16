@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_P_019",
+  "category": "parser",
+  "severity": "LOW",
+  "cwe": "CWE-476",
+  "title": "Implicitly unwrapped optionals on P7SpecItem properties",
+  "file": "Sources/WiredSwift/P7/P7SpecItem.swift",
+  "line": 13,
+  "description": "P7SpecItem declares name, id, and spec as implicitly unwrapped optionals (String!, P7Spec!). The description property at line 27 force-unwraps both self.id! and self.name!. If any SpecItem is constructed with a nil id (which is possible since attributes['id'] is optional), calling description on it will crash.",
+  "vulnerable_code": "return \"[\\(self.id!)] \\(self.name!)\"",
+  "recommendation": "Use nil-coalescing: return \"[\\(self.id ?? '?')] \\(self.name ?? '?')\" or change to non-optional properties.",
+  "status": "patched"
+}

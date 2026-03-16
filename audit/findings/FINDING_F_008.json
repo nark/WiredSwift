@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_F_008",
+  "category": "files",
+  "severity": "MEDIUM",
+  "cwe": "CWE-89",
+  "title": "SQL injection in readSchema via unsanitized table name",
+  "file": "Sources/wired3/UsersController.swift",
+  "line": 354,
+  "description": "The readSchema method constructs a SQL query by interpolating the 'table' parameter directly into the query string: \"SELECT sql FROM sqlite_master WHERE type='table' AND name='\\(table)' LIMIT 1;\". While the table name values are currently hardcoded strings ('user_privileges', 'group_privileges', 'groups', 'users') passed from within the same class, this is a dangerous pattern. If the method were ever called with user-controlled input, or if a refactoring moved the table name computation, it would become exploitable. The method uses sqlite3_prepare_v2 which only executes a single statement, mitigating the worst case but still allowing data exfiltration via UNION injection.",
+  "vulnerable_code": "let query = \"SELECT sql FROM sqlite_master WHERE type='table' AND name='\\(table)' LIMIT 1;\"",
+  "recommendation": "Use parameterized queries: 'SELECT sql FROM sqlite_master WHERE type=\\'table\\' AND name=? LIMIT 1' with sqlite3_bind_text for the table name parameter.",
+  "status": "patched"
+}
