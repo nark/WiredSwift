@@ -544,6 +544,11 @@ public class ServerController: ServerDelegate {
             self.receiveUserSetIdle(client, message)
         }
         else if message.name == "wired.send_login" {
+            if client.state == .LOGGED_IN {
+                Logger.error("Rejected wired.send_login: client \(client.userID) is already logged in")
+                App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+                return
+            }
             if !self.receiveSendLogin(client, message) {
                 // login failed
                 self.disconnectClient(client: client)
