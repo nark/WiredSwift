@@ -2365,8 +2365,10 @@ public class ServerController: ServerDelegate {
         if let comment = message.string(forField: "wired.account.comment") {
             account.comment = comment
         }
+        var passwordChanged = false
         if let password = message.string(forField: "wired.account.password"), !password.isEmpty {
             account.password = normalizedPasswordForStorage(password)
+            passwordChanged = true
         }
         if let group = message.string(forField: "wired.account.group") {
             account.group = group
@@ -2422,6 +2424,19 @@ public class ServerController: ServerDelegate {
         let updatedName = account.username ?? name
         if updatedName != name {
             self.broadcastAccountsChangedToSubscribers()
+        }
+
+        // SECURITY (FINDING_A_016): Invalidate other sessions after password change
+        if passwordChanged {
+            let targetName = normalizedAccountIdentifier(updatedName)
+            for connectedClient in App.clientsController.connectedClientsSnapshot() {
+                guard connectedClient.state == .LOGGED_IN else { continue }
+                guard connectedClient.userID != client.userID else { continue }
+                guard let connectedUsername = connectedClient.user?.username else { continue }
+                if normalizedAccountIdentifier(connectedUsername) == targetName {
+                    self.disconnectClient(client: connectedClient)
+                }
+            }
         }
 
         self.reloadPrivilegesForLoggedInUsers(matchingAccountNames: [name, updatedName])
