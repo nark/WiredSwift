@@ -188,22 +188,20 @@ public class ChatsController : TableController {
             return
         }
               
+        // SECURITY (FINDING_F_014): Perform DB delete first, then broadcast/remove from memory
         do {
-            let reply = P7Message(withName: "wired.chat.public_chat_deleted", spec: message.spec)
-            
-            reply.addParameter(field: "wired.chat.id", value: publicChat.chatID)
-            
-            App.clientsController.broadcast(message: reply)
-            
-            self.remove(chat: publicChat)
-
             try databaseController.dbQueue.write { db in try publicChat.delete(db) }
-
         } catch let error {
             Logger.error("Cannot delete public chat: \(error)")
-            
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
         }
+
+        self.remove(chat: publicChat)
+
+        let reply = P7Message(withName: "wired.chat.public_chat_deleted", spec: message.spec)
+        reply.addParameter(field: "wired.chat.id", value: publicChat.chatID)
+        App.clientsController.broadcast(message: reply)
     }
     
     
