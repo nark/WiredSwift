@@ -1448,7 +1448,26 @@ public class P7Socket: NSObject {
     
     
     private func receiveCompatibilityCheck() throws {
-        // TODO: implement this ?
+        let response = try self.readMessage()
+
+        if response.name != "p7.compatibility_check.specification" {
+            let message = "Message should be 'p7.compatibility_check.specification', not '\(response.name ?? "unknown")'"
+            Logger.error(message)
+            throw P7SocketError.localCompatibilityFailed(message)
+        }
+
+        // Validate the remote spec against our local protocol
+        let compatible = self.spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
+
+        let reply = P7Message(withName: "p7.compatibility_check.status", spec: self.spec)
+        reply.addParameter(field: "p7.compatibility_check.status", value: compatible)
+        _ = self.write(reply)
+
+        if !compatible {
+            let message = "Local protocol '\(self.spec.protocolName ?? "unknown") \(self.spec.protocolVersion ?? "unknown")' is not compatible with remote protocol '\(self.remoteName ?? "unknown") \(self.remoteVersion ?? "unknown")'"
+            Logger.error(message)
+            throw P7SocketError.localCompatibilityFailed(message)
+        }
     }
     
     
