@@ -33,28 +33,30 @@ public class FilesController {
     
     public func listDirectory(client:Client, message:P7Message) {
         var recursive = false
-        
+
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             return
         }
-        
+
         // sanitize checks
         if !File.isValid(path: path) {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
-        
+
         let normalizedPath = NSString(string: path).standardizingPath
 
         // file privileges (dropbox inherited in path)
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toRead: privilege) {
+            if !user.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
             // user privileges
-            if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+            if !user.hasPrivilege(name: "wired.account.file.list_files") {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -68,6 +70,8 @@ public class FilesController {
     }
 
     public func getInfo(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
@@ -87,13 +91,13 @@ public class FilesController {
             return
         }
 
-        guard client.user!.hasPrivilege(name: "wired.account.file.get_info") else {
+        guard user.hasPrivilege(name: "wired.account.file.get_info") else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toRead: privilege) {
+            if !user.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -143,35 +147,37 @@ public class FilesController {
             reply.addParameter(field: "wired.file.group.write", value: mode.contains(File.FilePermissions.groupWrite))
             reply.addParameter(field: "wired.file.everyone.read", value: mode.contains(File.FilePermissions.everyoneRead))
             reply.addParameter(field: "wired.file.everyone.write", value: mode.contains(File.FilePermissions.everyoneWrite))
-            reply.addParameter(field: "wired.file.readable", value: client.user!.hasPermission(toRead: privilege))
-            reply.addParameter(field: "wired.file.writable", value: client.user!.hasPermission(toWrite: privilege))
+            reply.addParameter(field: "wired.file.readable", value: user.hasPermission(toRead: privilege))
+            reply.addParameter(field: "wired.file.writable", value: user.hasPermission(toWrite: privilege))
         }
 
         App.serverController.reply(client: client, reply: reply, message: message)
     }
     
     public func createDirectory(client:Client, message:P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         // sanitize checks
         if !File.isValid(path: path) {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
-        
+
         let normalizedPath = NSString(string: path).standardizingPath
         let realPath = self.real(path: normalizedPath)
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
-            if !client.user!.hasPrivilege(name: "wired.account.file.create_directories") {
+            if !user.hasPrivilege(name: "wired.account.file.create_directories") {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -191,8 +197,8 @@ public class FilesController {
             return
         }
 
-        if createPath(normalizedPath, type: fileType, user: client.user!, message: message) {
-            if fileType == .dropbox, client.user!.hasPrivilege(name: "wired.account.file.set_permissions") {
+        if createPath(normalizedPath, type: fileType, user: user, message: message) {
+            if fileType == .dropbox, user.hasPrivilege(name: "wired.account.file.set_permissions") {
                 let privileges = privilegesFromMessage(message)
 
                 if !FilePrivilege.set(privileges: privileges, path: realPath) {
@@ -215,6 +221,8 @@ public class FilesController {
     }
 
     public func setType(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             return
         }
@@ -228,11 +236,11 @@ public class FilesController {
         let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath)
 
         if let privileges {
-            if !client.user!.hasPermission(toWrite: privileges) {
+            if !user.hasPermission(toWrite: privileges) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.set_type") {
+        } else if !user.hasPrivilege(name: "wired.account.file.set_type") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -253,6 +261,8 @@ public class FilesController {
     }
 
     public func setPermissions(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
@@ -273,11 +283,11 @@ public class FilesController {
         }
 
         if let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toWrite: privileges) {
+            if !user.hasPermission(toWrite: privileges) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.set_permissions") {
+        } else if !user.hasPrivilege(name: "wired.account.file.set_permissions") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -323,27 +333,29 @@ public class FilesController {
     
     
     public func delete(client:Client, message:P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             return
         }
-        
+
         // sanitize checks
         if !File.isValid(path: path) {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
-        
+
         let normalizedPath = NSString(string: path).standardizingPath
 
         // file privileges
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toRead: privilege) || !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toRead: privilege) || !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
             // user privileges
-            if !client.user!.hasPrivilege(name: "wired.account.file.delete_files") {
+            if !user.hasPrivilege(name: "wired.account.file.delete_files") {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -355,6 +367,8 @@ public class FilesController {
     }
 
     public func move(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let fromPath = message.string(forField: "wired.file.path"),
               let toPath = message.string(forField: "wired.file.new_path") else {
             return
@@ -372,23 +386,23 @@ public class FilesController {
         let isRenameOnly = fromDirectory == toDirectory
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedFromPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.move_files") &&
-                    (!client.user!.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
+        } else if !user.hasPrivilege(name: "wired.account.file.move_files") &&
+                    (!user.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedToPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.move_files") &&
-                    (!client.user!.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
+        } else if !user.hasPrivilege(name: "wired.account.file.move_files") &&
+                    (!user.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -481,6 +495,8 @@ public class FilesController {
         client: Client,
         message: P7Message
     ) -> Bool {
+        guard let user = client.user else { return false }
+
         let fm = FileManager.default
         let canonicalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().standardized.path
 
@@ -515,8 +531,8 @@ public class FilesController {
             var writable = false
 
             if type == .dropbox, let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
-                readable = client.user!.hasPermission(toRead: privileges)
-                writable = client.user!.hasPermission(toWrite: privileges)
+                readable = user.hasPermission(toRead: privileges)
+                writable = user.hasPermission(toWrite: privileges)
             }
 
             // TODO: read comment
@@ -704,7 +720,9 @@ public class FilesController {
 
     // MARK: - Directory subscriptions
     public func subscribeDirectory(client: Client, message: P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.file.list_files") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -741,7 +759,9 @@ public class FilesController {
     }
 
     public func unsubscribeDirectory(client: Client, message: P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.file.list_files") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
