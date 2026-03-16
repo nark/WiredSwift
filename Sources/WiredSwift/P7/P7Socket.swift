@@ -43,6 +43,9 @@ public class P7Socket: NSObject {
         case deflateError
     }
     
+    /// Maximum allowed P7 message size (64 MB) to prevent OOM from malicious length fields
+    private static let maxMessageSize: UInt32 = 64 * 1024 * 1024
+
     public enum Serialization:Int {
         case XML            = 0
         case BINARY         = 1
@@ -592,7 +595,14 @@ public class P7Socket: NSObject {
             throw P7SocketError.readFailed(errorMessage)
         }
 
-        // 2️⃣ Read payload
+        // 2️⃣ Validate message length before allocation
+        guard messageLength <= P7Socket.maxMessageSize else {
+            let errorMessage = "Message length \(messageLength) exceeds maximum allowed size (\(P7Socket.maxMessageSize))"
+            Logger.error(errorMessage)
+            throw P7SocketError.readFailed(errorMessage)
+        }
+
+        // 3️⃣ Read payload
         let encryptedPayload = try readExactly(size: Int(messageLength))
         let originalPayload = encryptedPayload
         var payload = encryptedPayload
