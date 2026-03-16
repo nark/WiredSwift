@@ -840,7 +840,8 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveUserGetInfo(_ fromClient:Client, _ message:P7Message) {
-        if !fromClient.user!.hasPrivilege(name: "wired.account.user.get_info") {
+        guard let user = fromClient.user else { return }
+        if !user.hasPrivilege(name: "wired.account.user.get_info") {
             App.serverController.replyError(client: fromClient, error: "wired.error.permission_denied", message: message)
             
             return
@@ -2078,7 +2079,8 @@ public class ServerController: ServerDelegate {
     // MARK: -
     
     private func receiveGetSettings(client:Client, message:P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.settings.get_settings") {
+        guard let user = client.user else { return }
+        if !user.hasPrivilege(name: "wired.account.settings.get_settings") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             
             return
@@ -2109,8 +2111,9 @@ public class ServerController: ServerDelegate {
     
     private func receiveSetSettings(client:Client, message:P7Message) {
         var changed = false
-        
-        if !client.user!.hasPrivilege(name: "wired.account.settings.set_settings") {
+
+        guard let user = client.user else { return }
+        if !user.hasPrivilege(name: "wired.account.settings.set_settings") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             
             return
