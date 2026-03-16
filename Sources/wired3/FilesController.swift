@@ -525,7 +525,8 @@ public class FilesController {
             }
 
             var visited: Set<String> = []
-            if !self.replyListRecursive(realPath: realPath, virtualPath: path, recursive: recursive, visited: &visited, client: client, message: message) {
+            var entryCount: Int = 0
+            if !self.replyListRecursive(realPath: realPath, virtualPath: path, recursive: recursive, depth: 0, visited: &visited, entryCount: &entryCount, client: client, message: message) {
                 App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
@@ -537,15 +538,33 @@ public class FilesController {
         }
     }
 
+    // SECURITY (FINDING_F_012): Limits to prevent DoS via deeply nested or huge directories
+    private static let maxRecursiveDepth: Int = 16
+    private static let maxRecursiveEntries: Int = 10_000
+
     private func replyListRecursive(
         realPath: String,
         virtualPath: String,
         recursive: Bool,
+        depth: Int,
         visited: inout Set<String>,
+        entryCount: inout Int,
         client: Client,
         message: P7Message
     ) -> Bool {
         guard let user = client.user else { return false }
+
+        // SECURITY (FINDING_F_012): enforce depth limit
+        guard depth <= Self.maxRecursiveDepth else {
+            Logger.warning("Recursive listing exceeded max depth \(Self.maxRecursiveDepth)")
+            return true
+        }
+
+        // SECURITY (FINDING_F_012): enforce entry count limit
+        guard entryCount < Self.maxRecursiveEntries else {
+            Logger.warning("Recursive listing exceeded max entries \(Self.maxRecursiveEntries)")
+            return true
+        }
 
         let fm = FileManager.default
         let canonicalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().standardized.path
@@ -637,12 +656,21 @@ public class FilesController {
 
             App.serverController.reply(client: client, reply: reply, message: message)
 
+            entryCount += 1
+            // SECURITY (FINDING_F_012): stop if entry limit reached
+            guard entryCount < Self.maxRecursiveEntries else {
+                Logger.warning("Recursive listing exceeded max entries \(Self.maxRecursiveEntries)")
+                return true
+            }
+
             if recursive && (type == .directory || type == .uploads || type == .dropbox) {
                 if !self.replyListRecursive(
                     realPath: childRealPath,
                     virtualPath: childVirtualPath,
                     recursive: true,
+                    depth: depth + 1,
                     visited: &visited,
+                    entryCount: &entryCount,
                     client: client,
                     message: message
                 ) {
