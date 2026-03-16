@@ -50,6 +50,16 @@ public class ServerController: ServerDelegate {
     
     var startTime:Date? = nil
 
+    // FINDING_A_001: Rate limiting for login attempts per IP
+    private struct LoginAttemptRecord {
+        var failureCount: Int
+        var bannedUntil: Date?
+    }
+    private var loginAttempts: [String: LoginAttemptRecord] = [:]
+    private let loginAttemptsLock = NSLock()
+    private let maxLoginAttempts = 5
+    private let loginBanDuration: TimeInterval = 60
+
     private func resolvedConfigPath(_ path: String) -> String {
         let expanded = (path as NSString).expandingTildeInPath
         if (expanded as NSString).isAbsolutePath {
@@ -1792,26 +1802,59 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveSendLogin(_ client:Client, _ message:P7Message) -> Bool {
+        let clientIP = client.socket.getClientIP() ?? "unknown"
+
+        // FINDING_A_001: Check if IP is temporarily banned due to repeated failures
+        loginAttemptsLock.lock()
+        if let record = loginAttempts[clientIP], let bannedUntil = record.bannedUntil {
+            if Date() < bannedUntil {
+                loginAttemptsLock.unlock()
+                let reply = P7Message(withName: "wired.error", spec: message.spec)
+                reply.addParameter(field: "wired.error.string", value: "Too many login attempts")
+                reply.addParameter(field: "wired.error", value: UInt32(4))
+                App.serverController.reply(client: client, reply: reply, message: message)
+                Logger.warning("Login rate-limited for IP '\(clientIP)'")
+                return false
+            }
+        }
+        loginAttemptsLock.unlock()
+
         guard let login = message.string(forField: "wired.user.login") else {
             return false
         }
-        
+
         guard let password = message.string(forField: "wired.user.password") else {
             return false
         }
-        
+
         guard let user = App.usersController.user(withUsername: login, password: password) else {
             let reply = P7Message(withName: "wired.error", spec: message.spec)
             reply.addParameter(field: "wired.error.string", value: "Login failed")
             reply.addParameter(field: "wired.error", value: UInt32(4
             ))
             App.serverController.reply(client: client, reply: reply, message: message)
-                        
+
             Logger.error("Login failed for user '\(login)'")
-            
+
+            // FINDING_A_001: Track failed attempt and apply ban if threshold reached
+            loginAttemptsLock.lock()
+            var record = loginAttempts[clientIP] ?? LoginAttemptRecord(failureCount: 0, bannedUntil: nil)
+            record.failureCount += 1
+            if record.failureCount >= maxLoginAttempts {
+                record.bannedUntil = Date().addingTimeInterval(loginBanDuration)
+                Logger.warning("IP '\(clientIP)' banned for \(Int(loginBanDuration))s after \(record.failureCount) failed login attempts")
+            }
+            loginAttempts[clientIP] = record
+            loginAttemptsLock.unlock()
+
             return false
         }
-        
+
+        // FINDING_A_001: Reset failure counter on successful login
+        loginAttemptsLock.lock()
+        loginAttempts.removeValue(forKey: clientIP)
+        loginAttemptsLock.unlock()
+
         client.user     = user
         client.state    = .LOGGED_IN
         
