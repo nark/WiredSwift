@@ -861,7 +861,7 @@ public class P7Socket: NSObject {
         let response = try self.readMessage()
                 
         if response.name != "p7.handshake.server_handshake" {
-            let message = "Handshake Failed: Unexpected message \(response.name!) instead of p7.handshake.server_handshake"
+            let message = "Handshake Failed: Unexpected message \(response.name ?? "unknown") instead of p7.handshake.server_handshake"
             Logger.error(message)
             throw P7SocketError.handshakeFailed(message)
         }
@@ -943,7 +943,7 @@ public class P7Socket: NSObject {
         let response = try self.readMessage()
         
         if response.name != "p7.handshake.client_handshake" {
-            let message = "Message should be 'p7.handshake.client_handshake', not '\(response.name!)'"
+            let message = "Message should be 'p7.handshake.client_handshake', not '\(response.name ?? "unknown")'"
             Logger.error(message)
             throw P7SocketError.handshakeFailed(message)
         }
@@ -1049,7 +1049,7 @@ public class P7Socket: NSObject {
         let acknowledge = try self.readMessage()
                 
         if acknowledge.name != "p7.handshake.acknowledge" {
-            let message = "Message should be 'p7.handshake.acknowledge', not '\(response.name!)'"
+            let message = "Message should be 'p7.handshake.acknowledge', not '\(response.name ?? "unknown")'"
             Logger.error(message)
             throw P7SocketError.handshakeFailed(message)
         }
@@ -1076,7 +1076,7 @@ public class P7Socket: NSObject {
         let response = try self.readMessage()
         
         if response.name != "p7.encryption.server_key" {
-            let message = "Message should be 'p7.encryption.server_key', not '\(response.name!)'"
+            let message = "Message should be 'p7.encryption.server_key', not '\(response.name ?? "unknown")'"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
@@ -1252,7 +1252,7 @@ public class P7Socket: NSObject {
         let response = try self.readMessage()
         
         if response.name != "p7.encryption.client_key" {
-            let message = "Message should be 'p7.encryption.client_key', not '\(response.name!)'"
+            let message = "Message should be 'p7.encryption.client_key', not '\(response.name ?? "unknown")'"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
@@ -1393,7 +1393,7 @@ public class P7Socket: NSObject {
         self.digest = Digest(type: self.checksum, key: derivedKey2.hexEncodedString())
 
         do {
-            self.sslCipher = try? Cipher(cipher: self.cipherType, keyData: derivedKey2, iv: derivedIV2)
+            self.sslCipher = try Cipher(cipher: self.cipherType, keyData: derivedKey2, iv: derivedIV2)
         } catch let error {
             let message = "Cipher cannot be created: \(error)"
             Logger.error(message)
@@ -1423,7 +1423,7 @@ public class P7Socket: NSObject {
         let response = try self.readMessage()
                 
         if response.name != "p7.compatibility_check.status" {
-            let message = "Message should be 'p7.compatibility_check.status', not '\(response.name!)'"
+            let message = "Message should be 'p7.compatibility_check.status', not '\(response.name ?? "unknown")'"
             Logger.error(message)
             throw P7SocketError.remoteCompatibilityFailed(message)
         }
