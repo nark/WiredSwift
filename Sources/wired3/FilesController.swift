@@ -837,14 +837,24 @@ public class FilesController {
             return
         }
 
-        subscriptionsQueue.sync {
-            var realPaths = subscribedRealPathsByClient[client.userID] ?? Set<String>()
+        // SECURITY (FINDING_F_017): per-client subscription limit to prevent memory exhaustion
+        let subscribed = subscriptionsQueue.sync { () -> Bool in
+            let existing = subscribedRealPathsByClient[client.userID] ?? Set<String>()
+            guard existing.count < 100 else { return false }
+
+            var realPaths = existing
             realPaths.insert(realPath)
             subscribedRealPathsByClient[client.userID] = realPaths
 
             var virtualPaths = subscribedVirtualPathsByClient[client.userID] ?? [:]
             virtualPaths[realPath] = normalizedVirtualPath
             subscribedVirtualPathsByClient[client.userID] = virtualPaths
+            return true
+        }
+
+        guard subscribed else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
         }
 
         App.serverController.replyOK(client: client, message: message)

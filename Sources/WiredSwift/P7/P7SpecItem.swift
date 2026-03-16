@@ -24,6 +24,7 @@ public class P7SpecItem : NSObject {
     }
     
     public override var description: String {
-        return "[\(self.id!)] \(self.name!)"
+        // SECURITY (FINDING_P_019): nil-coalescing instead of force unwrap
+        return "[\(self.id ?? "?")] \(self.name ?? "unknown")"
     }
 }

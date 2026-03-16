@@ -615,7 +615,8 @@ public class ServerController: ServerDelegate {
             App.chatsController.setTopic(message: message, client: client)
         }
         else if message.name == "wired.chat.kick_user" {
-            //App.chatsController.kickUser(user: user, message: message)
+            // SECURITY (FINDING_C_007): reply with error instead of silently ignoring
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
         else if message.name == "wired.message.send_message" {
             self.receiveMessageSendMessage(client: client, message: message)

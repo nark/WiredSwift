@@ -371,7 +371,16 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    // SECURITY (FINDING_A_010/C_011/F_008): whitelist allowed table names to prevent SQL injection
+    private static let allowedSchemaTableNames: Set<String> = [
+        "user_privileges", "group_privileges", "groups", "users", "offline_messages"
+    ]
+
     private func readSchema(db: OpaquePointer, table: String) -> String? {
+        guard Self.allowedSchemaTableNames.contains(table) else {
+            WiredSwift.Logger.error("readSchema called with disallowed table name: \(table)")
+            return nil
+        }
         let query = "SELECT sql FROM sqlite_master WHERE type='table' AND name='\(table)' LIMIT 1;"
         var statement: OpaquePointer?
         guard sqlitePrepare(db: db, query: query, statement: &statement) == SQLITE_OK, let statement else { return nil }
