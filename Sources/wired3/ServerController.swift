@@ -1847,22 +1847,25 @@ public class ServerController: ServerDelegate {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
-        
+
+        // Normalize path (consistent with other file handlers)
+        let normalizedPath = NSString(string: path).standardizingPath
+
         // file privileges
-        if let privilege = FilePrivilege(path: App.filesController.real(path: path)) {
+        if let privilege = FilePrivilege(path: App.filesController.real(path: normalizedPath)) {
             if !user.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
-        
+
         guard let dataOffset = message.uint64(forField: "wired.transfer.data_offset"),
               let rsrcOffset = message.uint64(forField: "wired.transfer.rsrc_offset") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-                
-        if let transfer = App.transfersController.download(path: path,
+
+        if let transfer = App.transfersController.download(path: normalizedPath,
                                                            dataOffset: dataOffset,
                                                            rsrcOffset: rsrcOffset,
                                                            client: client, message: message) {
