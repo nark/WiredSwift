@@ -60,6 +60,11 @@ public class ServerController: ServerDelegate {
     private let maxLoginAttempts = 5
     private let loginBanDuration: TimeInterval = 60
 
+    // SECURITY (FINDING_C_012): Rate limiting for broadcast messages per user
+    private static let broadcastRateLimitPerMinute: Int = 5
+    private var broadcastTimestamps: [UInt32: [Date]] = [:]
+    private let broadcastRateLock = NSLock()
+
     private func resolvedConfigPath(_ path: String) -> String {
         let expanded = (path as NSString).expandingTildeInPath
         if (expanded as NSString).isAbsolutePath {
@@ -939,6 +944,27 @@ public class ServerController: ServerDelegate {
         guard let body = message.string(forField: "wired.message.broadcast"),
               !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        // SECURITY (FINDING_C_012): Rate limit broadcasts (max 5/min per user)
+        let now = Date()
+        let broadcastExceeded: Bool = {
+            self.broadcastRateLock.lock()
+            defer { self.broadcastRateLock.unlock() }
+            var timestamps = self.broadcastTimestamps[client.userID] ?? []
+            let cutoff = now.addingTimeInterval(-60.0)
+            timestamps = timestamps.filter { $0 > cutoff }
+            if timestamps.count >= Self.broadcastRateLimitPerMinute {
+                return true
+            }
+            timestamps.append(now)
+            self.broadcastTimestamps[client.userID] = timestamps
+            return false
+        }()
+        if broadcastExceeded {
+            Logger.warning("Broadcast rate limit exceeded for user \(client.userID)")
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
 
