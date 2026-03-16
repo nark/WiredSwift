@@ -751,7 +751,12 @@ public class P7Socket: NSObject {
             Logger.error("Cannot read message length")
             throw P7SocketError.readFailed("Cannot read message length")
         }
-        
+
+        guard messageLength <= Self.maxMessageSize else {
+            Logger.error("OOB message length \(messageLength) exceeds maximum \(Self.maxMessageSize)")
+            throw P7SocketError.readFailed("OOB message too large: \(messageLength) bytes")
+        }
+
         var messageData = try self.readExactly(size: Int(messageLength), timeout: timeout, enforceDeadline: true)
         let originalPayload = messageData
         
