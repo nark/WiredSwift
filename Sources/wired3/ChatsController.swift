@@ -51,9 +51,14 @@ private extension ChatsController {
     }
     
     
+    // SECURITY (FINDING_C_009): Protect lastChatID increment with lock to prevent duplicate IDs
     private func nextChatID() -> UInt32 {
-        lastChatID += 1
-        return lastChatID
+        var newID: UInt32 = 0
+        self.chatsLock.exclusivelyWrite {
+            self.lastChatID += 1
+            newID = self.lastChatID
+        }
+        return newID
     }
     
     
@@ -202,6 +207,9 @@ public class ChatsController : TableController {
     }
     
     
+    // SECURITY (FINDING_C_008): Maximum private chats per user
+    private static let maxPrivateChatsPerUser: Int = 50
+
     public func createPrivateChat(message:P7Message, client:Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
@@ -212,7 +220,17 @@ public class ChatsController : TableController {
 
             return
         }
-                
+
+        // SECURITY (FINDING_C_008): Enforce per-user private chat limit
+        let userPrivateChatCount = self.chatsLock.concurrentlyRead {
+            self.privateChats.filter { $0.client(withID: client.userID) != nil || ($0 as? PrivateChat)?.isInvited(client: client) == true }.count
+        }
+        if userPrivateChatCount >= Self.maxPrivateChatsPerUser {
+            Logger.warning("User \(client.userID) exceeded private chat limit (\(Self.maxPrivateChatsPerUser))")
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
         let newPrivateChat = PrivateChat(chatID: self.nextChatID())
         // add invitation for initiator user
         newPrivateChat.addInvitation(client: client)
