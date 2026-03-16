@@ -150,6 +150,11 @@ class IndexController: TableController {
             do {
                 let results = try self.fetchResults(for: trimmed)
                 for entry in results {
+                    // F_015: skip files inside dropboxes the user cannot read
+                    if let priv = App.filesController.dropBoxPrivileges(forVirtualPath: entry.virtual_path),
+                       !user.hasPermission(toRead: priv) {
+                        continue
+                    }
                     self.sendSearchListEntry(entry: entry, user: user, client: client, message: message)
                 }
                 self.sendSearchDone(client: client, message: message)
