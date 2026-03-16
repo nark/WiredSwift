@@ -351,6 +351,22 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 }
             }
         }
+
+        // SECURITY (FINDING_C_010): per-recipient limit to prevent storage DoS
+        let triggerSQL = """
+            CREATE TRIGGER IF NOT EXISTS offline_messages_per_recipient_limit
+            BEFORE INSERT ON offline_messages
+            BEGIN
+                SELECT RAISE(ABORT, 'per-recipient offline message limit exceeded')
+                WHERE (SELECT COUNT(*) FROM offline_messages
+                       WHERE recipient_identity = NEW.recipient_identity) >= 100;
+            END;
+        """
+        if sqliteExec(db: db, triggerSQL) != SQLITE_OK {
+            if let message = sqlite3_errmsg(db) {
+                WiredSwift.Logger.error("Could not create offline_messages limit trigger: \(String(cString: message))")
+            }
+        }
     }
 
     private func readSchema(db: OpaquePointer, table: String) -> String? {
