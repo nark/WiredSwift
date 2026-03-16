@@ -2299,6 +2299,12 @@ public class ServerController: ServerDelegate {
             return
         }
 
+        // SECURITY (FINDING_F_006): Prevent non-admin users from editing the "admin" account
+        if name == "admin" && requestingUser.username != "admin" {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
         if let newName = message.string(forField: "wired.account.new_name"), !newName.isEmpty, newName != name {
             if App.usersController.user(withUsername: newName) != nil {
                 App.serverController.replyError(client: client, error: "wired.error.account_exists", message: message)
@@ -2333,6 +2339,10 @@ public class ServerController: ServerDelegate {
             switch field.type {
             case .bool:
                 if let value = message.bool(forField: privilege) {
+                    // SECURITY (FINDING_F_006): Cannot grant a privilege the editing user does not possess
+                    if value == true && !requestingUser.hasPrivilege(name: privilege) {
+                        continue
+                    }
                     if !App.usersController.setUserPrivilege(privilege, value: value, for: account) {
                         privilegesSaved = false
                     }
