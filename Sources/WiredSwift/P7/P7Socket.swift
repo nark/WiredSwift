@@ -850,7 +850,7 @@ public class P7Socket: NSObject {
         var serverCompression:P7Socket.Compression? = nil
         
         var message = P7Message(withName: "p7.handshake.client_handshake", spec: self.spec)
-        message.addParameter(field: "p7.handshake.version", value: "1.0")
+        message.addParameter(field: "p7.handshake.version", value: self.spec.builtinProtocolVersion ?? "1.2")
         message.addParameter(field: "p7.handshake.protocol.name", value: "Wired")
         message.addParameter(field: "p7.handshake.protocol.version", value: "3.0")
                 
