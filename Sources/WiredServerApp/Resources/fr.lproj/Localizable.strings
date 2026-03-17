@@ -56,6 +56,15 @@
 "advanced.security.compression" = "Compression preferee";
 "advanced.security.cipher" = "Chiffrement prefere";
 "advanced.security.checksum" = "Checksum prefere";
+
+"advanced.identity.section" = "Identite du serveur (TOFU)";
+"advanced.identity.fingerprint" = "Empreinte";
+"advanced.identity.fingerprint.none" = "Aucune cle — demarrer le serveur une fois pour la generer";
+"advanced.identity.strict" = "Mode strict";
+"advanced.identity.strict.help" = "Les clients doivent rejeter la connexion si la cle change (recommande).";
+"advanced.identity.export" = "Exporter la cle publique";
+"advanced.identity.copied" = "Empreinte copiee !";
+
 "advanced.save" = "Enregistrer les parametres avances";
 
 "logs.open" = "Ouvrir les logs";

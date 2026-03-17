@@ -56,6 +56,15 @@
 "advanced.security.compression" = "Preferred Compression";
 "advanced.security.cipher" = "Preferred Cipher";
 "advanced.security.checksum" = "Preferred Checksum";
+
+"advanced.identity.section" = "Server Identity (TOFU)";
+"advanced.identity.fingerprint" = "Fingerprint";
+"advanced.identity.fingerprint.none" = "No identity key — start the server once to generate it";
+"advanced.identity.strict" = "Strict mode";
+"advanced.identity.strict.help" = "Clients must reject connections if the server key changes (recommended).";
+"advanced.identity.export" = "Export Public Key";
+"advanced.identity.copied" = "Fingerprint copied!";
+
 "advanced.save" = "Save advanced settings";
 
 "logs.open" = "Open logs";
