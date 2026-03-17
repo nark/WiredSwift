@@ -46,6 +46,10 @@ public class P7Socket: NSObject {
     /// Maximum allowed P7 message size (64 MB) to prevent OOM from malicious length fields
     private static let maxMessageSize: UInt32 = 64 * 1024 * 1024
 
+    /// Maximum time (seconds) allowed for the entire accept/handshake path per read.
+    /// Prevents thread-pool exhaustion from clients that connect but never complete auth.
+    private static let handshakeTimeout: TimeInterval = 30.0
+
     public enum Serialization:Int {
         case XML            = 0
         case BINARY         = 1
@@ -575,20 +579,23 @@ public class P7Socket: NSObject {
     }
     
     
-    public func readMessage() throws -> P7Message {
+    public func readMessage(
+        timeout: TimeInterval = 1.0,
+        enforceDeadline: Bool = false
+    ) throws -> P7Message {
         readLock.lock()
         defer { readLock.unlock() }
 
         guard connected else {
             throw P7SocketError.readFailed("Not connected")
         }
-        
+
         guard serialization == .BINARY else {
             throw P7SocketError.readFailed("Not binary serialization")
         }
 
         // 1️⃣ Read message length (4 bytes)
-        let lengthData = try readExactly(size: 4)
+        let lengthData = try readExactly(size: 4, timeout: timeout, enforceDeadline: enforceDeadline)
         guard let messageLength = lengthData.uint32 else {
             let errorMessage = "Cannot read message length"
             Logger.error(errorMessage)
@@ -603,7 +610,7 @@ public class P7Socket: NSObject {
         }
 
         // 3️⃣ Read payload
-        let encryptedPayload = try readExactly(size: Int(messageLength))
+        let encryptedPayload = try readExactly(size: Int(messageLength), timeout: timeout, enforceDeadline: enforceDeadline)
         let originalPayload = encryptedPayload
         var payload = encryptedPayload
 
@@ -624,9 +631,9 @@ public class P7Socket: NSObject {
 
         // 5️⃣ Checksum (STRICT framing)
         if checksumEnabled {
-            let remoteChecksum = try readExactly(size: checksumLength(self.digest.type))
+            let remoteChecksum = try readExactly(size: checksumLength(self.digest.type), timeout: timeout, enforceDeadline: enforceDeadline)
             let localChecksum = try checksumData(originalPayload)
-            
+
             if localChecksum != remoteChecksum {
                 let errorMessage = "Checksum failed"
                 Logger.error(errorMessage)
@@ -637,7 +644,7 @@ public class P7Socket: NSObject {
         // 6️⃣ Build message
         let message = P7Message(withData: payload, spec: spec)
         Logger.info("READ [\(hash)]: \(message.name)")
-        
+
         return message
 
     }
@@ -942,9 +949,9 @@ public class P7Socket: NSObject {
         self.cipherType = cipher
         self.checksum = checksum
         
-        // client handshake message
-        let response = try self.readMessage()
-        
+        // client handshake message (with deadline to prevent thread-pool exhaustion)
+        let response = try self.readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true)
+
         if response.name != "p7.handshake.client_handshake" {
             let message = "Message should be 'p7.handshake.client_handshake', not '\(response.name ?? "unknown")'"
             Logger.error(message)
@@ -1049,8 +1056,8 @@ public class P7Socket: NSObject {
             throw P7SocketError.writeFailed()
         }
         
-        let acknowledge = try self.readMessage()
-                
+        let acknowledge = try self.readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true)
+
         if acknowledge.name != "p7.handshake.acknowledge" {
             let message = "Message should be 'p7.handshake.acknowledge', not '\(response.name ?? "unknown")'"
             Logger.error(message)
@@ -1251,9 +1258,9 @@ public class P7Socket: NSObject {
             throw P7SocketError.keyExchangeFailed(message)
         }
 
-        // read the client public key
-        let response = try self.readMessage()
-        
+        // read the client public key (with deadline to prevent thread-pool exhaustion)
+        let response = try self.readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true)
+
         if response.name != "p7.encryption.client_key" {
             let message = "Message should be 'p7.encryption.client_key', not '\(response.name ?? "unknown")'"
             Logger.error(message)
@@ -1446,7 +1453,7 @@ public class P7Socket: NSObject {
     
     
     private func receiveCompatibilityCheck() throws {
-        let response = try self.readMessage()
+        let response = try self.readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true)
 
         if response.name != "p7.compatibility_check.specification" {
             let message = "Message should be 'p7.compatibility_check.specification', not '\(response.name ?? "unknown")'"
