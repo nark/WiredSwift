@@ -9,5 +9,7 @@
   "description": "All file handlers follow a pattern of: (1) validate path with File.isValid, (2) normalize with standardizingPath, (3) optionally resolve symlinks, (4) check if file exists, (5) perform the operation. Between steps 3 and 5, the filesystem state can change (another client or process could create a symlink, move a file, etc.). This is a classic Time-of-Check-to-Time-of-Use (TOCTOU) race condition. While exploitation requires precise timing and the ability to modify the filesystem concurrently (which requires some level of access), it could be used to bypass jail checks or permission checks.",
   "vulnerable_code": "let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path\n// ... time passes ...\ntry FileManager.default.removeItem(atPath: realPath)",
   "recommendation": "Use O_NOFOLLOW or equivalent when opening files. For critical operations, open the file descriptor first, then verify the path using fstat on the descriptor rather than the path. Consider using renameat2/linkat with AT_EMPTY_PATH for atomic operations where possible.",
-  "status": "needs_human_review"
+  "status": "patched",
+  "patch_commit": "HEAD",
+  "patch_description": "Added double-resolve pattern in delete(), move(), and setPermissions(): immediately before each destructive syscall (removeItem, moveItem, createDirectory/FilePrivilege.set), re-resolve the path with resolvingSymlinksInPath() and re-check isWithinJail(). Uses the final re-resolved path for the actual operation. Narrows the TOCTOU window to the minimum achievable in user-space Swift without O_NOFOLLOW kernel APIs."
 }

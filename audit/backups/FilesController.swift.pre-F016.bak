@@ -338,15 +338,7 @@ public class FilesController {
         if everyoneRead { mode.insert(.everyoneRead) }
         if everyoneWrite { mode.insert(.everyoneWrite) }
 
-        // SECURITY (F_016): Re-resolve immediately before writing to the filesystem to
-        // close the TOCTOU window between the jail check above and the write operations.
-        let finalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().path
-        guard isWithinJail(finalPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            return
-        }
-
-        let wiredMetaPath = finalPath.stringByAppendingPathComponent(path: ".wired")
+        let wiredMetaPath = realPath.stringByAppendingPathComponent(path: ".wired")
         do {
             try FileManager.default.createDirectory(atPath: wiredMetaPath, withIntermediateDirectories: true, attributes: nil)
         } catch {
@@ -355,7 +347,7 @@ public class FilesController {
         }
 
         let newPrivileges = FilePrivilege(owner: owner, group: group, mode: mode)
-        if !FilePrivilege.set(privileges: newPrivileges, path: finalPath) {
+        if !FilePrivilege.set(privileges: newPrivileges, path: realPath) {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
@@ -464,22 +456,13 @@ public class FilesController {
             return false
         }
         let isDirectory = File.FileType.type(path: realPath) != .file
-
-        // SECURITY (F_016): Re-resolve immediately before the destructive syscall to close
-        // the TOCTOU window. A symlink swap between the jail check above and removeItem
-        // could otherwise redirect the deletion outside the jail.
-        let finalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().path
-        guard isWithinJail(finalPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            return false
-        }
-
+        
         do {
-            try FileManager.default.removeItem(atPath: finalPath)
+            try FileManager.default.removeItem(atPath: realPath)
             
-            App.indexController.removeIndex(forPath: finalPath)
+            App.indexController.removeIndex(forPath: realPath)
         } catch let error {
-            Logger.error("Cannot delete file \(finalPath) \(error)")
+            Logger.error("Cannot delete file \(realPath) \(error)")
             
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             
@@ -506,25 +489,15 @@ public class FilesController {
             return false
         }
 
-        // SECURITY (F_016): Re-resolve both paths immediately before moveItem to close the
-        // TOCTOU window. A symlink swap between the jail check above and the syscall could
-        // redirect the move source or destination outside the jail.
-        let finalSource = URL(fileURLWithPath: sourceRealPath).resolvingSymlinksInPath().path
-        let finalDestination = URL(fileURLWithPath: destinationRealPath).resolvingSymlinksInPath().path
-        guard isWithinJail(finalSource), isWithinJail(finalDestination) else {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            return false
-        }
-
         do {
-            try FileManager.default.moveItem(atPath: finalSource, toPath: finalDestination)
+            try FileManager.default.moveItem(atPath: sourceRealPath, toPath: destinationRealPath)
         } catch {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return false
         }
 
-        App.indexController.removeIndex(forPath: finalSource)
-        App.indexController.addIndex(forPath: finalDestination)
+        App.indexController.removeIndex(forPath: sourceRealPath)
+        App.indexController.addIndex(forPath: destinationRealPath)
         self.notifyDirectoryChanged(path: sourceParentPath)
         if sourceParentPath != destinationParentPath {
             self.notifyDirectoryChanged(path: destinationParentPath)
