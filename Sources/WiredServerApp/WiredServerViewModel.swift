@@ -39,6 +39,11 @@ final class WiredServerViewModel: ObservableObject {
     @Published var cipherMode: String = P7Socket.CipherType.SECURE_ONLY.description
     @Published var checksumMode: String = P7Socket.Checksum.SECURE_ONLY.description
 
+    // SECURITY (A_009): TOFU settings
+    @Published var strictIdentity: Bool = true
+    /// Human-readable fingerprint of the server's persistent identity key, or empty if not loaded.
+    @Published var identityFingerprint: String = ""
+
     @Published var adminStatus: String = L("advanced.admin.status.unknown")
     @Published var hasAdminPassword: Bool = false
     @Published var newAdminPassword: String = ""
@@ -436,6 +441,9 @@ final class WiredServerViewModel: ObservableObject {
             config["advanced", "compression"] = compressionMode
             config["advanced", "cipher"] = cipherMode
             config["advanced", "checksum"] = checksumMode
+
+            // SECURITY (A_009): persist strict_identity
+            config["security", "strict_identity"] = strictIdentity ? "yes" : "no"
         }
 
         if isRunning && sendReloadSignal() {
@@ -700,6 +708,10 @@ final class WiredServerViewModel: ObservableObject {
         cipherMode = normalizedCipherMode(rawCipher)
         checksumMode = normalizedChecksumMode(rawChecksum)
 
+        // SECURITY (A_009): load strict_identity and compute identity fingerprint
+        strictIdentity = boolValue(config["security", "strict_identity"], default: true)
+        refreshIdentityFingerprint()
+
         migrateAdvancedConfigIfNeeded(config: config, rawCompression: rawCompression, rawCipher: rawCipher, rawChecksum: rawChecksum)
     }
 
@@ -717,6 +729,39 @@ final class WiredServerViewModel: ObservableObject {
         }
         if rawChecksum.trimmingCharacters(in: .whitespacesAndNewlines) != checksumMode {
             config["advanced", "checksum"] = checksumMode
+        }
+    }
+
+    // MARK: - TOFU / Identity
+
+    /// Reload the identity fingerprint from the key file on disk.
+    func refreshIdentityFingerprint() {
+        let keyPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired-identity.key").path
+        identityFingerprint = ServerIdentity.fingerprintFromKeyFile(at: keyPath) ?? ""
+    }
+
+    /// Opens a save panel so the admin can export the server's identity public key.
+    func exportIdentityKey() {
+        let keyPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired-identity.key").path
+        guard let exportData = ServerIdentity.publicKeyBase64FromKeyFile(at: keyPath) else {
+            publishError("Cannot read identity key from \(keyPath)")
+            return
+        }
+
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "wired-identity-public.b64"
+        panel.title = "Export Server Identity Public Key"
+        panel.message = "Save the server's persistent identity public key for out-of-band distribution to clients."
+        panel.allowedContentTypes = [.plainText]
+        if panel.runModal() == .OK, let url = panel.url {
+            do {
+                try exportData.write(to: url)
+                statusMessage = "Identity key exported to \(url.lastPathComponent)"
+            } catch {
+                publishError("Failed to export identity key: \(error.localizedDescription)")
+            }
         }
     }
 
