@@ -1337,13 +1337,15 @@ public class P7Socket: NSObject {
         }
 
         if self.passwordProvider != nil {
-            guard let password = self.passwordProvider?.passwordForUsername(username: self.username) else {
-                let message = "No user found with username '\(self.username)', abort"
-                Logger.error(message)
-                throw P7SocketError.keyExchangeFailed(message)
+            if let password = self.passwordProvider?.passwordForUsername(username: self.username) {
+                self.password = password
+            } else {
+                // SECURITY (FINDING_A_014): Use dummy password instead of aborting early
+                // to prevent username enumeration via timing differences.
+                // The key exchange will proceed and fail at ECDSA verification,
+                // producing the same timing as a valid user with wrong password.
+                self.password = UUID().uuidString.sha256()
             }
-            
-            self.password = password
         } else {
             // assume password is empty (guest with empty password access only)
             self.password = "".sha256()
