@@ -87,7 +87,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://wired.read-write.fr/wired/html/p7-specification.xsd"
        name="P7"
-       version="1.2">
+       version="1.1">
 
   <p7:types>
     <p7:type name="bool" id="1" size="1" />
@@ -131,8 +131,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
     <p7:field name="p7.encryption.server_password" id="14" type="data" />
     <!-- Per-session client nonce; server uses it to derive the expected salted password hash -->
     <p7:field name="p7.encryption.password_salt" id="17" type="data" />
-    <!-- Per-user stored salt sent encrypted by the server; client uses it to derive the base hash -->
-    <p7:field name="p7.encryption.stored_salt"   id="18" type="data" />
 
     <p7:field name="p7.compatibility_check.specification" id="15" type="string" />
     <p7:field name="p7.compatibility_check.status" id="16" type="bool" />
@@ -166,10 +164,11 @@ public class P7Spec: NSObject, XMLParserDelegate {
       <p7:parameter field="p7.encryption.public_key" use="required" />
     </p7:message>
 
-    <!-- In P7 v1.2 cipher.key and username moved to username_request (separate round trip) -->
     <p7:message name="p7.encryption.client_key" id="5">
+      <p7:parameter field="p7.encryption.cipher.key" use="required" />
+      <p7:parameter field="p7.encryption.username" use="required" />
       <p7:parameter field="p7.encryption.client_password" use="required" />
-      <p7:parameter field="p7.encryption.password_salt"   use="required" />
+      <p7:parameter field="p7.encryption.password_salt" use="required" />
     </p7:message>
 
     <p7:message name="p7.encryption.acknowledge" id="6">
@@ -177,17 +176,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
     </p7:message>
 
     <p7:message name="p7.encryption.authentication_error" id="7" />
-
-    <!-- New in P7 v1.2: client sends identity first so server can look up per-user salt -->
-    <p7:message name="p7.encryption.username_request" id="10">
-      <p7:parameter field="p7.encryption.cipher.key" use="required" />
-      <p7:parameter field="p7.encryption.username"   use="required" />
-    </p7:message>
-
-    <!-- New in P7 v1.2: server sends per-user stored salt (encrypted) before client proves password -->
-    <p7:message name="p7.encryption.server_challenge" id="11">
-      <p7:parameter field="p7.encryption.stored_salt" use="required" />
-    </p7:message>
 
     <p7:message name="p7.compatibility_check.specification" id="8">
       <p7:parameter field="p7.compatibility_check.specification" use="required" />
@@ -208,14 +196,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
     </p7:transaction>
 
     <p7:transaction message="p7.encryption.server_key" originator="server" use="required">
-      <p7:reply message="p7.encryption.username_request" count="1" use="required" />
-    </p7:transaction>
-
-    <p7:transaction message="p7.encryption.username_request" originator="client" use="required">
-      <p7:reply message="p7.encryption.server_challenge" count="1" use="required" />
-    </p7:transaction>
-
-    <p7:transaction message="p7.encryption.server_challenge" originator="server" use="required">
       <p7:reply message="p7.encryption.client_key" count="1" use="required" />
     </p7:transaction>
 

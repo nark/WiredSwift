@@ -22,11 +22,8 @@ var hmac_256DigestLength  = 32
 var hmac_384DigestLength  = 48
 
 
-public protocol SocketPasswordDelegate: AnyObject {
-    func passwordForUsername(username: String) -> String?
-    /// Returns the per-user stored salt (hex string) used to derive the base hash in key exchange.
-    /// Return nil if the account has not yet been assigned a stored salt.
-    func passwordSaltForUsername(username: String) -> String?
+public protocol SocketPasswordDelegate: class {
+    func passwordForUsername(username:String) -> String?
 }
 
 public class P7Socket: NSObject {
@@ -1081,52 +1078,43 @@ public class P7Socket: NSObject {
     
     
     // MARK: - KEY EXCHANGE
-    // P7 v1.2 key exchange flow (client side):
-    //   1. Receive server_key {public_key}
-    //   2. Setup ECDH cipher from server public key
-    //   3. Send username_request {cipher.key, encrypted username}
-    //   4. Receive server_challenge {encrypted stored_salt}
-    //   5. Derive base_hash: SHA256(stored_salt || passwordData) if salt present, else passwordData
-    //   6. Generate session_salt (32 random bytes)
-    //   7. Compute saltedPasswordData = SHA256(session_salt || base_hash)
-    //   8. Send client_key {ECDSA signature over saltedPasswordData+serverKey, session_salt}
-    //   9. Receive acknowledge, verify server signature, derive final session keys
-    private func connectKeyExchange() throws {
+    private func connectKeyExchange() throws  {
         self.ecdh = ECDH()
         self.digest = Digest(type: .SHA2_256)
-
+        
         if self.ecdh == nil {
             let message = "ECDH Public key cannot be created"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-
-        // Step 1: receive server_key
-        let serverKeyMsg = try self.readMessage()
-        if serverKeyMsg.name != "p7.encryption.server_key" {
-            let message = "Message should be 'p7.encryption.server_key', not '\(serverKeyMsg.name ?? "unknown")'"
+                        
+        let response = try self.readMessage()
+        
+        if response.name != "p7.encryption.server_key" {
+            let message = "Message should be 'p7.encryption.server_key', not '\(response.name ?? "unknown")'"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        guard let serverPublicKey = serverKeyMsg.data(forField: "p7.encryption.public_key") else {
+        
+        guard let serverPublicKey = response.data(forField: "p7.encryption.public_key") else {
             let message = "Message has no 'p7.encryption.public_key' field"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-
-        // Step 2: setup cipher from ECDH shared secret
+        
         guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: serverPublicKey) else {
             let message = "Cannot compute shared secret"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        guard let ecdhSaltData = serverSharedSecret.data(using: .utf8),
-              let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: ecdhSaltData,
-                                                                  andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
+                
+        guard   let saltData = serverSharedSecret.data(using: .utf8),
+                let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData, andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
             let message = "Cannot derive key from shared secret"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+                
         do {
             self.sslCipher = try Cipher(cipher: self.cipherType, keyData: derivedKey, iv: derivedIV)
         } catch let error {
@@ -1134,67 +1122,23 @@ public class P7Socket: NSObject {
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-
+        
         if self.password == nil || self.password == "" {
             self.password = "".sha256()
         } else {
             self.password = self.password.sha256()
         }
+
         let passwordData = self.password.data(using: .utf8)!
 
-        guard let ecdsa = ECDSA(privateKey: derivedKey) else {
-            let message = "Cannot init ECDSA"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-
-        // Step 3: send username_request {cipher.key, encrypted username}
-        guard var clientPublicKey = self.ecdh.publicKeyData() else {
-            let message = "Cannot read client public key"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-        guard let usernameBytes = self.username.data(using: .utf8),
-              let encryptedUsername = try? self.sslCipher.encrypt(data: usernameBytes) else {
-            let message = "Cannot encrypt username"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-        clientPublicKey.append(ecdsa.publicKey.rawRepresentation)
-
-        let usernameRequest = P7Message(withName: "p7.encryption.username_request", spec: self.spec)
-        usernameRequest.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey.base64EncodedData())
-        usernameRequest.addParameter(field: "p7.encryption.username", value: encryptedUsername)
-        _ = self.write(usernameRequest)
-
-        // Step 4: receive server_challenge {encrypted stored_salt}
-        let challengeMsg = try self.readMessage()
-        if challengeMsg.name != "p7.encryption.server_challenge" {
-            let message = "Message should be 'p7.encryption.server_challenge', not '\(challengeMsg.name ?? "unknown")'"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-
-        // Step 5: derive base_hash
-        // If server provided a per-user stored_salt, the expected stored hash is SHA256(storedSalt || SHA256(plain)).
-        // We replicate that derivation so both sides produce the same proof value.
-        let baseHashData: Data
-        if let encryptedStoredSalt = challengeMsg.data(forField: "p7.encryption.stored_salt"),
-           let storedSaltData = try? self.sslCipher.decrypt(data: encryptedStoredSalt),
-           !storedSaltData.isEmpty {
-            var combined = storedSaltData
-            combined.append(passwordData)
-            baseHashData = combined.sha256().toHexString().data(using: .utf8)!
-        } else {
-            baseHashData = passwordData
-        }
-
-        // Step 6-7: generate session_salt and derive saltedPasswordData
+        // Generate a per-session random salt (32 bytes). The client sends it to the server
+        // alongside the ECDSA-signed password proof so the server can derive the same hash.
+        // This prevents wire-level replay attacks: the derived hash changes every session.
         var rng = SystemRandomNumberGenerator()
-        let sessionSalt = Data((0..<32).map { _ in UInt8.random(in: 0...255, using: &rng) })
+        let passwordSalt = Data((0..<32).map { _ in UInt8.random(in: 0...255, using: &rng) })
 
-        var saltedInput = sessionSalt
-        saltedInput.append(baseHashData)
+        var saltedInput = passwordSalt
+        saltedInput.append(passwordData)
         let saltedPasswordData = saltedInput.sha256().toHexString().data(using: .utf8)!
 
         var clientPassword1 = saltedPasswordData
@@ -1205,50 +1149,86 @@ public class P7Socket: NSObject {
         clientPassword2.append(saltedPasswordData)
         clientPassword2 = clientPassword2.sha256().toHexString().data(using: .utf8)!
 
-        // Step 8: send client_key {signature, session_salt}
+        let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
+
+        guard var clientPublicKey = self.ecdh.publicKeyData() else {
+            let message = "Cannot read client public key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+        
+        guard let d = self.username.data(using: .utf8), let encryptedUsername = try? self.sslCipher.encrypt(data: d)  else {
+            let message = "Cannot encrypt username"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+
+        guard let ecdsa = ECDSA(privateKey: derivedKey) else {
+            let message = "Cannot ini ECDSA"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+        
         guard let passwordSignature = ecdsa.sign(data: clientPassword1) else {
-            let message = "Cannot sign client password"
+            let message = "Cannot read client password"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        let clientKeyMsg = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
-        clientKeyMsg.addParameter(field: "p7.encryption.client_password", value: passwordSignature)
-        clientKeyMsg.addParameter(field: "p7.encryption.password_salt", value: sessionSalt)
-        _ = self.write(clientKeyMsg)
-
+        
+        clientPublicKey.append(ecdsa.publicKey.rawRepresentation)
+                    
+        message.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey.base64EncodedData())
+        message.addParameter(field: "p7.encryption.username", value: encryptedUsername)
+        message.addParameter(field: "p7.encryption.client_password", value: passwordSignature)
+        message.addParameter(field: "p7.encryption.password_salt", value: passwordSalt)
+        
+        _ = self.write(message)
+        
         self.digest = Digest(type: self.checksum, key: derivedKey.hexEncodedString())
+        //checksumLength = 48
 
-        // Step 9: receive acknowledge, verify server signature
-        let acknowledgeMsg = try self.readMessage()
-        if acknowledgeMsg.name == "p7.encryption.authentication_error" {
-            let message = "Authentication failed for '\(self.username)'"
+        if self.digest == nil {
+            let message = "Digest cannot be created"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        if acknowledgeMsg.name != "p7.encryption.acknowledge" {
-            let message = "Message should be 'p7.encryption.acknowledge', not '\(acknowledgeMsg.name ?? "unknown")'"
+        
+        let response2 = try self.readMessage()
+
+        if response2.name == "p7.encryption.authentication_error" {
+            let message = "Authentification failed for '\(self.username)'"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        guard let serverPasswordSignature = acknowledgeMsg.data(forField: "p7.encryption.server_password") else {
+
+        if response2.name != "p7.encryption.acknowledge" {
+            let message = "Message should be 'p7.encryption.acknowledge', not '\(response2.name!)'"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+
+        guard let encryptedServerPasswordData = response2.data(forField: "p7.encryption.server_password") else {
             let message = "Message has no 'p7.encryption.server_password' field"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        if !ecdsa.verify(data: clientPassword2, withSignature: serverPasswordSignature) {
-            let message = "Server password mismatch for '\(self.username)' during key exchange"
+        
+        if !ecdsa.verify(data: clientPassword2, withSignature: encryptedServerPasswordData) {
+            let message = "Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
 
-        // Derive final session keys from clientPassword2
         guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: clientPassword2,
-                                                                     andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-            let message = "Cannot derive final session key"
+                                                                        andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
+            let message = "Cannot derive key from server password"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
+                                                                            
         }
-        self.digest = Digest(type: self.checksum, key: derivedKey2.hexEncodedString())
+
+        self.digest     = Digest(type: self.checksum, key: derivedKey2.hexEncodedString())
+        
         do {
             self.sslCipher = try Cipher(cipher: self.cipherType, keyData: derivedKey2, iv: derivedIV2)
         } catch let error {
@@ -1256,20 +1236,21 @@ public class P7Socket: NSObject {
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+
+        if self.sslCipher == nil {
+            let message = "Cipher cannot be created"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+
         self.encryptionEnabled = true
     }
     
     
-    // P7 v1.2 key exchange flow (server side):
-    //   1. Send server_key {public_key}
-    //   2. Receive username_request {cipher.key, encrypted username} — setup ECDH cipher
-    //   3. Look up per-user stored_salt; send server_challenge {encrypted stored_salt}
-    //   4. Receive client_key {ECDSA signature, session_salt}
-    //   5. Derive base_hash (mirror client): SHA256(storedSalt || passwordData) if salt present
-    //   6. Derive saltedPasswordData = SHA256(session_salt || base_hash), verify ECDSA
-    //   7. Send acknowledge {server ECDSA signature over reversed proof}, derive final session keys
     private func acceptKeyExchange(timeout: Int) throws {
-        // Step 1: send server_key
+        // send the server public key
+        let message = P7Message(withName: "p7.encryption.server_key", spec: self.spec)
+        
         self.ecdh = ECDH()
         self.digest = Digest(type: .SHA2_256)
 
@@ -1278,140 +1259,126 @@ public class P7Socket: NSObject {
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+        
         guard let serverPublicKey = self.ecdh.publicKeyData() else {
             let message = "Failed to generate ECDH public key"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        let serverKeyMsg = P7Message(withName: "p7.encryption.server_key", spec: self.spec)
-        serverKeyMsg.addParameter(field: "p7.encryption.public_key", value: serverPublicKey)
-        if !self.write(serverKeyMsg) {
+
+        message.addParameter(field: "p7.encryption.public_key", value: serverPublicKey)
+                
+        if !self.write(message) {
             let message = "Failed to send server public key"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
 
-        // Step 2: receive username_request {cipher.key, encrypted username}
-        let usernameRequestMsg = try self.readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true)
-        if usernameRequestMsg.name != "p7.encryption.username_request" {
-            let message = "Message should be 'p7.encryption.username_request', not '\(usernameRequestMsg.name ?? "unknown")'"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-        guard let combinedBase64Keys = usernameRequestMsg.data(forField: "p7.encryption.cipher.key"),
-              let combinedKeys = Data(base64Encoded: combinedBase64Keys) else {
-            let message = "Client public key not found in username_request"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-        let clientPublicKey = combinedKeys.dropLast(64)
-        if clientPublicKey.count != 132 {
-            let message = "Invalid public key length in username_request"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-        let publicSigningKey = combinedKeys.dropFirst(132)
-        if publicSigningKey.count != 64 {
-            let message = "Invalid signing key length in username_request"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
+        // read the client public key (with deadline to prevent thread-pool exhaustion)
+        let response = try self.readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true)
 
-        // Setup ECDH cipher from client's public key (needed to decrypt username)
+        if response.name != "p7.encryption.client_key" {
+            let message = "Message should be 'p7.encryption.client_key', not '\(response.name ?? "unknown")'"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+        
+        guard   let combinedBase64Keys = response.data(forField: "p7.encryption.cipher.key"),
+                let combinedKeys = Data(base64Encoded: combinedBase64Keys) else {
+            let message = "Client public key not found"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+        
+        let clientPublicKey = combinedKeys.dropLast(64)
+        
+        if clientPublicKey.count != 132 {
+            let message = "Invalid public key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+        
+        let publicSigningKey = combinedKeys.dropFirst(132)
+
+        if publicSigningKey.count != 64 {
+            let message = "Invalid signing key"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+        
         guard let serverSharedSecret = self.ecdh.computeSecret(withPublicKey: clientPublicKey) else {
             let message = "Cannot compute shared secret"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        guard let ecdhSaltData = serverSharedSecret.data(using: .utf8),
-              let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: ecdhSaltData,
-                                                                  andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
+                
+        guard   let saltData = serverSharedSecret.data(using: .utf8),
+                let (derivedKey, derivedIV) = self.ecdh.derivedKey(withSalt: saltData,
+                                                                   andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
             let message = "Cannot derive key from shared secret"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+        
         do {
-            self.sslCipher = try Cipher(cipher: self.cipherType, keyData: derivedKey, iv: derivedIV)
+            self.sslCipher  = try Cipher(cipher: self.cipherType, keyData: derivedKey, iv: derivedIV)
         } catch let error {
             let message = "Cipher cannot be created: \(error)"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+        
         self.digest = Digest(type: self.checksum, key: derivedKey.hexEncodedString())
-
-        // Decrypt username
-        guard let encryptedUsernameData = usernameRequestMsg.data(forField: "p7.encryption.username"),
-              let usernameData = try? self.sslCipher.decrypt(data: encryptedUsernameData),
-              let username = usernameData.stringUTF8 else {
-            let message = "Cannot decrypt username from username_request"
+        //checksumLength = 48
+        
+        guard   let dd = response.data(forField: "p7.encryption.username"),
+                let data = try?  self.sslCipher.decrypt(data: dd) else {
+            let message = "Message has no 'p7.encryption.username' field"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+        
+        guard let username = data.stringUTF8 else {
+            let message = "Message has no 'p7.encryption.username' field"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+
         self.username = username
 
-        // Look up password and per-user stored salt
-        if self.passwordProvider != nil {
-            if let password = self.passwordProvider?.passwordForUsername(username: self.username) {
-                self.password = password
-            } else {
-                // SECURITY (FINDING_A_014): Use dummy password to prevent username enumeration
-                // via timing differences. Key exchange proceeds and fails at ECDSA verification,
-                // matching the timing of a valid user with wrong password.
-                self.password = UUID().uuidString.sha256()
-            }
-        } else {
-            self.password = "".sha256()
-        }
-        // Per-user stored salt for base_hash derivation (nil = not yet assigned)
-        let storedSalt = self.passwordProvider?.passwordSaltForUsername(username: self.username)
-
-        // Step 3: send server_challenge {encrypted stored_salt}
-        let storedSaltBytes: Data = storedSalt.flatMap { $0.isEmpty ? nil : $0.data(using: .utf8) } ?? Data()
-        guard let encryptedStoredSalt = try? self.sslCipher.encrypt(data: storedSaltBytes) else {
-            let message = "Cannot encrypt stored_salt for server_challenge"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-        let challengeMsg = P7Message(withName: "p7.encryption.server_challenge", spec: self.spec)
-        challengeMsg.addParameter(field: "p7.encryption.stored_salt", value: encryptedStoredSalt)
-        if !self.write(challengeMsg) {
-            let message = "Failed to send server_challenge"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-
-        // Step 4: receive client_key {signature, session_salt}
-        let clientKeyMsg = try self.readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true)
-        if clientKeyMsg.name != "p7.encryption.client_key" {
-            let message = "Message should be 'p7.encryption.client_key', not '\(clientKeyMsg.name ?? "unknown")'"
-            Logger.error(message)
-            throw P7SocketError.keyExchangeFailed(message)
-        }
-        guard let clientPasswordSignature = clientKeyMsg.data(forField: "p7.encryption.client_password") else {
+        guard let client_password = response.data(forField: "p7.encryption.client_password") else {
             let message = "Message has no 'p7.encryption.client_password' field"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
 
-        // Step 5-6: derive base_hash then saltedPasswordData (mirror client derivation)
-        let passwordData = self.password.data(using: .utf8)!
-        let baseHashData: Data
-        if !storedSaltBytes.isEmpty {
-            // Mirror: base_hash = SHA256(storedSaltBytes || SHA256(plain).utf8)
-            var combined = storedSaltBytes
-            combined.append(passwordData)
-            baseHashData = combined.sha256().toHexString().data(using: .utf8)!
+        if self.passwordProvider != nil {
+            if let password = self.passwordProvider?.passwordForUsername(username: self.username) {
+                self.password = password
+            } else {
+                // SECURITY (FINDING_A_014): Use dummy password instead of aborting early
+                // to prevent username enumeration via timing differences.
+                // The key exchange will proceed and fail at ECDSA verification,
+                // producing the same timing as a valid user with wrong password.
+                self.password = UUID().uuidString.sha256()
+            }
         } else {
-            baseHashData = passwordData
+            // assume password is empty (guest with empty password access only)
+            self.password = "".sha256()
         }
 
+        let passwordData = self.password.data(using: .utf8)!
+
+        // Read the per-session salt sent by the client and derive the same salted hash.
+        // If the field is missing (old P7 1.0 client), fall back to the unsalted derivation
+        // so the server produces a wrong hash that fails ECDSA — cleaner than a hard error.
         let saltedPasswordData: Data
-        if let sessionSalt = clientKeyMsg.data(forField: "p7.encryption.password_salt") {
-            var saltedInput = sessionSalt
-            saltedInput.append(baseHashData)
+        if let passwordSalt = response.data(forField: "p7.encryption.password_salt") {
+            var saltedInput = passwordSalt
+            saltedInput.append(passwordData)
             saltedPasswordData = saltedInput.sha256().toHexString().data(using: .utf8)!
         } else {
-            saltedPasswordData = baseHashData
+            saltedPasswordData = passwordData
         }
 
         var serverPassword1Data = saltedPasswordData
@@ -1421,46 +1388,51 @@ public class P7Socket: NSObject {
         var serverPassword2Data = serverPublicKey
         serverPassword2Data.append(saltedPasswordData)
         serverPassword2Data = serverPassword2Data.sha256().toHexString().data(using: .utf8)!
-
-        // Verify client ECDSA signature
+        
         guard let ecdsa = ECDSA(publicKey: publicSigningKey) else {
             let message = "Cannot init ECDSA with public signing key"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        if !ecdsa.verify(data: serverPassword1Data, withSignature: clientPasswordSignature) {
+        
+        if !ecdsa.verify(data: serverPassword1Data, withSignature: client_password) {
             let message = "Password mismatch for '\(self.username)' during key exchange, ECDSA validation failed"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
 
-        // Step 7: send acknowledge {server ECDSA signature}
+        // acknowledge
+        let message2 = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
+        
         guard let ecdsa2 = ECDSA(privateKey: derivedKey) else {
             let message = "Cannot init ECDSA with private signing key"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        guard let serverPasswordSignature = ecdsa2.sign(data: serverPassword2Data) else {
+        
+        guard let passwordSignature = ecdsa2.sign(data: serverPassword2Data) else {
             let message = "Cannot sign server password"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        let acknowledgeMsg = P7Message(withName: "p7.encryption.acknowledge", spec: self.spec)
-        acknowledgeMsg.addParameter(field: "p7.encryption.server_password", value: serverPasswordSignature)
-        if !self.write(acknowledgeMsg) {
+
+        message2.addParameter(field: "p7.encryption.server_password", value: passwordSignature)
+
+        if !self.write(message2) {
             let message = "Cannot write acknowledge message"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-
-        // Derive final session keys from serverPassword2Data
+                
         guard let (derivedKey2, derivedIV2) = self.ecdh.derivedKey(withSalt: serverPassword2Data,
-                                                                     andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
-            let message = "Cannot derive final session key"
+                                                                        andIVofLength: Cipher.IVlength(forCipher: self.cipherType)) else {
+            let message = "Cannot derive key from server password"
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+
         self.digest = Digest(type: self.checksum, key: derivedKey2.hexEncodedString())
+
         do {
             self.sslCipher = try Cipher(cipher: self.cipherType, keyData: derivedKey2, iv: derivedIV2)
         } catch let error {
@@ -1468,7 +1440,14 @@ public class P7Socket: NSObject {
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
-        self.encryptionEnabled = true
+        
+        if self.digest == nil {
+            let message = "Digest cannot be created"
+            Logger.error(message)
+            throw P7SocketError.keyExchangeFailed(message)
+        }
+
+        self.encryptionEnabled  = true
     }
 
     

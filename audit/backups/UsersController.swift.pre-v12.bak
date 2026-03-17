@@ -32,27 +32,25 @@ public class UsersController: TableController, SocketPasswordDelegate {
         user(withUsername: username)?.password
     }
 
-    public func passwordSaltForUsername(username: String) -> String? {
-        user(withUsername: username)?.passwordSalt
-    }
-
 
     // MARK: - Fetch
     public func user(withUsername username: String, password: String) -> User? {
         guard let user = user(withUsername: username) else { return nil }
 
-        // user.password = SHA-256(plaintext); password parameter = SHA-256(plaintext) from client.
-        guard user.password == password else { return nil }
-
-        // Lazy migration: assign a per-user stored_salt on first successful login if not set.
-        // The salt is used by the P7 v1.2 key exchange to derive the base hash, preventing
-        // stored-hash-in-transit exposure. user.password (SHA-256 of plaintext) is never changed.
-        if user.passwordSalt == nil || user.passwordSalt!.isEmpty {
-            let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-                     + UUID().uuidString.replacingOccurrences(of: "-", with: "")
-            user.passwordSalt = salt
+        // P7 key exchange uses user.password (SHA-256 of plaintext) as a shared secret for ECDSA.
+        // Proper salted-password support requires a client-aware protocol change (needs_human_review).
+        // If this account was previously rehashed by an earlier A_004 run, undo it: the `password`
+        // parameter IS SHA-256(plaintext), so we can restore the original stored value.
+        if let salt = user.passwordSalt, !salt.isEmpty {
+            let salted = (salt + password).sha256()
+            guard user.password == salted else { return nil }
+            // Restore original unsalted hash so P7 key exchange works again
+            user.password = password
+            user.passwordSalt = nil
             save(user: user)
-            Logger.info("Assigned stored_salt for '\(username)' (P7 v1.2 lazy migration)")
+            Logger.info("Restored unsalted password hash for '\(username)' (A_004 rollback)")
+        } else {
+            guard user.password == password else { return nil }
         }
 
         // Load privileges
@@ -215,19 +213,19 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 // Utilisateurs par défaut
                 // SECURITY (FINDING_A_005): Generate random password instead of hardcoded 'admin'
                 let generatedPassword = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(16)
-                // user.password = SHA-256(plaintext) — P7 key exchange proof layer.
-                // passwordSalt = per-user salt sent to client during P7 v1.2 key exchange
-                // so the ECDSA proof is derived from SHA-256(salt || SHA-256(plain)).
-                let admin = User(username: "admin", password: String(generatedPassword).sha256())
-                admin.passwordSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-                                   + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                // SECURITY (FINDING_A_004): Store salted SHA-256 from the start
+                let adminSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                let adminHash = (adminSalt + String(generatedPassword).sha256()).sha256()
+                let admin = User(username: "admin", password: adminHash)
+                admin.passwordSalt = adminSalt
                 WiredSwift.Logger.info("=== INITIAL ADMIN PASSWORD: \(generatedPassword) === (change it immediately)")
                 admin.color = "1"
                 try admin.insert(db)
 
-                let guest = User(username: "guest", password: "".sha256())
-                guest.passwordSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-                                   + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                let guestSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                let guestHash = (guestSalt + "".sha256()).sha256()
+                let guest = User(username: "guest", password: guestHash)
+                guest.passwordSalt = guestSalt
                 guest.color = "0"
                 try guest.insert(db)
 
