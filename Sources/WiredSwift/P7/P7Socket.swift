@@ -1025,9 +1025,14 @@ public class P7Socket: NSObject {
             //cipher
             if self.cipherType.contains(clientCipher) {
                 self.cipherType = clientCipher
+            } else if clientCipher == .NONE {
+                // Client explicitly requested no encryption but server requires it.
+                // Reject with a clear error instead of silently upgrading the cipher.
+                let msg = "Server requires encryption but client requested NONE. Please configure your client to use encryption."
+                Logger.error(msg)
+                throw P7SocketError.handshakeFailed(msg)
             } else {
                 Logger.error("Encryption cipher not supported (\(clientCipher)), fallback to \(self.cipherTypeFallback)")
-
                 self.cipherType = self.cipherTypeFallback
             }
             
