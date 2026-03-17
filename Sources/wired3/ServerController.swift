@@ -1865,6 +1865,9 @@ public class ServerController: ServerDelegate {
         }
 
         guard let user = App.usersController.user(withUsername: login, password: password) else {
+            // SECURITY (FINDING_A_014): Perform dummy SHA-256 to prevent username enumeration via timing
+            let _ = (UUID().uuidString + password).sha256()
+
             let reply = P7Message(withName: "wired.error", spec: message.spec)
             reply.addParameter(field: "wired.error.string", value: "Login failed")
             reply.addParameter(field: "wired.error", value: UInt32(4
