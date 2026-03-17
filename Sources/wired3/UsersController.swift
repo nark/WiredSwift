@@ -34,24 +34,23 @@ public class UsersController: TableController, SocketPasswordDelegate {
 
 
     // MARK: - Fetch
-    // SECURITY (FINDING_A_004): Support salted SHA-256 password verification
     public func user(withUsername username: String, password: String) -> User? {
         guard let user = user(withUsername: username) else { return nil }
 
-        let passwordMatches: Bool
+        // P7 key exchange uses user.password (SHA-256 of plaintext) as a shared secret for ECDSA.
+        // Proper salted-password support requires a client-aware protocol change (needs_human_review).
+        // If this account was previously rehashed by an earlier A_004 run, undo it: the `password`
+        // parameter IS SHA-256(plaintext), so we can restore the original stored value.
         if let salt = user.passwordSalt, !salt.isEmpty {
-            // Salted verification: SHA-256(salt + password)
-            passwordMatches = (user.password == (salt + password).sha256())
+            let salted = (salt + password).sha256()
+            guard user.password == salted else { return nil }
+            // Restore original unsalted hash so P7 key exchange works again
+            user.password = password
+            user.passwordSalt = nil
+            save(user: user)
+            Logger.info("Restored unsalted password hash for '\(username)' (A_004 rollback)")
         } else {
-            // Legacy unsalted verification
-            passwordMatches = (user.password == password)
-        }
-
-        guard passwordMatches else { return nil }
-
-        // Transparent re-hash: if account has no salt, add one now
-        if user.passwordSalt == nil || user.passwordSalt?.isEmpty == true {
-            rehashPasswordWithSalt(user: user, plainHash: password)
+            guard user.password == password else { return nil }
         }
 
         // Load privileges
@@ -62,16 +61,6 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
 
         return user
-    }
-
-    /// Re-hash an existing unsalted password with a new random salt.
-    /// Called transparently on successful login for legacy accounts.
-    private func rehashPasswordWithSalt(user: User, plainHash: String) {
-        let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-        let saltedHash = (salt + plainHash).sha256()
-        user.password = saltedHash
-        user.passwordSalt = salt
-        save(user: user)
     }
 
     public func user(withUsername username: String) -> User? {
