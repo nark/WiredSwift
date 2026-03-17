@@ -34,18 +34,44 @@ public class UsersController: TableController, SocketPasswordDelegate {
 
 
     // MARK: - Fetch
+    // SECURITY (FINDING_A_004): Support salted SHA-256 password verification
     public func user(withUsername username: String, password: String) -> User? {
-        try? databaseController.dbQueue.read { db in
-            if let user = try User
-                .filter(Column("username") == username && Column("password") == password)
-                .fetchOne(db) {
-                user.privileges = try UserPrivilege
-                    .filter(Column("user_id") == user.id!)
-                    .fetchAll(db)
-                return user
-            }
-            return nil
+        guard let user = user(withUsername: username) else { return nil }
+
+        let passwordMatches: Bool
+        if let salt = user.passwordSalt, !salt.isEmpty {
+            // Salted verification: SHA-256(salt + password)
+            passwordMatches = (user.password == (salt + password).sha256())
+        } else {
+            // Legacy unsalted verification
+            passwordMatches = (user.password == password)
         }
+
+        guard passwordMatches else { return nil }
+
+        // Transparent re-hash: if account has no salt, add one now
+        if user.passwordSalt == nil || user.passwordSalt?.isEmpty == true {
+            rehashPasswordWithSalt(user: user, plainHash: password)
+        }
+
+        // Load privileges
+        if let userId = user.id {
+            user.privileges = (try? databaseController.dbQueue.read { db in
+                try UserPrivilege.filter(Column("user_id") == userId).fetchAll(db)
+            }) ?? []
+        }
+
+        return user
+    }
+
+    /// Re-hash an existing unsalted password with a new random salt.
+    /// Called transparently on successful login for legacy accounts.
+    private func rehashPasswordWithSalt(user: User, plainHash: String) {
+        let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        let saltedHash = (salt + plainHash).sha256()
+        user.password = saltedHash
+        user.passwordSalt = salt
+        save(user: user)
     }
 
     public func user(withUsername username: String) -> User? {
@@ -198,12 +224,19 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 // Utilisateurs par défaut
                 // SECURITY (FINDING_A_005): Generate random password instead of hardcoded 'admin'
                 let generatedPassword = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(16)
-                let admin = User(username: "admin", password: String(generatedPassword).sha256())
+                // SECURITY (FINDING_A_004): Store salted SHA-256 from the start
+                let adminSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                let adminHash = (adminSalt + String(generatedPassword).sha256()).sha256()
+                let admin = User(username: "admin", password: adminHash)
+                admin.passwordSalt = adminSalt
                 WiredSwift.Logger.info("=== INITIAL ADMIN PASSWORD: \(generatedPassword) === (change it immediately)")
                 admin.color = "1"
                 try admin.insert(db)
 
-                let guest = User(username: "guest", password: "".sha256())
+                let guestSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                let guestHash = (guestSalt + "".sha256()).sha256()
+                let guest = User(username: "guest", password: guestHash)
+                guest.passwordSalt = guestSalt
                 guest.color = "0"
                 try guest.insert(db)
 

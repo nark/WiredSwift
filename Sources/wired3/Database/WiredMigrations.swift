@@ -17,6 +17,9 @@ enum WiredMigrations {
         migrator.registerMigration("v3_add_search_files_privilege") { db in
             try WiredMigrations.v3(db)
         }
+        migrator.registerMigration("v4_add_password_salt") { db in
+            try WiredMigrations.v4(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -100,6 +103,13 @@ enum WiredMigrations {
             LEFT JOIN group_privileges ref
                 ON ref.group_id = g.id AND ref.name = 'wired.account.file.get_info'
         """)
+    }
+
+    // SECURITY (FINDING_A_004): Add password_salt column for salted SHA-256 hashing
+    static func v4(_ db: Database) throws {
+        try db.alter(table: "users") { t in
+            t.add(column: "password_salt", .text)
+        }
     }
 
     // swiftlint:disable:next function_body_length
@@ -213,5 +223,16 @@ enum WiredMigrations {
             columns: ["expires_at"],
             ifNotExists: true
         )
+
+        // Security: per-recipient limit (100 messages) to prevent storage DoS
+        try db.execute(sql: """
+            CREATE TRIGGER IF NOT EXISTS offline_messages_per_recipient_limit
+            BEFORE INSERT ON offline_messages
+            BEGIN
+                SELECT RAISE(ABORT, 'per-recipient offline message limit exceeded')
+                WHERE (SELECT COUNT(*) FROM offline_messages
+                       WHERE recipient_identity = NEW.recipient_identity) >= 100;
+            END;
+        """)
     }
 }

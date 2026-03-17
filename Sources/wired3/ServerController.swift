@@ -2406,7 +2406,9 @@ public class ServerController: ServerDelegate {
         }
         var passwordChanged = false
         if let password = message.string(forField: "wired.account.password"), !password.isEmpty {
-            account.password = normalizedPasswordForStorage(password)
+            let result = normalizedPasswordForStorage(password)
+            account.password = result.hash
+            account.passwordSalt = result.salt
             passwordChanged = true
         }
         if let group = message.string(forField: "wired.account.group") {
@@ -2629,9 +2631,14 @@ public class ServerController: ServerDelegate {
         return reply
     }
 
-    private func normalizedPasswordForStorage(_ password: String) -> String {
+    // SECURITY (FINDING_A_004): Salted SHA-256 password storage
+    private func normalizedPasswordForStorage(_ password: String) -> (hash: String, salt: String) {
+        let normalized: String
         let isHexSHA256 = password.range(of: "^[0-9a-fA-F]{64}$", options: .regularExpression) != nil
-        return isHexSHA256 ? password.lowercased() : password.sha256()
+        normalized = isHexSHA256 ? password.lowercased() : password.sha256()
+        let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        let saltedHash = (salt + normalized).sha256()
+        return (hash: saltedHash, salt: salt)
     }
 
     private func accountPrivilegesMessage(for account: User) -> P7Message {
