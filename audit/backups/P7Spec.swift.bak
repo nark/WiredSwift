@@ -87,7 +87,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://wired.read-write.fr/wired/html/p7-specification.xsd"
        name="P7"
-       version="1.1">
+       version="1.0">
 
   <p7:types>
     <p7:type name="bool" id="1" size="1" />
@@ -129,8 +129,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
     <p7:field name="p7.encryption.username" id="12" type="data" />
     <p7:field name="p7.encryption.client_password" id="13" type="data" />
     <p7:field name="p7.encryption.server_password" id="14" type="data" />
-    <!-- Per-session client nonce; server uses it to derive the expected salted password hash -->
-    <p7:field name="p7.encryption.password_salt" id="17" type="data" />
 
     <p7:field name="p7.compatibility_check.specification" id="15" type="string" />
     <p7:field name="p7.compatibility_check.status" id="16" type="bool" />
@@ -168,7 +166,6 @@ public class P7Spec: NSObject, XMLParserDelegate {
       <p7:parameter field="p7.encryption.cipher.key" use="required" />
       <p7:parameter field="p7.encryption.username" use="required" />
       <p7:parameter field="p7.encryption.client_password" use="required" />
-      <p7:parameter field="p7.encryption.password_salt" use="required" />
     </p7:message>
 
     <p7:message name="p7.encryption.acknowledge" id="6">

@@ -1131,22 +1131,12 @@ public class P7Socket: NSObject {
 
         let passwordData = self.password.data(using: .utf8)!
 
-        // Generate a per-session random salt (32 bytes). The client sends it to the server
-        // alongside the ECDSA-signed password proof so the server can derive the same hash.
-        // This prevents wire-level replay attacks: the derived hash changes every session.
-        var rng = SystemRandomNumberGenerator()
-        let passwordSalt = Data((0..<32).map { _ in UInt8.random(in: 0...255, using: &rng) })
-
-        var saltedInput = passwordSalt
-        saltedInput.append(passwordData)
-        let saltedPasswordData = saltedInput.sha256().toHexString().data(using: .utf8)!
-
-        var clientPassword1 = saltedPasswordData
+        var clientPassword1 = passwordData
         clientPassword1.append(serverPublicKey)
         clientPassword1 = clientPassword1.sha256().toHexString().data(using: .utf8)!
 
         var clientPassword2 = serverPublicKey
-        clientPassword2.append(saltedPasswordData)
+        clientPassword2.append(passwordData)
         clientPassword2 = clientPassword2.sha256().toHexString().data(using: .utf8)!
 
         let message = P7Message(withName: "p7.encryption.client_key", spec: self.spec)
@@ -1180,7 +1170,6 @@ public class P7Socket: NSObject {
         message.addParameter(field: "p7.encryption.cipher.key", value: clientPublicKey.base64EncodedData())
         message.addParameter(field: "p7.encryption.username", value: encryptedUsername)
         message.addParameter(field: "p7.encryption.client_password", value: passwordSignature)
-        message.addParameter(field: "p7.encryption.password_salt", value: passwordSalt)
         
         _ = self.write(message)
         
@@ -1368,25 +1357,12 @@ public class P7Socket: NSObject {
         }
 
         let passwordData = self.password.data(using: .utf8)!
-
-        // Read the per-session salt sent by the client and derive the same salted hash.
-        // If the field is missing (old P7 1.0 client), fall back to the unsalted derivation
-        // so the server produces a wrong hash that fails ECDSA — cleaner than a hard error.
-        let saltedPasswordData: Data
-        if let passwordSalt = response.data(forField: "p7.encryption.password_salt") {
-            var saltedInput = passwordSalt
-            saltedInput.append(passwordData)
-            saltedPasswordData = saltedInput.sha256().toHexString().data(using: .utf8)!
-        } else {
-            saltedPasswordData = passwordData
-        }
-
-        var serverPassword1Data = saltedPasswordData
+        var serverPassword1Data = passwordData
         serverPassword1Data.append(serverPublicKey)
         serverPassword1Data = serverPassword1Data.sha256().toHexString().data(using: .utf8)!
 
         var serverPassword2Data = serverPublicKey
-        serverPassword2Data.append(saltedPasswordData)
+        serverPassword2Data.append(passwordData)
         serverPassword2Data = serverPassword2Data.sha256().toHexString().data(using: .utf8)!
         
         guard let ecdsa = ECDSA(publicKey: publicSigningKey) else {
