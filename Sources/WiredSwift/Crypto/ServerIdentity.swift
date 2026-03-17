@@ -62,7 +62,14 @@ public class ServerIdentity: ServerIdentityProvider {
         } else {
             let pk = P256.Signing.PrivateKey()
             do {
-                try pk.rawRepresentation.write(to: URL(fileURLWithPath: keyPath), options: .atomic)
+                // SECURITY: write via atomic temp file, then restrict to owner-read-write only (0600).
+                // Data.write(options: .atomic) does not honour posixPermissions, so we set them explicitly.
+                let keyURL = URL(fileURLWithPath: keyPath)
+                try pk.rawRepresentation.write(to: keyURL, options: .atomic)
+                try FileManager.default.setAttributes(
+                    [.posixPermissions: 0o600 as NSNumber],
+                    ofItemAtPath: keyPath
+                )
             } catch {
                 Logger.error("ServerIdentity: failed to write identity key to \(keyPath): \(error)")
                 return nil
