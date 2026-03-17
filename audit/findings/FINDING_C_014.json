@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_014",
+  "category": "chat",
+  "severity": "LOW",
+  "title": "deletePublicChat broadcasts before actually deleting - inconsistency on failure",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 178,
+  "description": "In deletePublicChat (line 178-193), the server broadcasts wired.chat.public_chat_deleted and removes the chat from memory (self.remove) BEFORE attempting the database delete (line 187). If the database delete fails (throws), the chat has already been removed from in-memory state and clients have been notified of deletion, but the chat still exists in the database. On server restart, the deleted chat will reappear. This creates an inconsistent state between in-memory and on-disk data.",
+  "vulnerable_code": "do {\n    let reply = P7Message(withName: \"wired.chat.public_chat_deleted\", spec: message.spec)\n    reply.addParameter(field: \"wired.chat.id\", value: publicChat.chatID)\n    App.clientsController.broadcast(message: reply)\n    self.remove(chat: publicChat)\n    try databaseController.dbQueue.write { db in try publicChat.delete(db) }\n} catch let error {",
+  "recommendation": "Perform the database delete first, then remove from memory and broadcast on success. Only broadcast after the database operation succeeds.",
+  "status": "patched"
+}

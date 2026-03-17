@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_F_017",
+  "category": "files",
+  "severity": "LOW",
+  "cwe": "CWE-770",
+  "title": "No limit on directory subscription count per client",
+  "file": "Sources/wired3/FilesController.swift",
+  "line": 706,
+  "description": "The subscribeDirectory handler allows a client to subscribe to an unlimited number of directories. The subscription data is stored in subscribedRealPathsByClient and subscribedVirtualPathsByClient dictionaries. A malicious client could subscribe to thousands of directories, consuming server memory. Each notification (notifyDirectoryChanged/notifyDirectoryDeleted) iterates over all subscriptions for all clients, so a large number of subscriptions also impacts notification performance.",
+  "vulnerable_code": "subscriptionsQueue.sync {\n    var realPaths = subscribedRealPathsByClient[client.userID] ?? Set<String>()\n    realPaths.insert(realPath)\n    subscribedRealPathsByClient[client.userID] = realPaths\n}",
+  "recommendation": "Add a configurable maximum subscription count per client (e.g. 100). Reject subscriptions beyond the limit with an appropriate error.",
+  "status": "patched"
+}

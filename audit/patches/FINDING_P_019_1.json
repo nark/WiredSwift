@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_P_019",
+  "attempt": 1,
+  "status": "patched",
+  "file": "Sources/WiredSwift/P7/P7SpecItem.swift",
+  "description": "Replaced force unwrap (self.id!, self.name!) with nil-coalescing in description computed property.",
+  "commit": "6018a6e",
+  "date": "2026-03-16"
+}

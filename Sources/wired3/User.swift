@@ -28,6 +28,7 @@ public class User: Codable, FetchableRecord, PersistableRecord {
     public var id: Int64?
     public var username: String?
     public var password: String?
+    public var passwordSalt: String?
     public var fullName: String?
     public var identity: String?
     public var comment: String?
@@ -51,6 +52,7 @@ public class User: Codable, FetchableRecord, PersistableRecord {
         case id
         case username
         case password
+        case passwordSalt = "password_salt"
         case fullName = "full_name"
         case identity
         case comment
@@ -74,6 +76,7 @@ public class User: Codable, FetchableRecord, PersistableRecord {
         id                  = try c.decodeIfPresent(Int64.self, forKey: .id)
         username            = try c.decodeIfPresent(String.self, forKey: .username)
         password            = try c.decodeIfPresent(String.self, forKey: .password)
+        passwordSalt        = try c.decodeIfPresent(String.self, forKey: .passwordSalt)
         fullName            = try c.decodeIfPresent(String.self, forKey: .fullName)
         identity            = try c.decodeIfPresent(String.self, forKey: .identity)
         comment             = try c.decodeIfPresent(String.self, forKey: .comment)

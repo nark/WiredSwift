@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_007",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "kick_user handler is commented out - no kick functionality enforced",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 588,
+  "description": "The wired.chat.kick_user message handler (line 588-589) has its implementation commented out. The message is silently accepted but does nothing. This means: (1) users with kick privilege cannot actually kick anyone, and (2) the server accepts the message without returning an error to the client, giving a false sense that the operation succeeded. The protocol spec defines this as a valid message with chat.id, user.id, and disconnect fields.",
+  "vulnerable_code": "else if message.name == \"wired.chat.kick_user\" {\n    //App.chatsController.kickUser(user: user, message: message)\n}",
+  "recommendation": "Either implement the kick_user handler properly (checking wired.account.chat.kick_users privilege, protecting chat_id=1 public chat) or return an explicit error indicating the feature is not implemented.",
+  "status": "patched"
+}

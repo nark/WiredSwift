@@ -30,31 +30,40 @@ public class FilesController {
     public func virtual(path:String) -> String {
         return "/" + path.deletingPrefix(self.rootPath)
     }
+
+    /// Returns true if the resolved path is safely within the root jail.
+    private func isWithinJail(_ resolvedPath: String) -> Bool {
+        let canonicalRoot = URL(fileURLWithPath: rootPath).resolvingSymlinksInPath().path
+        let suffixed = canonicalRoot.hasSuffix("/") ? canonicalRoot : canonicalRoot + "/"
+        return resolvedPath == canonicalRoot || resolvedPath.hasPrefix(suffixed)
+    }
     
     public func listDirectory(client:Client, message:P7Message) {
         var recursive = false
-        
+
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             return
         }
-        
+
         // sanitize checks
         if !File.isValid(path: path) {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
-        
+
         let normalizedPath = NSString(string: path).standardizingPath
 
         // file privileges (dropbox inherited in path)
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toRead: privilege) {
+            if !user.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
             // user privileges
-            if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+            if !user.hasPrivilege(name: "wired.account.file.list_files") {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -68,6 +77,8 @@ public class FilesController {
     }
 
     public func getInfo(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
@@ -81,19 +92,24 @@ public class FilesController {
         let normalizedPath = NSString(string: path).standardizingPath
         let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
 
+        guard isWithinJail(realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) else {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
 
-        guard client.user!.hasPrivilege(name: "wired.account.file.get_info") else {
+        guard user.hasPrivilege(name: "wired.account.file.get_info") else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toRead: privilege) {
+            if !user.hasPermission(toRead: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -143,35 +159,45 @@ public class FilesController {
             reply.addParameter(field: "wired.file.group.write", value: mode.contains(File.FilePermissions.groupWrite))
             reply.addParameter(field: "wired.file.everyone.read", value: mode.contains(File.FilePermissions.everyoneRead))
             reply.addParameter(field: "wired.file.everyone.write", value: mode.contains(File.FilePermissions.everyoneWrite))
-            reply.addParameter(field: "wired.file.readable", value: client.user!.hasPermission(toRead: privilege))
-            reply.addParameter(field: "wired.file.writable", value: client.user!.hasPermission(toWrite: privilege))
+            reply.addParameter(field: "wired.file.readable", value: user.hasPermission(toRead: privilege))
+            reply.addParameter(field: "wired.file.writable", value: user.hasPermission(toWrite: privilege))
         }
 
         App.serverController.reply(client: client, reply: reply, message: message)
     }
     
     public func createDirectory(client:Client, message:P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         // sanitize checks
         if !File.isValid(path: path) {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
-        
+
         let normalizedPath = NSString(string: path).standardizingPath
-        let realPath = self.real(path: normalizedPath)
+        // Resolve parent symlinks for jail check (target dir does not exist yet)
+        let rawRealPath = self.real(path: normalizedPath)
+        let parentResolved = URL(fileURLWithPath: rawRealPath).deletingLastPathComponent().resolvingSymlinksInPath().path
+        let realPath = parentResolved.stringByAppendingPathComponent(path: URL(fileURLWithPath: rawRealPath).lastPathComponent)
+
+        guard isWithinJail(parentResolved) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
-            if !client.user!.hasPrivilege(name: "wired.account.file.create_directories") {
+            if !user.hasPrivilege(name: "wired.account.file.create_directories") {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -191,8 +217,8 @@ public class FilesController {
             return
         }
 
-        if createPath(normalizedPath, type: fileType, user: client.user!, message: message) {
-            if fileType == .dropbox, client.user!.hasPrivilege(name: "wired.account.file.set_permissions") {
+        if createPath(normalizedPath, type: fileType, user: user, message: message) {
+            if fileType == .dropbox, user.hasPrivilege(name: "wired.account.file.set_permissions") {
                 let privileges = privilegesFromMessage(message)
 
                 if !FilePrivilege.set(privileges: privileges, path: realPath) {
@@ -215,6 +241,8 @@ public class FilesController {
     }
 
     public func setType(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             return
         }
@@ -228,11 +256,11 @@ public class FilesController {
         let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath)
 
         if let privileges {
-            if !client.user!.hasPermission(toWrite: privileges) {
+            if !user.hasPermission(toWrite: privileges) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.set_type") {
+        } else if !user.hasPrivilege(name: "wired.account.file.set_type") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -253,6 +281,8 @@ public class FilesController {
     }
 
     public func setPermissions(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
@@ -265,6 +295,12 @@ public class FilesController {
 
         let normalizedPath = NSString(string: path).standardizingPath
         let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
+
+        guard isWithinJail(realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
         var isDirectory: ObjCBool = false
 
         if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) || !isDirectory.boolValue {
@@ -273,11 +309,11 @@ public class FilesController {
         }
 
         if let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toWrite: privileges) {
+            if !user.hasPermission(toWrite: privileges) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.set_permissions") {
+        } else if !user.hasPrivilege(name: "wired.account.file.set_permissions") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -302,7 +338,15 @@ public class FilesController {
         if everyoneRead { mode.insert(.everyoneRead) }
         if everyoneWrite { mode.insert(.everyoneWrite) }
 
-        let wiredMetaPath = realPath.stringByAppendingPathComponent(path: ".wired")
+        // SECURITY (F_016): Re-resolve immediately before writing to the filesystem to
+        // close the TOCTOU window between the jail check above and the write operations.
+        let finalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().path
+        guard isWithinJail(finalPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let wiredMetaPath = finalPath.stringByAppendingPathComponent(path: ".wired")
         do {
             try FileManager.default.createDirectory(atPath: wiredMetaPath, withIntermediateDirectories: true, attributes: nil)
         } catch {
@@ -311,7 +355,7 @@ public class FilesController {
         }
 
         let newPrivileges = FilePrivilege(owner: owner, group: group, mode: mode)
-        if !FilePrivilege.set(privileges: newPrivileges, path: realPath) {
+        if !FilePrivilege.set(privileges: newPrivileges, path: finalPath) {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
@@ -323,27 +367,36 @@ public class FilesController {
     
     
     public func delete(client:Client, message:P7Message) {
+        guard let user = client.user else { return }
+
         guard let path = message.string(forField: "wired.file.path") else {
             return
         }
-        
+
+        // F_013: prevent deletion of root directory
+        let trimmedPath = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedPath.isEmpty || trimmedPath == "/" {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
         // sanitize checks
         if !File.isValid(path: path) {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
-        
+
         let normalizedPath = NSString(string: path).standardizingPath
 
         // file privileges
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !client.user!.hasPermission(toRead: privilege) || !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toRead: privilege) || !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         } else {
             // user privileges
-            if !client.user!.hasPrivilege(name: "wired.account.file.delete_files") {
+            if !user.hasPrivilege(name: "wired.account.file.delete_files") {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -355,6 +408,8 @@ public class FilesController {
     }
 
     public func move(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
         guard let fromPath = message.string(forField: "wired.file.path"),
               let toPath = message.string(forField: "wired.file.new_path") else {
             return
@@ -372,23 +427,23 @@ public class FilesController {
         let isRenameOnly = fromDirectory == toDirectory
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedFromPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.move_files") &&
-                    (!client.user!.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
+        } else if !user.hasPrivilege(name: "wired.account.file.move_files") &&
+                    (!user.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedToPath) {
-            if !client.user!.hasPermission(toWrite: privilege) {
+            if !user.hasPermission(toWrite: privilege) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
-        } else if !client.user!.hasPrivilege(name: "wired.account.file.move_files") &&
-                    (!client.user!.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
+        } else if !user.hasPrivilege(name: "wired.account.file.move_files") &&
+                    (!user.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -401,16 +456,30 @@ public class FilesController {
     
     
     private func delete(path:String, client:Client, message:P7Message) -> Bool {
-        let realPath = self.real(path: path)
+        let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
         let parentPath = path.stringByDeletingLastPathComponent
+
+        guard isWithinJail(realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
         let isDirectory = File.FileType.type(path: realPath) != .file
-        
+
+        // SECURITY (F_016): Re-resolve immediately before the destructive syscall to close
+        // the TOCTOU window. A symlink swap between the jail check above and removeItem
+        // could otherwise redirect the deletion outside the jail.
+        let finalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().path
+        guard isWithinJail(finalPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return false
+        }
+
         do {
-            try FileManager.default.removeItem(atPath: realPath)
+            try FileManager.default.removeItem(atPath: finalPath)
             
-            App.indexController.removeIndex(forPath: realPath)
+            App.indexController.removeIndex(forPath: finalPath)
         } catch let error {
-            Logger.error("Cannot delete file \(realPath) \(error)")
+            Logger.error("Cannot delete file \(finalPath) \(error)")
             
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             
@@ -432,15 +501,30 @@ public class FilesController {
         let sourceParentPath = sourcePath.stringByDeletingLastPathComponent
         let destinationParentPath = destinationPath.stringByDeletingLastPathComponent
 
+        guard isWithinJail(sourceRealPath), isWithinJail(destinationRealPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
+
+        // SECURITY (F_016): Re-resolve both paths immediately before moveItem to close the
+        // TOCTOU window. A symlink swap between the jail check above and the syscall could
+        // redirect the move source or destination outside the jail.
+        let finalSource = URL(fileURLWithPath: sourceRealPath).resolvingSymlinksInPath().path
+        let finalDestination = URL(fileURLWithPath: destinationRealPath).resolvingSymlinksInPath().path
+        guard isWithinJail(finalSource), isWithinJail(finalDestination) else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return false
+        }
+
         do {
-            try FileManager.default.moveItem(atPath: sourceRealPath, toPath: destinationRealPath)
+            try FileManager.default.moveItem(atPath: finalSource, toPath: finalDestination)
         } catch {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return false
         }
 
-        App.indexController.removeIndex(forPath: sourceRealPath)
-        App.indexController.addIndex(forPath: destinationRealPath)
+        App.indexController.removeIndex(forPath: finalSource)
+        App.indexController.addIndex(forPath: finalDestination)
         self.notifyDirectoryChanged(path: sourceParentPath)
         if sourceParentPath != destinationParentPath {
             self.notifyDirectoryChanged(path: destinationParentPath)
@@ -452,7 +536,14 @@ public class FilesController {
     
     private func replyList(_ path:String, _ recursive:Bool, _ client:Client, _ message:P7Message) {
         DispatchQueue.global(qos: .default).async {
-            let realPath: String = (path == "/") ? self.rootPath : self.real(path: path)
+            let rawRealPath: String = (path == "/") ? self.rootPath : self.real(path: path)
+            let realPath = URL(fileURLWithPath: rawRealPath).resolvingSymlinksInPath().path
+
+            guard self.isWithinJail(realPath) else {
+                App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+                return
+            }
+
             var isDir: ObjCBool = false
 
             if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDir) || !isDir.boolValue {
@@ -461,7 +552,8 @@ public class FilesController {
             }
 
             var visited: Set<String> = []
-            if !self.replyListRecursive(realPath: realPath, virtualPath: path, recursive: recursive, visited: &visited, client: client, message: message) {
+            var entryCount: Int = 0
+            if !self.replyListRecursive(realPath: realPath, virtualPath: path, recursive: recursive, depth: 0, visited: &visited, entryCount: &entryCount, client: client, message: message) {
                 App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
@@ -473,14 +565,34 @@ public class FilesController {
         }
     }
 
+    // SECURITY (FINDING_F_012): Limits to prevent DoS via deeply nested or huge directories
+    private static let maxRecursiveDepth: Int = 16
+    private static let maxRecursiveEntries: Int = 10_000
+
     private func replyListRecursive(
         realPath: String,
         virtualPath: String,
         recursive: Bool,
+        depth: Int,
         visited: inout Set<String>,
+        entryCount: inout Int,
         client: Client,
         message: P7Message
     ) -> Bool {
+        guard let user = client.user else { return false }
+
+        // SECURITY (FINDING_F_012): enforce depth limit
+        guard depth <= Self.maxRecursiveDepth else {
+            Logger.warning("Recursive listing exceeded max depth \(Self.maxRecursiveDepth)")
+            return true
+        }
+
+        // SECURITY (FINDING_F_012): enforce entry count limit
+        guard entryCount < Self.maxRecursiveEntries else {
+            Logger.warning("Recursive listing exceeded max entries \(Self.maxRecursiveEntries)")
+            return true
+        }
+
         let fm = FileManager.default
         let canonicalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().standardized.path
 
@@ -515,8 +627,8 @@ public class FilesController {
             var writable = false
 
             if type == .dropbox, let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
-                readable = client.user!.hasPermission(toRead: privileges)
-                writable = client.user!.hasPermission(toWrite: privileges)
+                readable = user.hasPermission(toRead: privileges)
+                writable = user.hasPermission(toWrite: privileges)
             }
 
             // TODO: read comment
@@ -571,12 +683,21 @@ public class FilesController {
 
             App.serverController.reply(client: client, reply: reply, message: message)
 
+            entryCount += 1
+            // SECURITY (FINDING_F_012): stop if entry limit reached
+            guard entryCount < Self.maxRecursiveEntries else {
+                Logger.warning("Recursive listing exceeded max entries \(Self.maxRecursiveEntries)")
+                return true
+            }
+
             if recursive && (type == .directory || type == .uploads || type == .dropbox) {
                 if !self.replyListRecursive(
                     realPath: childRealPath,
                     virtualPath: childVirtualPath,
                     recursive: true,
+                    depth: depth + 1,
                     visited: &visited,
+                    entryCount: &entryCount,
                     client: client,
                     message: message
                 ) {
@@ -608,7 +729,7 @@ public class FilesController {
                                         privileges: FilePrivilege?) {
         var isDirectory: ObjCBool = false
         if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
-            try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o777])
+            try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o755])
         } else if !isDirectory.boolValue {
             return
         }
@@ -621,10 +742,18 @@ public class FilesController {
     }
     
     private func createPath(_ path: String, type: File.FileType, user: User, message: P7Message) -> Bool {
-        let realPath = self.real(path: path)
-        
+        // Resolve the parent directory's symlinks to check jail containment,
+        // since the target directory does not exist yet.
+        let rawRealPath = self.real(path: path)
+        let parentDir = URL(fileURLWithPath: rawRealPath).deletingLastPathComponent().resolvingSymlinksInPath().path
+        let realPath = parentDir.stringByAppendingPathComponent(path: URL(fileURLWithPath: rawRealPath).lastPathComponent)
+
+        guard isWithinJail(parentDir) else {
+            return false
+        }
+
         do {
-            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o777])
+            try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o755])
         } catch {
             return false
         }
@@ -653,6 +782,12 @@ public class FilesController {
 
     private func setType(path: String, type: File.FileType, client: Client, message: P7Message) -> Bool {
         let canonicalPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+
+        guard isWithinJail(canonicalPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
+
         var isDirectory: ObjCBool = false
 
         if !FileManager.default.fileExists(atPath: canonicalPath, isDirectory: &isDirectory) || !isDirectory.boolValue {
@@ -704,7 +839,9 @@ public class FilesController {
 
     // MARK: - Directory subscriptions
     public func subscribeDirectory(client: Client, message: P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.file.list_files") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -727,21 +864,33 @@ public class FilesController {
             return
         }
 
-        subscriptionsQueue.sync {
-            var realPaths = subscribedRealPathsByClient[client.userID] ?? Set<String>()
+        // SECURITY (FINDING_F_017): per-client subscription limit to prevent memory exhaustion
+        let subscribed = subscriptionsQueue.sync { () -> Bool in
+            let existing = subscribedRealPathsByClient[client.userID] ?? Set<String>()
+            guard existing.count < 100 else { return false }
+
+            var realPaths = existing
             realPaths.insert(realPath)
             subscribedRealPathsByClient[client.userID] = realPaths
 
             var virtualPaths = subscribedVirtualPathsByClient[client.userID] ?? [:]
             virtualPaths[realPath] = normalizedVirtualPath
             subscribedVirtualPathsByClient[client.userID] = virtualPaths
+            return true
+        }
+
+        guard subscribed else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
         }
 
         App.serverController.replyOK(client: client, message: message)
     }
 
     public func unsubscribeDirectory(client: Client, message: P7Message) {
-        if !client.user!.hasPrivilege(name: "wired.account.file.list_files") {
+        guard let user = client.user else { return }
+
+        if !user.hasPrivilege(name: "wired.account.file.list_files") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }

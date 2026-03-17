@@ -51,13 +51,38 @@ private extension ChatsController {
     }
     
     
+    // SECURITY (FINDING_C_009): Protect lastChatID increment with lock to prevent duplicate IDs
     private func nextChatID() -> UInt32 {
-        lastChatID += 1
-        return lastChatID
+        var newID: UInt32 = 0
+        self.chatsLock.exclusivelyWrite {
+            self.lastChatID += 1
+            newID = self.lastChatID
+        }
+        return newID
     }
     
     
     private func receiveChat(string:String, _ client:Client, _ message:P7Message, isSay:Bool) {
+        // SECURITY (FINDING_C_006): Rate limit chat messages (max 10/s per client)
+        let now = Date()
+        let exceeded: Bool = {
+            self.chatRateLock.lock()
+            defer { self.chatRateLock.unlock() }
+            var timestamps = self.chatMessageTimestamps[client.userID] ?? []
+            let cutoff = now.addingTimeInterval(-1.0)
+            timestamps = timestamps.filter { $0 > cutoff }
+            if timestamps.count >= Self.chatRateLimitPerSecond {
+                return true
+            }
+            timestamps.append(now)
+            self.chatMessageTimestamps[client.userID] = timestamps
+            return false
+        }()
+        if exceeded {
+            Logger.warning("Chat rate limit exceeded for user \(client.userID)")
+            return
+        }
+
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
@@ -93,8 +118,13 @@ public class ChatsController : TableController {
     var privateChats:[Chat] = []
     var chatsLock:Lock = Lock()
     var publicChat:Chat!
-    
+
     private var lastChatID:UInt32 = 1
+
+    // SECURITY (FINDING_C_006): Rate limiting for chat messages per client
+    private static let chatRateLimitPerSecond: Int = 10
+    private var chatMessageTimestamps: [UInt32: [Date]] = [:]
+    private let chatRateLock = NSLock()
     
     public override init(databaseController: DatabaseController) {
         super.init(databaseController: databaseController)
@@ -118,18 +148,25 @@ public class ChatsController : TableController {
     
     
     public func createPublicChat(message:P7Message, client:Client) {
-        if !client.user!.hasPrivilege(name: "wired.account.chat.create_public_chats") {
+        guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-                
+            return
+        }
+        if !user.hasPrivilege(name: "wired.account.chat.create_public_chats") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+
             return
         }
         
-        guard let name = message.string(forField: "wired.chat.name") else {
+        guard let name = message.string(forField: "wired.chat.name"),
+              // SECURITY (FINDING_C_013): Reject empty/whitespace-only or oversized chat names
+              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              name.count <= 255 else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
-                
+
             return
         }
-        
+
         do {
             let newChat = Chat(chatID: self.nextChatID(), name: name, client: client)
 
@@ -153,9 +190,13 @@ public class ChatsController : TableController {
     
     
     public func deletePublicChat(message:P7Message, client:Client) {
-        if !client.user!.hasPrivilege(name: "wired.account.chat.delete_public_chats") {
+        guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-                
+            return
+        }
+        if !user.hasPrivilege(name: "wired.account.chat.delete_public_chats") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+
             return
         }
         
@@ -175,32 +216,47 @@ public class ChatsController : TableController {
             return
         }
               
+        // SECURITY (FINDING_F_014): Perform DB delete first, then broadcast/remove from memory
         do {
-            let reply = P7Message(withName: "wired.chat.public_chat_deleted", spec: message.spec)
-            
-            reply.addParameter(field: "wired.chat.id", value: publicChat.chatID)
-            
-            App.clientsController.broadcast(message: reply)
-            
-            self.remove(chat: publicChat)
-
             try databaseController.dbQueue.write { db in try publicChat.delete(db) }
-
         } catch let error {
             Logger.error("Cannot delete public chat: \(error)")
-            
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
         }
+
+        self.remove(chat: publicChat)
+
+        let reply = P7Message(withName: "wired.chat.public_chat_deleted", spec: message.spec)
+        reply.addParameter(field: "wired.chat.id", value: publicChat.chatID)
+        App.clientsController.broadcast(message: reply)
     }
     
     
+    // SECURITY (FINDING_C_008): Maximum private chats per user
+    private static let maxPrivateChatsPerUser: Int = 50
+
     public func createPrivateChat(message:P7Message, client:Client) {
-        if !client.user!.hasPrivilege(name: "wired.account.chat.create_chats") {
+        guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-        
             return
         }
-                
+        if !user.hasPrivilege(name: "wired.account.chat.create_chats") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+
+            return
+        }
+
+        // SECURITY (FINDING_C_008): Enforce per-user private chat limit
+        let userPrivateChatCount = self.chatsLock.concurrentlyRead {
+            self.privateChats.filter { $0.client(withID: client.userID) != nil || ($0 as? PrivateChat)?.isInvited(client: client) == true }.count
+        }
+        if userPrivateChatCount >= Self.maxPrivateChatsPerUser {
+            Logger.warning("User \(client.userID) exceeded private chat limit (\(Self.maxPrivateChatsPerUser))")
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
         let newPrivateChat = PrivateChat(chatID: self.nextChatID())
         // add invitation for initiator user
         newPrivateChat.addInvitation(client: client)
@@ -367,7 +423,8 @@ public class ChatsController : TableController {
     
     
     public func userLeave(client:Client) {
-        for (chatID, chat) in self.chats {
+        let snapshot = self.chatsLock.concurrentlyRead { self.chats }
+        for (chatID, chat) in snapshot {
             if let c = chat.client(withID: client.userID) {
                 userLeave(chatID: chatID, client: c)
             }
@@ -410,26 +467,36 @@ public class ChatsController : TableController {
     }
     
     public func receiveChatSay(_ client:Client, _ message:P7Message) {
-        guard let say = message.string(forField: "wired.chat.say") else {
+        guard let say = message.string(forField: "wired.chat.say"),
+              // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
+              !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         self.receiveChat(string: say, client, message, isSay: true)
     }
-    
-    
+
+
     public func receiveChatMe(_ client:Client, _ message:P7Message) {
-        guard let say = message.string(forField: "wired.chat.me") else {
+        guard let say = message.string(forField: "wired.chat.me"),
+              // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
+              !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         self.receiveChat(string: say, client, message, isSay: false)
     }
     
     
     
     public func setTopic(message: P7Message, client:Client) {
-        if !client.user!.hasPrivilege(name: "wired.account.chat.set_topic") {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+        if !user.hasPrivilege(name: "wired.account.chat.set_topic") {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -456,7 +523,7 @@ public class ChatsController : TableController {
         
         do {
             chat.topic = topic
-            chat.topicNick = client.nick!
+            chat.topicNick = client.nick ?? ""
             chat.topicTime = Date()
 
             try databaseController.dbQueue.write { db in try chat.update(db) }

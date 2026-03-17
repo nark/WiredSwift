@@ -45,6 +45,11 @@ public class P7Message: NSObject {
             self.id             = specMessage.attributes["id"] as? String
             self.name           = name
             self.spec           = spec
+        } else {
+            // SECURITY (FINDING_P_009): Log warning when message name not found in spec
+            Logger.error("WARNING: Message name '\(name)' not found in spec — message will have nil properties")
+            self.name = name
+            self.spec = spec
         }
     }
 
@@ -281,7 +286,11 @@ public class P7Message: NSObject {
                                 data.append(uint64: self.coerceUInt64(value), bigEndian: true)
                                 
                             } else if specField.type == .double { // double (4)
-                                data.append(double: value as! Double, bigEndian: true)
+                                if let doubleValue = value as? Double {
+                                    data.append(double: doubleValue, bigEndian: true)
+                                } else {
+                                    Logger.error("WARNING: Expected Double for field '\(field)', skipping")
+                                }
                                 
                             } else if specField.type == .string { // string (x)
                                 if let str = value as? String {
@@ -443,13 +452,22 @@ public class P7Message: NSObject {
     
     
     
+    /// Maximum size for a single TLV field value (16 MB).
+    private static let maxFieldSize: Int = 16 * 1024 * 1024
+
     private func loadBinaryMessage(_ data: Data) {
         var offset = 0
-                
+
+        // SECURITY: bounds check before reading message ID
+        guard data.count >= 4 else {
+            Logger.error("ERROR : Message too short to contain message ID")
+            return
+        }
+
         let messageIDData = data.subdata(in: 0..<4)
-        
+
         offset += 4
-                        
+
         if let v = messageIDData.uint32 {
             self.id = String(v)
         } else {
@@ -457,7 +475,12 @@ public class P7Message: NSObject {
             return
         }
 
-        if let specMessage = spec.messagesByID[Int(messageIDData.uint32!)] {
+        guard let messageIDValue = messageIDData.uint32 else {
+            Logger.error("ERROR : Cannot read message ID for spec lookup")
+            return
+        }
+
+        if let specMessage = spec.messagesByID[Int(messageIDValue)] {
             self.name = specMessage.name!
             self.specMessage = specMessage
             
@@ -465,6 +488,11 @@ public class P7Message: NSObject {
             var fieldID:UInt32!
             
             while offset < data.count {
+                // SECURITY: bounds check before reading field ID (4 bytes)
+                guard offset + 4 <= data.count else {
+                    Logger.error("ERROR : Truncated message — not enough data for field ID at offset \(offset)")
+                    break
+                }
                 fieldIDData = data.subdata(in: offset..<offset+4)
                 
                 if let v = fieldIDData.uint32 {
@@ -483,8 +511,22 @@ public class P7Message: NSObject {
                     
                     // read length if needed
                     if specField.type == .string || specField.type == .data || specField.type == .list {
+                        // SECURITY: bounds check before reading field length (4 bytes)
+                        guard offset + 4 <= data.count else {
+                            Logger.error("ERROR : Truncated message — not enough data for field length at offset \(offset)")
+                            break
+                        }
                         let fieldLengthData = data.subdata(in: offset..<offset+4)
-                        fieldLength = Int(fieldLengthData.uint32!)
+                        guard let fieldLengthRaw = fieldLengthData.uint32 else {
+                            Logger.error("ERROR : Cannot parse field length at offset \(offset)")
+                            break
+                        }
+                        fieldLength = Int(fieldLengthRaw)
+                        // SECURITY: reject oversized fields (FINDING_P_003)
+                        guard fieldLength <= Self.maxFieldSize else {
+                            Logger.error("ERROR : Field length \(fieldLength) exceeds maximum \(Self.maxFieldSize)")
+                            break
+                        }
                         offset += 4
                     } else {
                         fieldLength = SpecType.size(forType: specField.type)
@@ -494,6 +536,11 @@ public class P7Message: NSObject {
                         // Keep explicit empty strings (length=0) instead of dropping the field.
                         self.addParameter(field: specField.name, value: "")
                     } else if fieldLength > 0 {
+                        // SECURITY: bounds check before reading field data
+                        guard offset + fieldLength <= data.count else {
+                            Logger.error("ERROR : Truncated message — not enough data for field value at offset \(offset), need \(fieldLength) bytes, have \(data.count - offset)")
+                            break
+                        }
                         // read value
                         let fieldData = data.subdata(in: offset..<offset+fieldLength)
                         
@@ -501,7 +548,9 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData.uint8.bigEndian)
                         }
                         else if specField.type == .enum32 {
-                            self.addParameter(field: specField.name, value: fieldData.uint32?.bigEndian)
+                            // Data.uint32 already converts BE→host via CFSwapInt32HostToBig.
+                            // Applying .bigEndian again would double-swap, corrupting the value.
+                            self.addParameter(field: specField.name, value: fieldData.uint32)
                         }
                         else if specField.type == .int32 {
                             self.addParameter(field: specField.name, value: fieldData.uint32)
@@ -519,7 +568,11 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData.double)
                         }
                         else if specField.type == .string {
-                            self.addParameter(field: specField.name, value: String(bytes: fieldData, encoding: .utf8))
+                            if let str = String(bytes: fieldData, encoding: .utf8) {
+                                self.addParameter(field: specField.name, value: str)
+                            } else {
+                                Logger.error("WARNING: Invalid UTF-8 in field '\(specField.name)' — field rejected")
+                            }
                         }
                         else if specField.type == .uuid {
                             self.addParameter(field: specField.name, value: NSUUID(uuidBytes: Array(fieldData)).uuidString)

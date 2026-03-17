@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_C_007",
+  "attempt": 1,
+  "status": "patched",
+  "file": "Sources/wired3/ServerController.swift",
+  "description": "kick_user handler now returns wired.error.internal_error instead of silently ignoring the message.",
+  "commit": "6018a6e",
+  "date": "2026-03-16"
+}

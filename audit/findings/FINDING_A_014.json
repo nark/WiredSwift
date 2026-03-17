@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_014",
+  "category": "auth",
+  "severity": "LOW",
+  "title": "Username enumeration via distinct error responses",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 1798,
+  "description": "The login function (receiveSendLogin) uses user(withUsername: login, password: password) which queries for both username AND password simultaneously. This means an invalid username and a valid username with wrong password produce the same error. However, at the P7Socket key exchange level (line 1320-1323), if passwordProvider returns nil for an unknown username, a 'No user found with username' error is thrown and the connection is dropped during key exchange, BEFORE the login message. For a valid username, the key exchange succeeds and the login message phase is reached. This timing difference allows username enumeration.",
+  "vulnerable_code": "// P7Socket.swift:1319-1323 - during key exchange\nif self.passwordProvider != nil {\n    guard let password = self.passwordProvider?.passwordForUsername(username: self.username) else {\n        let message = \"No user found with username '\\(self.username)', abort\"\n        Logger.error(message)\n        throw P7SocketError.keyExchangeFailed(message)\n    }",
+  "recommendation": "When username is not found in passwordForUsername, return a dummy hash value instead of nil. This ensures the key exchange completes with a password mismatch rather than aborting early, making the timing and behavior identical for valid and invalid usernames.",
+  "status": "needs_human_review"
+}

@@ -262,16 +262,92 @@ sudo systemctl restart wired3
 
 ### Security Notes (Do This First)
 
-At database bootstrap, default users are created:
+#### Admin Password
 
-- `admin` with initial password `admin`
-- `guest` with empty password
+At database bootstrap (first start), two default accounts are created automatically:
 
-You should immediately:
+| Login | Default password | Role |
+|-------|-----------------|------|
+| `admin` | `admin` | Full privileges |
+| `guest` | *(empty)* | Read-only |
 
-1. Change the admin password
+**You must change the admin password immediately after first start:**
+
+- **WiredServerApp** → **Advanced** tab → "Admin account" section → type a new password → **Set Password**
+- **CLI / Linux**: connect with any Wired 3 client (e.g., Wired for macOS), log in as `admin / admin`, open the admin panel and change the password
+
+The server stores passwords as SHA-256 hashes with a per-user salt. There is no plain-text recovery — if you lose the admin password you must reset it via direct database access:
+
+```bash
+# Replace <hash> with SHA-256 of your new password
+sqlite3 wired3.db "UPDATE users SET password = '<sha256_of_password>' WHERE username = 'admin';"
+```
+
+#### Server Identity and TOFU
+
+Starting from P7 protocol v1.3, the server generates a **persistent identity key** (P-256 ECDSA) used for Trust On First Use (TOFU) protection against man-in-the-middle attacks.
+
+**How it works:**
+
+1. On first start, `wired3` generates a private key stored in `<working-dir>/wired-identity.key`
+2. On every connection, the server signs the ephemeral session key with this identity key
+3. Clients receive the identity public key and its fingerprint
+4. On first connection to a server, clients store the fingerprint
+5. On subsequent connections, clients compare the received fingerprint to the stored one
+   - If it matches → connection is allowed (green "Verified Identity" badge in the client)
+   - If it differs and `strict_identity = yes` → connection is **rejected** (possible MITM attack)
+   - If it differs and `strict_identity = no` → fingerprint is updated silently (useful during migration)
+
+**Viewing the fingerprint (WiredServerApp):**
+
+1. Open **WiredServerApp** → **Advanced** tab
+2. The "Server Identity (TOFU)" section shows:
+   - A green dot and the `SHA256:xx:xx:...` fingerprint if the key exists
+   - A red dot and a help message if the server has not been started yet
+
+**Exporting the public key:**
+
+Use the **Export Public Key** button to save a Base64-encoded copy of the server's identity public key. Distribute this file out-of-band (e.g., via your website or email) so users can verify they are connecting to the right server.
+
+**Rotating the identity key:**
+
+If the server is compromised or you intentionally rotate the key:
+
+1. Stop the server
+2. Delete `<working-dir>/wired-identity.key`
+3. Start the server — a new key is generated automatically
+4. Notify your users: they will see a "key changed" warning on next connection and must re-trust the new fingerprint
+
+**Temporarily disabling strict mode** (e.g., during migration):
+
+```ini
+# in config.ini
+[security]
+strict_identity = no
+```
+
+Re-enable strict mode once all clients have updated their stored fingerprint.
+
+**Linux / CLI — view the fingerprint:**
+
+```bash
+# OpenSSL one-liner (requires the base64-encoded public key)
+openssl dgst -sha256 -binary wired-identity-public.b64 | xxd -p | fold -w2 | paste -sd':'
+```
+
+Or use `wired3 --print-identity` (if available in your build):
+
+```bash
+wired3 --working-directory /var/lib/wired3 --print-identity
+```
+
+#### General Hardening Checklist
+
+1. Change the admin password (see above)
 2. Restrict network exposure (firewall, private interfaces)
-3. Run the service as a dedicated non-root user
+3. Run the service as a dedicated non-root user (`wired3` on Linux)
+4. Keep `strict_identity = yes` in `config.ini`
+5. Distribute the server identity fingerprint to users out-of-band
 
 ---
 

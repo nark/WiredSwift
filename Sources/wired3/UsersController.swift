@@ -16,10 +16,12 @@ import SQLite3
 
 public class UsersController: TableController, SocketPasswordDelegate {
     var lastUserID: UInt32 = 0
-    var lastUserIDLock: Lock = Lock()
+    var lastUserIDLock: NSLock = NSLock()
 
     // MARK: - Public
     public func nextUserID() -> UInt32 {
+        lastUserIDLock.lock()
+        defer { lastUserIDLock.unlock() }
         self.lastUserID += 1
         return self.lastUserID
     }
@@ -30,20 +32,37 @@ public class UsersController: TableController, SocketPasswordDelegate {
         user(withUsername: username)?.password
     }
 
+    public func passwordSaltForUsername(username: String) -> String? {
+        user(withUsername: username)?.passwordSalt
+    }
+
 
     // MARK: - Fetch
     public func user(withUsername username: String, password: String) -> User? {
-        try? databaseController.dbQueue.read { db in
-            if let user = try User
-                .filter(Column("username") == username && Column("password") == password)
-                .fetchOne(db) {
-                user.privileges = try UserPrivilege
-                    .filter(Column("user_id") == user.id!)
-                    .fetchAll(db)
-                return user
-            }
-            return nil
+        guard let user = user(withUsername: username) else { return nil }
+
+        // user.password = SHA-256(plaintext); password parameter = SHA-256(plaintext) from client.
+        guard user.password == password else { return nil }
+
+        // Lazy migration: assign a per-user stored_salt on first successful login if not set.
+        // The salt is used by the P7 v1.2 key exchange to derive the base hash, preventing
+        // stored-hash-in-transit exposure. user.password (SHA-256 of plaintext) is never changed.
+        if user.passwordSalt == nil || user.passwordSalt!.isEmpty {
+            let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                     + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+            user.passwordSalt = salt
+            save(user: user)
+            Logger.info("Assigned stored_salt for '\(username)' (P7 v1.2 lazy migration)")
         }
+
+        // Load privileges
+        if let userId = user.id {
+            user.privileges = (try? databaseController.dbQueue.read { db in
+                try UserPrivilege.filter(Column("user_id") == userId).fetchAll(db)
+            }) ?? []
+        }
+
+        return user
     }
 
     public func user(withUsername username: String) -> User? {
@@ -194,11 +213,21 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 try adminGroup.insert(db)
 
                 // Utilisateurs par défaut
-                let admin = User(username: "admin", password: "admin".sha256())
+                // SECURITY (FINDING_A_005): Generate random password instead of hardcoded 'admin'
+                let generatedPassword = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(16)
+                // user.password = SHA-256(plaintext) — P7 key exchange proof layer.
+                // passwordSalt = per-user salt sent to client during P7 v1.2 key exchange
+                // so the ECDSA proof is derived from SHA-256(salt || SHA-256(plain)).
+                let admin = User(username: "admin", password: String(generatedPassword).sha256())
+                admin.passwordSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                                   + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                WiredSwift.Logger.info("=== INITIAL ADMIN PASSWORD: \(generatedPassword) === (change it immediately)")
                 admin.color = "1"
                 try admin.insert(db)
 
                 let guest = User(username: "guest", password: "".sha256())
+                guest.passwordSalt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+                                   + UUID().uuidString.replacingOccurrences(of: "-", with: "")
                 guest.color = "0"
                 try guest.insert(db)
 
@@ -348,9 +377,34 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 }
             }
         }
+
+        // SECURITY (FINDING_C_010): per-recipient limit to prevent storage DoS
+        let triggerSQL = """
+            CREATE TRIGGER IF NOT EXISTS offline_messages_per_recipient_limit
+            BEFORE INSERT ON offline_messages
+            BEGIN
+                SELECT RAISE(ABORT, 'per-recipient offline message limit exceeded')
+                WHERE (SELECT COUNT(*) FROM offline_messages
+                       WHERE recipient_identity = NEW.recipient_identity) >= 100;
+            END;
+        """
+        if sqliteExec(db: db, triggerSQL) != SQLITE_OK {
+            if let message = sqlite3_errmsg(db) {
+                WiredSwift.Logger.error("Could not create offline_messages limit trigger: \(String(cString: message))")
+            }
+        }
     }
 
+    // SECURITY (FINDING_A_010/C_011/F_008): whitelist allowed table names to prevent SQL injection
+    private static let allowedSchemaTableNames: Set<String> = [
+        "user_privileges", "group_privileges", "groups", "users", "offline_messages"
+    ]
+
     private func readSchema(db: OpaquePointer, table: String) -> String? {
+        guard Self.allowedSchemaTableNames.contains(table) else {
+            WiredSwift.Logger.error("readSchema called with disallowed table name: \(table)")
+            return nil
+        }
         let query = "SELECT sql FROM sqlite_master WHERE type='table' AND name='\(table)' LIMIT 1;"
         var statement: OpaquePointer?
         guard sqlitePrepare(db: db, query: query, statement: &statement) == SQLITE_OK, let statement else { return nil }

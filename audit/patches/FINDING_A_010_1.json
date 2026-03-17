@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_A_010",
+  "attempt": 1,
+  "status": "patched",
+  "file": "Sources/wired3/UsersController.swift",
+  "description": "Added table name whitelist in readSchema to prevent SQL injection via string interpolation. Only hardcoded allowed table names (user_privileges, group_privileges, groups, users, offline_messages) are accepted.",
+  "commit": "6018a6e",
+  "date": "2026-03-16"
+}

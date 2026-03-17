@@ -167,18 +167,42 @@ public class File {
     
     
     public static func isValid(path:String) -> Bool {
+        // Reject null bytes (can truncate path in C-level APIs)
+        if path.contains("\0") {
+            return false
+        }
+
+        // Reject URL-encoded traversal sequences
+        let decodedPath = path.removingPercentEncoding ?? path
+
+        // Standardize path before checks to prevent bypass via non-canonical forms
+        let standardized = NSString(string: decodedPath).standardizingPath
+
+        if standardized.hasPrefix(".") {
+            return false
+        }
+
+        if standardized.contains("/..") {
+            return false
+        }
+
+        if standardized.contains("../") {
+            return false
+        }
+
+        // Also check the original (non-decoded) path
         if path.hasPrefix(".") {
             return false
         }
-        
+
         if path.contains("/..") {
             return false
         }
-        
+
         if path.contains("../") {
             return false
         }
-        
+
         return true
     }
     
@@ -247,8 +271,12 @@ public class FilePrivilege {
         }
         
         let components = string.split(separator: Character(File.wiredPermissionsFieldSeparator), omittingEmptySubsequences: false)
-                
-        self.owner  = String(components.first!)
+
+        guard components.count >= 3 else {
+            return nil
+        }
+
+        self.owner  = String(components[0])
         self.group  = String(components[1])
         self.mode   = File.FilePermissions(rawValue: UInt32(String(components[2])) ?? 0)
     }

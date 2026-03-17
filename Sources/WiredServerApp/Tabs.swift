@@ -103,12 +103,12 @@ struct GeneralTabView: View {
                             Task { await model.installServer() }
                         }
                         .disabled(model.isInstalled || model.isBusy)
-
+                        
                         Button(L("general.install.uninstall")) {
                             model.uninstallServer()
                         }
                         .disabled(!model.isInstalled || model.isBusy || model.isRunning)
-
+                        
                         Spacer()
                         
                         Image(systemName: model.isInstalled ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -136,25 +136,47 @@ struct GeneralTabView: View {
                         .buttonStyle(.plain)
                         
                         Spacer(minLength: 0)
-
+                        
                         Button(L("common.choose")) {
                             model.chooseWorkingDirectory()
                         }
                         .disabled(model.isRunning)
                     }
-
+                }
+                
+                Section("Versions") {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))
                             .bold()
-                        
                         Spacer()
-                        
                         Text(model.installedServerVersion)
                             .textSelection(.enabled)
-                        
+                    }
+
+                    HStack(spacing: 8) {
+                        Text(L("general.install.p7_version"))
+                            .bold()
+                        Spacer()
+                        Text(model.p7ProtocolVersion)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+
+                    HStack(spacing: 8) {
+                        Text(L("general.install.wired_protocol"))
+                            .bold()
+                        Spacer()
+                        if model.wiredProtocolName != "-" && model.wiredProtocolVersion != "-" {
+                            Text("\(model.wiredProtocolName) \(model.wiredProtocolVersion)")
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        } else {
+                            Text(model.wiredProtocolVersion)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                
+
                 Section(L("general.execution.section")) {
                     HStack {
                         StatusDot(color: model.isRunning ? .green : .red)
@@ -310,6 +332,7 @@ struct FilesTabView: View {
 @available(macOS 12.0, *)
 struct AdvancedTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
+    @State private var fingerprintCopied = false
 
     var body: some View {
         SettingsPane {
@@ -319,11 +342,11 @@ struct AdvancedTabView: View {
                         StatusDot(color: model.hasAdminPassword ? .green : .red)
                         Text(model.adminStatus)
                     }
-                    
+
                     HStack(spacing: 8) {
                         SecureField(L("advanced.admin.password.placeholder"), text: $model.newAdminPassword)
                             .frame(width: 260)
-                        
+
                         Spacer()
 
                         Button(L("advanced.admin.set_password")) {
@@ -335,27 +358,70 @@ struct AdvancedTabView: View {
                         }
                     }
                 }
-                
+
                 Section(L("advanced.security.section")) {
                     Picker(L("advanced.security.compression"), selection: $model.compressionMode) {
                         ForEach(model.compressionOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
-                    
+
                     Picker(L("advanced.security.cipher"), selection: $model.cipherMode) {
                         ForEach(model.cipherOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
-                    
+
                     Picker(L("advanced.security.checksum"), selection: $model.checksumMode) {
                         ForEach(model.checksumOptions) { option in
                             Text(option.title).tag(option.id)
                         }
                     }
                 }
-                
+
+                Section(L("advanced.identity.section")) {
+                    // Fingerprint display
+                    HStack(spacing: 8) {
+                        StatusDot(color: model.identityFingerprint.isEmpty ? .red : .green)
+                        if model.identityFingerprint.isEmpty {
+                            Text(L("advanced.identity.fingerprint.none"))
+                                .foregroundStyle(.secondary)
+                                .font(.footnote)
+                        } else {
+                            Text(model.identityFingerprint)
+                                .font(.system(.caption, design: .monospaced))
+                                .textSelection(.enabled)
+                                .lineLimit(2)
+                        }
+                        Spacer()
+                        if !model.identityFingerprint.isEmpty {
+                            Button(fingerprintCopied ? L("advanced.identity.copied") : L("advanced.identity.export")) {
+                                model.exportIdentityKey()
+                            }
+                            Button {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(model.identityFingerprint, forType: .string)
+                                fingerprintCopied = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    fingerprintCopied = false
+                                }
+                            } label: {
+                                Image(systemName: fingerprintCopied ? "checkmark" : "doc.on.doc")
+                            }
+                            .help(L("advanced.identity.copied"))
+                        }
+                    }
+
+                    // Strict identity toggle
+                    HStack(alignment: .top) {
+                        Toggle(L("advanced.identity.strict"), isOn: $model.strictIdentity)
+                        Spacer()
+                    }
+                    Text(L("advanced.identity.strict.help"))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 HStack {
                     Spacer()
                     Button(L("advanced.save")) {
@@ -365,6 +431,7 @@ struct AdvancedTabView: View {
             }
             .formStyle(.grouped)
         }
+        .onAppear { model.refreshIdentityFingerprint() }
     }
 }
 

@@ -95,7 +95,11 @@ open class Connection: NSObject {
     public var icon: String     = Wired.defaultUserIcon
     
     public var serverInfo: ServerInfo? = nil
-    
+
+    /// SECURITY (A_009): TOFU trust handler forwarded to P7Socket during connect/reconnect.
+    /// Set before calling connect(withUrl:). See P7Socket.serverTrustHandler for the signature.
+    public var serverTrustHandler: ((String, Bool, Bool) -> Bool)?
+
     private var lastPingDate:Date!
     private var pingCheckTimer:Timer!
     
@@ -204,7 +208,8 @@ open class Connection: NSObject {
         self.socket.cipherType  = cipher
         self.socket.compression = compression
         self.socket.checksum    = checksum
-        
+        self.socket.serverTrustHandler = self.serverTrustHandler
+
         do {
             try self.socket.connect()
         } catch {
@@ -264,7 +269,8 @@ open class Connection: NSObject {
         self.socket.cipherType  = cipher
         self.socket.compression = compression
         self.socket.checksum    = checksum
-                
+        self.socket.serverTrustHandler = self.serverTrustHandler
+
         try self.socket.connect()
         try self.clientInfo()
         try self.setUser()

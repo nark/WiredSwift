@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_A_006",
+  "attempt": 1,
+  "status": "patched",
+  "file": "Sources/wired3/UsersController.swift",
+  "date": "2026-03-16",
+  "description": "Replaced Lock (async barrier write, no return value) with NSLock for synchronous mutual exclusion in nextUserID(). The lastUserID increment and return are now wrapped in lock()/unlock() to prevent duplicate user IDs from concurrent acceptThread() calls.",
+  "diff_summary": "Changed lastUserIDLock type from Lock to NSLock; wrapped nextUserID() body in lastUserIDLock.lock()/defer unlock()"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "FINDING_A_009",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "No TOFU (Trust On First Use) or certificate pinning for server identity",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 1214,
+  "description": "The ECDH key exchange did not implement any form of server identity verification or certificate pinning, making the protocol vulnerable to MITM attacks.",
+  "recommendation": "Implement TOFU: on first connection, the client should store the server's public key fingerprint and warn/reject on subsequent connections if the key changes.",
+  "status": "patched",
+  "patch": {
+    "summary": "Implemented full TOFU (Trust On First Use) via persistent server identity key (P7 v1.3)",
+    "files_modified": [
+      "Sources/WiredSwift/Crypto/ServerIdentity.swift (new)",
+      "Sources/WiredSwift/P7/P7Spec.swift",
+      "Sources/WiredSwift/P7/P7Socket.swift",
+      "Sources/wired3/ServerController.swift",
+      "Sources/wired3/AppController.swift",
+      "Sources/wired3/config.ini"
+    ],
+    "details": [
+      "P7 v1.3: new fields server_identity_key (id=19), server_identity_sig (id=20), strict_identity (id=21) in server_key message",
+      "ServerIdentity class: persists P256 keypair in wired-identity.key; signs ECDH public key per connection",
+      "ServerIdentityProvider protocol on P7Socket; identityProvider set by ServerController",
+      "serverTrustHandler closure on P7Socket for client-side TOFU decision (app-level callback)",
+      "Server signs ephemeral ECDH public key with persistent identity key in acceptKeyExchange",
+      "Client verifies identity signature and calls serverTrustHandler in connectKeyExchange",
+      "strict_identity = yes in config.ini (default); clients must hard-fail on key change",
+      "WiredServerViewModel: identityFingerprint display, strictIdentity toggle, exportIdentityKey() with NSSavePanel"
+    ]
+  }
+}

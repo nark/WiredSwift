@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_010",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "SQL injection in readSchema via string interpolation",
+  "file": "Sources/wired3/UsersController.swift",
+  "line": 354,
+  "description": "The readSchema function constructs a SQL query using string interpolation with the 'table' parameter: \"SELECT sql FROM sqlite_master WHERE type='table' AND name='\\(table)' LIMIT 1;\". While the 'table' parameter currently comes from hardcoded strings within the same class (e.g., 'users', 'groups', 'user_privileges', 'group_privileges'), this is a dangerous pattern. If any future code path passes user-controlled data to readSchema, it would enable SQL injection. The function does not use parameterized queries.",
+  "vulnerable_code": "private func readSchema(db: OpaquePointer, table: String) -> String? {\n    let query = \"SELECT sql FROM sqlite_master WHERE type='table' AND name='\\(table)' LIMIT 1;\"\n    var statement: OpaquePointer?\n    guard sqlitePrepare(db: db, query: query, statement: &statement) == SQLITE_OK ...",
+  "recommendation": "Use parameterized queries with sqlite3_bind_text instead of string interpolation. Also, the migratePrivilegesTableIfNeeded function at line 258 uses string interpolation for table names in DDL statements (which cannot use bind parameters), so at minimum add a whitelist validation: guard [\"users\", \"groups\", \"user_privileges\", \"group_privileges\"].contains(table).",
+  "status": "patched"
+}
