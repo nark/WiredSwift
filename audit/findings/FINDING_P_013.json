@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_P_013",
+  "category": "parser",
+  "severity": "MEDIUM",
+  "cwe": "CWE-391",
+  "title": "receiveCompatibilityCheck is not implemented - compatibility bypass",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 1436,
+  "description": "The method receiveCompatibilityCheck() at line 1436 is empty (contains only a TODO comment). When localCompatibilityCheck is true (meaning the remote protocol is not considered compatible), this method is called but does nothing. The server/client proceeds with the connection even when it knows the remote protocol is incompatible.",
+  "vulnerable_code": "private func receiveCompatibilityCheck() throws { /* empty */ }",
+  "recommendation": "Implement the method to receive the remote spec XML, compare it with the local spec, and throw P7SocketError.localCompatibilityFailed if incompatible.",
+  "status": "patched"
+}

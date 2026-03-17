@@ -1,0 +1,79 @@
+{
+  "id": "FUZZ_003",
+  "severity": "HIGH",
+  "title": "DoS par saturation du thread pool GCD : handshake valide sans auth completee bloque les threads indefiniment",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 0,
+  "description": "Retest effectue le 2026-03-17. Trois sous-tests initiaux ont ete realises : (1) 30 connexions TCP ouvertes sans rien envoyer - serveur stable ; (2) 30 connexions envoyant 3 octets partiels et restant ouvertes 8s - serveur stable ; (3) 20 connexions envoyant un client_handshake P7 valide et restant ouvertes sans envoyer la reponse au key exchange - serveur crash/hang confirme. La cause etait l'absence de timeout global dans le chemin acceptHandshake -> acceptKeyExchange -> readMessage(). Patch applique en commit 76c8182 : ajout de enforceDeadline:true avec handshakeTimeout=30s sur tous les appels readMessage() dans le chemin d'acceptation. Retest post-patch confirme la correction.",
+  "exploit": "Payload: connexion TCP + envoi du client_handshake P7 valide (msg_id=1, avec champs p7.handshake.version='1.0', p7.handshake.protocol.name='Wired', p7.handshake.protocol.version='3.0') + maintien de la connexion ouverte indefiniment sans envoyer la reponse au key exchange. Repeter 20 fois en parallele. Serveur DOWN confirme avant patch.",
+  "exploit_hex": "Un client_handshake P7 minimal: 0000004e00000001000000010000000700000003312e30000000020000000957697265640000000300000007332e30000000040000000100000000050000000101000000060000000100 (82 octets). 20 threads en parallele suffisaient pour crasher le serveur.",
+  "retest_results": {
+    "date": "2026-03-17",
+    "binary_tested": "/Users/nark/Library/Application Support/Wired3/bin/wired3",
+    "binary_compiled": "2026-03-17T09:01 (commit 76c8182)",
+    "server_state_before": "UP (patch 76c8182 deploye)",
+    "test1_20conns_hold10s": {
+      "description": "20 connexions TCP avec client_handshake P7 valide, maintenues 10s sans envoyer l'auth",
+      "connections_opened": 20,
+      "connections_failed": 0,
+      "server_alive_during": true,
+      "legit_connection_ok": true,
+      "server_alive_after": true,
+      "verdict": "PASS"
+    },
+    "test2_50conns_hold8s": {
+      "description": "50 connexions TCP half-auth simultanees maintenues 8s (montee en charge)",
+      "connections_opened": 50,
+      "connections_failed": 0,
+      "server_alive_during": true,
+      "server_alive_after": true,
+      "verdict": "PASS"
+    },
+    "test3_legit_during_flood": {
+      "description": "Connexion legitime pendant que 20 connexions half-auth sont actives (hold=20s)",
+      "connections_opened": 20,
+      "legit_ok_count": 3,
+      "legit_connection_ok": true,
+      "server_alive_after": true,
+      "verdict": "PASS"
+    },
+    "test4_timeout_measurement": {
+      "description": "5 connexions half-auth : client_handshake envoye, server_handshake consomme (~67B), puis silence total. Mesure du delai avant fermeture par le serveur (handshakeTimeout=30s). Test realise avec serveur stabilise (apres les tests 1-3).",
+      "methodology": "Envoi client_handshake, drain de la reponse initiale du serveur (server_handshake ~67B avec timeout 5s), puis silence total. Mesure du delai depuis l'entree en phase silencieuse jusqu'a la fermeture de la connexion par le serveur.",
+      "connections_opened": 5,
+      "closed_by_server": 5,
+      "silence_to_close_seconds": [25.0, 25.0, 25.0, 25.0, 25.0],
+      "silence_to_close_min": 25.0,
+      "silence_to_close_max": 25.0,
+      "silence_to_close_avg": 25.0,
+      "total_connection_duration": 30.0,
+      "timeout_in_expected_range_10_40s": true,
+      "note": "Le handshakeTimeout est 30s depuis le debut du handshake cote serveur. Les ~5s initiales sont consommees par l'echange server_handshake. La fermeture intervient donc ~25s apres l'entree en phase silencieuse, soit exactement 30s depuis la connexion initiale.",
+      "server_alive_after": true,
+      "verdict": "PASS"
+    }
+  },
+  "root_cause": "Dans P7Socket.readMessage() (ligne ~591), readExactly(size:4) et readExactly(size:messageLength) etaient appeles sans enforceDeadline:true. La boucle interne 'while buffer.count < size' attendait indefiniment des donnees sur une connexion TCP maintenue ouverte. Chaque appel a p7Socket.accept() dans acceptThread() creait un DispatchQueue.global(qos:.default).async block qui bloquait indefiniment. Le pool de threads GCD (typiquement 64 threads sur macOS) etait sature rapidement, rendant le serveur incapable de traiter de nouvelles connexions.",
+  "patch_note": "Fixed in commit 76c8182. Added enforceDeadline:true with 30s handshakeTimeout to all readMessage() calls in acceptHandshake, acceptKeyExchange, and receiveCompatibilityCheck. readMessage() now accepts optional timeout/enforceDeadline parameters propagated to readExactly(). Backward-compatible defaults preserve existing behavior for normal message reads.",
+  "patch_commit": "76c8182",
+  "patch_date": "2026-03-17",
+  "patch_files": [
+    "Sources/WiredSwift/P7/P7Socket.swift"
+  ],
+  "patch_locations": [
+    "P7Socket.swift L51: private static let handshakeTimeout: TimeInterval = 30.0",
+    "P7Socket.swift L953: readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true) in acceptHandshake",
+    "P7Socket.swift L1059: readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true) in acceptHandshake",
+    "P7Socket.swift L1262: readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true) in acceptKeyExchange",
+    "P7Socket.swift L1456: readMessage(timeout: P7Socket.handshakeTimeout, enforceDeadline: true) in receiveCompatibilityCheck"
+  ],
+  "retest_verdict": "PASS — patch valide. Tests 1-4 tous PASS. Le serveur resiste a 50 connexions half-auth simultanees, les connexions legitimes sont acceptees pendant le flood, et les connexions malveillantes sont fermees par le serveur apres exactement 30s (25s de silence + ~5s de handshake initial).",
+  "source_location": "Sources/WiredSwift/P7/P7Socket.swift (readExactly ~L688, readMessage ~L578, acceptHandshake ~L942, acceptKeyExchange ~L1234, receiveCompatibilityCheck ~L1455)",
+  "timestamp": "2026-03-16T08:32:43.973214+00:00",
+  "retest_timestamp": "2026-03-17T09:30:00.000000+00:00",
+  "reproducibility": "Avant patch: 100% deterministe — 20 connexions avec handshake valide, crash en ~3s. Apres patch: 100% deterministe — serveur stable, connexions fermees apres 30s.",
+  "impact": "Denial of Service complet du serveur Wired 3 (avant patch) — un attaquant non authentifie envoyait un handshake valide sur 20 connexions et maintenait les connexions ouvertes, causant la saturation du thread pool GCD et l'arret du service. Aucune authentication requise.",
+  "cvss_estimate": "7.5 (AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H)",
+  "status": "patched",
+  "related_findings": ["FUZZ_004"]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_C_012",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "Broadcast message has no rate limiting or recipient count check",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 903,
+  "description": "The receiveMessageSendBroadcast method (line 903) sends a message to ALL connected clients via App.clientsController.broadcast. While it checks the wired.account.message.broadcast privilege, there is no rate limiting. A user with broadcast privilege can spam all connected users at high frequency. The broadcast is dispatched on a global queue (ClientsController.swift line 45) which could also saturate the thread pool.",
+  "vulnerable_code": "private func receiveMessageSendBroadcast(client: Client, message: P7Message) {\n    // privilege check only, no rate limiting\n    App.clientsController.broadcast(message: broadcast)\n}",
+  "recommendation": "Add per-client rate limiting for broadcast messages (e.g., 1 per 10 seconds). Consider adding a cooldown or queue for broadcast messages.",
+  "status": "patched",
+  "patched_at": "2026-03-16"
+}

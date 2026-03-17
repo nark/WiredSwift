@@ -1,0 +1,14 @@
+{
+  "id": "FINDING_A_001",
+  "category": "auth",
+  "severity": "HIGH",
+  "title": "No rate limiting on login attempts",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 1789,
+  "description": "The receiveSendLogin function processes login attempts without any rate limiting, delay, or lockout mechanism. An attacker can perform unlimited brute-force login attempts against any account. The function simply checks credentials and returns true/false with no throttling, no failed attempt counter, no IP-based blocking, and no exponential backoff. Combined with the SHA-256 password hashing (no salting, no bcrypt/scrypt/argon2), this makes brute-force attacks highly practical.",
+  "vulnerable_code": "private func receiveSendLogin(_ client:Client, _ message:P7Message) -> Bool {\n    guard let login = message.string(forField: \"wired.user.login\") else {\n        return false\n    }\n    guard let password = message.string(forField: \"wired.user.password\") else {\n        return false\n    }\n    guard let user = App.usersController.user(withUsername: login, password: password) else {\n        let reply = P7Message(withName: \"wired.error\", spec: message.spec)\n        reply.addParameter(field: \"wired.error.string\", value: \"Login failed\")\n        reply.addParameter(field: \"wired.error\", value: UInt32(4))\n        App.serverController.reply(client: client, reply: reply, message: message)\n        Logger.error(\"Login failed for user '\\(login)'\")\n        return false\n    }",
+  "recommendation": "Implement a rate limiter that tracks failed login attempts per IP address and per username. After N failed attempts (e.g. 5), introduce an exponential backoff delay or temporary account lockout. Consider using a token bucket or sliding window algorithm. Also consider replacing SHA-256 password storage with bcrypt/scrypt/argon2 for password hashing at rest.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patched_commit": "b074806"
+}

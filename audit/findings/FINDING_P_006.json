@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_P_006",
+  "category": "parser",
+  "severity": "HIGH",
+  "cwe": "CWE-770",
+  "title": "Unbounded OOB data read without maximum size limit",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 745,
+  "description": "In readOOB(), the message length is read as a UInt32 from the network and passed directly to readExactly(size: Int(messageLength)) at line 745 without any upper bound validation. Same as FINDING_P_001 but for the OOB data path. An attacker can trigger OOM by sending a large length value in the OOB framing header.",
+  "vulnerable_code": "var messageData = try self.readExactly(size: Int(messageLength), timeout: timeout, enforceDeadline: true)",
+  "recommendation": "Add maximum size validation: guard messageLength <= maxOOBSize else { throw P7SocketError.readFailed(\"OOB data too large\") }",
+  "status": "patched"
+}

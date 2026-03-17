@@ -1,0 +1,11 @@
+{
+  "id": "FUZZ_002",
+  "severity": "CRITICAL",
+  "title": "CRASH_CONNECTION_FLOOD",
+  "file": "network",
+  "line": 0,
+  "description": "Le serveur a crashe apres l'ouverture de 50 connexions simultanees.",
+  "exploit": "Payload: 666c6f6f645f35305f636f6e6e656374696f6e73",
+  "suggested_fix": "Ajouter validation bounds-checking sur length fields et msg_id avant traitement",
+  "timestamp": "2026-03-17T07:56:22.636553+00:00"
+}

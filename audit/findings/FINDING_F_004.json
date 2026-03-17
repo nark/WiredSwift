@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_004",
+  "category": "files",
+  "severity": "HIGH",
+  "cwe": "CWE-22",
+  "title": "Missing root-path jail check after path normalization and symlink resolution",
+  "file": "Sources/wired3/FilesController.swift",
+  "line": 26,
+  "description": "The real(path:) method (line 26-28) simply concatenates rootPath with the user-supplied path: 'self.rootPath.stringByAppendingPathComponent(path: path)'. Even where symlinks are resolved (getInfo, setPermissions, move), the code never verifies that the resolved absolute path is still within rootPath. An attacker who manages to create a symlink inside the root pointing outside (or exploits a TOCTOU race between normalization and the filesystem operation) can escape the file jail entirely. There is no single enforcement point that guarantees all resolved paths remain under rootPath.",
+  "vulnerable_code": "public func real(path:String) -> String {\n    return self.rootPath.stringByAppendingPathComponent(path: path)\n}",
+  "recommendation": "Add a jailCheck method: after resolving symlinks, verify that resolvedPath.hasPrefix(self.rootPath + '/') || resolvedPath == self.rootPath. Call this check in every handler before performing filesystem operations. Return an error (permission_denied or file_not_found) if the check fails.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "commit": "827ccc0"
+}

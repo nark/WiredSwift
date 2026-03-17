@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_A_011",
+  "category": "auth",
+  "severity": "HIGH",
+  "title": "Unlimited message size in readMessage allows memory exhaustion DoS",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 596,
+  "description": "The readMessage function reads a 4-byte message length from the network and allocates a buffer of that size via readExactly(size: Int(messageLength)). Since messageLength is a UInt32, the maximum value is 4,294,967,295 (4 GB). A malicious client can send a length prefix of 0xFFFFFFFF, causing the server to attempt allocating 4 GB of memory per connection. With multiple concurrent connections, this trivially causes an out-of-memory server crash. The readExactly function at line 688 calls buffer.reserveCapacity(size) with the untrusted size value.",
+  "vulnerable_code": "let lengthData = try readExactly(size: 4)\nguard let messageLength = lengthData.uint32 else { ... }\nlet encryptedPayload = try readExactly(size: Int(messageLength))",
+  "recommendation": "Add a maximum message size constant (e.g., 16 MB or 64 MB depending on expected maximum message size for file transfers) and reject messages that exceed it: 'guard messageLength <= MAX_MESSAGE_SIZE else { throw P7SocketError.readFailed(\"Message too large\") }'.",
+  "status": "patched",
+  "patch_note": "Duplicate of FINDING_P_002/P_001 \u2014 fixed in same commit"
+}

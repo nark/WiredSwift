@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_A_016",
+  "category": "auth",
+  "severity": "HIGH",
+  "title": "Session is not invalidated on password change",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 2308,
+  "description": "When an admin changes a user's password via receiveAccountEditUser, the password is updated in the database but any existing sessions for that user remain active. The reloadPrivilegesForLoggedInUsers function (line 2559) only refreshes privileges, not credentials. This means a compromised account's sessions persist even after the password is changed. An attacker who has logged in can maintain their session indefinitely even after the legitimate user changes their password.",
+  "vulnerable_code": "if let password = message.string(forField: \"wired.account.password\"), !password.isEmpty {\n    account.password = normalizedPasswordForStorage(password)\n}\n...\n// After save, only privileges are reloaded, sessions are NOT invalidated\nreloadPrivilegesForLoggedInUsers(matchingAccountNames: [name])",
+  "recommendation": "When a password is changed, forcibly disconnect all active sessions for that user. Add a mechanism to track password change timestamps and compare against session establishment time.",
+  "status": "patched",
+  "patch_date": "2026-03-16",
+  "patch_commit": "581709e",
+  "fix_summary": "After password change, all connected clients with the same username (except the editing client) are disconnected via disconnectClient, forcing re-authentication with the new credentials."
+}

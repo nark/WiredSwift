@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_005",
+  "category": "files",
+  "severity": "HIGH",
+  "cwe": "CWE-476",
+  "title": "Force unwrap of client.user! in FilesController without guard — potential crash from unauthenticated request",
+  "file": "Sources/wired3/FilesController.swift",
+  "line": 51,
+  "description": "FilesController methods (listDirectory, getInfo, createDirectory, setType, setPermissions, delete, move, subscribeDirectory, unsubscribeDirectory) all use client.user! (force unwrap) without first checking that client.user is non-nil. While the ServerController.receiveMessage state machine should prevent unauthenticated clients from reaching these handlers, the guard is not in the handlers themselves. The state machine at ServerController line 448-464 only blocks messages if client.state is CONNECTED or GAVE_CLIENT_INFO, but does not explicitly require LOGGED_IN for all file operations. If a logic error or race condition allows a message to reach these handlers with client.user == nil, the server will crash. There are 25+ instances of client.user! in FilesController.swift alone.",
+  "vulnerable_code": "if !client.user!.hasPrivilege(name: \"wired.account.file.list_files\") {",
+  "recommendation": "Add 'guard let user = client.user else { return }' at the top of each public handler in FilesController, matching the pattern used in receiveDownloadFile and receiveUploadFile. Replace all client.user! with the guarded local variable.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patched_commit": "231309a"
+}

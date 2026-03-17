@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_005",
+  "category": "chat",
+  "severity": "HIGH",
+  "title": "userLeave(client:) iterates chats dictionary without lock (race condition)",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 370,
+  "description": "The userLeave(client:Client) method on line 370 iterates 'self.chats' (a [UInt32:Chat] dictionary) without holding chatsLock. This is called when a client disconnects (ServerController.disconnectClient -> chatsController.userLeave). If another thread concurrently adds or removes a chat (e.g., createPublicChat or deletePublicChat), the dictionary iteration can crash due to concurrent mutation of a Swift Dictionary, which is not thread-safe. All other accesses to self.chats go through methods that hold chatsLock, but this one does not.",
+  "vulnerable_code": "public func userLeave(client:Client) {\n    for (chatID, chat) in self.chats {\n        if let c = chat.client(withID: client.userID) {\n            userLeave(chatID: chatID, client: c)\n        }\n    }\n}",
+  "recommendation": "Wrap the iteration in chatsLock.concurrentlyRead, or take a snapshot of the chats dictionary inside the lock before iterating.",
+  "status": "patched"
+}

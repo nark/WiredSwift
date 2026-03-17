@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_012",
+  "category": "files",
+  "severity": "MEDIUM",
+  "cwe": "CWE-770",
+  "title": "Recursive directory listing without depth limit can exhaust server resources",
+  "file": "Sources/wired3/FilesController.swift",
+  "line": 63,
+  "description": "The listDirectory handler accepts a 'wired.file.recursive' boolean field. When true, it recursively traverses and sends the listing for the entire directory tree under the requested path. There is no depth limit, no maximum number of entries, and no timeout. A user with list_files privilege can request a recursive listing of the root '/' directory, which on a server with millions of files could: (1) consume excessive CPU and memory building responses, (2) generate enormous network traffic, (3) block the dispatch queue for extended periods. While the cycle detection (visited set) prevents infinite loops from symlinks, it does not limit the total work.",
+  "vulnerable_code": "if let r = message.bool(forField: \"wired.file.recursive\") {\n    recursive = r\n}\nself.replyList(normalizedPath, recursive, client, message)",
+  "recommendation": "Add a configurable maximum depth limit (e.g. 32 levels) and a maximum total entry count (e.g. 50000). Abort the traversal and send a truncation indicator when limits are reached.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patch_notes": "Added maxRecursiveDepth (16) and maxRecursiveEntries (10000) limits to replyListRecursive"
+}

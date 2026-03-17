@@ -1,0 +1,11 @@
+{
+  "id": "FINDING_F_015",
+  "category": "files",
+  "severity": "MEDIUM",
+  "title": "Search results leak file paths inside dropboxes",
+  "file": "Sources/wired3/IndexController.swift",
+  "line": 377,
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patched_commit": "7befced"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_004",
+  "category": "chat",
+  "severity": "HIGH",
+  "title": "Force unwrap client.nick! in setTopic can crash server",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 459,
+  "description": "In the setTopic method, line 459 does 'chat.topicNick = client.nick!' which force-unwraps an Optional String?. The nick property (Client.swift line 21) is declared as 'public var nick:String?'. If a client sends a set_topic message before setting a nick (which is allowed by the state machine since set_nick is optional before login), this will crash with a fatal error. This is a remotely triggerable denial-of-service.",
+  "vulnerable_code": "chat.topicNick = client.nick!",
+  "recommendation": "Replace with: chat.topicNick = client.nick ?? \"\" or add a guard let nick = client.nick at the beginning of the method.",
+  "status": "patched"
+}

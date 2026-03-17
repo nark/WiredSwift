@@ -1,0 +1,8 @@
+{
+  "id": "FINDING_P_017",
+  "severity": "MEDIUM",
+  "title": "Unknown type strings default to .uint32 -- silent misinterpretation",
+  "file": "Sources/WiredSwift/P7/P7SpecType.swift",
+  "status": "patched",
+  "patch_date": "2026-03-16"
+}

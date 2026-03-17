@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_P_016",
+  "category": "parser",
+  "severity": "HIGH",
+  "cwe": "CWE-476",
+  "title": "Force unwrap on XMLParser(contentsOf:) in loadFile",
+  "file": "Sources/WiredSwift/P7/P7Spec.swift",
+  "line": 397,
+  "description": "At line 397, XMLParser(contentsOf: url)! is force-unwrapped. The XMLParser(contentsOf:) initializer returns nil if the URL cannot be read. If the spec file is missing, moved, or has incorrect permissions, this force unwrap crashes the server at startup.",
+  "vulnerable_code": "self.parser = XMLParser(contentsOf: url)!",
+  "recommendation": "Use guard: guard let parser = XMLParser(contentsOf: url) else { return false }; self.parser = parser",
+  "status": "patched"
+}

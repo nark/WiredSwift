@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_P_007",
+  "category": "parser",
+  "severity": "HIGH",
+  "cwe": "CWE-476",
+  "title": "Force unwrap on specMessage.name and response.name throughout P7Socket",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 854,
+  "description": "Multiple locations in P7Socket.swift force-unwrap response.name! when constructing error messages (lines 854, 936, 1042, 1069, 1169, 1245, 1416, 1428). The name property is declared as String! (implicitly unwrapped optional). If a malformed message is received where the message ID is not found in the spec, loadBinaryMessage returns early without setting self.name, leaving it nil. Any subsequent access to response.name! crashes the server. An attacker can trigger this by sending a message with an unknown message ID followed by a message with the wrong transaction name.",
+  "vulnerable_code": "let message = \"Handshake Failed: Unexpected message \\(response.name!) instead of p7.handshake.server_handshake\"",
+  "recommendation": "Use optional binding: response.name ?? \"<unknown>\" in all error message interpolations, or change name from String! to String? with proper nil handling.",
+  "status": "patched",
+  "patched_by": "commit 0ababa1",
+  "patched_date": "2026-03-16"
+}

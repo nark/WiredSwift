@@ -1,0 +1,128 @@
+{
+  "audit_date": "2026-03-16",
+  "scope": "Files, accounts, permissions, path traversal, privilege escalation",
+  "files_analyzed": [
+    "Sources/wired3/FilesController.swift",
+    "Sources/wired3/ServerController.swift",
+    "Sources/wired3/UsersController.swift",
+    "Sources/wired3/User.swift",
+    "Sources/wired3/UserPrivilege.swift",
+    "Sources/wired3/GroupPrivilege.swift",
+    "Sources/wired3/Privilege.swift",
+    "Sources/wired3/TransfersController.swift",
+    "Sources/wired3/Transfer.swift",
+    "Sources/wired3/Client.swift",
+    "Sources/wired3/ClientsController.swift",
+    "Sources/wired3/IndexController.swift",
+    "Sources/WiredSwift/Data/File.swift"
+  ],
+  "total": 17,
+  "critical": 2,
+  "high": 5,
+  "medium": 8,
+  "low": 2,
+  "findings": [
+    {
+      "id": "FINDING_F_001",
+      "severity": "CRITICAL",
+      "cwe": "CWE-22",
+      "title": "Incomplete path traversal validation in File.isValid(path:)"
+    },
+    {
+      "id": "FINDING_F_002",
+      "severity": "CRITICAL",
+      "cwe": "CWE-22",
+      "title": "Download handler does not normalize path or resolve symlinks — path traversal via symlink"
+    },
+    {
+      "id": "FINDING_F_003",
+      "severity": "HIGH",
+      "cwe": "CWE-59",
+      "title": "Symlink attack: no symlink resolution on delete, createDirectory, and other filesystem mutators"
+    },
+    {
+      "id": "FINDING_F_004",
+      "severity": "HIGH",
+      "cwe": "CWE-22",
+      "title": "Missing root-path jail check after path normalization and symlink resolution"
+    },
+    {
+      "id": "FINDING_F_005",
+      "severity": "HIGH",
+      "cwe": "CWE-476",
+      "title": "Force unwrap of client.user! in FilesController without guard — potential crash from unauthenticated request"
+    },
+    {
+      "id": "FINDING_F_006",
+      "severity": "HIGH",
+      "cwe": "CWE-269",
+      "title": "Privilege escalation: edit_users allows setting arbitrary privileges including admin privileges"
+    },
+    {
+      "id": "FINDING_F_007",
+      "severity": "HIGH",
+      "cwe": "CWE-200",
+      "title": "Password hashes leaked in account listing response"
+    },
+    {
+      "id": "FINDING_F_008",
+      "severity": "MEDIUM",
+      "cwe": "CWE-89",
+      "title": "SQL injection in readSchema via unsanitized table name"
+    },
+    {
+      "id": "FINDING_F_009",
+      "severity": "MEDIUM",
+      "cwe": "CWE-252",
+      "title": "Force unwrap crash in FilePrivilege init parsing permissions file"
+    },
+    {
+      "id": "FINDING_F_010",
+      "severity": "MEDIUM",
+      "cwe": "CWE-732",
+      "title": "Directories created with overly permissive POSIX permissions (0o777)"
+    },
+    {
+      "id": "FINDING_F_011",
+      "severity": "MEDIUM",
+      "cwe": "CWE-862",
+      "title": "Download file handler does not check dropbox permissions using normalized/resolved paths"
+    },
+    {
+      "id": "FINDING_F_012",
+      "severity": "MEDIUM",
+      "cwe": "CWE-770",
+      "title": "Recursive directory listing without depth limit can exhaust server resources"
+    },
+    {
+      "id": "FINDING_F_013",
+      "severity": "MEDIUM",
+      "cwe": "CWE-862",
+      "title": "Root directory '/' deletion not protected — user can delete entire file tree"
+    },
+    {
+      "id": "FINDING_F_014",
+      "severity": "MEDIUM",
+      "cwe": "CWE-306",
+      "title": "No rate limiting on login attempts — brute force attack possible"
+    },
+    {
+      "id": "FINDING_F_015",
+      "severity": "MEDIUM",
+      "cwe": "CWE-862",
+      "title": "Search results bypass dropbox read permission checks"
+    },
+    {
+      "id": "FINDING_F_016",
+      "severity": "LOW",
+      "cwe": "CWE-362",
+      "title": "TOCTOU race between path validation and filesystem operations"
+    },
+    {
+      "id": "FINDING_F_017",
+      "severity": "LOW",
+      "cwe": "CWE-770",
+      "title": "No limit on directory subscription count per client"
+    }
+  ]
+}

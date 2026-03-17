@@ -1,0 +1,8 @@
+{
+  "id": "FINDING_P_010",
+  "severity": "MEDIUM",
+  "title": "Bundle(identifier:)! force unwrap -- crash on Linux",
+  "file": "Sources/WiredSwift/P7/P7Spec.swift",
+  "status": "patched",
+  "patch_date": "2026-03-16"
+}

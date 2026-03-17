@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_A_003",
+  "category": "auth",
+  "severity": "HIGH",
+  "title": "Password hashes leaked to clients in account list responses",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 2193,
+  "description": "The receiveAccountListUsers function sends the password hash of every user account to any client with the 'wired.account.account.list_accounts' privilege. Similarly, receiveAccountReadUser (via accountUserMessage) sends the password hash at line 2478. Even though these are SHA-256 hashes, exposing them allows offline brute-force or rainbow table attacks. Any user with list_accounts/read_accounts privilege can extract all password hashes from the server.",
+  "vulnerable_code": "reply.addParameter(field: \"wired.account.password\", value: listedUser.password ?? \"\")",
+  "recommendation": "Never send password hashes to clients. Replace the password field with an empty string or a boolean 'has_password' flag. If password comparison is needed for admin operations, do it server-side only.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "commit": "b91e453",
+  "fix": "Removed wired.account.password field from receiveAccountListUsers and accountUserMessage response builders"
+}

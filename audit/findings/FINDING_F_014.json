@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_014",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "cwe": "CWE-662",
+  "title": "deletePublicChat broadcasts deletion before DB delete — inconsistent state on DB failure",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 178,
+  "description": "deletePublicChat broadcasts deletion and removes from memory before the database delete. If the DB delete fails, state is inconsistent: clients see the chat as deleted but it still exists in the database.",
+  "vulnerable_code": "App.clientsController.broadcast(message: reply)\nself.remove(chat: publicChat)\ntry databaseController.dbQueue.write { db in try publicChat.delete(db) }",
+  "recommendation": "Perform the database delete first, then broadcast and remove from memory only on success.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patch_notes": "Reordered to DB-delete-first, then remove from memory and broadcast on success"
+}

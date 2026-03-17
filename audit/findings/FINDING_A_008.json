@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_A_008",
+  "category": "auth",
+  "severity": "CRITICAL",
+  "title": "P7 binary message parser lacks bounds checking on field length",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "line": 487,
+  "description": "In loadBinaryMessage, when parsing TLV fields of type string/data/list, the field length is read from the network data and used directly without bounds validation: 'fieldLength = Int(fieldLengthData.uint32!)'. There is no check that offset + fieldLength <= data.count before calling data.subdata(in: offset..<offset+fieldLength) at line 498. A malicious peer could craft a message with a fieldLength larger than the remaining data, causing an out-of-range crash (fatal error). Additionally, fieldLengthData.uint32 is force-unwrapped with '!' at line 487. While the offset+4 subdata should always yield 4 bytes at this point, a carefully crafted message could cause issues if the overall message length was manipulated.",
+  "vulnerable_code": "if specField.type == .string || specField.type == .data || specField.type == .list {\n    let fieldLengthData = data.subdata(in: offset..<offset+4)\n    fieldLength = Int(fieldLengthData.uint32!)\n    offset += 4\n}\n...\nlet fieldData = data.subdata(in: offset..<offset+fieldLength)",
+  "recommendation": "Add bounds checking before reading field data: 'guard offset + 4 <= data.count else { Logger.error(\"Truncated field header\"); return }' before reading the length, and 'guard offset + fieldLength <= data.count else { Logger.error(\"Field length exceeds message bounds\"); return }' before reading the value. Also replace the force-unwrap with a guard let.",
+  "status": "patched",
+  "patch_note": "Duplicate of FINDING_P_002/P_001 \u2014 fixed in same commit"
+}

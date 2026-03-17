@@ -1,0 +1,9 @@
+{
+  "id": "FINDING_P_018",
+  "severity": "MEDIUM",
+  "title": "No transaction state machine -- message IDs not validated",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "status": "needs_human_review",
+  "reason": "Architectural change required: state machine across P7Socket/P7Message/ServerController. Not a minimal patch.",
+  "patch_date": "2026-03-16"
+}

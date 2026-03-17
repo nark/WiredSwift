@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_009",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "nextChatID() not protected by lock (race condition on lastChatID)",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 54,
+  "description": "The nextChatID() method (line 54) increments lastChatID (a UInt32) without synchronization. If two createPublicChat or createPrivateChat calls execute concurrently, they can read the same value of lastChatID, both increment it, and produce the same chatID for two different chats. One would overwrite the other in the self.chats dictionary. This is a TOCTOU race that could cause chat data loss or users joining the wrong chat.",
+  "vulnerable_code": "private func nextChatID() -> UInt32 {\n    lastChatID += 1\n    return lastChatID\n}",
+  "recommendation": "Wrap the increment and return in chatsLock.exclusivelyWrite, or use an atomic counter.",
+  "status": "patched"
+}

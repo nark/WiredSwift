@@ -1,0 +1,11 @@
+{
+  "id": "FINDING_P_001",
+  "category": "parser",
+  "severity": "CRITICAL",
+  "title": "Unbounded message length allocation — Remote OOM DoS",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 596,
+  "status": "patched",
+  "patched_at": "2026-03-16",
+  "commit": "7c1fa79"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "FINDING_F_013",
+  "category": "files",
+  "severity": "MEDIUM",
+  "title": "Root directory deletion not protected — wipe entire file tree",
+  "file": "Sources/wired3/FilesController.swift",
+  "line": 325,
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patched_commit": "74c1aeb"
+}

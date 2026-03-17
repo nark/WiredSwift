@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_P_003",
+  "category": "parser",
+  "severity": "CRITICAL",
+  "cwe": "CWE-770",
+  "title": "Unbounded TLV field length for string/data/list types allows OOM via crafted field",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "line": 487,
+  "description": "In loadBinaryMessage(), when a field has explicit length (string, data, list types), the field length is read from the wire as a UInt32 at line 487: fieldLength = Int(fieldLengthData.uint32!). There is no maximum bound on this value. A malicious peer can send a field with length 0xFFFFFFFF, causing data.subdata(in: offset..<offset+fieldLength) to attempt a 4 GB allocation. Even if the underlying data buffer is smaller, Swift's Data.subdata will crash with a range error rather than gracefully failing. Combined with FINDING_P_002, this is a guaranteed crash vector.",
+  "vulnerable_code": "fieldLength = Int(fieldLengthData.uint32!)",
+  "recommendation": "Validate that fieldLength does not exceed the remaining data: guard offset + fieldLength <= data.count else { Logger.error(\"Field length exceeds message\"); return }. Additionally consider a hard cap (e.g., 16 MB) for any single field.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patched_commit": "c3b7906"
+}

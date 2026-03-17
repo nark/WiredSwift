@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_015",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "Encryption can be negotiated to NONE, allowing plaintext sessions",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 1006,
+  "description": "During the handshake negotiation in acceptHandshake, if the client requests cipher type NONE and the server's configured cipher includes NONE (or ALL), the connection proceeds without any encryption. The server's default cipher is SECURE_ONLY (which excludes NONE), but the configuration allows setting it to ALL via the advanced.cipher config key. When encryption is NONE, the entire session including login credentials (password hashes) is transmitted in plaintext. Additionally, when cipherType is NONE, the key exchange phase is skipped entirely (ServerController.swift:453), meaning no ECDH authentication occurs -- the password hash from wired.send_login travels in cleartext.",
+  "vulnerable_code": "// acceptHandshake:\nif self.cipherType.contains(clientCipher) {\n    self.cipherType = clientCipher  // client can force NONE\n}\n...\n// accept:\nif self.cipherType != .NONE {\n    try self.acceptKeyExchange(timeout: timeout)  // SKIPPED when NONE\n}",
+  "recommendation": "Remove NONE from CipherType.ALL or add a minimum cipher enforcement. When the server is configured with SECURE_ONLY or ALL, reject connections that negotiate NONE cipher. Log a warning when a plaintext session is established.",
+  "status": "patched"
+}

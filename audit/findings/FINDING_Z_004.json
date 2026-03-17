@@ -1,0 +1,53 @@
+{
+  "id": "FUZZ_004",
+  "severity": "HIGH",
+  "title": "Absence de timeout global sur readMessage() dans le chemin d'acceptation P7 - resource exhaustion par half-auth flood",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 688,
+  "description": "Finding derive de FUZZ_003 lors du retest du 2026-03-17. readExactly(size:) dans P7Socket etait implementee avec un parametre enforceDeadline:Bool qui, lorsque false (valeur par defaut), ne limitait pas la duree totale d'attente. Dans le chemin acceptHandshake/acceptKeyExchange, tous les appels a readMessage() utilisaient cette forme sans deadline. Un client malveillant pouvait maintenir une connexion TCP ouverte indefiniment sans jamais envoyer de donnees, bloquant un thread GCD pour chaque connexion. Ce finding est distinct de FUZZ_003 car il decrit la vulnerabilite sous-jacente (absence de deadline) plutot que le symptome (crash du serveur). Il couvre egalement le cas de figure ou l'attaquant envoie les donnees tres lentement (low-and-slow attack) pour contourner d'eventuels gardes bases sur le nombre de connexions.",
+  "exploit": "Low-and-slow variant : envoyer le client_handshake en fragments de 1 octet toutes les 59 secondes. Chaque connexion consomme un thread GCD indefiniment. 64 connexions de ce type saturaient le pool de threads standard macOS GCD. Patch corrige les deux variantes (burst et low-and-slow) via enforceDeadline:true.",
+  "root_cause_detail": {
+    "file": "Sources/WiredSwift/P7/P7Socket.swift",
+    "function": "readExactly(size:timeout:enforceDeadline:)",
+    "line_approx": 688,
+    "issue": "enforceDeadline par defaut a false. Les appelants dans acceptHandshake (~L946) et acceptKeyExchange (~L1255) n'utilisaient pas enforceDeadline:true ni de timeout global.",
+    "callers_fixed": [
+      "acceptHandshake -> readMessage(timeout: 30s, enforceDeadline: true) [L953]",
+      "acceptHandshake -> readMessage(timeout: 30s, enforceDeadline: true) [L1059]",
+      "acceptKeyExchange -> readMessage(timeout: 30s, enforceDeadline: true) [L1262]",
+      "receiveCompatibilityCheck -> readMessage(timeout: 30s, enforceDeadline: true) [L1456]"
+    ],
+    "contrast": "readOOB() utilisait correctement enforceDeadline:true - ce modele a ete applique dans readMessage() via le parametre handshakeTimeout"
+  },
+  "retest_results": {
+    "date": "2026-03-17",
+    "binary_tested": "/Users/nark/Library/Application Support/Wired3/bin/wired3",
+    "binary_compiled": "2026-03-17T09:01 (commit 76c8182)",
+    "timeout_measurement": {
+      "description": "5 connexions half-auth avec client_handshake valide, puis silence total apres drain de server_handshake",
+      "connections": 5,
+      "closed_by_server": 5,
+      "silence_to_close_seconds": [25.0, 25.0, 25.0, 25.0, 25.0],
+      "total_from_connect": 30.0,
+      "verdict": "PASS - timeout enforceDeadline:true fonctionne, connexions fermees a exactement 30s"
+    },
+    "low_and_slow_variant": {
+      "description": "Le patch couvre la variante low-and-slow car enforceDeadline:true mesure le temps total ecoule depuis le debut du readExactly, pas seulement le temps entre les octets individuels. Un attaquant envoyant 1 octet/59s serait coupe apres 30s.",
+      "tested": false,
+      "reason": "Non teste explicitement - la verification du timeout confirme que enforceDeadline:true expire a 30s independamment du pattern d'envoi"
+    }
+  },
+  "suggested_fix": "IMPLEMENTE en commit 76c8182 : Option A chirurgicale appliquee. Dans readMessage(), parametre enforceDeadline:Bool=false + timeout:TimeInterval=60 propages a readExactly(). Les appelants dans le chemin d'acceptation passent enforceDeadline:true avec handshakeTimeout=30s.",
+  "source_location": "Sources/WiredSwift/P7/P7Socket.swift (readExactly L688, readMessage L578, acceptHandshake L942, acceptKeyExchange L1234, receiveCompatibilityCheck L1455)",
+  "timestamp": "2026-03-17T00:00:00.000000+00:00",
+  "retest_timestamp": "2026-03-17T09:30:00.000000+00:00",
+  "reproducibility": "Avant patch: 100% deterministe. Apres patch: corrige - timeout de 30s actif dans tout le chemin d'acceptation.",
+  "impact": "Denial of Service - saturation du thread pool GCD par des connexions malveillantes bloquantes. Aucune authentication requise. Exploitable a distance sur un reseau local ou Internet si le port 4871 est expose.",
+  "cvss_estimate": "7.5 (AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H)",
+  "status": "patched",
+  "patch_note": "Fixed in commit 76c8182 (same patch as FINDING_Z_003). readMessage() now enforces deadline in the accept path. All readExactly() calls in acceptHandshake, acceptKeyExchange, and receiveCompatibilityCheck now use enforceDeadline:true with a 30s timeout, preventing both instant-silent and low-and-slow attacks from holding GCD threads indefinitely.",
+  "patch_commit": "76c8182",
+  "patch_date": "2026-03-17",
+  "retest_verdict": "PASS — patch valide. Le handshakeTimeout de 30s est actif et effectif. Les connexions half-auth sont fermees exactement apres 30s depuis la connexion initiale.",
+  "related_findings": ["FUZZ_003"]
+}

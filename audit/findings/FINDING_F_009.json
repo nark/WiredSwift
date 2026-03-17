@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_009",
+  "category": "files",
+  "severity": "MEDIUM",
+  "cwe": "CWE-252",
+  "title": "Force unwrap crash in FilePrivilege init parsing permissions file",
+  "file": "Sources/WiredSwift/Data/File.swift",
+  "line": 251,
+  "description": "The FilePrivilege failable initializer reads the permissions file and splits its content using a separator character. It then force-unwraps components.first! at line 251 and accesses components[1] at line 252. If the permissions file is malformed (e.g. corrupted, manually edited, or containing no separators), the array could have fewer than 2 elements, causing an index-out-of-bounds crash. Since the permissions file is stored inside .wired/permissions under user-controlled directory paths, an attacker who can write arbitrary files (via upload to a dropbox) could craft a malicious .wired/permissions file to crash the server when any user lists or accesses that directory.",
+  "vulnerable_code": "let components = string.split(separator: Character(File.wiredPermissionsFieldSeparator), omittingEmptySubsequences: false)\nself.owner  = String(components.first!)\nself.group  = String(components[1])\nself.mode   = File.FilePermissions(rawValue: UInt32(String(components[2])) ?? 0)",
+  "recommendation": "Guard that components has at least 3 elements before accessing indices: guard components.count >= 3 else { return nil }. Replace force unwraps with safe indexing.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patch_commit": "ae5ea85"
+}

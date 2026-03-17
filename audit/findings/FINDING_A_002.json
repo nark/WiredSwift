@@ -1,0 +1,14 @@
+{
+  "id": "FINDING_A_002",
+  "category": "auth",
+  "severity": "HIGH",
+  "title": "Force unwrap on client.user crashes server on unauthenticated access",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 828,
+  "description": "Multiple handler functions use force-unwrap (!) on client.user without first verifying the client is in LOGGED_IN state. If a message arrives at these handlers when user is nil (e.g., due to a race condition or state machine bypass), the server will crash with a fatal error. This is a denial-of-service vulnerability. Affected lines: 828 (receiveUserGetInfo), 2030 (receiveGetSettings), 2062 (receiveSetSettings). The state machine in receiveMessage only blocks messages at CONNECTED and GAVE_CLIENT_INFO states, but once LOGGED_IN, any message can reach handleMessage and be dispatched to these handlers, which assume user is non-nil.",
+  "vulnerable_code": "private func receiveUserGetInfo(_ fromClient:Client, _ message:P7Message) {\n    if !fromClient.user!.hasPrivilege(name: \"wired.account.user.get_info\") {",
+  "recommendation": "Replace all force-unwraps of client.user with guard-let statements: 'guard let user = client.user else { replyError(...); return }'. This pattern is already used in other handlers like receiveDownloadFile and receiveMessageSendMessage.",
+  "status": "patched",
+  "patch_commit": "2a76c6a",
+  "patch_date": "2026-03-16"
+}
