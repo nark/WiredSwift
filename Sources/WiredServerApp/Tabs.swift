@@ -103,12 +103,12 @@ struct GeneralTabView: View {
                             Task { await model.installServer() }
                         }
                         .disabled(model.isInstalled || model.isBusy)
-
+                        
                         Button(L("general.install.uninstall")) {
                             model.uninstallServer()
                         }
                         .disabled(!model.isInstalled || model.isBusy || model.isRunning)
-
+                        
                         Spacer()
                         
                         Image(systemName: model.isInstalled ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -136,13 +136,15 @@ struct GeneralTabView: View {
                         .buttonStyle(.plain)
                         
                         Spacer(minLength: 0)
-
+                        
                         Button(L("common.choose")) {
                             model.chooseWorkingDirectory()
                         }
                         .disabled(model.isRunning)
                     }
-
+                }
+                
+                Section("Versions") {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))
                             .bold()

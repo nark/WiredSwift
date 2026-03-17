@@ -14,9 +14,9 @@ struct WiredServerApplication: App {
         WindowGroup(L("window.title")) {
             ContentView()
                 .environmentObject(model)
-                .frame(width: 880, height: 440)
+                .frame(width: 880, height: 580)
         }
-        .defaultSize(width: 880, height: 440)
+        .defaultSize(width: 880, height: 580)
         .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)

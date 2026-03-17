@@ -17,7 +17,7 @@
 "general.install.state.installed" = "Installed";
 "general.install.state.uninstalled" = "Uninstalled";
 "general.install.directory" = "Install directory";
-"general.install.version" = "Version";
+"general.install.version" = "Server Version";
 "general.install.p7_version" = "P7 Protocol";
 "general.install.wired_protocol" = "Wired Protocol";
 
