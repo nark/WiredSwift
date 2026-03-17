@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_P_011",
+  "category": "parser",
+  "severity": "MEDIUM",
+  "cwe": "CWE-476",
+  "title": "Force unwrap on spec.protocolName and spec.protocolVersion in loadFile",
+  "file": "Sources/WiredSwift/P7/P7Spec.swift",
+  "line": 401,
+  "description": "At line 401, self.protocolName! and self.protocolVersion! are force-unwrapped in a Logger.debug call. If the XML file fails to parse or does not contain the expected p7:protocol element with name/version attributes, these properties remain nil and the force unwrap crashes. Since this occurs during spec loading, a corrupted or attacker-modified spec XML file could crash the server at startup.",
+  "vulnerable_code": "Logger.debug(\"Loaded spec \\(self.protocolName!) version \\(self.protocolVersion!)\")",
+  "recommendation": "Use nil-coalescing: Logger.debug(\"Loaded spec \\(self.protocolName ?? 'unknown') version \\(self.protocolVersion ?? 'unknown')\")",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patch_notes": "Replaced force unwraps with nil-coalescing to 'unknown'"
+}

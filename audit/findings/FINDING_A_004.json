@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_004",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "Unsalted SHA-256 for password storage",
+  "file": "Sources/wired3/UsersController.swift",
+  "line": 197,
+  "description": "Passwords are stored as plain SHA-256 hashes without per-user salt. The seedDefaultDataIfNeeded function stores 'admin'.sha256() and ''.sha256(). The normalizedPasswordForStorage function at ServerController.swift:2514 either accepts a pre-hashed value or calls .sha256() on plaintext. SHA-256 is fast and unsalted, making it vulnerable to rainbow table attacks and GPU-accelerated brute-force. Two users with the same password will have identical hashes.",
+  "vulnerable_code": "let admin = User(username: \"admin\", password: \"admin\".sha256())\n...\nprivate func normalizedPasswordForStorage(_ password: String) -> String {\n    let isHexSHA256 = password.range(of: \"^[0-9a-fA-F]{64}$\", options: .regularExpression) != nil\n    return isHexSHA256 ? password.lowercased() : password.sha256()\n}",
+  "recommendation": "Migrate to bcrypt, scrypt, or Argon2id for password storage. Add per-user random salt. The protocol-level ECDH key exchange protects the password in transit, but the at-rest storage remains weak. Note: this is a protocol-level design decision that requires careful migration planning.",
+  "status": "patched"
+}

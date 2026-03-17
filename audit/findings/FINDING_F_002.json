@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_002",
+  "category": "files",
+  "severity": "CRITICAL",
+  "cwe": "CWE-22",
+  "title": "Download handler does not normalize path or resolve symlinks — path traversal via symlink",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 1840,
+  "description": "The receiveDownloadFile handler calls File.isValid(path:) then passes the raw (un-normalized) path directly to App.transfersController.download() and filesController.real(). Unlike other handlers (listDirectory, createDirectory, delete, move, upload) which apply NSString.standardizingPath, this handler never normalizes or resolves symlinks. The path is concatenated to rootPath as-is. Combined with the weakness in File.isValid, an attacker with upload privileges could upload a symlink pointing outside the root, then download arbitrary files from the server filesystem through that symlink. Even without symlinks, the lack of normalization means the path can contain redundant components that may bypass dropbox permission checks.",
+  "vulnerable_code": "guard let path = message.string(forField: \"wired.file.path\") else {\n    // ...\n}\nif !File.isValid(path: path) { ... }\n// No normalization! path is used raw:\nif let privilege = FilePrivilege(path: App.filesController.real(path: path)) { ... }\nif let transfer = App.transfersController.download(path: path, ...)",
+  "recommendation": "Apply the same normalization as other handlers: let normalizedPath = NSString(string: path).standardizingPath, then resolve symlinks on the real path with URL.resolvingSymlinksInPath(), and verify the resolved path starts with filesController.rootPath before proceeding.",
+  "status": "patched",
+  "patched_in_commit": "cc54315",
+  "patched_date": "2026-03-16"
+}

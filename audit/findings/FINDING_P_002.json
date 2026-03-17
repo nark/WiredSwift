@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_P_002",
+  "category": "parser",
+  "severity": "CRITICAL",
+  "cwe": "CWE-125",
+  "title": "Missing bounds check before TLV field read in loadBinaryMessage causes out-of-bounds crash",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "line": 468,
+  "description": "In loadBinaryMessage(), the while loop reads field IDs at offset..offset+4 (line 468) without first checking that offset+4 <= data.count. If the message data is truncated or malformed (e.g., only 2 bytes remaining), data.subdata(in: offset..<offset+4) will crash with a range out-of-bounds fatal error. Similarly, the field length read at line 486 (data.subdata(in: offset..<offset+4)) lacks a guard that offset+4 <= data.count. The field value read at line 498 (data.subdata(in: offset..<offset+fieldLength)) lacks a guard that offset+fieldLength <= data.count. Any of these can be triggered by a malicious peer sending a truncated binary message.",
+  "vulnerable_code": "fieldIDData = data.subdata(in: offset..<offset+4)\n...\nlet fieldLengthData = data.subdata(in: offset..<offset+4)\n...\nlet fieldData = data.subdata(in: offset..<offset+fieldLength)",
+  "recommendation": "Add bounds checks before each subdata call: guard offset + 4 <= data.count else { Logger.error(\"Truncated field\"); return } before reading field ID and field length, and guard offset + fieldLength <= data.count else { return } before reading field value.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patched_commit": "c3b7906"
+}

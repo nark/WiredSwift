@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_P_014",
+  "category": "parser",
+  "severity": "HIGH",
+  "cwe": "CWE-476",
+  "title": "Force unwrap on double cast in bin() serialization",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "line": 284,
+  "description": "At line 284 in the bin() method, 'value as! Double' is a force cast that will crash at runtime if the value stored for a .double-type field is not actually a Double. Since parameters are typed as [String:Any], any code path that stores a non-Double value for a double-typed field will cause a fatal crash during message serialization.",
+  "vulnerable_code": "data.append(double: value as! Double, bigEndian: true)",
+  "recommendation": "Use conditional cast: if let d = value as? Double { data.append(double: d, bigEndian: true) }",
+  "status": "patched"
+}

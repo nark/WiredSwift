@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_010",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "No limit on offline_messages table allows storage exhaustion DoS",
+  "file": "Sources/wired3/Database/WiredMigrations.swift",
+  "line": 190,
+  "description": "The offline_messages table (WiredMigrations.swift line 190) has no per-recipient row limit and no maximum total size. The table has an expires_at column, but there is no evidence of a periodic cleanup job or an INSERT-time check that enforces a maximum number of messages per recipient. A malicious user with send_offline_messages privilege can flood the database with messages targeted at any identity, causing disk exhaustion. The ciphertext column is a BLOB with no size limit, compounding the issue.",
+  "vulnerable_code": "try db.create(table: \"offline_messages\", ifNotExists: true) { t in\n    t.column(\"id\", .text).primaryKey()\n    t.column(\"sender_identity\", .text).notNull()\n    t.column(\"recipient_identity\", .text).notNull()\n    t.column(\"ciphertext\", .blob).notNull()\n    // ... no row count or size constraints\n}",
+  "recommendation": "Add a per-recipient message limit (e.g., 100 messages) enforced at INSERT time. Implement a periodic cleanup job that deletes expired messages (WHERE expires_at < NOW()). Consider adding a maximum ciphertext size check at the application layer.",
+  "status": "patched"
+}

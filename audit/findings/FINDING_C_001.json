@@ -1,0 +1,14 @@
+{
+  "id": "FINDING_C_001",
+  "category": "chat",
+  "severity": "HIGH",
+  "title": "PrivateChat.invitedClients not thread-safe — concurrent crash",
+  "file": "Sources/wired3/Chat.swift",
+  "line": 101,
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patched_commit": "c79eca0",
+  "description": "The invitedClients array is accessed from multiple threads (addInvitation, removeInvitation, isInvited) without any lock, while the parent Chat class correctly uses a Lock for its clients dictionary. Concurrent Swift array mutation causes crashes or logic errors from stale reads.",
+  "recommendation": "Add a lock to protect invitedClients, the same way clientsLock protects the clients dictionary in the Chat class.",
+  "fix_summary": "Added invitedClientsLock: Lock to PrivateChat. Wrapped addInvitation and removeInvitation with exclusivelyWrite, isInvited with concurrentlyRead."
+}

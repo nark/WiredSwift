@@ -1,0 +1,128 @@
+{
+  "audit_date": "2026-03-16",
+  "scope": "Authentication, Session Management, Key Exchange, Password Storage",
+  "files_analyzed": [
+    "Sources/wired3/ServerController.swift",
+    "Sources/wired3/Client.swift",
+    "Sources/wired3/UsersController.swift",
+    "Sources/wired3/User.swift",
+    "Sources/wired3/ClientsController.swift",
+    "Sources/wired3/AppController.swift",
+    "Sources/wired3/DatabaseController.swift",
+    "Sources/WiredSwift/P7/P7Socket.swift",
+    "Sources/WiredSwift/P7/P7Message.swift",
+    "Sources/WiredSwift/Crypto/Digest.swift",
+    "Sources/WiredSwift/Network/Connection.swift"
+  ],
+  "total_findings": 16,
+  "by_severity": {
+    "critical": 1,
+    "high": 6,
+    "medium": 8,
+    "low": 1
+  },
+  "findings": [
+    {
+      "id": "FINDING_A_001",
+      "severity": "HIGH",
+      "title": "No rate limiting on login attempts"
+    },
+    {
+      "id": "FINDING_A_002",
+      "severity": "HIGH",
+      "title": "Force unwrap on client.user crashes server on unauthenticated access"
+    },
+    {
+      "id": "FINDING_A_003",
+      "severity": "HIGH",
+      "title": "Password hashes leaked to clients in account list responses"
+    },
+    {
+      "id": "FINDING_A_004",
+      "severity": "MEDIUM",
+      "title": "Unsalted SHA-256 for password storage"
+    },
+    {
+      "id": "FINDING_A_005",
+      "severity": "MEDIUM",
+      "title": "Default admin password is well-known value 'admin'"
+    },
+    {
+      "id": "FINDING_A_006",
+      "severity": "MEDIUM",
+      "title": "Race condition in nextUserID generation"
+    },
+    {
+      "id": "FINDING_A_007",
+      "severity": "HIGH",
+      "title": "State machine allows multiple login messages without re-authentication"
+    },
+    {
+      "id": "FINDING_A_008",
+      "severity": "CRITICAL",
+      "title": "P7 binary message parser lacks bounds checking on field length"
+    },
+    {
+      "id": "FINDING_A_009",
+      "severity": "MEDIUM",
+      "title": "No TOFU or certificate pinning for server identity"
+    },
+    {
+      "id": "FINDING_A_010",
+      "severity": "MEDIUM",
+      "title": "SQL injection in readSchema via string interpolation"
+    },
+    {
+      "id": "FINDING_A_011",
+      "severity": "HIGH",
+      "title": "Unlimited message size in readMessage allows memory exhaustion DoS"
+    },
+    {
+      "id": "FINDING_A_012",
+      "severity": "MEDIUM",
+      "title": "No replay attack protection in the authentication protocol"
+    },
+    {
+      "id": "FINDING_A_013",
+      "severity": "MEDIUM",
+      "title": "Login password sent as SHA-256 hash without server challenge (pass-the-hash)"
+    },
+    {
+      "id": "FINDING_A_014",
+      "severity": "LOW",
+      "title": "Username enumeration via distinct error responses"
+    },
+    {
+      "id": "FINDING_A_015",
+      "severity": "MEDIUM",
+      "title": "Encryption can be negotiated to NONE, allowing plaintext sessions"
+    },
+    {
+      "id": "FINDING_A_016",
+      "severity": "HIGH",
+      "title": "Session is not invalidated on password change"
+    }
+  ],
+  "attack_chains": [
+    {
+      "name": "Hash Extraction + Pass-the-Hash",
+      "steps": ["FINDING_A_003 (extract hashes via list_accounts)", "FINDING_A_013 (use hash directly to authenticate)"],
+      "impact": "Full account takeover without knowing plaintext password"
+    },
+    {
+      "name": "Brute-Force Admin via Default Credentials",
+      "steps": ["FINDING_A_005 (default admin/admin)", "FINDING_A_001 (no rate limiting)", "FINDING_A_004 (weak hash allows fast offline cracking)"],
+      "impact": "Full server compromise"
+    },
+    {
+      "name": "Session Hijack via UserID Race",
+      "steps": ["FINDING_A_006 (duplicate userID)", "FINDING_A_007 (re-login to switch user)"],
+      "impact": "Session confusion, potential privilege escalation"
+    },
+    {
+      "name": "Remote DoS via Parser Crash",
+      "steps": ["FINDING_A_008 (crafted TLV field length)", "FINDING_A_011 (4GB allocation)"],
+      "impact": "Server crash or out-of-memory kill"
+    }
+  ]
+}

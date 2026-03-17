@@ -1,0 +1,121 @@
+{
+  "audit_date": "2026-03-16",
+  "scope": "Chat, Messages, Topics, Offline Messaging",
+  "files_analyzed": [
+    "Sources/wired3/Chat.swift",
+    "Sources/wired3/ChatsController.swift",
+    "Sources/wired3/ServerController.swift",
+    "Sources/wired3/Client.swift",
+    "Sources/wired3/ClientsController.swift",
+    "Sources/wired3/DatabaseController.swift",
+    "Sources/wired3/Database/WiredMigrations.swift",
+    "Sources/wired3/UsersController.swift"
+  ],
+  "total_findings": 14,
+  "by_severity": {
+    "critical": 0,
+    "high": 4,
+    "medium": 9,
+    "low": 1
+  },
+  "findings": [
+    {
+      "id": "FINDING_C_001",
+      "severity": "HIGH",
+      "title": "PrivateChat.invitedClients array not thread-safe (race condition)",
+      "file": "Sources/wired3/Chat.swift",
+      "line": 101
+    },
+    {
+      "id": "FINDING_C_002",
+      "severity": "MEDIUM",
+      "title": "Chat say/me messages not validated for empty content",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 412
+    },
+    {
+      "id": "FINDING_C_003",
+      "severity": "HIGH",
+      "title": "Force unwrap on client.user! in chat privilege checks can crash server",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 121
+    },
+    {
+      "id": "FINDING_C_004",
+      "severity": "HIGH",
+      "title": "Force unwrap client.nick! in setTopic can crash server",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 459
+    },
+    {
+      "id": "FINDING_C_005",
+      "severity": "HIGH",
+      "title": "userLeave(client:) iterates chats dictionary without lock (race condition)",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 370
+    },
+    {
+      "id": "FINDING_C_006",
+      "severity": "MEDIUM",
+      "title": "No rate limiting on chat messages enables flood DoS",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 60
+    },
+    {
+      "id": "FINDING_C_007",
+      "severity": "MEDIUM",
+      "title": "kick_user handler is commented out - no kick functionality enforced",
+      "file": "Sources/wired3/ServerController.swift",
+      "line": 588
+    },
+    {
+      "id": "FINDING_C_008",
+      "severity": "MEDIUM",
+      "title": "Unlimited private chat creation enables resource exhaustion",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 197
+    },
+    {
+      "id": "FINDING_C_009",
+      "severity": "MEDIUM",
+      "title": "nextChatID() not protected by lock (race condition on lastChatID)",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 54
+    },
+    {
+      "id": "FINDING_C_010",
+      "severity": "MEDIUM",
+      "title": "No limit on offline_messages table allows storage exhaustion DoS",
+      "file": "Sources/wired3/Database/WiredMigrations.swift",
+      "line": 190
+    },
+    {
+      "id": "FINDING_C_011",
+      "severity": "MEDIUM",
+      "title": "SQL injection via string interpolation in readSchema",
+      "file": "Sources/wired3/UsersController.swift",
+      "line": 354
+    },
+    {
+      "id": "FINDING_C_012",
+      "severity": "MEDIUM",
+      "title": "Broadcast message has no rate limiting or recipient count check",
+      "file": "Sources/wired3/ServerController.swift",
+      "line": 903
+    },
+    {
+      "id": "FINDING_C_013",
+      "severity": "MEDIUM",
+      "title": "No chat name validation allows creation of chats with empty or oversized names",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 127
+    },
+    {
+      "id": "FINDING_C_014",
+      "severity": "LOW",
+      "title": "deletePublicChat broadcasts before actually deleting - inconsistency on failure",
+      "file": "Sources/wired3/ChatsController.swift",
+      "line": 178
+    }
+  ]
+}

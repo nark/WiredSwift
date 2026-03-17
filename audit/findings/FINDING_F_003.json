@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_003",
+  "category": "files",
+  "severity": "HIGH",
+  "cwe": "CWE-59",
+  "title": "Symlink attack: no symlink resolution on delete, createDirectory, and other filesystem mutators",
+  "file": "Sources/wired3/FilesController.swift",
+  "line": 404,
+  "description": "The private delete(path:client:message:) method at line 404 computes realPath = self.real(path:) which is a simple string concatenation (rootPath + path) without resolving symlinks. If an attacker has created a symlink inside the files root pointing to an arbitrary location (e.g. /etc), they can then delete files outside the root. The createDirectory method at line 166 also uses self.real(path:) without resolving symlinks. In contrast, getInfo, setPermissions, and move do call URL.resolvingSymlinksInPath(). This inconsistency means some operations are vulnerable while others are not.",
+  "vulnerable_code": "private func delete(path:String, client:Client, message:P7Message) -> Bool {\n    let realPath = self.real(path: path)\n    // ...\n    try FileManager.default.removeItem(atPath: realPath)\n}",
+  "recommendation": "All filesystem operations should resolve symlinks on the computed realPath using URL(fileURLWithPath: realPath).resolvingSymlinksInPath().path, then verify the resolved path starts with the root path (jail check) before performing any filesystem mutation.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "commit": "827ccc0"
+}

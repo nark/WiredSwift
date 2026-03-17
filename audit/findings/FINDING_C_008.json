@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_008",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "Unlimited private chat creation enables resource exhaustion",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 197,
+  "description": "The createPrivateChat method (line 197) creates private chats without any limit on the number of chats a single user can create. A malicious user with wired.account.chat.create_chats privilege can create millions of PrivateChat objects. Each object is stored in-memory in self.chats, self.privateChats, and consumes a UInt32 chatID (lastChatID increments). Additionally, since lastChatID is a UInt32, creating 2^32 chats would overflow to 0 and potentially collide with existing chat IDs including the protected public chat (chatID=1).",
+  "vulnerable_code": "public func createPrivateChat(message:P7Message, client:Client) {\n    if !client.user!.hasPrivilege(name: \"wired.account.chat.create_chats\") {\n        // ...\n    }\n    let newPrivateChat = PrivateChat(chatID: self.nextChatID())\n    // no limit check\n    self.add(chat: newPrivateChat)\n}",
+  "recommendation": "Add a per-user limit on active private chats (e.g., 50). Add a global limit on total chats. Guard against UInt32 overflow in nextChatID() by checking for wrap-around and refusing to create new chats when the ID space is exhausted.",
+  "status": "patched"
+}

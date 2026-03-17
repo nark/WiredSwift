@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_A_005",
+  "category": "auth",
+  "severity": "MEDIUM",
+  "title": "Default admin password is well-known value 'admin'",
+  "file": "Sources/wired3/UsersController.swift",
+  "line": 197,
+  "description": "When the database is seeded for the first time, the admin account is created with the password 'admin' (stored as SHA-256 hash). The guest account is created with an empty password. If the administrator does not change the default password, any attacker who knows this default (which is in the public source code) can gain full admin access to the server. There is no mechanism to force a password change on first login.",
+  "vulnerable_code": "let admin = User(username: \"admin\", password: \"admin\".sha256())\nadmin.color = \"1\"\ntry admin.insert(db)\n\nlet guest = User(username: \"guest\", password: \"\".sha256())\nguest.color = \"0\"\ntry guest.insert(db)",
+  "recommendation": "Generate a random admin password on first run and display it to the administrator in the console output. Alternatively, force the admin to set a password through a setup wizard. Add a startup warning if the admin password matches the default value.",
+  "status": "patched"
+}

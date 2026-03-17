@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_001",
+  "category": "files",
+  "severity": "CRITICAL",
+  "cwe": "CWE-22",
+  "title": "Incomplete path traversal validation in File.isValid(path:)",
+  "file": "Sources/WiredSwift/Data/File.swift",
+  "line": 169,
+  "description": "The path validation function File.isValid(path:) only checks for paths starting with '.' and containing '/..' or '../'. This can be bypassed using encoded or alternative traversal sequences. More critically, NSString.standardizingPath (used later to normalize) does NOT resolve symlinks, so a malicious symlink placed inside the files root (e.g. via upload) pointing to '/' would allow escaping the root directory. The function also does not check for null bytes in the path string. Additionally, paths like '..foo' or trailing '/..' without a slash are not caught by the current checks (though 'contains(/..)'  covers trailing '..'). The real issue is that paths are validated BEFORE normalization: File.isValid is called on the raw user input, then standardizingPath is applied. A path like '/foo/bar/.' passes isValid but could interact unexpectedly with path operations.",
+  "vulnerable_code": "public static func isValid(path:String) -> Bool {\n    if path.hasPrefix(\".\") {\n        return false\n    }\n    \n    if path.contains(\"/..\") {\n        return false\n    }\n    \n    if path.contains(\"../\") {\n        return false\n    }\n    \n    return true\n}",
+  "recommendation": "1. After normalization with standardizingPath, verify the resolved real path starts with the root path prefix (jail check). 2. Resolve symlinks on the real path and re-check the jail. 3. Reject null bytes in paths. 4. Use URL.resolvingSymlinksInPath() consistently before all filesystem operations and verify the result remains within rootPath.",
+  "status": "patched",
+  "patched_in_commit": "cc54315",
+  "patched_date": "2026-03-16"
+}

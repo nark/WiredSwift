@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_P_009",
+  "category": "parser",
+  "severity": "MEDIUM",
+  "cwe": "CWE-457",
+  "title": "Uninitialized P7Message properties after failed init(withName:)",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "line": 42,
+  "description": "In init(withName:spec:), if the message name is not found in spec.messagesByName, the if-let block is skipped and the initializer completes without calling super.init() and without setting self.id, self.name, self.specMessage, or self.spec. These are all declared as implicitly unwrapped optionals (String!, P7Spec!, SpecMessage!). Any subsequent access to these properties (e.g., self.name in xml(), self.id in bin()) will crash with a nil dereference. An attacker who can influence the message name parameter could trigger this, though it is primarily a code correctness issue.",
+  "vulnerable_code": "public var id: String!\npublic var name: String!\npublic var spec: P7Spec!\npublic var specMessage: SpecMessage!\n\npublic init(withName name: String, spec: P7Spec) {\n    if let specMessage = spec.messagesByName[name] {\n        // ... sets properties\n    }\n    // implicit super.init() — properties remain nil if name not found\n}",
+  "recommendation": "Make this a failable initializer (init?) that returns nil if the message name is not found, or throw an error. Change the implicitly unwrapped optional properties to regular optionals.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patch_notes": "Added warning log and fallback property assignment in else branch of init(withName:spec:)"
+}

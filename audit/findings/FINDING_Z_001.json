@@ -1,0 +1,11 @@
+{
+  "id": "FUZZ_001",
+  "severity": "CRITICAL",
+  "title": "CRASH_INVALID_LENGTH_LENGTH_ZERO",
+  "file": "network",
+  "line": 0,
+  "description": "Le serveur a crashe apres reception d'un message avec Longueur declaree = 0 pour un message non vide. fake_length=0x00000000",
+  "exploit": "Payload: 00000000000000010000000100000003312e30000000020000000557697265640000000300000003332e30",
+  "suggested_fix": "Ajouter validation bounds-checking sur length fields et msg_id avant traitement",
+  "timestamp": "2026-03-17T07:56:22.017575+00:00"
+}

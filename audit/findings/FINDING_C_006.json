@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_C_006",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "No rate limiting on chat messages enables flood DoS",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 60,
+  "description": "The receiveChat method (line 60) broadcasts each incoming chat message to all clients in the chat room with no rate limiting. A malicious client can send thousands of messages per second, which are all relayed to every user in the chat room. This amplifies the attack: a single attacker's traffic is multiplied by N connected users. There is no per-client message throttle, no message queue depth limit, and no maximum message length enforcement.",
+  "vulnerable_code": "private func receiveChat(string:String, _ client:Client, _ message:P7Message, isSay:Bool) {\n    // ... no rate limiting ...\n    chat.withClients { toClient in\n        // broadcasts to all clients\n    }\n}",
+  "recommendation": "Implement per-client rate limiting (e.g., token bucket with ~10 messages/second). Consider also adding a maximum message length (e.g., 8KB) to prevent memory abuse through very large chat messages.",
+  "status": "patched",
+  "patched_at": "2026-03-16"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_C_013",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "No chat name validation allows creation of chats with empty or oversized names",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 127,
+  "description": "The createPublicChat method (line 127) extracts the chat name with message.string(forField: wired.chat.name) and only checks that the field exists (guard != nil). It does not validate that the name is non-empty after trimming whitespace, nor does it enforce a maximum length. A user can create public chats with empty names, whitespace-only names, or extremely long names (limited only by P7 message size). Similarly, no check prevents duplicate chat names.",
+  "vulnerable_code": "guard let name = message.string(forField: \"wired.chat.name\") else {\n    App.serverController.replyError(...)\n    return\n}\nlet newChat = Chat(chatID: self.nextChatID(), name: name, client: client)",
+  "recommendation": "Validate name: guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { ... }. Add a maximum length check (e.g., 255 characters). Consider checking for duplicate names.",
+  "status": "patched",
+  "patched_at": "2026-03-16"
+}

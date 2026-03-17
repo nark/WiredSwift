@@ -1,0 +1,14 @@
+{
+  "id": "FINDING_A_007",
+  "category": "auth",
+  "severity": "HIGH",
+  "title": "State machine allows multiple login messages without re-authentication",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 447,
+  "description": "The state machine in receiveMessage only restricts messages when client.state is CONNECTED or GAVE_CLIENT_INFO. Once a client reaches LOGGED_IN state, there is no restriction at all -- any message is forwarded to handleMessage, including wired.send_login. This means an already-logged-in client can send another wired.send_login with different credentials and effectively switch to a different user account mid-session without disconnecting. This bypasses any audit trail and could allow privilege escalation if the attacker first logs in as guest, then brute-forces admin credentials within the same session.",
+  "vulnerable_code": "public func receiveMessage(client:Client, message:P7Message) {\n    if client.state == .CONNECTED {\n        if message.name != \"wired.client_info\" { ... return }\n    } else if client.state == .GAVE_CLIENT_INFO {\n        if message.name != \"wired.user.set_nick\" && ... && message.name != \"wired.send_login\" { ... return }\n    }\n    // NO CHECK for .LOGGED_IN state -- all messages pass through\n    self.handleMessage(client: client, message: message)\n}",
+  "recommendation": "Add an explicit check: when client.state == .LOGGED_IN, reject wired.send_login and wired.client_info messages with an error. The state machine should be: CONNECTED -> (client_info only) -> GAVE_CLIENT_INFO -> (set_nick/set_status/set_icon/send_login only) -> LOGGED_IN -> (all except client_info and send_login).",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "commit": "f1ad3c8"
+}

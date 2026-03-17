@@ -1,0 +1,164 @@
+{
+  "audit": "P7 Parser Security Audit",
+  "date": "2026-03-16",
+  "scope": "Sources/WiredSwift/P7/",
+  "files_analyzed": [
+    "Sources/WiredSwift/P7/P7Message.swift",
+    "Sources/WiredSwift/P7/P7Socket.swift",
+    "Sources/WiredSwift/P7/P7Spec.swift",
+    "Sources/WiredSwift/P7/P7SpecField.swift",
+    "Sources/WiredSwift/P7/P7SpecType.swift",
+    "Sources/WiredSwift/P7/P7SpecMessage.swift",
+    "Sources/WiredSwift/P7/P7SpecError.swift",
+    "Sources/WiredSwift/P7/P7SpecItem.swift"
+  ],
+  "summary": {
+    "total": 20,
+    "critical": 3,
+    "high": 7,
+    "medium": 8,
+    "low": 2
+  },
+  "findings": [
+    {
+      "id": "FINDING_P_001",
+      "severity": "CRITICAL",
+      "title": "Unbounded message length in readMessage allows OOM denial of service",
+      "file": "Sources/WiredSwift/P7/P7Socket.swift",
+      "line": 596
+    },
+    {
+      "id": "FINDING_P_002",
+      "severity": "CRITICAL",
+      "title": "Missing bounds check before TLV field read in loadBinaryMessage causes out-of-bounds crash",
+      "file": "Sources/WiredSwift/P7/P7Message.swift",
+      "line": 468
+    },
+    {
+      "id": "FINDING_P_003",
+      "severity": "CRITICAL",
+      "title": "Unbounded TLV field length for string/data/list types allows OOM via crafted field",
+      "file": "Sources/WiredSwift/P7/P7Message.swift",
+      "line": 487
+    },
+    {
+      "id": "FINDING_P_004",
+      "severity": "HIGH",
+      "title": "Force unwrap on network-derived uint32 in loadBinaryMessage",
+      "file": "Sources/WiredSwift/P7/P7Message.swift",
+      "line": 460
+    },
+    {
+      "id": "FINDING_P_005",
+      "severity": "HIGH",
+      "title": "String(bytes:encoding:.utf8) result silently stored as nil parameter",
+      "file": "Sources/WiredSwift/P7/P7Message.swift",
+      "line": 522
+    },
+    {
+      "id": "FINDING_P_006",
+      "severity": "HIGH",
+      "title": "Unbounded OOB data read without maximum size limit",
+      "file": "Sources/WiredSwift/P7/P7Socket.swift",
+      "line": 745
+    },
+    {
+      "id": "FINDING_P_007",
+      "severity": "HIGH",
+      "title": "Force unwrap on specMessage.name and response.name throughout P7Socket",
+      "file": "Sources/WiredSwift/P7/P7Socket.swift",
+      "line": 854
+    },
+    {
+      "id": "FINDING_P_008",
+      "severity": "MEDIUM",
+      "title": "Checksum/length mismatch in writeOOB when compression enabled without encryption",
+      "file": "Sources/WiredSwift/P7/P7Socket.swift",
+      "line": 813
+    },
+    {
+      "id": "FINDING_P_009",
+      "severity": "MEDIUM",
+      "title": "Uninitialized P7Message properties after failed init(withName:)",
+      "file": "Sources/WiredSwift/P7/P7Message.swift",
+      "line": 42
+    },
+    {
+      "id": "FINDING_P_010",
+      "severity": "MEDIUM",
+      "title": "Force unwrap of Bundle identifier in P7Spec convenience init",
+      "file": "Sources/WiredSwift/P7/P7Spec.swift",
+      "line": 253
+    },
+    {
+      "id": "FINDING_P_011",
+      "severity": "MEDIUM",
+      "title": "Force unwrap on spec.protocolName and spec.protocolVersion in loadFile",
+      "file": "Sources/WiredSwift/P7/P7Spec.swift",
+      "line": 401
+    },
+    {
+      "id": "FINDING_P_012",
+      "severity": "MEDIUM",
+      "title": "Compatibility check always returns true - no actual validation",
+      "file": "Sources/WiredSwift/P7/P7Spec.swift",
+      "line": 291
+    },
+    {
+      "id": "FINDING_P_013",
+      "severity": "MEDIUM",
+      "title": "receiveCompatibilityCheck is not implemented - compatibility bypass",
+      "file": "Sources/WiredSwift/P7/P7Socket.swift",
+      "line": 1436
+    },
+    {
+      "id": "FINDING_P_014",
+      "severity": "HIGH",
+      "title": "Force unwrap on double cast in bin() serialization",
+      "file": "Sources/WiredSwift/P7/P7Message.swift",
+      "line": 284
+    },
+    {
+      "id": "FINDING_P_015",
+      "severity": "MEDIUM",
+      "title": "Force unwrap on accountPrivileges member field attribute",
+      "file": "Sources/WiredSwift/P7/P7Spec.swift",
+      "line": 341
+    },
+    {
+      "id": "FINDING_P_016",
+      "severity": "HIGH",
+      "title": "Force unwrap on XMLParser(contentsOf:) in loadFile",
+      "file": "Sources/WiredSwift/P7/P7Spec.swift",
+      "line": 397
+    },
+    {
+      "id": "FINDING_P_017",
+      "severity": "MEDIUM",
+      "title": "Default type fallback to .uint32 for unknown type strings in spec parsing",
+      "file": "Sources/WiredSwift/P7/P7SpecType.swift",
+      "line": 57
+    },
+    {
+      "id": "FINDING_P_018",
+      "severity": "MEDIUM",
+      "title": "No validation of message ID against expected transaction state",
+      "file": "Sources/WiredSwift/P7/P7Message.swift",
+      "line": 446
+    },
+    {
+      "id": "FINDING_P_019",
+      "severity": "LOW",
+      "title": "Implicitly unwrapped optionals on P7SpecItem properties",
+      "file": "Sources/WiredSwift/P7/P7SpecItem.swift",
+      "line": 13
+    },
+    {
+      "id": "FINDING_P_020",
+      "severity": "HIGH",
+      "title": "try? silently swallows cipher creation failure in acceptKeyExchange",
+      "file": "Sources/WiredSwift/P7/P7Socket.swift",
+      "line": 1386
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_011",
+  "category": "files",
+  "severity": "MEDIUM",
+  "cwe": "CWE-862",
+  "title": "Download file handler does not check dropbox permissions using normalized/resolved paths",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 1852,
+  "description": "The receiveDownloadFile handler checks dropbox permissions using 'FilePrivilege(path: App.filesController.real(path: path))' where 'path' is the raw un-normalized user input. It does not use dropBoxPrivileges(forVirtualPath:) like other handlers do. This means: (1) it checks permissions on the raw concatenated path rather than the normalized virtual path, which could miss the dropbox ancestor detection, and (2) a path that would be blocked after normalization might pass the permission check before normalization. Furthermore, the permission check uses FilePrivilege(path:) directly on the file path rather than walking up to find the dropbox ancestor directory, so permissions are only checked if the target itself has a .wired/permissions file.",
+  "vulnerable_code": "if let privilege = FilePrivilege(path: App.filesController.real(path: path)) {\n    if !user.hasPermission(toRead: privilege) {\n        // ...\n    }\n}",
+  "recommendation": "Normalize the path first (like upload does), then use App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) to correctly detect inherited dropbox permissions from ancestor directories.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patch_commit": "eb8192e"
+}

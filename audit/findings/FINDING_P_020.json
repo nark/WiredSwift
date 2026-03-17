@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_P_020",
+  "category": "parser",
+  "severity": "HIGH",
+  "cwe": "CWE-311",
+  "title": "try? silently swallows cipher creation failure in acceptKeyExchange",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 1386,
+  "description": "At line 1386, 'self.sslCipher = try? Cipher(...)' uses try? inside a do-catch block. The try? converts any error to nil, so the catch block is never reached. If cipher creation fails, self.sslCipher becomes nil but the code continues, setting encryptionEnabled = true at line 1399. All subsequent encrypt/decrypt calls on nil sslCipher will crash. This is exploitable if an attacker can cause cipher creation to fail (e.g., with crafted key material).",
+  "vulnerable_code": "self.sslCipher = try? Cipher(cipher: self.cipherType, keyData: derivedKey2, iv: derivedIV2)",
+  "recommendation": "Change 'try?' to 'try' so cipher creation failures are properly caught and thrown. Add explicit nil check for sslCipher.",
+  "status": "patched",
+  "patched_by": "commit 0ababa1",
+  "patched_date": "2026-03-16"
+}

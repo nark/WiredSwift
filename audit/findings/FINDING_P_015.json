@@ -1,0 +1,8 @@
+{
+  "id": "FINDING_P_015",
+  "severity": "MEDIUM",
+  "title": "attributeDict[\"field\"]! force unwrap in spec XML parsing",
+  "file": "Sources/WiredSwift/P7/P7Spec.swift",
+  "status": "patched",
+  "patch_date": "2026-03-16"
+}

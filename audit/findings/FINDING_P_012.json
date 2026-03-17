@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_P_012",
+  "category": "parser",
+  "severity": "MEDIUM",
+  "cwe": "CWE-391",
+  "title": "Compatibility check always returns true - no actual validation",
+  "file": "Sources/WiredSwift/P7/P7Spec.swift",
+  "line": 291,
+  "description": "The method isCompatibleWithProtocol(withName:version:) always returns true (line 291). The TODO comment confirms this is unimplemented. This means any client regardless of protocol version will be accepted. A client running an incompatible protocol version could cause undefined behavior, message parsing errors, or security bypasses if newer protocol versions add security-critical fields.",
+  "vulnerable_code": "public func isCompatibleWithProtocol(withName name:String, version: String) -> Bool { return true }",
+  "recommendation": "Implement proper version comparison: check that the remote protocol name matches and the version is within a compatible range.",
+  "status": "patched"
+}

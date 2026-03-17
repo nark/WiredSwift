@@ -1,0 +1,8 @@
+{
+  "id": "FINDING_P_008",
+  "severity": "MEDIUM",
+  "title": "Length header not recomputed after compression in writeOOB()",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "status": "patched",
+  "patch_date": "2026-03-16"
+}

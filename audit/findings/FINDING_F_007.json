@@ -1,0 +1,16 @@
+{
+  "id": "FINDING_F_007",
+  "category": "files",
+  "severity": "HIGH",
+  "cwe": "CWE-200",
+  "title": "Password hashes leaked in account listing response",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 2193,
+  "description": "The receiveAccountListUsers handler includes password hashes in the 'wired.account.password' field of the response for every user account. Any user with 'wired.account.account.list_accounts' privilege can retrieve all password hashes. This enables offline brute-force attacks against all user accounts. While the passwords are hashed (SHA-256), including them in listing responses is an unnecessary information disclosure.",
+  "vulnerable_code": "reply.addParameter(field: \"wired.account.password\", value: listedUser.password ?? \"\")",
+  "recommendation": "Do not include password hashes in account listing responses. If a client needs to know whether a password is set, send a boolean flag instead of the actual hash. Only return the hash (if absolutely necessary) in the read_user response, and only to users with edit_users privilege.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "commit": "b91e453",
+  "fix": "Removed wired.account.password field from receiveAccountListUsers and accountUserMessage response builders (same fix as FINDING_A_003)"
+}

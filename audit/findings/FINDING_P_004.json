@@ -1,0 +1,16 @@
+{
+  "id": "FINDING_P_004",
+  "category": "parser",
+  "severity": "HIGH",
+  "cwe": "CWE-476",
+  "title": "Force unwrap on network-derived uint32 in loadBinaryMessage",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "line": 460,
+  "description": "At line 460, messageIDData.uint32! is force-unwrapped. While the previous guard at line 453 checks messageIDData.uint32 for nil, the force unwrap at line 460 is a separate call. If the .uint32 computed property is non-deterministic or if the data is mutated concurrently, this could crash. More critically, at line 487, fieldLengthData.uint32! is force-unwrapped without any prior nil check whatsoever. If the uint32 property returns nil (e.g., insufficient bytes), this is a guaranteed fatal crash from network input.",
+  "vulnerable_code": "if let specMessage = spec.messagesByID[Int(messageIDData.uint32!)] {\n...\nfieldLength = Int(fieldLengthData.uint32!)",
+  "recommendation": "Replace force unwraps with guard-let: guard let fieldLengthValue = fieldLengthData.uint32 else { return } and reuse the already-validated value from line 453 instead of re-reading.",
+  "status": "patched",
+  "patched_by": "prior commit on security/audit-20260316",
+  "patched_date": "2026-03-16",
+  "notes": "Already fixed: loadBinaryMessage now uses guard-let for all uint32 conversions"
+}

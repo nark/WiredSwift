@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_P_005",
+  "category": "parser",
+  "severity": "HIGH",
+  "cwe": "CWE-252",
+  "title": "String(bytes:encoding:.utf8) result silently stored as nil parameter",
+  "file": "Sources/WiredSwift/P7/P7Message.swift",
+  "line": 522,
+  "description": "At line 522, String(bytes: fieldData, encoding: .utf8) is called on network-supplied bytes. If the bytes are not valid UTF-8, this returns nil. The nil value is then stored as a parameter via addParameter(field:value:) which accepts Any?. Downstream code calling string(forField:) will return nil, but code using the parameter dictionary directly or via lazy() may encounter unexpected nil values. More importantly, this means an attacker can inject invalid UTF-8 data to silently drop fields, potentially bypassing validation logic that checks for field presence.",
+  "vulnerable_code": "self.addParameter(field: specField.name, value: String(bytes: fieldData, encoding: .utf8))",
+  "recommendation": "Guard the UTF-8 conversion: if let str = String(bytes: fieldData, encoding: .utf8) { self.addParameter(field: specField.name, value: str) } else { Logger.error(\"Invalid UTF-8 in field \\(specField.name)\") }",
+  "status": "patched"
+}

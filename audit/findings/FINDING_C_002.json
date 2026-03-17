@@ -1,0 +1,13 @@
+{
+  "id": "FINDING_C_002",
+  "category": "chat",
+  "severity": "MEDIUM",
+  "title": "Chat say/me messages not validated for empty content",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 412,
+  "description": "The receiveChatSay and receiveChatMe methods (lines 412-427) extract the message string but do not validate that it is non-empty or non-whitespace-only. A client can flood the chat with empty or whitespace-only messages that get broadcast to all connected users. Contrast with receiveMessageSendMessage (ServerController.swift line 889-892) which correctly validates !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty. The chat handlers lack this validation.",
+  "vulnerable_code": "public func receiveChatSay(_ client:Client, _ message:P7Message) {\n    guard let say = message.string(forField: \"wired.chat.say\") else {\n        return\n    }\n    self.receiveChat(string: say, client, message, isSay: true)\n}",
+  "recommendation": "Add empty-string validation after extracting the chat text: guard !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }. Apply the same check in receiveChatMe.",
+  "status": "patched",
+  "patched_at": "2026-03-16"
+}

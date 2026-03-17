@@ -1,0 +1,12 @@
+{
+  "id": "FINDING_C_003",
+  "category": "chat",
+  "severity": "HIGH",
+  "title": "Force unwrap on client.user! in chat privilege checks can crash server",
+  "file": "Sources/wired3/ChatsController.swift",
+  "line": 121,
+  "description": "Multiple chat handler methods force-unwrap client.user! without checking for nil first: createPublicChat (line 121), deletePublicChat (line 156), createPrivateChat (line 198), and setTopic (line 432). Although receiveMessage in ServerController checks client.state for CONNECTED and GAVE_CLIENT_INFO states, the state machine only blocks specific messages. A client in LOGGED_IN state where client.user is nil (e.g., due to a race or unexpected state) would cause a fatal crash on force-unwrap, taking down the server or at minimum the client handler thread. The pattern 'guard let user = client.user else { replyError... }' is correctly used in receiveMessageSendMessage (line 872) but not in the chat handlers.",
+  "vulnerable_code": "if !client.user!.hasPrivilege(name: \"wired.account.chat.create_public_chats\") {",
+  "recommendation": "Replace all client.user! force-unwraps with guard let user = client.user else { replyError(...); return } pattern, consistent with the message handlers.",
+  "status": "patched"
+}

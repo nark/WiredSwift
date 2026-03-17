@@ -1,0 +1,16 @@
+{
+  "id": "FINDING_F_006",
+  "category": "files",
+  "severity": "HIGH",
+  "cwe": "CWE-269",
+  "title": "Privilege escalation: edit_users allows setting arbitrary privileges including admin privileges",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 2276,
+  "description": "The receiveAccountEditUser handler allows any user with the 'wired.account.account.edit_users' privilege to set any privilege flag (including wired.account.account.edit_users itself, wired.account.account.edit_groups, wired.account.transfer.*, wired.account.file.access_all_dropboxes, etc.) on any account. There is no check preventing a user from granting themselves elevated privileges, or from modifying the admin account. A user with edit_users privilege can escalate to full admin by: (1) editing their own account to grant all privileges, or (2) changing the admin password. The same issue exists for receiveAccountEditGroup at line 2366.",
+  "vulnerable_code": "for privilege in self.accountPrivilegesIncludingColor() {\n    guard let field = spec?.fieldsByName[privilege] else { continue }\n    switch field.type {\n    case .bool:\n        if let value = message.bool(forField: privilege) {\n            if !App.usersController.setUserPrivilege(privilege, value: value, for: account) {\n                privilegesSaved = false\n            }\n        }\n    // ...\n}",
+  "recommendation": "1. Prevent users from editing their own account privileges (only other admins should be able to). 2. Consider requiring a separate 'wired.account.account.raise_privileges' capability. 3. Prevent users from granting privileges they do not themselves possess. 4. Consider making the admin account immutable or requiring a confirmation mechanism for admin account changes.",
+  "status": "patched",
+  "patch_commit": "7dd47be",
+  "patch_date": "2026-03-16",
+  "patch_notes": "Added admin account protection and privilege escalation guard in receiveAccountEditUser. Users can no longer grant privileges they do not possess. Non-admin users cannot edit the admin account."
+}

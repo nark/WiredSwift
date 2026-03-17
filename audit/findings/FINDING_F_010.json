@@ -1,0 +1,15 @@
+{
+  "id": "FINDING_F_010",
+  "category": "files",
+  "severity": "MEDIUM",
+  "cwe": "CWE-732",
+  "title": "Directories created with overly permissive POSIX permissions (0o777)",
+  "file": "Sources/wired3/FilesController.swift",
+  "line": 627,
+  "description": "Both createPath (line 627) and receiveUploadDirectory (ServerController.swift line 2009) create directories with POSIX permissions 0o777 (world-readable, writable, executable). The initFilesSystem method at line 611 also uses 0o777. On a shared server, this allows any local OS user to read, write, and delete files in the Wired file tree, bypassing all Wired-level access controls.",
+  "vulnerable_code": "try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o777])",
+  "recommendation": "Use restrictive permissions (e.g. 0o755 or 0o700) for created directories. Only the server process user should have write access. If the web server needs read access, use 0o750 with a shared group.",
+  "status": "patched",
+  "patched_date": "2026-03-16",
+  "patch_commit": "eb8192e"
+}

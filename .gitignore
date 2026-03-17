@@ -94,3 +94,11 @@ iOSInjectionProject/
 run/
 
 *.db
+
+# Claude Code
+.claude/
+
+# Audit artifacts (transient)
+audit/backups/
+audit/patches/
+audit/fuzzing/
