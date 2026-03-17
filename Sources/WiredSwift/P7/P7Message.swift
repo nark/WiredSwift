@@ -548,7 +548,9 @@ public class P7Message: NSObject {
                             self.addParameter(field: specField.name, value: fieldData.uint8.bigEndian)
                         }
                         else if specField.type == .enum32 {
-                            self.addParameter(field: specField.name, value: fieldData.uint32?.bigEndian)
+                            // Data.uint32 already converts BE→host via CFSwapInt32HostToBig.
+                            // Applying .bigEndian again would double-swap, corrupting the value.
+                            self.addParameter(field: specField.name, value: fieldData.uint32)
                         }
                         else if specField.type == .int32 {
                             self.addParameter(field: specField.name, value: fieldData.uint32)
