@@ -17,6 +17,9 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var isInstalled: Bool = false
     @Published var installedServerVersion: String = "-"
+    @Published var p7ProtocolVersion: String = "-"
+    @Published var wiredProtocolName: String = "-"
+    @Published var wiredProtocolVersion: String = "-"
     @Published var isRunning: Bool = false
     @Published var launchAtLogin: Bool = false
     @Published var launchServerAtAppStart: Bool = false
@@ -523,6 +526,17 @@ final class WiredServerViewModel: ObservableObject {
             .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
 
         installedServerVersion = versionLine ?? "-"
+        refreshSpecVersions()
+    }
+
+    private func refreshSpecVersions() {
+        let wiredXmlPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired.xml").path
+
+        let spec = P7Spec(withPath: fileManager.fileExists(atPath: wiredXmlPath) ? wiredXmlPath : nil)
+        p7ProtocolVersion    = spec.builtinProtocolVersion ?? "-"
+        wiredProtocolName    = spec.protocolName    ?? "-"
+        wiredProtocolVersion = spec.protocolVersion ?? "-"
     }
 
     private func refreshRunningStatus() {

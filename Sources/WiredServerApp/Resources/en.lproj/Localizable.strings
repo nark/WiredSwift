@@ -18,6 +18,8 @@
 "general.install.state.uninstalled" = "Uninstalled";
 "general.install.directory" = "Install directory";
 "general.install.version" = "Version";
+"general.install.p7_version" = "P7 Protocol";
+"general.install.wired_protocol" = "Wired Protocol";
 
 "general.execution.section" = "Execution";
 "general.execution.running" = "Server is running";

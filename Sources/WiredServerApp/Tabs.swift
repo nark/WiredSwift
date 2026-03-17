@@ -146,15 +146,35 @@ struct GeneralTabView: View {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))
                             .bold()
-                        
                         Spacer()
-                        
                         Text(model.installedServerVersion)
                             .textSelection(.enabled)
-                        
+                    }
+
+                    HStack(spacing: 8) {
+                        Text(L("general.install.p7_version"))
+                            .bold()
+                        Spacer()
+                        Text(model.p7ProtocolVersion)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+
+                    HStack(spacing: 8) {
+                        Text(L("general.install.wired_protocol"))
+                            .bold()
+                        Spacer()
+                        if model.wiredProtocolName != "-" && model.wiredProtocolVersion != "-" {
+                            Text("\(model.wiredProtocolName) \(model.wiredProtocolVersion)")
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        } else {
+                            Text(model.wiredProtocolVersion)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                
+
                 Section(L("general.execution.section")) {
                     HStack {
                         StatusDot(color: model.isRunning ? .green : .red)
