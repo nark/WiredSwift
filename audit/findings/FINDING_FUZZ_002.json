@@ -1,0 +1,13 @@
+{
+  "id": "FUZZ_002",
+  "category": "network",
+  "severity": "CRITICAL",
+  "title": "GCD thread-pool exhaustion via connection flood (pre-auth)",
+  "file": "Sources/wired3/ServerController.swift",
+  "line": 2907,
+  "description": "acceptThread() spawned a DispatchQueue.global.async block for every accepted socket without any limit. Opening 50+ simultaneous connections before authentication saturated the GCD default thread pool, making the server unresponsive. The pending connections were never counted — only authenticated clients in connectedClients were tracked.",
+  "exploit": "Open 50+ TCP connections to port 4871 without completing the P7 handshake.",
+  "status": "patched",
+  "patch_commit": "HEAD",
+  "patch_description": "Added pendingConnectionCount atomic counter (protected by NSLock) in ServerController. Before spawning the async block, acceptThread() checks pendingConnections + connectedClients.count >= maxConcurrentConnections (100). If over limit, the raw socket is closed immediately without spawning a thread. The counter is incremented before the block and decremented in a defer block regardless of outcome."
+}

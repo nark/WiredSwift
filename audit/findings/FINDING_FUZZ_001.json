@@ -1,0 +1,13 @@
+{
+  "id": "FUZZ_001",
+  "category": "parser",
+  "severity": "CRITICAL",
+  "title": "Crash on declared message length = 0 in readMessage()",
+  "file": "Sources/WiredSwift/P7/P7Socket.swift",
+  "line": 609,
+  "description": "The fuzzer sent a P7 binary message with the 4-byte length header set to 0x00000000. readMessage() only validated length <= maxMessageSize but not length >= 4. With length=0, readExactly(size:0) returned empty Data. P7Message(withData: Data(), spec:) then crashed attempting to read the 4-byte msg_id from an empty buffer.",
+  "exploit": "Payload: 00000000 [followed by valid TLV content ignored by server]",
+  "status": "patched",
+  "patch_commit": "HEAD",
+  "patch_description": "Added guard messageLength >= 4 check before the maxMessageSize check in readMessage(). A length of 0-3 is rejected with readFailed error and the connection is closed cleanly. No crash, no allocation."
+}

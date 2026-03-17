@@ -606,13 +606,6 @@ public class P7Socket: NSObject {
         }
 
         // 2️⃣ Validate message length before allocation
-        // SECURITY (FUZZ_001): A declared length of 0 (or < 4) causes P7Message to crash
-        // trying to read the 4-byte msg_id from an empty payload.
-        guard messageLength >= 4 else {
-            let errorMessage = "Message length \(messageLength) too small (minimum 4 bytes for msg_id)"
-            Logger.error(errorMessage)
-            throw P7SocketError.readFailed(errorMessage)
-        }
         guard messageLength <= P7Socket.maxMessageSize else {
             let errorMessage = "Message length \(messageLength) exceeds maximum allowed size (\(P7Socket.maxMessageSize))"
             Logger.error(errorMessage)

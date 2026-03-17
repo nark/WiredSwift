@@ -47,12 +47,6 @@ public class ServerController: ServerDelegate {
     private var socket:Socket!
     private let ecdh = ECDH()
     private let group = DispatchGroup()
-
-    // SECURITY (FUZZ_002): Limit concurrent connections (pending + authenticated) to prevent
-    // GCD thread-pool exhaustion from a connection flood before any authentication occurs.
-    private let maxConcurrentConnections = 100
-    private var pendingConnectionCount: Int = 0
-    private let pendingConnectionLock = NSLock()
     
     var startTime:Date? = nil
 
@@ -2913,54 +2907,36 @@ public class ServerController: ServerDelegate {
     private func acceptThread() {
         do {
             let socket = try self.socket.accept()
-
-            // SECURITY (FUZZ_002): Reject connections that would exceed the concurrent limit
-            // to prevent GCD thread-pool exhaustion from pre-auth connection floods.
-            let currentPending: Int = pendingConnectionLock.withLock {
-                pendingConnectionCount
-            }
-            let currentConnected = App.clientsController.connectedClientsSnapshot().count
-            if currentPending + currentConnected >= maxConcurrentConnections {
-                Logger.warning("Connection limit reached (\(maxConcurrentConnections)), dropping new connection")
-                try? socket.close()
-                return
-            }
-
-            pendingConnectionLock.withLock { pendingConnectionCount += 1 }
-
+            
             DispatchQueue.global(qos: .default).async {
-                defer {
-                    self.pendingConnectionLock.withLock { self.pendingConnectionCount -= 1 }
-                }
-
                 let p7Socket = P7Socket(socket: socket, spec: self.spec)
-
+                
                 p7Socket.ecdh = self.ecdh
                 p7Socket.passwordProvider = App.usersController
-
+                
                 let userID = App.usersController.nextUserID()
                 let client = Client(userID: userID, socket: p7Socket)
-
+                
                 do {
                     try p7Socket.accept(
                         compression: self.serverCompression,
                         cipher:      self.serverCipher,
                         checksum:    self.serverChecksum
                     )
-
-                    Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknown")")
+                    
+                    Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknow")")
 
                     App.clientsController.addClient(client: client)
-
+                    
                     client.state = .CONNECTED
-
+                    
                     self.clientLoop(client)
-
+   
                 } catch {
                     p7Socket.disconnect()
                 }
             }
-
+                
         } catch let error {
             if let socketError = error as? Socket.Error {
                 Logger.error(socketError.description)
