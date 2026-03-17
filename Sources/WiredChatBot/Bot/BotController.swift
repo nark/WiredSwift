@@ -108,6 +108,18 @@ public final class BotController: NSObject {
         conn.status = config.identity.status
         if let icon = config.identity.icon { conn.icon = icon }
 
+        // P7 v1.3: accept any server identity fingerprint and log it.
+        // A bot has no interactive UI for trust decisions, so we accept silently
+        // and leave strict enforcement to human clients.
+        conn.serverTrustHandler = { fingerprint, isNewKey, _ in
+            if isNewKey {
+                BotLogger.info("New server identity fingerprint: \(fingerprint)")
+            } else {
+                BotLogger.debug("Server identity fingerprint: \(fingerprint)")
+            }
+            return true
+        }
+
         self.connection = conn
 
         let url = Url(withString: config.server.url)
