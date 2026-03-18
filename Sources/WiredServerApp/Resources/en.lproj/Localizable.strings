@@ -1,5 +1,12 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Error";
+"alert.binary_updated.title" = "Server Updated";
+"alert.binary_updated.message" = "A new version of the server binary has been installed. The running server is still using the previous version. Would you like to restart it now?";
+"alert.binary_updated.restart" = "Restart Now";
+"alert.binary_updated.later" = "Later";
+"alert.initial_password.title" = "Initial Admin Password";
+"alert.initial_password.message" = "The server has been initialized with a random admin password. Save it now — it will not be shown again.";
+"alert.initial_password.copy" = "Copy to Clipboard";
 "common.ok" = "OK";
 "common.choose" = "Choose";
 "common.select" = "Select";

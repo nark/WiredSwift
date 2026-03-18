@@ -42,6 +42,23 @@ struct ContentView: View {
         } message: {
             Text(model.lastErrorMessage)
         }
+        .alert(L("alert.binary_updated.title"), isPresented: $model.showRestartAfterUpdateAlert) {
+            Button(L("alert.binary_updated.restart")) {
+                Task { await model.restartServer() }
+            }
+            Button(L("alert.binary_updated.later"), role: .cancel) {}
+        } message: {
+            Text(L("alert.binary_updated.message"))
+        }
+        .alert(L("alert.initial_password.title"), isPresented: $model.showInitialPasswordAlert) {
+            Button(L("alert.initial_password.copy")) {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(model.initialAdminPassword, forType: .string)
+            }
+            Button(L("common.ok"), role: .cancel) {}
+        } message: {
+            Text("\(L("alert.initial_password.message"))\n\n\(model.initialAdminPassword)")
+        }
     }
 
     @ViewBuilder

@@ -59,6 +59,10 @@ final class WiredServerViewModel: ObservableObject {
     @Published var showErrorAlert: Bool = false
     @Published var lastErrorMessage: String = ""
 
+    @Published var showRestartAfterUpdateAlert: Bool = false
+    @Published var showInitialPasswordAlert: Bool = false
+    @Published var initialAdminPassword: String = ""
+
     private let fileManager = FileManager.default
     private var pollTimer: Timer?
     private var process: Process?
@@ -160,8 +164,9 @@ final class WiredServerViewModel: ObservableObject {
 
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
+        var binaryWasUpdated = false
         do {
-            _ = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
+            binaryWasUpdated = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
         } catch {
             publishError("\(L("error.install_failed")): \(error.localizedDescription)")
         }
@@ -173,6 +178,10 @@ final class WiredServerViewModel: ObservableObject {
         refreshAdminStatus()
         refreshLogText()
         checkPort()
+
+        if binaryWasUpdated && isRunning {
+            showRestartAfterUpdateAlert = true
+        }
     }
 
     func chooseWorkingDirectory() {
@@ -362,6 +371,12 @@ final class WiredServerViewModel: ObservableObject {
         if !isRunning {
             statusMessage = L("status.server_stopped")
         }
+    }
+
+    func restartServer() async {
+        stopServer()
+        try? await Task.sleep(nanoseconds: 500_000_000)
+        await startServer()
     }
 
     func saveNetworkSettings() {
@@ -796,6 +811,19 @@ final class WiredServerViewModel: ObservableObject {
         let current = logsText + text
         let lines = current.split(separator: "\n", omittingEmptySubsequences: false)
         logsText = lines.suffix(400).joined(separator: "\n")
+
+        // Detect initial admin password generated on first launch
+        if initialAdminPassword.isEmpty, text.contains("INITIAL ADMIN PASSWORD") {
+            // Extract password between "INITIAL ADMIN PASSWORD: " and " ==="
+            if let range = text.range(of: "INITIAL ADMIN PASSWORD: "),
+               let endRange = text[range.upperBound...].range(of: " ===") {
+                let password = String(text[range.upperBound..<endRange.lowerBound])
+                if !password.isEmpty {
+                    initialAdminPassword = password
+                    showInitialPasswordAlert = true
+                }
+            }
+        }
     }
 
     private func bootstrapRuntimeIfNeeded() {

@@ -212,6 +212,7 @@ public class Logger {
      */
     public func consoleLog(message:String) {
         print(message)
+        fflush(stdout)
     }
 
     /**
