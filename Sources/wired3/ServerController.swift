@@ -756,6 +756,9 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.account.read_group" {
             self.receiveAccountReadGroup(client: client, message: message)
         }
+        else if message.name == "wired.account.change_password" {
+            self.receiveAccountChangePassword(client: client, message: message)
+        }
         else if message.name == "wired.account.edit_user" {
             self.receiveAccountEditUser(client: client, message: message)
         }
@@ -2337,6 +2340,39 @@ public class ServerController: ServerDelegate {
 
         let done = P7Message(withName: "wired.account.group_list.done", spec: self.spec)
         self.reply(client: client, reply: done, message: message)
+    }
+
+    private func receiveAccountChangePassword(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.change_password") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let password = message.string(forField: "wired.account.password"), !password.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let account = App.usersController.user(withUsername: requestingUser.username ?? "") else {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        let result = normalizedPasswordForStorage(password)
+        account.password = result.hash
+        account.passwordSalt = result.salt
+
+        guard App.usersController.save(user: account) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        Logger.info("Password changed for user '\(requestingUser.username ?? "")'")
+
+        let reply = P7Message(withName: "wired.okay", spec: self.spec)
+        App.serverController.reply(client: client, reply: reply, message: message)
     }
 
     private func receiveAccountReadUser(client: Client, message: P7Message) {
