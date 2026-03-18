@@ -1,50 +1,132 @@
 # WiredSwift
 
-Swift implementation of the Wired protocol, including:
+**Wired** is a bulletin board system (BBS) for group chat, private messaging, file sharing, and community administration. Originally created in 2003 by Axel Andersson at Zanka Software as a modern alternative to Hotline, it has been maintained as open-source software ever since.
 
-- `WiredSwift`: reusable Swift library
-- `wired3`: Wired 3 server daemon
-- `WiredServerApp`: macOS GUI wrapper for local server installation and administration
+A Wired server lets you host a private community where users can join public or private chat rooms, exchange messages on discussion boards, share files, and manage accounts with fine-grained permissions. All communications are encrypted end-to-end between client and server.
+
+This repository contains the **Wired 3.0** implementation in Swift:
+
+- **WiredSwift** — reusable Swift library for building Wired clients
+- **wired3** — server daemon (macOS and Linux)
+- **WiredServerApp** — macOS GUI for local server administration
 
 Releases: https://github.com/nark/WiredSwift/releases
 
-## Why This Repository Exists
+---
 
-This project serves three different audiences:
+## Table of Contents
 
-- Server operators who want to run a Wired 3 server on Linux or macOS
-- App developers who want to integrate Wired protocol support in Swift
-- Contributors who want to improve protocol/server/client internals
-
-## Quick Start (Choose Your Path)
-
-- [I want to run a server (User)](#for-users-running-a-server)
-- [I want to integrate the library (Developer)](#for-developers-using-wiredswift)
-- [I want to contribute to the project (Contributor)](#for-contributors)
+- [What changed in Wired 3.0](#what-changed-in-wired-30)
+  - [Encryption](#encryption)
+  - [Integrity checksums](#integrity-checksums)
+  - [Compression](#compression)
+  - [Passwords](#passwords)
+  - [Admin password](#admin-password)
+  - [Server identity TOFU](#server-identity-tofu)
+  - [Rate limiting](#rate-limiting)
+  - [Comparison table](#comparison-table)
+- [Getting Started as a Server Administrator](#getting-started-as-a-server-administrator)
+  - [macOS with Wired Server app](#macos-with-wired-server-app)
+  - [Linux with a DEB package](#linux-with-a-deb-package)
+  - [Linux with an RPM package](#linux-with-an-rpm-package)
+  - [Docker](#docker)
+  - [Building from source on Linux](#building-from-source-on-linux)
+  - [First boot and runtime layout](#first-boot-and-runtime-layout)
+  - [Running as a systemd service](#running-as-a-systemd-service)
+  - [Securing your server](#securing-your-server)
+- [Integrating WiredSwift in Your App](#integrating-wiredswift-in-your-app)
+  - [Requirements](#requirements)
+  - [Adding the dependency](#adding-the-dependency)
+  - [Versioning](#versioning)
+  - [Core concepts](#core-concepts)
+  - [Connection example](#connection-example)
+  - [Manual non-interactive mode](#manual-non-interactive-mode)
+  - [AsyncConnection async/await](#asyncconnection-asyncawait)
+  - [BlockConnection callbacks](#blockconnection-callbacks)
+  - [Logging](#logging)
+  - [Local development commands](#local-development-commands)
+  - [Building a Docker image](#building-a-docker-image)
+- [Protocol Overview](#protocol-overview)
+- [Contributing](#contributing)
+  - [Local setup](#local-setup)
+  - [Project layout](#project-layout)
+  - [Build and test status](#build-and-test-status)
+  - [Contribution priorities](#contribution-priorities)
+  - [Typical workflow](#typical-workflow)
+- [License](#license)
 
 ---
 
-## For Users (Running a Server)
+## What Changed in Wired 3.0
 
-### Option A: macOS with `WiredServerApp` (recommended on Mac)
+Wired 3.0 is a complete rewrite of the protocol's security layer. Here is what changed and why it matters.
 
-`WiredServerApp` is a local admin UI around `wired3`.
+### Encryption
 
-Requirements:
+Wired 2.0 used **RSA key exchange** with a choice of symmetric ciphers: AES (128/192/256-bit), Blowfish-128, and 3DES-192, each combined with SHA-1, SHA-256, or SHA-512 for key derivation — 15 cipher suites total. The RSA public key was sent in the clear during the handshake.
 
-- macOS 14+
+Wired 3.0 replaces RSA with **ECDH key exchange (P-521 curve)** and offers five modern cipher suites: AES-256-CBC, AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305, and XChaCha20-Poly1305. The last four provide **authenticated encryption** (AEAD), meaning tampered data is detected and rejected automatically. Legacy ciphers (Blowfish, 3DES) are dropped entirely.
 
-Install from Releases:
+Operators can enforce `cipher = SECURE_ONLY` in `config.ini` to reject unencrypted connections.
+
+### Integrity checksums
+
+Wired 2.0 supported three checksum algorithms: SHA-1, SHA-256, and SHA-512. Wired 3.0 keeps SHA2-256 and adds SHA2-384, SHA3-256, SHA3-384, and **HMAC variants** (HMAC-SHA256, HMAC-SHA384) for authenticated integrity checking — seven options total. SHA-1 is dropped. AEAD ciphers already include built-in integrity, so the checksum layer acts as defense in depth.
+
+### Compression
+
+Wired 2.0 supported **DEFLATE** (zlib) compression. Wired 3.0 keeps DEFLATE and adds **LZ4** (fast, cross-platform) and **LZFSE** (high compression ratio with very good performance). LZFSE is only available on macOS servers — Linux servers fall back to DEFLATE or LZ4. Compression is applied before encryption (standard ordering to avoid CRIME/BREACH class issues).
+
+### Passwords
+
+Wired 2.0 stored passwords as **unsalted SHA-1 hashes** and sent them directly over the wire, making them vulnerable to rainbow tables, GPU brute-force, and pass-the-hash attacks.
+
+Wired 3.0 stores passwords as **SHA-256 hashes with a per-user random salt**. Authentication uses a **challenge-response protocol with ECDSA proofs**: the client proves it knows the password without ever transmitting the hash. Session salts prevent replay attacks, and a dummy hash is computed on invalid usernames to block timing-based user enumeration.
+
+### Admin password
+
+Wired 2.0 shipped with a well-known default `admin / admin` password. Wired 3.0 **auto-generates a random 16-character password** on first boot and prints it to the console. There is no hardcoded default to forget about.
+
+### Server identity (TOFU)
+
+Wired 2.0 had no mechanism to verify that you were connecting to the right server. A DNS spoof or network-level MITM attack could go undetected.
+
+Wired 3.0 implements **Trust On First Use** (TOFU), similar to SSH known hosts. The server generates a persistent **P-256 ECDSA identity key** on first start and signs every session with it. Clients store the server's fingerprint on first connection. If the fingerprint changes later (possible MITM), the client warns the user and can reject the connection. Strict mode (`strict_identity = yes`, the default) makes key changes a hard failure.
+
+### Rate limiting
+
+Wired 2.0 had no protection against brute-force login attempts. Wired 3.0 enforces **per-IP rate limiting** (5 failed attempts trigger a 60-second lockout), per-user chat broadcast limits (5 messages/minute), and a cap of 100 concurrent connections to prevent resource exhaustion.
+
+### Comparison table
+
+| | Wired 2.0 | Wired 3.0 |
+|---|---|---|
+| **Key exchange** | RSA | ECDH (P-521) |
+| **Ciphers** | RSA + AES/Blowfish/3DES (15 suites) | ECDH + AES-GCM/ChaCha20-Poly1305 (5 suites, 4 AEAD) |
+| **Password storage** | SHA-1, no salt | SHA-256, per-user salt |
+| **Authentication** | Hash sent directly | Challenge-response, ECDSA proof |
+| **Checksums** | SHA-1, SHA-256, SHA-512 | SHA2, SHA3, HMAC (7 options, SHA-1 dropped) |
+| **Compression** | DEFLATE | DEFLATE, LZ4, LZFSE |
+| **Server identity** | None | P-256 ECDSA + TOFU |
+| **Rate limiting** | None | Per-IP login, per-user chat, connection cap |
+| **Default admin password** | `admin` | Random, auto-generated |
+
+---
+
+## Getting Started as a Server Administrator
+
+### macOS with Wired Server app
+
+This is the recommended way to run a Wired server on a Mac. `WiredServerApp` is a native macOS GUI around `wired3`.
+
+Requirements: macOS 14+
 
 1. Download `Wired-Server.app.zip` from [Releases](https://github.com/nark/WiredSwift/releases)
-2. Unzip
-3. Move `Wired Server.app` to `/Applications`
-4. Launch the app
-5. In **General** tab:
-   - click **Install** to install `wired3`
-   - click **Start** to run the server
+2. Unzip and move `Wired Server.app` to `/Applications`
+3. Launch the app
+4. In the **General** tab, click **Install** then **Start**
 
-Default runtime paths used by the app:
+Default runtime paths:
 
 - Working directory: `~/Library/Application Support/Wired3`
 - Binary: `~/Library/Application Support/Wired3/bin/wired3`
@@ -61,14 +143,9 @@ What you can manage in the app:
 - **Advanced**: admin account/password + protocol security options
 - **Logs**: tail-like log viewer
 
-### Option B: Linux with `.deb` package
+### Linux with a DEB package
 
-Requirements:
-
-- Debian/Ubuntu-compatible distro
-- Matching architecture (`amd64` or `arm64`)
-
-Install:
+Requirements: Debian/Ubuntu-compatible distro, matching architecture (`amd64` or `arm64`).
 
 ```bash
 sudo apt update
@@ -87,14 +164,9 @@ wired3 --version
 wired3 --help
 ```
 
-### Option C: Linux with `.rpm` package
+### Linux with an RPM package
 
-Requirements:
-
-- RPM-based distro (Fedora, RHEL, Rocky, Alma, etc.)
-- Matching architecture (`x86_64` or `aarch64`)
-
-Install:
+Requirements: RPM-based distro (Fedora, RHEL, Rocky, Alma, etc.), matching architecture (`x86_64` or `aarch64`).
 
 ```bash
 sudo dnf install ./wired3-<version>-<release>.<arch>.rpm
@@ -118,19 +190,11 @@ wired3 --version
 wired3 --help
 ```
 
-### Option D: Docker
-
-You can run `wired3` in a container using the published image.
-
-Pull:
+### Docker
 
 ```bash
 docker pull ghcr.io/nark/wired3:<tag>
-```
 
-Run:
-
-```bash
 docker run -d \
   --name wired3 \
   -p 4871:4871 \
@@ -152,7 +216,7 @@ docker logs -f wired3
 docker exec wired3 wired3 --version
 ```
 
-### Option E: Linux from source
+### Building from source on Linux
 
 Install dependencies (Debian/Ubuntu):
 
@@ -187,7 +251,7 @@ Optional install:
 sudo install -m 755 .build/release/wired3 /usr/local/bin/wired3
 ```
 
-### First Boot and Runtime Layout
+### First boot and runtime layout
 
 `wired3` needs a runtime directory. At first start, it creates defaults such as config, logs, DB, and files root.
 
@@ -222,7 +286,7 @@ sudo -u wired3 wired3 \
   --spec /var/lib/wired3/wired.xml
 ```
 
-### Systemd (Linux production baseline)
+### Running as a systemd service
 
 Recommended service pattern:
 
@@ -260,21 +324,23 @@ sudo journalctl -u wired3 -f
 sudo systemctl restart wired3
 ```
 
-### Security Notes (Do This First)
+### Securing your server
 
-#### Admin Password
+#### Admin password
 
 At database bootstrap (first start), two default accounts are created automatically:
 
 | Login | Default password | Role |
 |-------|-----------------|------|
-| `admin` | `admin` | Full privileges |
+| `admin` | *random, printed to console* | Full privileges |
 | `guest` | *(empty)* | Read-only |
 
-**You must change the admin password immediately after first start:**
+On first boot the server generates a random 16-character admin password and prints it to stdout (look for `===INITIAL ADMIN PASSWORD===` in the log). **Copy it immediately** — it is only shown once.
+
+You can change the admin password at any time:
 
 - **WiredServerApp** → **Advanced** tab → "Admin account" section → type a new password → **Set Password**
-- **CLI / Linux**: connect with any Wired 3 client (e.g., Wired for macOS), log in as `admin / admin`, open the admin panel and change the password
+- **CLI / Linux**: connect with any Wired 3 client, log in as `admin` with the generated password, open the admin panel and change it
 
 The server stores passwords as SHA-256 hashes with a per-user salt. There is no plain-text recovery — if you lose the admin password you must reset it via direct database access:
 
@@ -283,7 +349,7 @@ The server stores passwords as SHA-256 hashes with a per-user salt. There is no 
 sqlite3 wired3.db "UPDATE users SET password = '<sha256_of_password>' WHERE username = 'admin';"
 ```
 
-#### Server Identity and TOFU
+#### Server identity and TOFU
 
 Starting from P7 protocol v1.3, the server generates a **persistent identity key** (P-256 ECDSA) used for Trust On First Use (TOFU) protection against man-in-the-middle attacks.
 
@@ -341,7 +407,7 @@ Or use `wired3 --print-identity` (if available in your build):
 wired3 --working-directory /var/lib/wired3 --print-identity
 ```
 
-#### General Hardening Checklist
+#### Hardening checklist
 
 1. Change the admin password (see above)
 2. Restrict network exposure (firewall, private interfaces)
@@ -351,22 +417,22 @@ wired3 --working-directory /var/lib/wired3 --print-identity
 
 ---
 
-## For Developers (Using `WiredSwift`)
+## Integrating WiredSwift in Your App
 
 ### Requirements
 
 - Swift Package Manager
 - Platform support declared in `Package.swift`: iOS 13+, macOS 13+
 
-### Add Dependency
+### Adding the dependency
 
 ```swift
 .package(name: "WiredSwift", url: "https://github.com/nark/WiredSwift", exact: "3.0.0+4")
 ```
 
-### Unified Versioning (Library + Server)
+### Versioning
 
-This repository now uses a single release line for all targets (`WiredSwift`, `wired3`, `WiredServerApp`):
+This repository uses a single release line for all targets (`WiredSwift`, `wired3`, `WiredServerApp`):
 
 - Git tag: `v3.0+N` (example: `v3.0+4`)
 - SwiftPM semantic version: `3.0.0+N` (example: `3.0.0+4`)
@@ -381,7 +447,132 @@ git checkout v3.0+4
 swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
 ```
 
-### Build Docker Image (Developer)
+### Core concepts
+
+- `P7Spec`: protocol specification parser (`wired.xml`)
+- `Url`: Wired URL (`wired://user:pass@host:port`)
+- `Connection`: delegate-driven connection API
+- `AsyncConnection`: async/await transaction-oriented API
+- `BlockConnection`: callback-based connection API
+
+### Connection example
+
+`Connection.connect` is `throws` (not `Bool`).
+
+```swift
+import Foundation
+import WiredSwift
+
+final class ClientDelegate: ConnectionDelegate {
+    func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
+        print("recv:", message.name ?? "<unknown>")
+    }
+
+    func connectionDidReceiveError(connection: Connection, message: P7Message) {
+        print("error:", message.xml())
+    }
+}
+
+let specURL = URL(string: "https://wired.read-write.fr/spec.xml")!
+guard let spec = P7Spec(withUrl: specURL) else {
+    fatalError("Cannot load protocol spec")
+}
+
+let delegate = ClientDelegate()
+let connection = Connection(withSpec: spec, delegate: delegate)
+connection.nick = "My Swift Client"
+connection.status = "Online"
+
+let serverURL = Url(withString: "wired://guest@127.0.0.1:4871")
+
+try connection.connect(withUrl: serverURL)
+_ = connection.joinChat(chatID: 1)
+```
+
+### Manual non-interactive mode
+
+By default, `Connection` is interactive (`interactive = true`) and dispatches incoming messages through delegates.
+
+For explicit read loops:
+
+```swift
+connection.interactive = false
+try connection.connect(withUrl: serverURL)
+
+while connection.isConnected() {
+    let message = try connection.readMessage()
+    print(message.name ?? "<unknown>")
+}
+```
+
+### AsyncConnection (async/await)
+
+`AsyncConnection` adds transaction streams tied to `wired.transaction`.
+
+Single-response style:
+
+```swift
+let asyncConnection = AsyncConnection(withSpec: spec, delegate: delegate)
+try asyncConnection.connect(withUrl: serverURL)
+
+let msg = P7Message(withName: "wired.board.get_boards", spec: spec)
+let first = try await asyncConnection.sendAsync(msg)
+print(first?.name ?? "no response")
+```
+
+Multi-response stream style:
+
+```swift
+let msg = P7Message(withName: "wired.board.get_boards", spec: spec)
+let stream = try asyncConnection.sendAndWaitMany(msg)
+
+for try await response in stream {
+    print("stream:", response.name ?? "<unknown>")
+}
+```
+
+### BlockConnection (callbacks)
+
+```swift
+let blockConnection = BlockConnection(withSpec: spec, delegate: delegate)
+try blockConnection.connect(withUrl: serverURL)
+
+let message = P7Message(withName: "wired.board.get_boards", spec: spec)
+blockConnection.send(message: message, progressBlock: { response in
+    print("progress:", response.name ?? "<unknown>")
+}, completionBlock: { final in
+    print("done:", final?.name ?? "nil")
+})
+```
+
+### Logging
+
+```swift
+Logger.setMaxLevel(.ERROR)
+Logger.removeDestination(.Stdout)
+```
+
+### Local development commands
+
+```bash
+swift build -v
+swift run wired3 --working-directory ./run
+```
+
+Build macOS wrapper app bundle:
+
+```bash
+./Scripts/build-wired-server-app.sh release
+```
+
+Output artifacts:
+
+- `dist/Wired Server.app`
+- `dist/Wired-Server.app.zip`
+- `dist/wired3`
+- `dist/wired3.zip`
+
+### Building a Docker image
 
 Local image build (single arch):
 
@@ -420,136 +611,25 @@ docker buildx build \
 
 If you use the release automation, `Scripts/distribute.sh --prepare --phase docker` and `--upload --phase docker` generate/publish Docker tags and metadata automatically.
 
-### Core Concepts
+---
 
-- `P7Spec`: protocol specification parser (`wired.xml`)
-- `Url`: Wired URL (`wired://user:pass@host:port`)
-- `Connection`: delegate-driven connection API
-- `AsyncConnection`: async/await transaction-oriented API
-- `BlockConnection`: callback-based transaction API
+## Protocol Overview
 
-### Minimal `Connection` Example (Current API)
+Wired is built on **P7**, a custom binary protocol designed for low-overhead, structured messaging over TCP. All communication between clients and the server uses P7 messages.
 
-`Connection.connect` is `throws` (not `Bool`).
+**Message format:** each P7 message is a binary frame consisting of a 4-byte message ID (big-endian), a 4-byte total length, and a sequence of TLV (type-length-value) fields. Each field carries a 4-byte field ID, a 4-byte value length, and the raw value bytes. This compact encoding avoids the overhead of text-based formats like XML or JSON while remaining easy to parse.
 
-```swift
-import Foundation
-import WiredSwift
+**Protocol specification:** the full catalog of messages, fields, and data types is declared in `wired.xml`, a machine-readable XML file shipped with every server. Clients load this spec at connection time to know which messages exist and how to encode/decode them. When the protocol evolves, only `wired.xml` needs to be updated — the parser, serializer, and network layer adapt automatically.
 
-final class ClientDelegate: ConnectionDelegate {
-    func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
-        print("recv:", message.name ?? "<unknown>")
-    }
+**Session lifecycle:** a typical session flows through handshake (version and capability negotiation), key exchange (ECDH + optional identity verification), authentication (challenge-response), and then enters steady-state messaging (chat, file transfers, board operations, admin commands). Each phase is a well-defined sequence of P7 messages documented in `wired.xml`.
 
-    func connectionDidReceiveError(connection: Connection, message: P7Message) {
-        print("error:", message.xml())
-    }
-}
-
-let specURL = URL(string: "https://wired.read-write.fr/spec.xml")!
-guard let spec = P7Spec(withUrl: specURL) else {
-    fatalError("Cannot load protocol spec")
-}
-
-let delegate = ClientDelegate()
-let connection = Connection(withSpec: spec, delegate: delegate)
-connection.nick = "My Swift Client"
-connection.status = "Online"
-
-let serverURL = Url(withString: "wired://guest@127.0.0.1:4871")
-
-try connection.connect(withUrl: serverURL)
-_ = connection.joinChat(chatID: 1)
-```
-
-### Manual (Non-Interactive) Mode
-
-By default, `Connection` is interactive (`interactive = true`) and dispatches incoming messages through delegates.
-
-For explicit read loops:
-
-```swift
-connection.interactive = false
-try connection.connect(withUrl: serverURL)
-
-while connection.isConnected() {
-    let message = try connection.readMessage()
-    print(message.name ?? "<unknown>")
-}
-```
-
-### `AsyncConnection` (async/await)
-
-`AsyncConnection` adds transaction streams tied to `wired.transaction`.
-
-Single-response style:
-
-```swift
-let asyncConnection = AsyncConnection(withSpec: spec, delegate: delegate)
-try asyncConnection.connect(withUrl: serverURL)
-
-let msg = P7Message(withName: "wired.board.get_boards", spec: spec)
-let first = try await asyncConnection.sendAsync(msg)
-print(first?.name ?? "no response")
-```
-
-Multi-response stream style:
-
-```swift
-let msg = P7Message(withName: "wired.board.get_boards", spec: spec)
-let stream = try asyncConnection.sendAndWaitMany(msg)
-
-for try await response in stream {
-    print("stream:", response.name ?? "<unknown>")
-}
-```
-
-### `BlockConnection` (callbacks)
-
-```swift
-let blockConnection = BlockConnection(withSpec: spec, delegate: delegate)
-try blockConnection.connect(withUrl: serverURL)
-
-let message = P7Message(withName: "wired.board.get_boards", spec: spec)
-blockConnection.send(message: message, progressBlock: { response in
-    print("progress:", response.name ?? "<unknown>")
-}, completionBlock: { final in
-    print("done:", final?.name ?? "nil")
-})
-```
-
-### Logging
-
-```swift
-Logger.setMaxLevel(.ERROR)
-Logger.removeDestination(.Stdout)
-```
-
-### Local Dev Commands
-
-```bash
-swift build -v
-swift run wired3 --working-directory ./run
-```
-
-Build macOS wrapper app bundle:
-
-```bash
-./Scripts/build-wired-server-app.sh release
-```
-
-Output artifacts:
-
-- `dist/Wired Server.app`
-- `dist/Wired-Server.app.zip`
-- `dist/wired3`
-- `dist/wired3.zip`
+For implementation details, see `Sources/WiredSwift/P7/` (parser, socket, spec loader) and `Sources/wired3/` (server-side message handlers).
 
 ---
 
-## For Contributors
+## Contributing
 
-### Local Setup
+### Local setup
 
 ```bash
 git clone https://github.com/nark/WiredSwift.git
@@ -557,7 +637,7 @@ cd WiredSwift
 swift build -v
 ```
 
-### Project Layout
+### Project layout
 
 - `Sources/WiredSwift`: library implementation
 - `Sources/wired3`: server daemon
@@ -566,9 +646,9 @@ swift build -v
 - `Scripts/build-wired-server-app.sh`: macOS app packaging script
 - `.github/workflows/build-linux-deb-packages.yml`: CI workflow for amd64/arm64 `.deb` artifacts
 
-### Current Build/Test Reality
+### Build and test status
 
-As of March 6, 2026:
+As of March 2026:
 
 - `swift build -c release --product wired3` succeeds locally
 - Linux CI build command: `swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE`
@@ -576,7 +656,7 @@ As of March 6, 2026:
 
 If you submit a PR touching networking APIs, include test updates when signatures change.
 
-### Contribution Priorities
+### Contribution priorities
 
 - Protocol correctness and compatibility
 - Socket I/O reliability
@@ -584,7 +664,7 @@ If you submit a PR touching networking APIs, include test updates when signature
 - Regression-resistant test coverage
 - Server operational stability
 
-### Typical Contribution Workflow
+### Typical workflow
 
 1. Open an issue describing bug/feature scope
 2. Submit a focused PR
