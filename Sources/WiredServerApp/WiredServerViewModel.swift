@@ -851,7 +851,6 @@ final class WiredServerViewModel: ObservableObject {
 
     @discardableResult
     private func synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: Bool = true) throws -> Bool {
-        appendRuntimeLog("binary-update: synchronization check started")
         guard let bundledBinary = bundledServerBinaryPath() else {
             appendRuntimeLog("binary-update: no bundled wired3 found, skipping synchronization")
             return false
@@ -859,40 +858,25 @@ final class WiredServerViewModel: ObservableObject {
 
         let bundledSHA256 = try normalizedSHA256ForFile(at: bundledBinary)
         let metadataSHA256 = bundledBinaryExpectedSHA256()
-        let expectedSHA256: String
-        if let metadataSHA256 {
-            if metadataSHA256 == bundledSHA256 {
-                expectedSHA256 = metadataSHA256
-                appendRuntimeLog("binary-update: embedded metadata hash validated")
-            } else {
-                expectedSHA256 = bundledSHA256
-                appendRuntimeLog("binary-update: metadata hash mismatch with bundled binary, falling back to bundled hash")
-            }
-        } else {
-            expectedSHA256 = bundledSHA256
-            appendRuntimeLog("binary-update: no usable metadata hash, using bundled binary hash")
-        }
-        appendRuntimeLog("binary-update: expected bundled hash \(expectedSHA256)")
+        let expectedSHA256 = (metadataSHA256 == bundledSHA256 ? metadataSHA256 : nil) ?? bundledSHA256
 
         if fileManager.isExecutableFile(atPath: installedBinaryPath) {
             let installedSHA256 = try normalizedSHA256ForFile(at: installedBinaryPath)
             if installedSHA256 == expectedSHA256 {
                 binaryPath = installedBinaryPath
-                appendRuntimeLog("binary-update: installed binary is up-to-date")
+                appendRuntimeLog("binary-update: up-to-date (\(expectedSHA256.prefix(8)))")
                 return false
             }
-            appendRuntimeLog("binary-update: hash mismatch detected (installed: \(installedSHA256))")
+            appendRuntimeLog("binary-update: update required (installed: \(installedSHA256.prefix(8)), expected: \(expectedSHA256.prefix(8)))")
         } else {
-            appendRuntimeLog("binary-update: no installed binary found")
+            appendRuntimeLog("binary-update: no installed binary found, provisioning from bundle")
             if !allowInstallIfMissing {
-                appendRuntimeLog("binary-update: auto-install disabled for this flow, skipping synchronization")
+                appendRuntimeLog("binary-update: auto-install disabled for this flow, skipping")
                 return false
             }
-            appendRuntimeLog("binary-update: provisioning from bundled binary")
         }
 
         try installBinaryWithStagingRollback(from: bundledBinary, expectedSHA256: expectedSHA256)
-        appendRuntimeLog("binary-update: synchronization completed successfully")
         return true
     }
 
@@ -904,7 +888,6 @@ final class WiredServerViewModel: ObservableObject {
         let stagingURL = updatesDirectory.appendingPathComponent("wired3.staged.\(token)", isDirectory: false)
         let backupURL = updatesDirectory.appendingPathComponent("wired3.backup.\(token)", isDirectory: false)
 
-        appendRuntimeLog("binary-update: staging install from \(sourcePath)")
         try fileManager.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: updatesDirectory, withIntermediateDirectories: true)
 
@@ -913,7 +896,6 @@ final class WiredServerViewModel: ObservableObject {
         }
         try fileManager.copyItem(atPath: sourcePath, toPath: stagingURL.path)
         try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: stagingURL.path)
-        appendRuntimeLog("binary-update: staged candidate at \(stagingURL.path)")
 
         let stagedHash = try normalizedSHA256ForFile(at: stagingURL.path)
         guard stagedHash == expectedSHA256 else {
@@ -921,7 +903,6 @@ final class WiredServerViewModel: ObservableObject {
             appendRuntimeLog("binary-update: staging hash mismatch, aborting update")
             throw WiredServerError.binaryIntegrityCheckFailed("staging hash mismatch")
         }
-        appendRuntimeLog("binary-update: staging hash verified")
 
         if fileManager.fileExists(atPath: backupURL.path) {
             try? fileManager.removeItem(at: backupURL)
@@ -932,11 +913,9 @@ final class WiredServerViewModel: ObservableObject {
         do {
             if destinationExists {
                 try fileManager.moveItem(at: destinationURL, to: backupURL)
-                appendRuntimeLog("binary-update: existing binary moved to backup \(backupURL.path)")
             }
             try fileManager.moveItem(at: stagingURL, to: destinationURL)
             try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destinationURL.path)
-            appendRuntimeLog("binary-update: staged binary promoted to \(destinationURL.path)")
 
             let installedHash = try normalizedSHA256ForFile(at: destinationURL.path)
             guard installedHash == expectedSHA256 else {
@@ -945,12 +924,11 @@ final class WiredServerViewModel: ObservableObject {
             }
 
             if fileManager.fileExists(atPath: backupURL.path) {
-                try fileManager.removeItem(at: backupURL)
-                appendRuntimeLog("binary-update: backup removed after successful update")
+                try? fileManager.removeItem(at: backupURL)
             }
 
             binaryPath = destinationURL.path
-            appendRuntimeLog("binary-update: update completed")
+            appendRuntimeLog("binary-update: updated successfully (\(expectedSHA256.prefix(8)))")
         } catch {
             appendRuntimeLog("binary-update: update failed (\(error.localizedDescription)), attempting rollback")
             if fileManager.fileExists(atPath: destinationURL.path) {
