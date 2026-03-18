@@ -2424,9 +2424,15 @@ public class ServerController: ServerDelegate {
         var passwordChanged = false
         if let password = message.string(forField: "wired.account.password"), !password.isEmpty {
             let result = normalizedPasswordForStorage(password)
-            account.password = result.hash
-            account.passwordSalt = result.salt
-            passwordChanged = true
+            // Only update stored hash+salt when the derived hash actually changes.
+            // The client always sends passwordForAccountEdit() — even for permissions-only edits
+            // it sends SHA256("") — so we must compare against the current stored hash to avoid
+            // unnecessary salt regeneration and spurious session disconnection.
+            if result.hash != account.password {
+                account.password = result.hash
+                account.passwordSalt = result.salt
+                passwordChanged = true
+            }
         }
         if let group = message.string(forField: "wired.account.group") {
             account.group = group
