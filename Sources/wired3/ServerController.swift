@@ -2649,13 +2649,21 @@ public class ServerController: ServerDelegate {
     }
 
     // SECURITY (FINDING_A_004): Salted SHA-256 password storage
+    // SECURITY (FINDING_A_004): Normalize password for storage and generate a fresh per-user salt.
+    //
+    // stored.password  = SHA256(plaintext) — the single hash the P7 v1.2 key exchange expects
+    //                    on both client and server when computing base_hash.
+    // stored.passwordSalt = random UUID, sent to the client via server_challenge so the
+    //                    ECDSA proof is unique per session: base_hash = SHA256(salt || SHA256(plain)).
+    //
+    // Do NOT double-salt here: the key exchange already mixes the stored salt into the proof.
+    // Salting stored.password would produce a mismatch because the server would feed
+    // SHA256(salt||SHA256(plain)) back into the base_hash formula instead of SHA256(plain).
     private func normalizedPasswordForStorage(_ password: String) -> (hash: String, salt: String) {
-        let normalized: String
         let isHexSHA256 = password.range(of: "^[0-9a-fA-F]{64}$", options: .regularExpression) != nil
-        normalized = isHexSHA256 ? password.lowercased() : password.sha256()
+        let hash = isHexSHA256 ? password.lowercased() : password.sha256()
         let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-        let saltedHash = (salt + normalized).sha256()
-        return (hash: saltedHash, salt: salt)
+        return (hash: hash, salt: salt)
     }
 
     private func accountPrivilegesMessage(for account: User) -> P7Message {
