@@ -1,0 +1,97 @@
+"window.title" = "Wired Server";
+"alert.error.title" = "Fehler";
+"common.ok" = "OK";
+"common.choose" = "Auswählen";
+"common.select" = "Auswählen";
+"common.save" = "Speichern";
+
+"pane.general" = "Allgemein";
+"pane.network" = "Netzwerk";
+"pane.files" = "Dateien";
+"pane.advanced" = "Erweitert";
+"pane.logs" = "Protokolle";
+
+"general.installation.section" = "Installation";
+"general.install.install" = "Installieren";
+"general.install.uninstall" = "Deinstallieren";
+"general.install.state.installed" = "Installiert";
+"general.install.state.uninstalled" = "Nicht installiert";
+"general.install.directory" = "Installationsverzeichnis";
+"general.install.version" = "Version";
+
+"general.execution.section" = "Ausführung";
+"general.execution.running" = "Server läuft";
+"general.execution.stopped" = "Server läuft nicht";
+"general.execution.start" = "Starten";
+"general.execution.stop" = "Stoppen";
+"general.execution.start_on_login" = "Automatisch beim Systemstart starten";
+
+"network.section" = "Netzwerk";
+"network.port" = "Listening-Port";
+"network.check" = "Prüfen";
+"network.restart_required" = "Der Server muss nach einer Port-Änderung neu gestartet werden.";
+"network.port_status.unknown" = "Port-Status unbekannt";
+"network.port_status.open" = "Port ist geöffnet";
+"network.port_status.closed" = "Port ist geschlossen";
+
+"files.section" = "Dateien";
+"files.directory" = "Dateiverzeichnis";
+"files.index.section" = "Index";
+"files.index.every" = "Server-Dateien neu indizieren alle";
+"files.index.seconds" = "Sek.";
+"files.index.now" = "Neu indizieren";
+
+"advanced.admin.section" = "Admin-Konto";
+"advanced.admin.password.placeholder" = "Admin-Passwort";
+"advanced.admin.set_password" = "Passwort festlegen";
+"advanced.admin.create_user" = "Admin-Benutzer erstellen";
+"advanced.admin.status.unknown" = "Unbekannt";
+"advanced.admin.status.secured" = "Admin-Konto ist gesichert";
+"advanced.admin.status.no_password" = "Admin-Konto hat kein Passwort";
+"advanced.admin.status.missing" = "Admin-Konto fehlt";
+"advanced.admin.status.db_not_initialized" = "Datenbank nicht initialisiert (Server einmal starten)";
+"advanced.admin.status.unavailable" = "Admin-Konto nicht verfügbar";
+
+"advanced.security.section" = "Sicherheit";
+"advanced.security.compression" = "Bevorzugte Komprimierung";
+"advanced.security.cipher" = "Bevorzugte Verschlüsselung";
+"advanced.security.checksum" = "Bevorzugte Prüfsumme";
+"advanced.save" = "Erweiterte Einstellungen speichern";
+
+"logs.open" = "Protokolle öffnen";
+"logs.empty" = "Noch keine Protokolle";
+
+"status.installing" = "Wird installiert...";
+"status.server_installed" = "Server installiert";
+"status.server_uninstalled" = "Server deinstalliert";
+"status.server_started" = "Server gestartet";
+"status.server_stopped" = "Server gestoppt";
+"status.port_saved_restart_required" = "Port gespeichert. Neustart erforderlich.";
+"status.port_saved" = "Port gespeichert";
+"status.files_settings_saved" = "Dateieinstellungen gespeichert";
+"status.reindex_on_next_start" = "Neu-Indizierung wird beim nächsten Start durchgeführt";
+"status.server_restarted_reindex" = "Server neu gestartet, Neu-Indizierung ausgelöst";
+"status.advanced_saved" = "Erweiterte Einstellungen gespeichert";
+"status.admin_password_updated" = "Admin-Passwort aktualisiert";
+"status.admin_user_created" = "Admin-Benutzer erstellt";
+"status.building_binary" = "wired3-Binary wird kompiliert...";
+"status.partial_db_reinitialized" = "Unvollständige Datenbank erkannt und zurückgesetzt (sauberer Start beim nächsten Mal)";
+
+"error.launch_at_login_update_failed" = "Autostart-Einstellung konnte nicht aktualisiert werden";
+"error.launch_at_login_change_failed" = "Autostart-Einstellung konnte nicht geändert werden";
+"error.install_failed" = "Installation fehlgeschlagen";
+"error.uninstall_failed" = "Deinstallation fehlgeschlagen";
+"error.start_failed" = "Start fehlgeschlagen";
+"error.admin_password_empty" = "Passwort darf nicht leer sein";
+"error.admin_password_set_failed" = "Admin-Passwort konnte nicht gesetzt werden";
+"error.admin_user_create_failed" = "Admin-Benutzer konnte nicht erstellt werden";
+"error.runtime_prepare_failed" = "Laufzeitumgebung konnte nicht vorbereitet werden";
+"error.config_read_failed" = "Konfiguration konnte nicht gelesen werden";
+"error.wired3_binary_missing" = "wired3-Binary nicht gefunden";
+"error.wired3_build_failed" = "wired3-Binary-Kompilierung fehlgeschlagen";
+"error.launch_agent_write_failed" = "Start-LaunchAgent konnte nicht geschrieben werden";
+"error.launchctl_failed" = "launchctl fehlgeschlagen";
+"error.database_open_failed" = "Datenbank konnte nicht geöffnet werden";
+"error.database_not_initialized" = "Datenbank nicht initialisiert: Server zunächst einmal starten";
+"error.sql_prepare_failed" = "SQL-Vorbereitung fehlgeschlagen";
+"error.sql_execution_failed" = "SQL-Ausführung fehlgeschlagen";
