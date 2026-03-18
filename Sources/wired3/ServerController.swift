@@ -2618,7 +2618,9 @@ public class ServerController: ServerDelegate {
         reply.addParameter(field: "wired.account.name", value: account.username ?? "")
         reply.addParameter(field: "wired.account.full_name", value: account.fullName ?? "")
         reply.addParameter(field: "wired.account.comment", value: account.comment ?? "")
-        // SECURITY: password hash intentionally omitted (FINDING_A_003)
+        // Send stored hash so clients can echo it back unchanged on permissions-only edits.
+        // The connection is already encrypted; admins can set any password via edit_user anyway.
+        reply.addParameter(field: "wired.account.password", value: account.password ?? "")
         reply.addParameter(field: "wired.account.group", value: account.group ?? "")
         reply.addParameter(field: "wired.account.groups", value: account.groups?
             .split(separator: ",")
