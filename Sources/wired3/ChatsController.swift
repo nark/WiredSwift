@@ -174,11 +174,12 @@ public class ChatsController : TableController {
 
             self.add(chat: newChat)
             
-            let reply = P7Message(withName: "wired.chat.public_chat_created", spec: message.spec)
-            reply.addParameter(field: "wired.chat.id", value: newChat.chatID)
-            reply.addParameter(field: "wired.chat.name", value: newChat.name)
-            
-            App.clientsController.broadcast(message: reply)
+            let broadcast = P7Message(withName: "wired.chat.public_chat_created", spec: message.spec)
+            broadcast.addParameter(field: "wired.chat.id", value: newChat.chatID)
+            broadcast.addParameter(field: "wired.chat.name", value: newChat.name)
+            App.clientsController.broadcast(message: broadcast)
+
+            App.serverController.replyOK(client: client, message: message)
         } catch let error {
             Logger.error("Cannot create public chat")
             Logger.error("\(error)")
@@ -227,9 +228,11 @@ public class ChatsController : TableController {
 
         self.remove(chat: publicChat)
 
-        let reply = P7Message(withName: "wired.chat.public_chat_deleted", spec: message.spec)
-        reply.addParameter(field: "wired.chat.id", value: publicChat.chatID)
-        App.clientsController.broadcast(message: reply)
+        let broadcast = P7Message(withName: "wired.chat.public_chat_deleted", spec: message.spec)
+        broadcast.addParameter(field: "wired.chat.id", value: publicChat.chatID)
+        App.clientsController.broadcast(message: broadcast)
+
+        App.serverController.replyOK(client: client, message: message)
     }
     
     

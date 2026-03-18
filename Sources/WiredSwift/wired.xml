@@ -3634,20 +3634,22 @@
         
         <p7:transaction message="wired.chat.create_public_chat" originator="client" version="3.0">
             <p7:documentation>
-
+                Creates a new public chat. On success, [message:wired.okay] is replied to the
+                originator, and [message:wired.chat.public_chat_created] is broadcast to all clients.
             </p7:documentation>
             <p7:or>
-                <p7:reply message="wired.chat.public_chat_created" count="1" use="required" version="3.0" />
+                <p7:reply message="wired.okay" count="1" use="required" version="2.0" />
                 <p7:reply message="wired.error" count="1" use="required" version="2.0" />
             </p7:or>
         </p7:transaction>
 
         <p7:transaction message="wired.chat.delete_public_chat" originator="client" version="3.0">
             <p7:documentation>
-
+                Deletes a public chat. On success, [message:wired.okay] is replied to the
+                originator, and [message:wired.chat.public_chat_deleted] is broadcast to all clients.
             </p7:documentation>
             <p7:or>
-                <p7:reply message="wired.chat.public_chat_deleted" count="1" use="required" version="3.0" />
+                <p7:reply message="wired.okay" count="1" use="required" version="2.0" />
                 <p7:reply message="wired.error" count="1" use="required" version="2.0" />
             </p7:or>
         </p7:transaction>
