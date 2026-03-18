@@ -812,7 +812,7 @@ public class BoardsController {
             return replyBoards(forUser: user, group: group, spec: message.spec)
 
         case "wired.board.get_threads":
-            guard let boardPath = message.string(forField: "wired.board.board") else { return [] }
+            let boardPath = message.string(forField: "wired.board.board")
             return replyThreads(forBoard: boardPath, user: user, group: group, spec: message.spec)
 
         case "wired.board.get_thread":
@@ -880,9 +880,18 @@ public class BoardsController {
         return messages
     }
 
-    private func replyThreads(forBoard boardPath: String, user: String, group: String, spec: P7Spec) -> [P7Message] {
+    private func replyThreads(forBoard boardPath: String?, user: String, group: String, spec: P7Spec) -> [P7Message] {
         var messages: [P7Message] = []
-        for thread in getThreads(forBoard: boardPath) {
+        let threads: [Thread]
+
+        if let boardPath, !boardPath.isEmpty {
+            threads = getThreads(forBoard: boardPath)
+        } else {
+            threads = getBoards(forUser: user, group: group)
+                .flatMap { getThreads(forBoard: $0.path) }
+        }
+
+        for thread in threads {
             let m = P7Message(withName: "wired.board.thread_list", spec: spec)
             m.addParameter(field: "wired.board.board",             value: thread.board)
             m.addParameter(field: "wired.board.thread",            value: thread.uuid)

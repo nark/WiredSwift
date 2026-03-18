@@ -1035,24 +1035,28 @@ public class ServerController: ServerDelegate {
             return
         }
 
-        guard let boardPath = message.string(forField: "wired.board.board"), !boardPath.isEmpty else {
-            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
-            return
-        }
-
-        guard let board = App.boardsController.getBoardInfo(path: boardPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.board_not_found", message: message)
-            return
-        }
-
         let username = user.username ?? ""
         let groupName = user.group ?? ""
-        guard board.canRead(user: username, group: groupName) else {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            return
+
+        let threads: [Thread]
+        if let boardPath = message.string(forField: "wired.board.board"), !boardPath.isEmpty {
+            guard let board = App.boardsController.getBoardInfo(path: boardPath) else {
+                App.serverController.replyError(client: client, error: "wired.error.board_not_found", message: message)
+                return
+            }
+
+            guard board.canRead(user: username, group: groupName) else {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+
+            threads = App.boardsController.getThreads(forBoard: boardPath)
+        } else {
+            threads = App.boardsController
+                .getBoards(forUser: username, group: groupName)
+                .flatMap { App.boardsController.getThreads(forBoard: $0.path) }
         }
 
-        let threads = App.boardsController.getThreads(forBoard: boardPath)
         for thread in threads {
             let reply = P7Message(withName: "wired.board.thread_list", spec: self.spec)
             reply.addParameter(field: "wired.board.board", value: thread.board)

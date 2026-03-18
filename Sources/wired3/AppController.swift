@@ -14,10 +14,8 @@ public let DEFAULT_PORT = 4871
 private let defaultWelcomeBoardPath = "Welcome"
 private let defaultWelcomeThreadSubject = "Welcome to Wired Server 3"
 private let defaultWelcomeThreadBody = "You are running Wired Server version 3.x, this is an early alpha version, you are pleased to report any issue at : https://github.com/nark/WiredSwift/issues"
-
-
-
-
+private let welcomeBoardSeed = "boards.welcome.v1"
+private let defaultFilesSeed = "files.defaults.v1"
 
 public class AppController {
     var workingDirectoryPath:String
@@ -37,6 +35,7 @@ public class AppController {
     var filesController:FilesController!
     var indexController:IndexController!
     var transfersController:TransfersController!
+    var bootstrapStateStore: BootstrapStateStore!
     
     var config:Config
     
@@ -66,6 +65,7 @@ public class AppController {
 
     
     public func start() {
+        self.bootstrapStateStore = BootstrapStateStore(workingDirectoryPath: self.workingDirectoryPath)
         self.databaseController = DatabaseController(baseURL: self.databaseURL, spec: self.spec)
 
         // Open the database and run pending migrations FIRST so that dbQueue
@@ -195,35 +195,72 @@ public class AppController {
     }
 
     private func bootstrapDefaultContentIfNeeded() {
-        if self.boardsController.getBoardInfo(path: defaultWelcomeBoardPath) == nil {
-            _ = self.boardsController.addBoard(
-                path: defaultWelcomeBoardPath,
-                owner: "admin",
-                group: "admin",
-                ownerRead: true,
-                ownerWrite: true,
-                groupRead: true,
-                groupWrite: true,
-                everyoneRead: true,
-                everyoneWrite: true
-            )
+        bootstrapWelcomeBoardIfNeeded()
+        bootstrapDefaultFilesIfNeeded()
+    }
+
+    private func bootstrapWelcomeBoardIfNeeded() {
+        guard !self.bootstrapStateStore.isCompleted(welcomeBoardSeed) else { return }
+
+        defer {
+            self.bootstrapStateStore.markCompleted(welcomeBoardSeed)
         }
 
-        let existingThreads = self.boardsController.getThreads(forBoard: defaultWelcomeBoardPath)
-        let hasWelcomeThread = existingThreads.contains {
-            $0.subject == defaultWelcomeThreadSubject && $0.text == defaultWelcomeThreadBody
+        guard self.boardsController.boards.isEmpty,
+              self.boardsController.threads.isEmpty,
+              self.boardsController.posts.isEmpty else {
+            return
         }
 
-        if !hasWelcomeThread {
-            _ = self.boardsController.addThread(
-                board: defaultWelcomeBoardPath,
-                subject: defaultWelcomeThreadSubject,
-                text: defaultWelcomeThreadBody,
-                nick: "Wired Server",
-                login: "admin",
-                icon: nil
-            )
+        guard self.boardsController.addBoard(
+            path: defaultWelcomeBoardPath,
+            owner: "admin",
+            group: "admin",
+            ownerRead: true,
+            ownerWrite: true,
+            groupRead: true,
+            groupWrite: true,
+            everyoneRead: true,
+            everyoneWrite: true
+        ) != nil else {
+            return
         }
+
+        _ = self.boardsController.addThread(
+            board: defaultWelcomeBoardPath,
+            subject: defaultWelcomeThreadSubject,
+            text: defaultWelcomeThreadBody,
+            nick: "Wired Server",
+            login: "admin",
+            icon: nil
+        )
+    }
+
+    private func bootstrapDefaultFilesIfNeeded() {
+        guard !self.bootstrapStateStore.isCompleted(defaultFilesSeed) else { return }
+
+        defer {
+            self.bootstrapStateStore.markCompleted(defaultFilesSeed)
+        }
+
+        guard isDirectoryEmpty(atPath: self.rootPath) else {
+            return
+        }
+
+        let upload = self.rootPath.stringByAppendingPathComponent(path: "Upload")
+        let dropbox = self.rootPath.stringByAppendingPathComponent(path: "DropBox")
+        let dropboxPrivileges = FilePrivilege(owner: "admin", group: "", mode: [.ownerRead, .ownerWrite, .everyoneWrite])
+
+        self.filesController.createDefaultDirectoryIfMissing(path: upload, type: .uploads, privileges: nil)
+        self.filesController.createDefaultDirectoryIfMissing(path: dropbox, type: .dropbox, privileges: dropboxPrivileges)
+    }
+
+    private func isDirectoryEmpty(atPath path: String) -> Bool {
+        guard let entries = try? FileManager.default.contentsOfDirectory(atPath: path) else {
+            return false
+        }
+
+        return entries.isEmpty
     }
     
     

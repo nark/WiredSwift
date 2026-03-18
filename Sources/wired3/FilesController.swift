@@ -713,20 +713,11 @@ public class FilesController {
     // MARK: -
     private func initFilesSystem() {
         try? FileManager.default.createDirectory(atPath: rootPath, withIntermediateDirectories: true, attributes: nil)
-
-        let upload = rootPath.stringByAppendingPathComponent(path: "Upload")
-        let dropbox = rootPath.stringByAppendingPathComponent(path: "DropBox")
-
-        ensureDefaultDirectory(path: upload, type: .uploads, privileges: nil)
-
-        // Restricted DropBox by default: admin read/write + everyone write only.
-        let dropboxPrivileges = FilePrivilege(owner: "admin", group: "", mode: [.ownerRead, .ownerWrite, .everyoneWrite])
-        ensureDefaultDirectory(path: dropbox, type: .dropbox, privileges: dropboxPrivileges)
     }
 
-    private func ensureDefaultDirectory(path: String,
-                                        type: File.FileType,
-                                        privileges: FilePrivilege?) {
+    public func createDefaultDirectoryIfMissing(path: String,
+                                                type: File.FileType,
+                                                privileges: FilePrivilege?) {
         var isDirectory: ObjCBool = false
         if !FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
             try? FileManager.default.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: [FileAttributeKey.posixPermissions: 0o755])
