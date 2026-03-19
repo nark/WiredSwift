@@ -837,6 +837,8 @@ final class WiredServerViewModel: ObservableObject {
                 try defaultConfig().write(to: URL(fileURLWithPath: configPath), atomically: true, encoding: .utf8)
             }
 
+            _ = ConfigFileDefaults.ensureStrictIdentitySetting(at: configPath)
+
             if !fileManager.fileExists(atPath: logPath) {
                 fileManager.createFile(atPath: logPath, contents: Data())
             }
@@ -1200,6 +1202,9 @@ register_with_trackers = no
 compression = ALL
 cipher = SECURE_ONLY
 checksum = SECURE_ONLY
+
+[security]
+strict_identity = yes
 """
     }
 

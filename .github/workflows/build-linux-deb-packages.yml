@@ -207,6 +207,12 @@ jobs:
               'if [[ ! -f /var/lib/wired3/wired.xml ]] || ([[ "${{ inputs.wired_xml_update_if_different }}" == "1" ]] && ! cmp -s /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml); then install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml; fi' \
               '[[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png' \
               '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
+              'if ! awk '"'"'BEGIN { in_security = 0; found = 0 } /^[[:space:]]*\\[/ { in_security = ($0 ~ /^[[:space:]]*\\[security\\][[:space:]]*$/) } in_security && $0 ~ /^[[:space:]]*strict_identity[[:space:]]*=/ { found = 1 } END { exit(found ? 0 : 1) }'"'"' /etc/wired3/config.ini; then' \
+              '  tmp="$(mktemp)"' \
+              '  awk '"'"'BEGIN { in_security = 0; inserted = 0 } /^[[:space:]]*\\[/ { if (in_security && !inserted && $0 !~ /^[[:space:]]*\\[security\\][[:space:]]*$/) { print "strict_identity = yes"; inserted = 1 } in_security = ($0 ~ /^[[:space:]]*\\[security\\][[:space:]]*$/); print; next } { print } END { if (in_security && !inserted) { print "strict_identity = yes"; inserted = 1 } if (!inserted) { if (NR > 0) print ""; print "[security]"; print "strict_identity = yes" } }'"'"' /etc/wired3/config.ini > "$tmp"' \
+              '  install -m 0640 -o root -g wired3 "$tmp" /etc/wired3/config.ini' \
+              '  rm -f "$tmp"' \
+              'fi' \
               'if command -v systemctl >/dev/null 2>&1; then' \
               '  systemctl daemon-reload || true' \
               'fi' \

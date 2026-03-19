@@ -70,6 +70,9 @@ struct Wired: ParsableCommand {
         }
 
         ensureDefaultConfigExists(at: resolved.configPath)
+        if ConfigFileDefaults.ensureStrictIdentitySetting(at: resolved.configPath) {
+            Logger.info("Backfilled security.strict_identity in \(resolved.configPath)")
+        }
         bootstrapRuntimeFiles(using: resolved)
         configureLogger(logFilePath: resolved.logPath)
 
@@ -295,6 +298,9 @@ reindex_interval = 3600
 compression = ALL
 cipher = SECURE_ONLY
 checksum = SECURE_ONLY
+
+[security]
+strict_identity = yes
 """
 
         do {
