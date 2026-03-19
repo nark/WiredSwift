@@ -414,7 +414,13 @@ struct AdvancedTabView: View {
 
                     // Strict identity toggle
                     HStack(alignment: .top) {
-                        Toggle(L("advanced.identity.strict"), isOn: $model.strictIdentity)
+                        Toggle(
+                            L("advanced.identity.strict"),
+                            isOn: Binding(
+                                get: { model.strictIdentity },
+                                set: { model.setStrictIdentity($0) }
+                            )
+                        )
                         Spacer()
                     }
                     Text(L("advanced.identity.strict.help"))

@@ -418,7 +418,7 @@ final class WiredServerViewModel: ObservableObject {
                 launchAtLogin = isLaunchAtLoginEnabled()
             }
         }
-        if isRunning && sendReloadSignal() {
+        if reloadServerIfPossible() {
             statusMessage = L("status.files_settings_saved_reloaded")
         } else {
             statusMessage = L("status.files_settings_saved")
@@ -464,7 +464,21 @@ final class WiredServerViewModel: ObservableObject {
             config["security", "strict_identity"] = strictIdentity ? "yes" : "no"
         }
 
-        if isRunning && sendReloadSignal() {
+        if reloadServerIfPossible() {
+            statusMessage = L("status.advanced_saved_reloaded")
+        } else {
+            statusMessage = L("status.advanced_saved")
+        }
+    }
+
+    func setStrictIdentity(_ enabled: Bool) {
+        strictIdentity = enabled
+
+        withConfig { config in
+            config["security", "strict_identity"] = enabled ? "yes" : "no"
+        }
+
+        if reloadServerIfPossible() {
             statusMessage = L("status.advanced_saved_reloaded")
         } else {
             statusMessage = L("status.advanced_saved")
@@ -1041,6 +1055,16 @@ final class WiredServerViewModel: ObservableObject {
     @discardableResult
     private func sendReloadSignal() -> Bool {
         sendSignal(SIGHUP)
+    }
+
+    @discardableResult
+    private func reloadServerIfPossible() -> Bool {
+        refreshRunningStatus()
+        let didReload = sendReloadSignal()
+        if !didReload, isRunning {
+            appendRuntimeLog("reload: failed to send SIGHUP despite running-state detection")
+        }
+        return didReload
     }
 
     /// Send SIGUSR1 to the running wired3 process to trigger a full file reindex
