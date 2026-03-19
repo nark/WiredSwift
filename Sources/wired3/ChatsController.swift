@@ -11,9 +11,21 @@ import GRDB
 
 private extension ChatsController {
     // MARK: - Privates
+
+    private func describe(chat: Chat) -> String {
+        let kind = chat is PrivateChat ? "private" : "public"
+        let name = chat.name ?? "Private Chat"
+        return "kind=\(kind) chatID=\(chat.chatID) name='\(name)'"
+    }
     
     private func add(chat:Chat) {
         self.chatsLock.exclusivelyWrite {
+            if let existing = self.chats[chat.chatID] {
+                Logger.error("Replacing existing chat with duplicate ID: existing={\(self.describe(chat: existing))} incoming={\(self.describe(chat: chat))}")
+            }
+
+            self.publicChats.removeAll { $0.chatID == chat.chatID }
+            self.privateChats.removeAll { $0.chatID == chat.chatID }
             self.chats[chat.chatID] = chat
             
             if let privateChat = chat as? PrivateChat {
@@ -55,8 +67,19 @@ private extension ChatsController {
     private func nextChatID() -> UInt32 {
         var newID: UInt32 = 0
         self.chatsLock.exclusivelyWrite {
-            self.lastChatID += 1
-            newID = self.lastChatID
+            var candidate = self.lastChatID
+
+            while candidate < UInt32.max {
+                candidate += 1
+
+                if self.chats[candidate] == nil {
+                    self.lastChatID = candidate
+                    newID = candidate
+                    return
+                }
+            }
+
+            Logger.fatal("Exhausted chat ID space while allocating a new chat ID")
         }
         return newID
     }
@@ -98,13 +121,15 @@ private extension ChatsController {
             return
         }
 
+        App.serverController.replyOK(client: client, message: message)
+
         chat.withClients { toClient in
             let messageName = isSay ? "wired.chat.say" : "wired.chat.me"
             let reply = P7Message(withName: messageName, spec: toClient.socket.spec)
             reply.addParameter(field: "wired.chat.id", value: chatID)
             reply.addParameter(field: "wired.user.id", value: client.userID)
             reply.addParameter(field: messageName, value: string)
-            App.serverController.reply(client: toClient, reply: reply, message: message)
+            App.serverController.send(message: reply, client: toClient)
         }
     }
 }
@@ -305,10 +330,10 @@ public class ChatsController : TableController {
         
         privateChat.addInvitation(client: peer)
         
-        let reply = P7Message(withName: "wired.chat.invitation", spec: message.spec)
+        let reply = P7Message(withName: "wired.chat.invitation", spec: peer.socket.spec)
         reply.addParameter(field: "wired.user.id", value: client.userID)
         reply.addParameter(field: "wired.chat.id", value: chatID)
-        App.serverController.reply(client: peer, reply: reply, message: message)
+        App.serverController.send(message: reply, client: peer)
         
         App.serverController.replyOK(client: client, message: message)
     }
@@ -329,22 +354,21 @@ public class ChatsController : TableController {
             return
         }
 
-        guard let inviter = App.clientsController.user(withID: userID) else {
+        guard App.clientsController.user(withID: userID) != nil else {
             App.serverController.replyError(client: client, error: "wired.error.user_not_found", message: message)
             return
         }
 
         privateChat.removeInvitation(client: client)
 
-        let reply = P7Message(withName: "wired.chat.user_decline_invitation", spec: message.spec)
+        let reply = P7Message(withName: "wired.chat.user_decline_invitation", spec: client.socket.spec)
         reply.addParameter(field: "wired.chat.id", value: chatID)
         reply.addParameter(field: "wired.user.id", value: client.userID)
 
         privateChat.withClients { toClient in
-            App.serverController.reply(client: toClient, reply: reply, message: message)
+            App.serverController.send(message: reply, client: toClient)
         }
 
-        App.serverController.reply(client: inviter, reply: reply, message: message)
         App.serverController.replyOK(client: client, message: message)
     }
     
@@ -419,7 +443,7 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.user.icon", value: client.icon)
                 reply.addParameter(field: "wired.account.color", value: client.accountColor)
                 
-                App.serverController.reply(client: chatClient, reply: reply, message: message)
+                App.serverController.send(message: reply, client: chatClient)
             }
         }
     }
@@ -529,7 +553,9 @@ public class ChatsController : TableController {
             chat.topicNick = client.nick ?? ""
             chat.topicTime = Date()
 
-            try databaseController.dbQueue.write { db in try chat.update(db) }
+            if !(chat is PrivateChat) {
+                try databaseController.dbQueue.write { db in try chat.update(db) }
+            }
             
             // reply okay msg
             App.serverController.replyOK(client: client, message: message)
@@ -542,7 +568,7 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
                 reply.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
                 
-                App.serverController.reply(client: toClient, reply: reply, message: message)
+                App.serverController.send(message: reply, client: toClient)
             }
             
         } catch let error {
@@ -572,11 +598,47 @@ public class ChatsController : TableController {
     
     
     public func loadChats() {
+        self.chatsLock.exclusivelyWrite {
+            self.chats.removeAll()
+            self.publicChats.removeAll()
+            self.privateChats.removeAll()
+            self.lastChatID = 1
+        }
+        self.publicChat = nil
+
         let chats = (try? databaseController.dbQueue.read { db in try Chat.fetchAll(db) }) ?? []
+        var seenChatIDs: Set<UInt32> = []
+        var highestChatID = max(chats.map(\.chatID).max() ?? 1, 1)
+
         for chat in chats {
+            if seenChatIDs.contains(chat.chatID) {
+                let originalChatID = chat.chatID
+
+                while highestChatID < UInt32.max {
+                    highestChatID += 1
+
+                    if !seenChatIDs.contains(highestChatID) {
+                        chat.chatID = highestChatID
+                        break
+                    }
+                }
+
+                Logger.error("Duplicate persisted chatID detected, reassigning chat '\(chat.name ?? "Private Chat")' from \(originalChatID) to \(chat.chatID)")
+
+                do {
+                    try databaseController.dbQueue.write { db in
+                        try chat.update(db)
+                    }
+                } catch {
+                    Logger.error("Cannot repair duplicate chatID \(originalChatID): \(error)")
+                }
+            }
+
+            seenChatIDs.insert(chat.chatID)
             self.add(chat: chat)
             if chat.chatID == 1 { self.publicChat = chat }
-            lastChatID = chat.chatID
+            self.lastChatID = max(self.lastChatID, chat.chatID)
         }
+
     }
 }

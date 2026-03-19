@@ -20,9 +20,10 @@ public class Lock {
         }
     }
     
-    public func exclusivelyWrite(_ block: @escaping (() -> Void)) {
-        queue.async(flags: .barrier) {
-            block()
+    @discardableResult
+    public func exclusivelyWrite<T>(_ block: (() throws -> T)) rethrows -> T {
+        try queue.sync(flags: .barrier) {
+            try block()
         }
     }
 }
