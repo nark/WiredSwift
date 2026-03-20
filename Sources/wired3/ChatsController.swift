@@ -450,10 +450,14 @@ public class ChatsController : TableController {
     
     
     public func userLeave(client:Client) {
+        removeUserFromAllChats(client: client, broadcastLeaves: true)
+    }
+
+    public func removeUserFromAllChats(client: Client, broadcastLeaves: Bool) {
         let snapshot = self.chatsLock.concurrentlyRead { self.chats }
         for (chatID, chat) in snapshot {
             if let c = chat.client(withID: client.userID) {
-                userLeave(chatID: chatID, client: c)
+                removeUser(chatID: chatID, client: c, broadcastLeave: broadcastLeaves)
             }
         }
     }
@@ -475,20 +479,22 @@ public class ChatsController : TableController {
             return
         }
     
-        userLeave(chatID: chatID, client: client)
+        removeUser(chatID: chatID, client: client, broadcastLeave: true)
         App.serverController.replyOK(client: client, message: message)
     }
     
     
-    private func userLeave(chatID:UInt32, client:Client) {
+    private func removeUser(chatID: UInt32, client: Client, broadcastLeave: Bool) {
         if let chat = self.chat(withID: chatID) {
             chat.removeClient(client.userID)
-            
-            chat.withClients { chatClient in
-                let reply = P7Message(withName: "wired.chat.user_leave", spec: client.socket.spec)
-                reply.addParameter(field: "wired.chat.id", value: chatID)
-                reply.addParameter(field: "wired.user.id", value: client.userID)
-                App.serverController.send(message: reply, client: chatClient)
+
+            if broadcastLeave {
+                chat.withClients { chatClient in
+                    let reply = P7Message(withName: "wired.chat.user_leave", spec: client.socket.spec)
+                    reply.addParameter(field: "wired.chat.id", value: chatID)
+                    reply.addParameter(field: "wired.user.id", value: client.userID)
+                    App.serverController.send(message: reply, client: chatClient)
+                }
             }
         }
     }
@@ -577,6 +583,60 @@ public class ChatsController : TableController {
             
             return
         }
+    }
+
+    public func chats(containingUserID userID: UInt32) -> [Chat] {
+        self.chatsLock.concurrentlyRead {
+            self.chats.values.filter { $0.client(withID: userID) != nil }
+        }
+    }
+
+    public func kickUser(message: P7Message, client: Client) {
+        guard let actor = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let chatID = message.uint32(forField: "wired.chat.id"),
+              let targetUserID = message.uint32(forField: "wired.user.id"),
+              let disconnectMessage = message.string(forField: "wired.user.disconnect_message") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let target = App.clientsController.user(withID: targetUserID) else {
+            App.serverController.replyError(client: client, error: "wired.error.user_not_found", message: message)
+            return
+        }
+
+        guard let chat = self.chat(withID: chatID) else {
+            App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
+            return
+        }
+
+        guard chat.client(withID: client.userID) != nil,
+              chat.client(withID: target.userID) != nil else {
+            App.serverController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
+            return
+        }
+
+        if chat === self.publicChat && !actor.hasPrivilege(name: "wired.account.chat.kick_users") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let broadcast = P7Message(withName: "wired.chat.user_kick", spec: client.socket.spec)
+        broadcast.addParameter(field: "wired.chat.id", value: chatID)
+        broadcast.addParameter(field: "wired.user.id", value: client.userID)
+        broadcast.addParameter(field: "wired.user.disconnected_id", value: target.userID)
+        broadcast.addParameter(field: "wired.user.disconnect_message", value: disconnectMessage)
+
+        chat.withClients { chatClient in
+            App.serverController.send(message: broadcast, client: chatClient)
+        }
+
+        chat.removeClient(target.userID)
+        App.serverController.replyOK(client: client, message: message)
     }
     
     

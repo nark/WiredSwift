@@ -476,10 +476,15 @@ public class ServerController: ServerDelegate {
     
     
     public func disconnectClient(client: Client) {
+        self.disconnectClient(client: client, broadcastLeaves: true)
+    }
+
+    private func disconnectClient(client: Client, broadcastLeaves: Bool) {
         App.filesController.unsubscribeAll(client: client)
         client.isSubscribedToAccounts = false
         client.isSubscribedToBoards = false
-        App.chatsController.userLeave(client: client)
+        App.chatsController.removeUserFromAllChats(client: client, broadcastLeaves: broadcastLeaves)
+        client.state = .DISCONNECTED
         App.clientsController.removeClient(client: client)
     }
     
@@ -598,6 +603,12 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.user.get_info" {
             self.receiveUserGetInfo(client, message)
         }
+        else if message.name == "wired.user.disconnect_user" {
+            self.receiveUserDisconnectUser(client: client, message: message)
+        }
+        else if message.name == "wired.user.ban_user" {
+            self.receiveUserBanUser(client: client, message: message)
+        }
         else if message.name == "wired.chat.get_chats" {
             App.chatsController.getChats(message: message, client: client)
         }
@@ -632,8 +643,7 @@ public class ServerController: ServerDelegate {
             App.chatsController.setTopic(message: message, client: client)
         }
         else if message.name == "wired.chat.kick_user" {
-            // SECURITY (FINDING_C_007): reply with error instead of silently ignoring
-            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            App.chatsController.kickUser(message: message, client: client)
         }
         else if message.name == "wired.message.send_message" {
             self.receiveMessageSendMessage(client: client, message: message)
@@ -746,6 +756,15 @@ public class ServerController: ServerDelegate {
         }
         else if message.name == "wired.settings.set_settings" {
             self.receiveSetSettings(client: client, message: message)
+        }
+        else if message.name == "wired.banlist.get_bans" {
+            self.receiveBanListGetBans(client: client, message: message)
+        }
+        else if message.name == "wired.banlist.add_ban" {
+            self.receiveBanListAddBan(client: client, message: message)
+        }
+        else if message.name == "wired.banlist.delete_ban" {
+            self.receiveBanListDeleteBan(client: client, message: message)
         }
         else if message.name == "wired.account.list_users" {
             self.receiveAccountListUsers(client: client, message: message)
@@ -921,6 +940,215 @@ public class ServerController: ServerDelegate {
         App.serverController.reply(client: fromClient,
                                    reply: response,
                                    message: message)
+    }
+
+    private func receiveUserDisconnectUser(client: Client, message: P7Message) {
+        guard let (_, target, disconnectMessage) = self.validateModerationTarget(
+            client: client,
+            message: message,
+            requiredPrivilege: "wired.account.user.disconnect_users"
+        ) else {
+            return
+        }
+
+        let chats = App.chatsController.chats(containingUserID: target.userID)
+
+        for chat in chats {
+            let broadcast = P7Message(withName: "wired.chat.user_disconnect", spec: client.socket.spec)
+            broadcast.addParameter(field: "wired.chat.id", value: chat.chatID)
+            broadcast.addParameter(field: "wired.user.disconnected_id", value: target.userID)
+            broadcast.addParameter(field: "wired.user.disconnect_message", value: disconnectMessage)
+
+            chat.withClients { chatClient in
+                App.serverController.send(message: broadcast, client: chatClient)
+            }
+        }
+
+        self.disconnectClient(client: target, broadcastLeaves: false)
+        self.replyOK(client: client, message: message)
+    }
+
+    private func receiveUserBanUser(client: Client, message: P7Message) {
+        guard let (_, target, disconnectMessage) = self.validateModerationTarget(
+            client: client,
+            message: message,
+            requiredPrivilege: "wired.account.user.ban_users"
+        ) else {
+            return
+        }
+
+        let expirationDate = message.date(forField: "wired.banlist.expiration_date")
+        let targetIP = target.socket.getClientIP()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        guard !targetIP.isEmpty else {
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        do {
+            _ = try App.banListController.addBan(ipPattern: targetIP, expirationDate: expirationDate)
+        } catch let error as BanListError {
+            self.replyBanListError(client: client, message: message, error: error)
+            return
+        } catch {
+            Logger.error("Failed to ban user \(target.userID) at IP \(targetIP): \(error)")
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        let chats = App.chatsController.chats(containingUserID: target.userID)
+
+        for chat in chats {
+            let broadcast = P7Message(withName: "wired.chat.user_ban", spec: client.socket.spec)
+            broadcast.addParameter(field: "wired.chat.id", value: chat.chatID)
+            broadcast.addParameter(field: "wired.user.disconnected_id", value: target.userID)
+            broadcast.addParameter(field: "wired.user.disconnect_message", value: disconnectMessage)
+
+            chat.withClients { chatClient in
+                App.serverController.send(message: broadcast, client: chatClient)
+            }
+        }
+
+        self.disconnectClient(client: target, broadcastLeaves: false)
+        self.replyOK(client: client, message: message)
+    }
+
+    private func validateModerationTarget(
+        client: Client,
+        message: P7Message,
+        requiredPrivilege: String
+    ) -> (User, Client, String)? {
+        guard let actor = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return nil
+        }
+
+        guard actor.hasPrivilege(name: requiredPrivilege) else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return nil
+        }
+
+        guard let targetUserID = message.uint32(forField: "wired.user.id"),
+              let disconnectMessage = message.string(forField: "wired.user.disconnect_message") else {
+            self.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return nil
+        }
+
+        guard let target = App.clientsController.user(withID: targetUserID) else {
+            self.replyError(client: client, error: "wired.error.user_not_found", message: message)
+            return nil
+        }
+
+        guard target.user?.hasPrivilege(name: "wired.account.user.cannot_be_disconnected") != true else {
+            self.replyError(client: client, error: "wired.error.user_cannot_be_disconnected", message: message)
+            return nil
+        }
+
+        return (actor, target, disconnectMessage)
+    }
+
+    private func receiveBanListGetBans(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.banlist.get_bans") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        do {
+            let bans = try App.banListController.listBans()
+
+            for ban in bans {
+                let reply = P7Message(withName: "wired.banlist.list", spec: client.socket.spec)
+                reply.addParameter(field: "wired.banlist.ip", value: ban.ipPattern)
+                if let expirationDate = ban.expirationDate {
+                    reply.addParameter(field: "wired.banlist.expiration_date", value: expirationDate)
+                }
+                self.reply(client: client, reply: reply, message: message)
+            }
+
+            let done = P7Message(withName: "wired.banlist.list.done", spec: client.socket.spec)
+            self.reply(client: client, reply: done, message: message)
+        } catch {
+            Logger.error("Failed to list bans: \(error)")
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+
+    private func receiveBanListAddBan(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.banlist.add_bans") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let ipPattern = message.string(forField: "wired.banlist.ip") else {
+            self.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let expirationDate = message.date(forField: "wired.banlist.expiration_date")
+
+        do {
+            _ = try App.banListController.addBan(ipPattern: ipPattern, expirationDate: expirationDate)
+            self.replyOK(client: client, message: message)
+        } catch let error as BanListError {
+            self.replyBanListError(client: client, message: message, error: error)
+        } catch {
+            Logger.error("Failed to add ban '\(ipPattern)': \(error)")
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+
+    private func receiveBanListDeleteBans(client: Client, message: P7Message) {
+        self.receiveBanListDeleteBan(client: client, message: message)
+    }
+
+    private func receiveBanListDeleteBan(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.banlist.delete_bans") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let ipPattern = message.string(forField: "wired.banlist.ip") else {
+            self.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let expirationDate = message.date(forField: "wired.banlist.expiration_date")
+
+        do {
+            try App.banListController.deleteBan(ipPattern: ipPattern, expirationDate: expirationDate)
+            self.replyOK(client: client, message: message)
+        } catch let error as BanListError {
+            self.replyBanListError(client: client, message: message, error: error)
+        } catch {
+            Logger.error("Failed to delete ban '\(ipPattern)': \(error)")
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+
+    private func replyBanListError(client: Client, message: P7Message, error: BanListError) {
+        switch error {
+        case .invalidPattern, .invalidExpirationDate:
+            self.replyError(client: client, error: "wired.error.invalid_message", message: message)
+        case .alreadyExists:
+            self.replyError(client: client, error: "wired.error.ban_exists", message: message)
+        case .notFound:
+            self.replyError(client: client, error: "wired.error.ban_not_found", message: message)
+        }
     }
 
     private func receiveMessageSendMessage(client: Client, message: P7Message) {
@@ -1952,6 +2180,22 @@ public class ServerController: ServerDelegate {
     
     private func receiveSendLogin(_ client:Client, _ message:P7Message) -> Bool {
         let clientIP = client.socket.getClientIP() ?? "unknown"
+
+        do {
+            if let ban = try App.banListController.getBan(forIPAddress: clientIP) {
+                let reply = P7Message(withName: "wired.banned", spec: message.spec)
+                if let expirationDate = ban.expirationDate {
+                    reply.addParameter(field: "wired.banlist.expiration_date", value: expirationDate)
+                }
+                App.serverController.reply(client: client, reply: reply, message: message)
+                Logger.warning("Rejected login for banned IP '\(clientIP)'")
+                return false
+            }
+        } catch {
+            Logger.error("Failed to check banlist for IP '\(clientIP)': \(error)")
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return false
+        }
 
         // FINDING_A_001: Check if IP is temporarily banned due to repeated failures
         loginAttemptsLock.lock()

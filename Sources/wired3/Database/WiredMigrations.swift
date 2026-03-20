@@ -23,6 +23,9 @@ enum WiredMigrations {
         migrator.registerMigration("v5_add_search_boards_privilege") { db in
             try WiredMigrations.v5(db)
         }
+        migrator.registerMigration("v6_banlist") { db in
+            try WiredMigrations.v6(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -131,6 +134,14 @@ enum WiredMigrations {
             LEFT JOIN group_privileges ref
                 ON ref.group_id = g.id AND ref.name = 'wired.account.board.read_boards'
         """)
+    }
+
+    static func v6(_ db: Database) throws {
+        try db.create(table: "banlist", ifNotExists: true) { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("ip_pattern", .text).notNull().unique()
+            t.column("expiration_date", .datetime)
+        }
     }
 
     // swiftlint:disable:next function_body_length
