@@ -32,6 +32,7 @@ public class Client {
     public var transfer:Transfer?
     public var isSubscribedToAccounts: Bool = false
     public var isSubscribedToBoards: Bool = false
+    public var isSubscribedToEvents: Bool = false
     public var accountColor: UInt32 {
         UInt32(user?.color ?? "") ?? 0
     }

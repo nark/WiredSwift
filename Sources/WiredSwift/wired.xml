@@ -1223,6 +1223,7 @@
             <p7:enum name="wired.event.board.added_post" value="47" version="2.0" />
             <p7:enum name="wired.event.board.edited_post" value="48" version="2.0" />
             <p7:enum name="wired.event.board.deleted_post" value="49" version="2.0" />
+            <p7:enum name="wired.event.board.searched" value="67" version="2.0" />
             <p7:enum name="wired.event.transfer.started_file_download" value="50" version="2.0" />
             <p7:enum name="wired.event.transfer.stopped_file_download" value="51" version="2.0" />
             <p7:enum name="wired.event.transfer.completed_file_download" value="52" version="2.0" />

@@ -120,7 +120,7 @@ public class FilesController {
             return
         }
 
-        let reply = P7Message(withName: "wired.file.info", spec: message.spec)
+            let reply = P7Message(withName: "wired.file.info", spec: message.spec)
         reply.addParameter(field: "wired.file.path", value: normalizedPath)
         reply.addParameter(field: "wired.file.type", value: type.rawValue)
 
@@ -164,6 +164,7 @@ public class FilesController {
         }
 
         App.serverController.reply(client: client, reply: reply, message: message)
+        App.serverController.recordEvent(.fileGotInfo, client: client, parameters: [normalizedPath])
     }
     
     public func createDirectory(client:Client, message:P7Message) {
@@ -231,6 +232,7 @@ public class FilesController {
             App.indexController.addIndex(forPath: realPath)
             self.notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
             App.serverController.replyOK(client: client, message: message)
+            App.serverController.recordEvent(.fileCreatedDirectory, client: client, parameters: [normalizedPath])
         } else if (path as NSString).lastPathComponent.isEmpty {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
         } else if FileManager.default.fileExists(atPath: realPath) {
@@ -277,6 +279,7 @@ public class FilesController {
             self.notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
             self.notifyDirectoryChanged(path: normalizedPath)
             App.serverController.replyOK(client: client, message: message)
+            App.serverController.recordEvent(.fileSetType, client: client, parameters: [normalizedPath])
         }
     }
 
@@ -361,6 +364,7 @@ public class FilesController {
         }
 
         App.serverController.replyOK(client: client, message: message)
+        App.serverController.recordEvent(.fileSetPermissions, client: client, parameters: [normalizedPath])
     }
     
     
@@ -404,6 +408,7 @@ public class FilesController {
         
         if self.delete(path: normalizedPath, client: client, message: message) {
             App.serverController.replyOK(client: client, message: message)
+            App.serverController.recordEvent(.fileDeleted, client: client, parameters: [normalizedPath])
         }
     }
 
@@ -450,6 +455,7 @@ public class FilesController {
 
         if move(from: normalizedFromPath, to: normalizedToPath, client: client, message: message) {
             App.serverController.replyOK(client: client, message: message)
+            App.serverController.recordEvent(.fileMoved, client: client, parameters: [normalizedFromPath, normalizedToPath])
         }
     }
     
@@ -562,6 +568,7 @@ public class FilesController {
             reply.addParameter(field: "wired.file.path", value: path)
             reply.addParameter(field: "wired.file.available", value: UInt64(1))
             App.serverController.reply(client: client, reply: reply, message: message)
+            App.serverController.recordEvent(.fileListedDirectory, client: client, parameters: [path])
         }
     }
 

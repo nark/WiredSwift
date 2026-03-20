@@ -480,9 +480,13 @@ public class ServerController: ServerDelegate {
     }
 
     private func disconnectClient(client: Client, broadcastLeaves: Bool) {
+        if client.state == .LOGGED_IN {
+            self.recordEvent(.userLoggedOut, client: client)
+        }
         App.filesController.unsubscribeAll(client: client)
         client.isSubscribedToAccounts = false
         client.isSubscribedToBoards = false
+        client.isSubscribedToEvents = false
         App.chatsController.removeUserFromAllChats(client: client, broadcastLeaves: broadcastLeaves)
         client.state = .DISCONNECTED
         App.clientsController.removeClient(client: client)
@@ -766,6 +770,21 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.banlist.delete_ban" {
             self.receiveBanListDeleteBan(client: client, message: message)
         }
+        else if message.name == "wired.event.get_first_time" {
+            self.receiveEventGetFirstTime(client: client, message: message)
+        }
+        else if message.name == "wired.event.get_events" {
+            self.receiveEventGetEvents(client: client, message: message)
+        }
+        else if message.name == "wired.event.subscribe" {
+            self.receiveEventSubscribe(client: client, message: message)
+        }
+        else if message.name == "wired.event.unsubscribe" {
+            self.receiveEventUnsubscribe(client: client, message: message)
+        }
+        else if message.name == "wired.event.delete_events" {
+            self.receiveEventDeleteEvents(client: client, message: message)
+        }
         else if message.name == "wired.account.list_users" {
             self.receiveAccountListUsers(client: client, message: message)
         }
@@ -778,6 +797,12 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.account.read_group" {
             self.receiveAccountReadGroup(client: client, message: message)
         }
+        else if message.name == "wired.account.create_user" {
+            self.receiveAccountCreateUser(client: client, message: message)
+        }
+        else if message.name == "wired.account.create_group" {
+            self.receiveAccountCreateGroup(client: client, message: message)
+        }
         else if message.name == "wired.account.change_password" {
             self.receiveAccountChangePassword(client: client, message: message)
         }
@@ -786,6 +811,12 @@ public class ServerController: ServerDelegate {
         }
         else if message.name == "wired.account.edit_group" {
             self.receiveAccountEditGroup(client: client, message: message)
+        }
+        else if message.name == "wired.account.delete_user" {
+            self.receiveAccountDeleteUser(client: client, message: message)
+        }
+        else if message.name == "wired.account.delete_group" {
+            self.receiveAccountDeleteGroup(client: client, message: message)
         }
         else if message.name == "wired.account.subscribe_accounts" {
             self.receiveAccountSubscribeAccounts(client: client, message: message)
@@ -838,6 +869,7 @@ public class ServerController: ServerDelegate {
     
     
     private func receiveUserSetNick(_ client:Client, _ message:P7Message) {
+        let previousNick = client.nick ?? ""
         if let nick = message.string(forField: "wired.user.nick") {
             client.nick = nick
         }
@@ -848,6 +880,10 @@ public class ServerController: ServerDelegate {
         
         // broadcast if already logged in
         if client.state == .LOGGED_IN && client.user != nil {
+            let newNick = client.nick ?? ""
+            if previousNick != newNick {
+                self.recordEvent(.userChangedNick, client: client, parameters: [previousNick, newNick])
+            }
             self.sendUserStatus(forClient: client)
         }
     }
@@ -940,6 +976,7 @@ public class ServerController: ServerDelegate {
         App.serverController.reply(client: fromClient,
                                    reply: response,
                                    message: message)
+        self.recordEvent(.userGotInfo, client: fromClient, parameters: [client.nick ?? client.user?.username ?? ""])
     }
 
     private func receiveUserDisconnectUser(client: Client, message: P7Message) {
@@ -966,6 +1003,7 @@ public class ServerController: ServerDelegate {
 
         self.disconnectClient(client: target, broadcastLeaves: false)
         self.replyOK(client: client, message: message)
+        self.recordEvent(.userDisconnectedUser, client: client, parameters: [target.nick ?? target.user?.username ?? ""])
     }
 
     private func receiveUserBanUser(client: Client, message: P7Message) {
@@ -1011,6 +1049,7 @@ public class ServerController: ServerDelegate {
 
         self.disconnectClient(client: target, broadcastLeaves: false)
         self.replyOK(client: client, message: message)
+        self.recordEvent(.userBannedUser, client: client, parameters: [target.nick ?? target.user?.username ?? ""])
     }
 
     private func validateModerationTarget(
@@ -1072,6 +1111,7 @@ public class ServerController: ServerDelegate {
 
             let done = P7Message(withName: "wired.banlist.list.done", spec: client.socket.spec)
             self.reply(client: client, reply: done, message: message)
+            self.recordEvent(.banlistGotBans, client: client)
         } catch {
             Logger.error("Failed to list bans: \(error)")
             self.replyError(client: client, error: "wired.error.internal_error", message: message)
@@ -1099,6 +1139,7 @@ public class ServerController: ServerDelegate {
         do {
             _ = try App.banListController.addBan(ipPattern: ipPattern, expirationDate: expirationDate)
             self.replyOK(client: client, message: message)
+            self.recordEvent(.banlistAddedBan, client: client, parameters: [ipPattern])
         } catch let error as BanListError {
             self.replyBanListError(client: client, message: message, error: error)
         } catch {
@@ -1132,6 +1173,7 @@ public class ServerController: ServerDelegate {
         do {
             try App.banListController.deleteBan(ipPattern: ipPattern, expirationDate: expirationDate)
             self.replyOK(client: client, message: message)
+            self.recordEvent(.banlistDeletedBan, client: client, parameters: [ipPattern])
         } catch let error as BanListError {
             self.replyBanListError(client: client, message: message, error: error)
         } catch {
@@ -1148,6 +1190,196 @@ public class ServerController: ServerDelegate {
             self.replyError(client: client, error: "wired.error.ban_exists", message: message)
         case .notFound:
             self.replyError(client: client, error: "wired.error.ban_not_found", message: message)
+        }
+    }
+
+    private func receiveEventGetFirstTime(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.events.view_events") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        do {
+            let reply = P7Message(withName: "wired.event.first_time", spec: client.socket.spec)
+            reply.addParameter(
+                field: "wired.event.first_time",
+                value: try App.eventsController.firstEventDate() ?? Date(timeIntervalSince1970: 0)
+            )
+            self.reply(client: client, reply: reply, message: message)
+        } catch {
+            Logger.error("Failed to fetch first event time: \(error)")
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+
+    private func receiveEventGetEvents(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.events.view_events") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let fromTime = message.date(forField: "wired.event.from_time")
+        let numberOfDays = message.uint32(forField: "wired.event.number_of_days") ?? 0
+        let lastEventCount = message.uint32(forField: "wired.event.last_event_count") ?? 0
+
+        self.recordEvent(.eventsGotEvents, client: client)
+
+        do {
+            let entries = try App.eventsController.listEvents(
+                from: fromTime,
+                numberOfDays: numberOfDays,
+                lastEventCount: lastEventCount
+            )
+
+            for entry in entries {
+                self.reply(
+                    client: client,
+                    reply: self.eventMessage(for: entry, name: "wired.event.event_list"),
+                    message: message
+                )
+            }
+
+            let done = P7Message(withName: "wired.event.event_list.done", spec: client.socket.spec)
+            self.reply(client: client, reply: done, message: message)
+        } catch {
+            Logger.error("Failed to list events: \(error)")
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+
+    private func receiveEventSubscribe(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.events.view_events") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if client.isSubscribedToEvents {
+            self.replyError(client: client, error: "wired.error.already_subscribed", message: message)
+            return
+        }
+
+        client.isSubscribedToEvents = true
+        self.replyOK(client: client, message: message)
+    }
+
+    private func receiveEventUnsubscribe(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.events.view_events") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if !client.isSubscribedToEvents {
+            self.replyError(client: client, error: "wired.error.not_subscribed", message: message)
+            return
+        }
+
+        client.isSubscribedToEvents = false
+        self.replyOK(client: client, message: message)
+    }
+
+    private func receiveEventDeleteEvents(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.events.view_events") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let fromTime = message.date(forField: "wired.event.from_time")
+        let toTime = message.date(forField: "wired.event.to_time")
+
+        do {
+            try App.eventsController.deleteEvents(from: fromTime, to: toTime)
+            self.replyOK(client: client, message: message)
+        } catch {
+            Logger.error("Failed to delete events: \(error)")
+            self.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
+    }
+
+    private func eventMessage(for entry: EventEntry, name: String) -> P7Message {
+        let reply = P7Message(withName: name, spec: self.spec)
+        reply.addParameter(field: "wired.event.event", value: entry.eventCode)
+        reply.addParameter(field: "wired.event.time", value: entry.time)
+        if !entry.parameters.isEmpty {
+            reply.addParameter(field: "wired.event.parameters", value: entry.parameters)
+        }
+        reply.addParameter(field: "wired.user.nick", value: entry.nick)
+        reply.addParameter(field: "wired.user.login", value: entry.login)
+        reply.addParameter(field: "wired.user.ip", value: entry.ip)
+        return reply
+    }
+
+    func recordEvent(
+        _ event: WiredServerEvent,
+        client: Client,
+        parameters: [String] = [],
+        loginOverride: String? = nil,
+        nickOverride: String? = nil
+    ) {
+        let nick = nickOverride ?? client.nick ?? ""
+        let login = loginOverride ?? client.user?.username ?? ""
+        let ip = client.socket.getClientIP() ?? client.ip ?? ""
+        self.recordEvent(event, nick: nick, login: login, ip: ip, parameters: parameters)
+    }
+
+    func recordEvent(
+        _ event: WiredServerEvent,
+        nick: String?,
+        login: String?,
+        ip: String,
+        parameters: [String] = []
+    ) {
+        do {
+            let entry = try App.eventsController.addEvent(
+                event,
+                parameters: parameters,
+                nick: nick ?? "",
+                login: login ?? "",
+                ip: ip
+            )
+            self.broadcastEvent(entry)
+        } catch {
+            Logger.error("Failed to record event \(event.protocolName): \(error)")
+        }
+    }
+
+    private func broadcastEvent(_ entry: EventEntry) {
+        let broadcast = self.eventMessage(for: entry, name: "wired.event.event")
+        for connectedClient in App.clientsController.connectedClientsSnapshot() {
+            guard connectedClient.state == .LOGGED_IN else { continue }
+            guard connectedClient.isSubscribedToEvents else { continue }
+            guard let connectedUser = connectedClient.user else { continue }
+
+            if !connectedUser.hasPrivilege(name: "wired.account.events.view_events") {
+                connectedClient.isSubscribedToEvents = false
+                continue
+            }
+
+            _ = self.send(message: broadcast, client: connectedClient)
         }
     }
 
@@ -1180,6 +1412,7 @@ public class ServerController: ServerDelegate {
 
         _ = self.send(message: reply, client: recipient)
         App.serverController.replyOK(client: client, message: message)
+        self.recordEvent(.messageSent, client: client, parameters: [recipient.nick ?? recipient.user?.username ?? ""])
     }
 
     private func receiveMessageSendBroadcast(client: Client, message: P7Message) {
@@ -1226,6 +1459,7 @@ public class ServerController: ServerDelegate {
 
         App.clientsController.broadcast(message: broadcast)
         App.serverController.replyOK(client: client, message: message)
+        self.recordEvent(.messageBroadcasted, client: client)
     }
 
     private func receiveBoardGetBoards(client: Client, message: P7Message) {
@@ -1253,6 +1487,7 @@ public class ServerController: ServerDelegate {
 
         let done = P7Message(withName: "wired.board.board_list.done", spec: self.spec)
         self.reply(client: client, reply: done, message: message)
+        self.recordEvent(.boardGotBoards, client: client)
     }
 
     private func receiveBoardGetThreads(client: Client, message: P7Message) {
@@ -1311,6 +1546,7 @@ public class ServerController: ServerDelegate {
 
         let done = P7Message(withName: "wired.board.thread_list.done", spec: self.spec)
         self.reply(client: client, reply: done, message: message)
+        self.recordEvent(.boardGotThreads, client: client)
     }
 
     private func receiveBoardGetThread(client: Client, message: P7Message) {
@@ -1371,6 +1607,7 @@ public class ServerController: ServerDelegate {
         let done = P7Message(withName: "wired.board.post_list.done", spec: self.spec)
         done.addParameter(field: "wired.board.thread", value: thread.uuid)
         self.reply(client: client, reply: done, message: message)
+        self.recordEvent(.boardGotThread, client: client, parameters: [thread.subject, thread.board])
     }
 
     private func receiveBoardSearch(client: Client, message: P7Message) {
@@ -1453,6 +1690,7 @@ public class ServerController: ServerDelegate {
 
             let done = P7Message(withName: "wired.board.search_list.done", spec: self.spec)
             self.reply(client: client, reply: done, message: message)
+            self.recordEvent(.boardSearched, client: client, parameters: [trimmed])
         } catch {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
@@ -1510,6 +1748,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastBoardAdded(board: board)
+        self.recordEvent(.boardAddedBoard, client: client, parameters: [board.path])
     }
 
     private func receiveBoardDeleteBoard(client: Client, message: P7Message) {
@@ -1540,6 +1779,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastBoardDeleted(path: path)
+        self.recordEvent(.boardDeletedBoard, client: client, parameters: [path])
     }
 
     private func receiveBoardRenameBoard(client: Client, message: P7Message) {
@@ -1580,6 +1820,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastBoardRenamed(path: path, newPath: newPath)
+        self.recordEvent(.boardRenamedBoard, client: client, parameters: [path, newPath])
     }
 
     private func receiveBoardMoveBoard(client: Client, message: P7Message) {
@@ -1620,6 +1861,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastBoardMoved(path: path, newPath: newPath)
+        self.recordEvent(.boardMovedBoard, client: client, parameters: [path, newPath])
     }
 
     private func receiveBoardGetBoardInfo(client: Client, message: P7Message) {
@@ -1654,6 +1896,7 @@ public class ServerController: ServerDelegate {
         reply.addParameter(field: "wired.board.everyone.read", value: board.everyoneRead)
         reply.addParameter(field: "wired.board.everyone.write", value: board.everyoneWrite)
         self.reply(client: client, reply: reply, message: message)
+        self.recordEvent(.boardGotBoardInfo, client: client, parameters: [board.path])
     }
 
     private func receiveBoardSetBoardInfo(client: Client, message: P7Message) {
@@ -1707,6 +1950,7 @@ public class ServerController: ServerDelegate {
         if let board = App.boardsController.getBoardInfo(path: path) {
             broadcastBoardInfoChanged(board: board)
         }
+        self.recordEvent(.boardSetBoardInfo, client: client, parameters: [path])
     }
 
     private func receiveBoardAddThread(client: Client, message: P7Message) {
@@ -1756,6 +2000,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastThreadAdded(thread: thread)
+        self.recordEvent(.boardAddedThread, client: client, parameters: [thread.subject, thread.board])
     }
 
     private func receiveBoardEditThread(client: Client, message: P7Message) {
@@ -1794,6 +2039,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastThreadChanged(thread: thread)
+        self.recordEvent(.boardEditedThread, client: client, parameters: [thread.subject, thread.board])
     }
 
     private func receiveBoardMoveThread(client: Client, message: P7Message) {
@@ -1827,6 +2073,11 @@ public class ServerController: ServerDelegate {
             return
         }
 
+        guard let existingThread = App.boardsController.getThread(uuid: uuid) else {
+            App.serverController.replyError(client: client, error: "wired.error.thread_not_found", message: message)
+            return
+        }
+
         guard let thread = App.boardsController.moveThread(uuid: uuid, toBoard: newBoard) else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
@@ -1834,6 +2085,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastThreadMoved(thread: thread)
+        self.recordEvent(.boardMovedThread, client: client, parameters: [thread.subject, existingThread.board, newBoard])
     }
 
     private func receiveBoardDeleteThread(client: Client, message: P7Message) {
@@ -1867,6 +2119,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastThreadDeleted(uuid: uuid)
+        self.recordEvent(.boardDeletedThread, client: client, parameters: [existing.subject, existing.board])
     }
 
     private func receiveBoardAddPost(client: Client, message: P7Message) {
@@ -1920,6 +2173,7 @@ public class ServerController: ServerDelegate {
 
         App.serverController.replyOK(client: client, message: message)
         broadcastThreadChanged(thread: updatedThread, appendedPost: post)
+        self.recordEvent(.boardAddedPost, client: client, parameters: [updatedThread.subject, updatedThread.board])
     }
 
     private func receiveBoardEditPost(client: Client, message: P7Message) {
@@ -1959,6 +2213,7 @@ public class ServerController: ServerDelegate {
         App.serverController.replyOK(client: client, message: message)
         if let thread = App.boardsController.getThread(uuid: threadUUID) {
             broadcastThreadChanged(thread: thread)
+            self.recordEvent(.boardEditedPost, client: client, parameters: [thread.subject, thread.board])
         }
     }
 
@@ -1995,6 +2250,7 @@ public class ServerController: ServerDelegate {
         App.serverController.replyOK(client: client, message: message)
         if let thread = App.boardsController.getThread(uuid: threadUUID) {
             broadcastThreadChanged(thread: thread)
+            self.recordEvent(.boardDeletedPost, client: client, parameters: [thread.subject, thread.board])
         }
     }
 
@@ -2243,6 +2499,8 @@ public class ServerController: ServerDelegate {
             loginAttempts[clientIP] = record
             loginAttemptsLock.unlock()
 
+            self.recordEvent(.userLoginFailed, nick: client.nick, login: login, ip: clientIP)
+
             return false
         }
 
@@ -2263,6 +2521,12 @@ public class ServerController: ServerDelegate {
         client.loginTime = Date()
                 
         App.serverController.reply(client: client, reply: accountPrivilegesMessage(for: user), message: message)
+        self.recordEvent(
+            .userLoggedIn,
+            client: client,
+            parameters: [client.applicationName, client.osName],
+            loginOverride: login
+        )
         
         return true
     }
@@ -2314,9 +2578,22 @@ public class ServerController: ServerDelegate {
                                                            rsrcOffset: rsrcOffset,
                                                            client: client, message: message) {
             client.transfer = transfer
-            
+
+            self.recordEvent(.transferStartedFileDownload, client: client, parameters: [normalizedPath])
+
             if(App.transfersController.run(transfer: transfer, client: client, message: message)) {
+                self.recordEvent(
+                    .transferCompletedFileDownload,
+                    client: client,
+                    parameters: [normalizedPath, String(transfer.actualTransferred ?? 0)]
+                )
                 client.state = .DISCONNECTED
+            } else {
+                self.recordEvent(
+                    .transferStoppedFileDownload,
+                    client: client,
+                    parameters: [normalizedPath, String(transfer.actualTransferred ?? 0)]
+                )
             }
             
             client.transfer = nil
@@ -2385,6 +2662,8 @@ public class ServerController: ServerDelegate {
                                                          executable: false,
                                                          client: client, message: message) {
             client.transfer = transfer
+
+            self.recordEvent(.transferStartedFileUpload, client: client, parameters: [normalizedPath])
             
             do {
                 try client.socket.set(interactive: false)
@@ -2396,8 +2675,19 @@ public class ServerController: ServerDelegate {
             }
                         
             if(!App.transfersController.run(transfer: transfer, client: client, message: message)) {
+                self.recordEvent(
+                    .transferStoppedFileUpload,
+                    client: client,
+                    parameters: [normalizedPath, String(transfer.actualTransferred ?? 0)]
+                )
                 App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
                 client.state = .DISCONNECTED
+            } else {
+                self.recordEvent(
+                    .transferCompletedFileUpload,
+                    client: client,
+                    parameters: [normalizedPath, String(transfer.actualTransferred ?? 0)]
+                )
             }
             
             client.transfer = nil
@@ -2466,6 +2756,7 @@ public class ServerController: ServerDelegate {
         App.indexController.addIndex(forPath: realPath)
         App.filesController.notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
         App.serverController.replyOK(client: client, message: message)
+        self.recordEvent(.transferCompletedDirectoryUpload, client: client, parameters: [normalizedPath])
     }
     
     
@@ -2501,6 +2792,7 @@ public class ServerController: ServerDelegate {
         response.addParameter(field: "wired.tracker.categories", value: self.trackerCategories)
         
         self.reply(client: client, reply: response, message: message)
+        self.recordEvent(.settingsGotSettings, client: client)
     }
     
     
@@ -2601,6 +2893,7 @@ public class ServerController: ServerDelegate {
         }
 
         App.serverController.replyOK(client: client, message: message)
+        self.recordEvent(.settingsSetSettings, client: client)
     }
 
     private func receiveAccountListUsers(client: Client, message: P7Message) {
@@ -2647,6 +2940,7 @@ public class ServerController: ServerDelegate {
 
         let done = P7Message(withName: "wired.account.user_list.done", spec: self.spec)
         self.reply(client: client, reply: done, message: message)
+        self.recordEvent(.accountListedUsers, client: client)
     }
 
     private func receiveAccountListGroups(client: Client, message: P7Message) {
@@ -2676,6 +2970,152 @@ public class ServerController: ServerDelegate {
 
         let done = P7Message(withName: "wired.account.group_list.done", spec: self.spec)
         self.reply(client: client, reply: done, message: message)
+        self.recordEvent(.accountListedGroups, client: client)
+    }
+
+    private func receiveAccountCreateUser(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.create_users") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name")?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty,
+              let password = message.string(forField: "wired.account.password"),
+              !password.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if App.usersController.user(withUsername: name) != nil {
+            App.serverController.replyError(client: client, error: "wired.error.account_exists", message: message)
+            return
+        }
+
+        let primaryGroup = message.string(forField: "wired.account.group") ?? ""
+        let secondaryGroups = message.stringList(forField: "wired.account.groups") ?? []
+        if !primaryGroup.isEmpty && App.usersController.group(withName: primaryGroup) == nil {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+        if secondaryGroups.contains(where: { !$0.isEmpty && App.usersController.group(withName: $0) == nil }) {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        let normalizedPassword = normalizedPasswordForStorage(password)
+        let account = User(username: name, password: normalizedPassword.hash)
+        account.passwordSalt = normalizedPassword.salt
+        account.fullName = message.string(forField: "wired.account.full_name") ?? ""
+        account.comment = message.string(forField: "wired.account.comment") ?? ""
+        account.group = primaryGroup
+        account.groups = secondaryGroups.joined(separator: ", ")
+        account.files = message.string(forField: "wired.account.files")
+        account.creationTime = Date()
+        account.modificationTime = account.creationTime
+        account.editedBy = requestingUser.username ?? ""
+
+        if let identity = message.string(forField: "wired.account.identity")?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !identity.isEmpty {
+            if !App.usersController.isIdentityAvailable(identity) {
+                App.serverController.replyError(client: client, error: "wired.error.account_exists", message: message)
+                return
+            }
+            account.identity = identity
+        }
+
+        if let color = message.enumeration(forField: "wired.account.color")
+            ?? message.uint32(forField: "wired.account.color") {
+            account.color = String(color)
+        }
+
+        guard App.usersController.save(user: account) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        var privilegesSaved = true
+        for privilege in self.accountPrivilegesIncludingColor() {
+            guard let field = spec?.fieldsByName[privilege] else { continue }
+            guard field.type == .bool else { continue }
+            if let value = message.bool(forField: privilege) {
+                if value && !requestingUser.hasPrivilege(name: privilege) {
+                    privilegesSaved = false
+                    continue
+                }
+                if !App.usersController.setUserPrivilege(privilege, value: value, for: account) {
+                    privilegesSaved = false
+                }
+            }
+        }
+
+        if !privilegesSaved {
+            _ = App.usersController.delete(user: account)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+        self.broadcastAccountsChangedToSubscribers()
+        self.recordEvent(.accountCreatedUser, client: client, parameters: [name])
+    }
+
+    private func receiveAccountCreateGroup(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.create_groups") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name")?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if App.usersController.group(withName: name) != nil {
+            App.serverController.replyError(client: client, error: "wired.error.account_exists", message: message)
+            return
+        }
+
+        let account = Group(name: name)
+        if let color = message.enumeration(forField: "wired.account.color")
+            ?? message.uint32(forField: "wired.account.color") {
+            account.color = String(color)
+        }
+
+        guard App.usersController.save(group: account) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        var privilegesSaved = true
+        for privilege in self.accountPrivilegesIncludingColor() {
+            guard let field = spec?.fieldsByName[privilege] else { continue }
+            guard field.type == .bool else { continue }
+            if let value = message.bool(forField: privilege) {
+                if value && !requestingUser.hasPrivilege(name: privilege) {
+                    privilegesSaved = false
+                    continue
+                }
+                if !App.usersController.setGroupPrivilege(privilege, value: value, for: account) {
+                    privilegesSaved = false
+                }
+            }
+        }
+
+        if !privilegesSaved {
+            _ = App.usersController.delete(group: account)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+        self.broadcastAccountsChangedToSubscribers()
+        self.recordEvent(.accountCreatedGroup, client: client, parameters: [name])
     }
 
     private func receiveAccountChangePassword(client: Client, message: P7Message) {
@@ -2709,6 +3149,7 @@ public class ServerController: ServerDelegate {
 
         let reply = P7Message(withName: "wired.okay", spec: self.spec)
         App.serverController.reply(client: client, reply: reply, message: message)
+        self.recordEvent(.accountChangedPassword, client: client)
     }
 
     private func receiveAccountReadUser(client: Client, message: P7Message) {
@@ -2731,6 +3172,7 @@ public class ServerController: ServerDelegate {
 
         let reply = accountUserMessage(for: account, name: "wired.account.user")
         self.reply(client: client, reply: reply, message: message)
+        self.recordEvent(.accountReadUser, client: client, parameters: [name])
     }
 
     private func receiveAccountReadGroup(client: Client, message: P7Message) {
@@ -2753,6 +3195,7 @@ public class ServerController: ServerDelegate {
 
         let reply = accountGroupMessage(for: account, name: "wired.account.group")
         self.reply(client: client, reply: reply, message: message)
+        self.recordEvent(.accountReadGroup, client: client, parameters: [name])
     }
 
     private func receiveAccountEditUser(client: Client, message: P7Message) {
@@ -2862,6 +3305,8 @@ public class ServerController: ServerDelegate {
             self.broadcastAccountsChangedToSubscribers()
         }
 
+        self.recordEvent(.accountEditedUser, client: client, parameters: [updatedName])
+
         // SECURITY (FINDING_A_016): Invalidate other sessions after password change
         if passwordChanged {
             let targetName = normalizedAccountIdentifier(updatedName)
@@ -2946,7 +3391,88 @@ public class ServerController: ServerDelegate {
             self.broadcastAccountsChangedToSubscribers()
         }
 
+        self.recordEvent(.accountEditedGroup, client: client, parameters: [updatedName])
+
         self.reloadPrivilegesForLoggedInUsers(affectedByGroups: [name, updatedName])
+    }
+
+    private func receiveAccountDeleteUser(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.delete_users") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name"), !name.isEmpty,
+              let disconnectUsers = message.bool(forField: "wired.account.disconnect_users") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let account = App.usersController.userWithPrivileges(withUsername: name) else {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        if name == "admin" && requestingUser.username != "admin" {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let targetName = normalizedAccountIdentifier(name)
+        let connectedClients = App.clientsController.connectedClientsSnapshot().filter { connectedClient in
+            guard connectedClient.state == .LOGGED_IN else { return false }
+            guard let connectedName = connectedClient.user?.username else { return false }
+            return normalizedAccountIdentifier(connectedName) == targetName
+        }
+
+        if !disconnectUsers && !connectedClients.isEmpty {
+            App.serverController.replyError(client: client, error: "wired.error.account_in_use", message: message)
+            return
+        }
+
+        guard App.usersController.delete(user: account) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+        for connectedClient in connectedClients {
+            self.disconnectClient(client: connectedClient)
+        }
+
+        self.broadcastAccountsChangedToSubscribers()
+        self.recordEvent(.accountDeletedUser, client: client, parameters: [name])
+    }
+
+    private func receiveAccountDeleteGroup(client: Client, message: P7Message) {
+        guard let requestingUser = client.user else { return }
+
+        if !requestingUser.hasPrivilege(name: "wired.account.account.delete_groups") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let name = message.string(forField: "wired.account.name"), !name.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let account = App.usersController.groupWithPrivileges(withName: name) else {
+            App.serverController.replyError(client: client, error: "wired.error.account_not_found", message: message)
+            return
+        }
+
+        guard App.usersController.delete(group: account) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+        self.broadcastAccountsChangedToSubscribers()
+        self.recordEvent(.accountDeletedGroup, client: client, parameters: [name])
+        self.reloadPrivilegesForLoggedInUsers(affectedByGroups: [name])
     }
 
     private func receiveAccountSubscribeAccounts(client: Client, message: P7Message) {
@@ -3104,6 +3630,10 @@ public class ServerController: ServerDelegate {
                 connectedClient.isSubscribedToAccounts = false
             }
 
+            if !refreshedUser.hasPrivilege(name: "wired.account.events.view_events") {
+                connectedClient.isSubscribedToEvents = false
+            }
+
             _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
         }
     }
@@ -3126,6 +3656,10 @@ public class ServerController: ServerDelegate {
 
             if !refreshedUser.hasPrivilege(name: "wired.account.account.list_accounts") {
                 connectedClient.isSubscribedToAccounts = false
+            }
+
+            if !refreshedUser.hasPrivilege(name: "wired.account.events.view_events") {
+                connectedClient.isSubscribedToEvents = false
             }
 
             _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)

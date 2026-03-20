@@ -159,6 +159,40 @@ public class UsersController: TableController, SocketPasswordDelegate {
     }
 
     @discardableResult
+    public func delete(user: User) -> Bool {
+        guard let userID = user.id else { return false }
+
+        do {
+            try databaseController.dbQueue.write { db in
+                try UserPrivilege
+                    .filter(Column("user_id") == userID)
+                    .deleteAll(db)
+                try user.delete(db)
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    @discardableResult
+    public func delete(group: Group) -> Bool {
+        guard let groupID = group.id else { return false }
+
+        do {
+            try databaseController.dbQueue.write { db in
+                try GroupPrivilege
+                    .filter(Column("group_id") == groupID)
+                    .deleteAll(db)
+                try group.delete(db)
+            }
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    @discardableResult
     public func setUserPrivilege(_ name: String, value: Bool, for user: User) -> Bool {
         guard let userID = user.id else { return false }
         do {

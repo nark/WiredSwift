@@ -32,6 +32,7 @@ public class AppController {
     var usersController:UsersController!
     var chatsController:ChatsController!
     var banListController:BanListController!
+    var eventsController:EventsController!
     var boardsController:BoardsController!
     var filesController:FilesController!
     var indexController:IndexController!
@@ -81,6 +82,7 @@ public class AppController {
         self.usersController = UsersController(databaseController: self.databaseController)
         self.chatsController = ChatsController(databaseController: self.databaseController)
         self.banListController = BanListController(databaseController: self.databaseController)
+        self.eventsController = EventsController(databaseController: self.databaseController)
         self.boardsController = BoardsController(databasePath: self.databaseURL.path)
         self.indexController = IndexController(databaseController: self.databaseController,
                                                filesController: self.filesController)

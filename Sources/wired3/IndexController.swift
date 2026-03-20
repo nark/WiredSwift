@@ -142,6 +142,7 @@ class IndexController: TableController {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else {
             sendSearchDone(client: client, message: message)
+            App.serverController.recordEvent(.fileSearched, client: client, parameters: [trimmed])
             return
         }
 
@@ -158,6 +159,7 @@ class IndexController: TableController {
                     self.sendSearchListEntry(entry: entry, user: user, client: client, message: message)
                 }
                 self.sendSearchDone(client: client, message: message)
+                App.serverController.recordEvent(.fileSearched, client: client, parameters: [trimmed])
             } catch {
                 Logger.error("Search failed for query '\(trimmed)': \(error)")
                 self.sendSearchDone(client: client, message: message)

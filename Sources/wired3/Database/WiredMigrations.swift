@@ -26,6 +26,9 @@ enum WiredMigrations {
         migrator.registerMigration("v6_banlist") { db in
             try WiredMigrations.v6(db)
         }
+        migrator.registerMigration("v7_events") { db in
+            try WiredMigrations.v7(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -142,6 +145,23 @@ enum WiredMigrations {
             t.column("ip_pattern", .text).notNull().unique()
             t.column("expiration_date", .datetime)
         }
+    }
+
+    static func v7(_ db: Database) throws {
+        try db.create(table: "events", ifNotExists: true) { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("event_code", .integer).notNull()
+            t.column("parameters_text", .text)
+            t.column("time", .datetime).notNull()
+            t.column("nick", .text).notNull()
+            t.column("login", .text).notNull()
+            t.column("ip", .text).notNull()
+        }
+
+        try db.create(index: "events_time", on: "events", columns: ["time"], ifNotExists: true)
+        try db.create(index: "events_nick", on: "events", columns: ["nick"], ifNotExists: true)
+        try db.create(index: "events_login", on: "events", columns: ["login"], ifNotExists: true)
+        try db.create(index: "events_ip", on: "events", columns: ["ip"], ifNotExists: true)
     }
 
     // swiftlint:disable:next function_body_length
