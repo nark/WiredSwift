@@ -17,13 +17,8 @@ Releases: https://github.com/nark/WiredSwift/releases
 ## Table of Contents
 
 - [What changed in Wired 3.0](#what-changed-in-wired-30)
-  - [Encryption](#encryption)
-  - [Integrity checksums](#integrity-checksums)
-  - [Compression](#compression)
-  - [Passwords](#passwords)
-  - [Admin password](#admin-password)
-  - [Server identity TOFU](#server-identity-tofu)
-  - [Rate limiting](#rate-limiting)
+  - [Features](#features)
+  - [Security](#security)
   - [Comparison table](#comparison-table)
 - [Getting Started as a Server Administrator](#getting-started-as-a-server-administrator)
   - [macOS with Wired Server app](#macos-with-wired-server-app)
@@ -59,9 +54,23 @@ Releases: https://github.com/nark/WiredSwift/releases
 
 ## What Changed in Wired 3.0
 
-Wired 3.0 is a complete rewrite of the protocol's security layer. Here is what changed and why it matters.
+Wired 3.0 brings both major functional additions and a full overhaul of the protocol's security model.
 
-### Encryption
+### Features
+
+Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader set of collaborative and search capabilities:
+
+- **Multiple public chats** instead of a single default public room, with protocol support for listing, creating, and deleting public chats
+- **Remote board search** so clients can query discussions server-side and jump directly to matching threads or snippets
+- **FTS5-backed file search** on supported SQLite builds, with automatic fallback to `LIKE` queries when FTS5 is unavailable
+- **Expanded search privileges** for boards and files, making search a first-class capability in the protocol and server permission model
+- **A more modern platform foundation** for current Swift clients, server tooling, and GUI-based administration around the same Wired 3.0 protocol stack
+
+### Security
+
+Wired 3.0 is also a complete rewrite of the protocol's security layer. Here is what changed and why it matters.
+
+#### Encryption
 
 Wired 2.0 used **RSA key exchange** with a choice of symmetric ciphers: AES (128/192/256-bit), Blowfish-128, and 3DES-192, each combined with SHA-1, SHA-256, or SHA-512 for key derivation — 15 cipher suites total. The RSA public key was sent in the clear during the handshake.
 
@@ -69,31 +78,31 @@ Wired 3.0 replaces RSA with **ECDH key exchange (P-521 curve)** and offers five 
 
 Operators can enforce `cipher = SECURE_ONLY` in `config.ini` to reject unencrypted connections.
 
-### Integrity checksums
+#### Integrity checksums
 
 Wired 2.0 supported three checksum algorithms: SHA-1, SHA-256, and SHA-512. Wired 3.0 keeps SHA2-256 and adds SHA2-384, SHA3-256, SHA3-384, and **HMAC variants** (HMAC-SHA256, HMAC-SHA384) for authenticated integrity checking — seven options total. SHA-1 is dropped. AEAD ciphers already include built-in integrity, so the checksum layer acts as defense in depth.
 
-### Compression
+#### Compression
 
 Wired 2.0 supported **DEFLATE** (zlib) compression. Wired 3.0 keeps DEFLATE and adds **LZ4** (fast, cross-platform) and **LZFSE** (high compression ratio with very good performance). LZFSE is only available on macOS servers — Linux servers fall back to DEFLATE or LZ4. Compression is applied before encryption (standard ordering to avoid CRIME/BREACH class issues).
 
-### Passwords
+#### Passwords
 
 Wired 2.0 stored passwords as **unsalted SHA-1 hashes** and sent them directly over the wire, making them vulnerable to rainbow tables, GPU brute-force, and pass-the-hash attacks.
 
 Wired 3.0 stores passwords as **SHA-256 hashes with a per-user random salt**. Authentication uses a **challenge-response protocol with ECDSA proofs**: the client proves it knows the password without ever transmitting the hash. Session salts prevent replay attacks, and a dummy hash is computed on invalid usernames to block timing-based user enumeration.
 
-### Admin password
+#### Admin password
 
 Wired 2.0 shipped with a well-known default `admin / admin` password. Wired 3.0 **auto-generates a random 16-character password** on first boot and prints it to the console. There is no hardcoded default to forget about.
 
-### Server identity (TOFU)
+#### Server identity (TOFU)
 
 Wired 2.0 had no mechanism to verify that you were connecting to the right server. A DNS spoof or network-level MITM attack could go undetected.
 
 Wired 3.0 implements **Trust On First Use** (TOFU), similar to SSH known hosts. The server generates a persistent **P-256 ECDSA identity key** on first start and signs every session with it. Clients store the server's fingerprint on first connection. If the fingerprint changes later (possible MITM), the client warns the user and can reject the connection. Strict mode (`strict_identity = yes`, the default) makes key changes a hard failure.
 
-### Rate limiting
+#### Rate limiting
 
 Wired 2.0 had no protection against brute-force login attempts. Wired 3.0 enforces **per-IP rate limiting** (5 failed attempts trigger a 60-second lockout), per-user chat broadcast limits (5 messages/minute), and a cap of 100 concurrent connections to prevent resource exhaustion.
 
