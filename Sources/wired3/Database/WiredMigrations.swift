@@ -20,6 +20,9 @@ enum WiredMigrations {
         migrator.registerMigration("v4_add_password_salt") { db in
             try WiredMigrations.v4(db)
         }
+        migrator.registerMigration("v5_add_search_boards_privilege") { db in
+            try WiredMigrations.v5(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -110,6 +113,24 @@ enum WiredMigrations {
         try db.alter(table: "users") { t in
             t.add(column: "password_salt", .text)
         }
+    }
+
+    static func v5(_ db: Database) throws {
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO user_privileges (name, value, user_id)
+            SELECT 'wired.account.board.search_boards', COALESCE(ref.value, 0), u.id
+            FROM users u
+            LEFT JOIN user_privileges ref
+                ON ref.user_id = u.id AND ref.name = 'wired.account.board.read_boards'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO group_privileges (name, value, group_id)
+            SELECT 'wired.account.board.search_boards', COALESCE(ref.value, 0), g.id
+            FROM groups g
+            LEFT JOIN group_privileges ref
+                ON ref.group_id = g.id AND ref.name = 'wired.account.board.read_boards'
+        """)
     }
 
     // swiftlint:disable:next function_body_length

@@ -16,6 +16,93 @@ import SQLite3
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+public struct BoardSearchResult {
+    public let boardPath: String
+    public let threadUUID: String
+    public let postUUID: String?
+    public let subject: String
+    public let nick: String
+    public let postDate: Date
+    public let editDate: Date?
+    public let snippet: String
+}
+
+private struct BoardSearchRow {
+    let boardPath: String
+    let threadUUID: String
+    let postUUID: String?
+    let subject: String
+    let text: String
+    let nick: String
+    let postDate: Date
+    let editDate: Date?
+    let rank: Double
+    let isPostMatch: Bool
+}
+
+private struct BoardSearchQueryPlan {
+    let raw: String
+    let tokens: [String]
+    let ftsQuery: String
+    let rawWildcard: String
+
+    init(query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.raw = trimmed
+
+        let extractedTokens = Self.extractTokens(from: trimmed)
+        self.tokens = extractedTokens.isEmpty ? [trimmed] : extractedTokens
+        self.ftsQuery = self.tokens
+            .map(Self.escapedFTSTerm)
+            .joined(separator: " AND ")
+        self.rawWildcard = "%\(trimmed)%"
+    }
+
+    var snippetTerms: [String] {
+        var seen: Set<String> = []
+        return ([raw] + tokens).filter { term in
+            let trimmed = term.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+
+            let key = trimmed.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            return seen.insert(key).inserted
+        }
+    }
+
+    func matchesThread(subject: String, text: String, nick: String) -> Bool {
+        tokens.allSatisfy { token in
+            [subject, text, nick].contains {
+                $0.range(of: token, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+            }
+        }
+    }
+
+    func matchesPost(text: String, nick: String) -> Bool {
+        tokens.allSatisfy { token in
+            [text, nick].contains {
+                $0.range(of: token, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+            }
+        }
+    }
+
+    private static func extractTokens(from query: String) -> [String] {
+        let rawTokens = query
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        var seen: Set<String> = []
+        return rawTokens.filter { token in
+            let key = token.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            return seen.insert(key).inserted
+        }
+    }
+
+    private static func escapedFTSTerm(_ term: String) -> String {
+        "\"\(term.replacingOccurrences(of: "\"", with: "\"\""))\""
+    }
+}
+
 
 /// Manages all boards, threads and posts for a Wired server.
 /// Storage is in-memory; persist `boards`, `threads` and `posts`
@@ -26,6 +113,7 @@ public class BoardsController {
 
     private let lock = NSLock()
     private let databasePath: String?
+    public private(set) var hasSearchFTS5: Bool = false
 
     /// All boards indexed by path.
     public private(set) var boards: [String: Board] = [:]
@@ -113,9 +201,121 @@ public class BoardsController {
             for statement in sql where sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
                 return false
             }
+
+            self.hasSearchFTS5 = self.createBoardSearchIndexIfNeeded(db: db)
             
             return true
         }
+    }
+
+    private func createBoardSearchIndexIfNeeded(db: OpaquePointer) -> Bool {
+        let statements = [
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS board_thread_search
+            USING fts5(
+                uuid UNINDEXED,
+                board_path UNINDEXED,
+                subject,
+                text,
+                nick,
+                login UNINDEXED,
+                post_date UNINDEXED,
+                edit_date UNINDEXED,
+                tokenize='unicode61 remove_diacritics 2'
+            );
+            """,
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS board_post_search
+            USING fts5(
+                uuid UNINDEXED,
+                thread_uuid UNINDEXED,
+                board_path UNINDEXED,
+                subject UNINDEXED,
+                text,
+                nick,
+                login UNINDEXED,
+                post_date UNINDEXED,
+                edit_date UNINDEXED,
+                tokenize='unicode61 remove_diacritics 2'
+            );
+            """,
+            """
+            CREATE TRIGGER IF NOT EXISTS board_threads_search_ai
+            AFTER INSERT ON board_threads BEGIN
+                INSERT INTO board_thread_search(uuid, board_path, subject, text, nick, login, post_date, edit_date)
+                VALUES (new.uuid, new.board_path, new.subject, new.text, new.nick, new.login, new.post_date, new.edit_date);
+            END;
+            """,
+            """
+            CREATE TRIGGER IF NOT EXISTS board_threads_search_au
+            AFTER UPDATE ON board_threads BEGIN
+                DELETE FROM board_thread_search WHERE uuid = old.uuid;
+                INSERT INTO board_thread_search(uuid, board_path, subject, text, nick, login, post_date, edit_date)
+                VALUES (new.uuid, new.board_path, new.subject, new.text, new.nick, new.login, new.post_date, new.edit_date);
+
+                DELETE FROM board_post_search WHERE thread_uuid = old.uuid;
+                INSERT INTO board_post_search(uuid, thread_uuid, board_path, subject, text, nick, login, post_date, edit_date)
+                SELECT p.uuid, p.thread_uuid, new.board_path, new.subject, p.text, p.nick, p.login, p.post_date, p.edit_date
+                FROM board_posts p
+                WHERE p.thread_uuid = new.uuid;
+            END;
+            """,
+            """
+            CREATE TRIGGER IF NOT EXISTS board_threads_search_ad
+            AFTER DELETE ON board_threads BEGIN
+                DELETE FROM board_thread_search WHERE uuid = old.uuid;
+                DELETE FROM board_post_search WHERE thread_uuid = old.uuid;
+            END;
+            """,
+            """
+            CREATE TRIGGER IF NOT EXISTS board_posts_search_ai
+            AFTER INSERT ON board_posts BEGIN
+                INSERT INTO board_post_search(uuid, thread_uuid, board_path, subject, text, nick, login, post_date, edit_date)
+                SELECT new.uuid, new.thread_uuid, t.board_path, t.subject, new.text, new.nick, new.login, new.post_date, new.edit_date
+                FROM board_threads t
+                WHERE t.uuid = new.thread_uuid;
+            END;
+            """,
+            """
+            CREATE TRIGGER IF NOT EXISTS board_posts_search_au
+            AFTER UPDATE ON board_posts BEGIN
+                DELETE FROM board_post_search WHERE uuid = old.uuid;
+                INSERT INTO board_post_search(uuid, thread_uuid, board_path, subject, text, nick, login, post_date, edit_date)
+                SELECT new.uuid, new.thread_uuid, t.board_path, t.subject, new.text, new.nick, new.login, new.post_date, new.edit_date
+                FROM board_threads t
+                WHERE t.uuid = new.thread_uuid;
+            END;
+            """,
+            """
+            CREATE TRIGGER IF NOT EXISTS board_posts_search_ad
+            AFTER DELETE ON board_posts BEGIN
+                DELETE FROM board_post_search WHERE uuid = old.uuid;
+            END;
+            """,
+            "DELETE FROM board_thread_search;",
+            """
+            INSERT INTO board_thread_search(uuid, board_path, subject, text, nick, login, post_date, edit_date)
+            SELECT uuid, board_path, subject, text, nick, login, post_date, edit_date
+            FROM board_threads;
+            """,
+            "DELETE FROM board_post_search;",
+            """
+            INSERT INTO board_post_search(uuid, thread_uuid, board_path, subject, text, nick, login, post_date, edit_date)
+            SELECT p.uuid, p.thread_uuid, t.board_path, t.subject, p.text, p.nick, p.login, p.post_date, p.edit_date
+            FROM board_posts p
+            JOIN board_threads t ON t.uuid = p.thread_uuid;
+            """
+        ]
+
+        for statement in statements {
+            if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+                let errorMessage = sqlite3_errmsg(db).map { String(cString: $0) } ?? "unknown"
+                WiredSwift.Logger.warning("BoardsController: board search will use LIKE queries (\(errorMessage))")
+                return false
+            }
+        }
+
+        return true
     }
     
     private func loadFromDatabase() {
@@ -795,6 +995,388 @@ public class BoardsController {
             threads[post.thread]?.posts.removeAll { $0.uuid == key }
             return true
         }
+    }
+
+    public func search(query: String, boardPaths: [String], limit: Int = 100) throws -> [BoardSearchResult] {
+        let plan = BoardSearchQueryPlan(query: query)
+        guard !plan.raw.isEmpty else { return [] }
+
+        let scopedBoardPaths = Array(Set(boardPaths)).sorted()
+        guard !scopedBoardPaths.isEmpty else { return [] }
+
+        if let results = withDatabase({ db -> [BoardSearchResult]? in
+            let rows: [BoardSearchRow]
+
+            do {
+                if self.hasSearchFTS5 {
+                    rows = try self.fetchFTSBoardSearchRows(db: db, plan: plan, boardPaths: scopedBoardPaths, limit: limit)
+                } else {
+                    rows = try self.fetchLikeBoardSearchRows(db: db, plan: plan, boardPaths: scopedBoardPaths, limit: limit)
+                }
+            } catch {
+                if self.hasSearchFTS5 {
+                    do {
+                        return try self.finalizeBoardSearchResults(
+                            rows: self.fetchLikeBoardSearchRows(db: db, plan: plan, boardPaths: scopedBoardPaths, limit: limit),
+                            plan: plan,
+                            limit: limit
+                        )
+                    } catch {
+                        return nil
+                    }
+                }
+                return nil
+            }
+
+            return self.finalizeBoardSearchResults(rows: rows, plan: plan, limit: limit)
+        }) {
+            return results
+        }
+
+        return withLock {
+            self.inMemorySearch(plan: plan, boardPaths: Set(scopedBoardPaths), limit: limit)
+        }
+    }
+
+    private func finalizeBoardSearchResults(rows: [BoardSearchRow], plan: BoardSearchQueryPlan, limit: Int) -> [BoardSearchResult] {
+        let deduplicated = rows
+            .sorted {
+                if $0.rank != $1.rank { return $0.rank < $1.rank }
+                if $0.postDate != $1.postDate { return $0.postDate > $1.postDate }
+                if $0.threadUUID != $1.threadUUID { return $0.threadUUID < $1.threadUUID }
+                return ($0.postUUID ?? "") < ($1.postUUID ?? "")
+            }
+            .reduce(into: [String: BoardSearchRow]()) { partialResult, row in
+                let key = row.threadUUID + "|" + (row.postUUID ?? "")
+                if partialResult[key] == nil {
+                    partialResult[key] = row
+                }
+            }
+            .values
+            .sorted {
+                if $0.rank != $1.rank { return $0.rank < $1.rank }
+                if $0.postDate != $1.postDate { return $0.postDate > $1.postDate }
+                if $0.threadUUID != $1.threadUUID { return $0.threadUUID < $1.threadUUID }
+                return ($0.postUUID ?? "") < ($1.postUUID ?? "")
+            }
+            .prefix(limit)
+
+        return deduplicated.map { row in
+            BoardSearchResult(
+                boardPath: row.boardPath,
+                threadUUID: row.threadUUID,
+                postUUID: row.postUUID,
+                subject: row.subject,
+                nick: row.nick,
+                postDate: row.postDate,
+                editDate: row.editDate,
+                snippet: self.makeSnippet(for: row, plan: plan)
+            )
+        }
+    }
+
+    private func fetchFTSBoardSearchRows(
+        db: OpaquePointer,
+        plan: BoardSearchQueryPlan,
+        boardPaths: [String],
+        limit: Int
+    ) throws -> [BoardSearchRow] {
+        let boardPlaceholders = Array(repeating: "?", count: boardPaths.count).joined(separator: ", ")
+        let sql = """
+            SELECT thread_uuid, post_uuid, board_path, subject, text, nick, post_date, edit_date, rank, is_post_match
+            FROM (
+                SELECT
+                    uuid AS thread_uuid,
+                    NULL AS post_uuid,
+                    board_path,
+                    subject,
+                    text,
+                    nick,
+                    post_date,
+                    edit_date,
+                    bm25(board_thread_search) AS rank,
+                    0 AS is_post_match
+                FROM board_thread_search
+                WHERE board_thread_search MATCH ? AND board_path IN (\(boardPlaceholders))
+
+                UNION ALL
+
+                SELECT
+                    thread_uuid,
+                    uuid AS post_uuid,
+                    board_path,
+                    subject,
+                    text,
+                    nick,
+                    post_date,
+                    edit_date,
+                    bm25(board_post_search) AS rank,
+                    1 AS is_post_match
+                FROM board_post_search
+                WHERE board_post_search MATCH ? AND board_path IN (\(boardPlaceholders))
+            )
+            ORDER BY rank ASC, post_date DESC
+            LIMIT ?;
+            """
+
+        var ftsSearchStatement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &ftsSearchStatement, nil) == SQLITE_OK, let ftsSearchStatement else {
+            throw NSError(domain: "BoardsController", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unable to prepare board FTS search"])
+        }
+        defer { sqlite3_finalize(ftsSearchStatement) }
+
+        var bindIndex: Int32 = 1
+        sqlite3_bind_text(ftsSearchStatement, bindIndex, plan.ftsQuery, -1, SQLITE_TRANSIENT)
+        bindIndex += 1
+        for boardPath in boardPaths {
+            sqlite3_bind_text(ftsSearchStatement, bindIndex, boardPath, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+        }
+        sqlite3_bind_text(ftsSearchStatement, bindIndex, plan.ftsQuery, -1, SQLITE_TRANSIENT)
+        bindIndex += 1
+        for boardPath in boardPaths {
+            sqlite3_bind_text(ftsSearchStatement, bindIndex, boardPath, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+        }
+        sqlite3_bind_int(ftsSearchStatement, bindIndex, Int32(max(limit * 4, limit)))
+
+        return collectSearchRows(from: ftsSearchStatement)
+    }
+
+    private func fetchLikeBoardSearchRows(
+        db: OpaquePointer,
+        plan: BoardSearchQueryPlan,
+        boardPaths: [String],
+        limit: Int
+    ) throws -> [BoardSearchRow] {
+        let boardPlaceholders = Array(repeating: "?", count: boardPaths.count).joined(separator: ", ")
+        let threadTokenClauses = Array(repeating: "(t.subject LIKE ? COLLATE NOCASE OR t.text LIKE ? COLLATE NOCASE OR t.nick LIKE ? COLLATE NOCASE)", count: plan.tokens.count)
+            .joined(separator: "\n                    AND ")
+        let postTokenClauses = Array(repeating: "(p.text LIKE ? COLLATE NOCASE OR p.nick LIKE ? COLLATE NOCASE)", count: plan.tokens.count)
+            .joined(separator: "\n                    AND ")
+        let sql = """
+            SELECT thread_uuid, post_uuid, board_path, subject, text, nick, post_date, edit_date, rank, is_post_match
+            FROM (
+                SELECT
+                    t.uuid AS thread_uuid,
+                    NULL AS post_uuid,
+                    t.board_path,
+                    t.subject,
+                    t.text,
+                    t.nick,
+                    t.post_date,
+                    t.edit_date,
+                    CASE
+                        WHEN t.subject LIKE ? COLLATE NOCASE THEN 0
+                        WHEN t.text LIKE ? COLLATE NOCASE THEN 1
+                        ELSE 2
+                    END AS rank,
+                    0 AS is_post_match
+                FROM board_threads t
+                WHERE t.board_path IN (\(boardPlaceholders))
+                  AND (
+                    \(threadTokenClauses)
+                  )
+
+                UNION ALL
+
+                SELECT
+                    p.thread_uuid AS thread_uuid,
+                    p.uuid AS post_uuid,
+                    t.board_path,
+                    t.subject,
+                    p.text,
+                    p.nick,
+                    p.post_date,
+                    p.edit_date,
+                    CASE
+                        WHEN p.text LIKE ? COLLATE NOCASE THEN 0
+                        ELSE 1
+                    END AS rank,
+                    1 AS is_post_match
+                FROM board_posts p
+                JOIN board_threads t ON t.uuid = p.thread_uuid
+                WHERE t.board_path IN (\(boardPlaceholders))
+                  AND (
+                    \(postTokenClauses)
+                  )
+            )
+            ORDER BY rank ASC, post_date DESC
+            LIMIT ?;
+            """
+
+        var likeSearchStatement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &likeSearchStatement, nil) == SQLITE_OK, let likeSearchStatement else {
+            throw NSError(domain: "BoardsController", code: 2, userInfo: [NSLocalizedDescriptionKey: "Unable to prepare board LIKE search"])
+        }
+        defer { sqlite3_finalize(likeSearchStatement) }
+
+        var bindIndex: Int32 = 1
+        sqlite3_bind_text(likeSearchStatement, bindIndex, plan.rawWildcard, -1, SQLITE_TRANSIENT)
+        bindIndex += 1
+        sqlite3_bind_text(likeSearchStatement, bindIndex, plan.rawWildcard, -1, SQLITE_TRANSIENT)
+        bindIndex += 1
+        for boardPath in boardPaths {
+            sqlite3_bind_text(likeSearchStatement, bindIndex, boardPath, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+        }
+        for token in plan.tokens {
+            let wildcard = "%\(token)%"
+            sqlite3_bind_text(likeSearchStatement, bindIndex, wildcard, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+            sqlite3_bind_text(likeSearchStatement, bindIndex, wildcard, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+            sqlite3_bind_text(likeSearchStatement, bindIndex, wildcard, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+        }
+        sqlite3_bind_text(likeSearchStatement, bindIndex, plan.rawWildcard, -1, SQLITE_TRANSIENT)
+        bindIndex += 1
+        for boardPath in boardPaths {
+            sqlite3_bind_text(likeSearchStatement, bindIndex, boardPath, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+        }
+        for token in plan.tokens {
+            let wildcard = "%\(token)%"
+            sqlite3_bind_text(likeSearchStatement, bindIndex, wildcard, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+            sqlite3_bind_text(likeSearchStatement, bindIndex, wildcard, -1, SQLITE_TRANSIENT)
+            bindIndex += 1
+        }
+        sqlite3_bind_int(likeSearchStatement, bindIndex, Int32(max(limit * 4, limit)))
+
+        return collectSearchRows(from: likeSearchStatement)
+    }
+
+    private func collectSearchRows(from statement: OpaquePointer) -> [BoardSearchRow] {
+        var rows: [BoardSearchRow] = []
+
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard
+                let threadUUID = sqlite3_column_text(statement, 0).map({ canonicalUUID(String(cString: $0)) }),
+                let boardPath = sqlite3_column_text(statement, 2).map({ String(cString: $0) }),
+                let subject = sqlite3_column_text(statement, 3).map({ String(cString: $0) }),
+                let text = sqlite3_column_text(statement, 4).map({ String(cString: $0) }),
+                let nick = sqlite3_column_text(statement, 5).map({ String(cString: $0) })
+            else {
+                continue
+            }
+
+            let postUUID: String?
+            if sqlite3_column_type(statement, 1) == SQLITE_NULL {
+                postUUID = nil
+            } else {
+                postUUID = sqlite3_column_text(statement, 1).map { canonicalUUID(String(cString: $0)) }
+            }
+
+            let editDate: Date?
+            if sqlite3_column_type(statement, 7) == SQLITE_NULL {
+                editDate = nil
+            } else {
+                editDate = Date(timeIntervalSince1970: sqlite3_column_double(statement, 7))
+            }
+
+            rows.append(
+                BoardSearchRow(
+                    boardPath: boardPath,
+                    threadUUID: threadUUID,
+                    postUUID: postUUID,
+                    subject: subject,
+                    text: text,
+                    nick: nick,
+                    postDate: Date(timeIntervalSince1970: sqlite3_column_double(statement, 6)),
+                    editDate: editDate,
+                    rank: sqlite3_column_double(statement, 8),
+                    isPostMatch: sqlite3_column_int(statement, 9) != 0
+                )
+            )
+        }
+
+        return rows
+    }
+
+    private func makeSnippet(for row: BoardSearchRow, plan: BoardSearchQueryPlan) -> String {
+        let candidates: [String]
+        if row.isPostMatch {
+            candidates = [row.text, row.nick, row.subject]
+        } else {
+            candidates = [row.subject, row.text, row.nick]
+        }
+
+        for candidate in candidates {
+            if let snippet = snippet(in: candidate, terms: plan.snippetTerms) {
+                return snippet
+            }
+        }
+
+        return candidates
+            .first(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })?
+            .prefix(160)
+            .description ?? ""
+    }
+
+    private func snippet(in text: String, terms: [String]) -> String? {
+        let cleaned = text
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return nil }
+
+        guard let match = terms.compactMap({ token -> Range<String.Index>? in
+            cleaned.range(of: token, options: [.caseInsensitive, .diacriticInsensitive])
+        }).min(by: { cleaned.distance(from: cleaned.startIndex, to: $0.lowerBound) < cleaned.distance(from: cleaned.startIndex, to: $1.lowerBound) }) else {
+            return nil
+        }
+
+        let radius = 70
+        let lowerBound = cleaned.index(match.lowerBound, offsetBy: -radius, limitedBy: cleaned.startIndex) ?? cleaned.startIndex
+        let upperBound = cleaned.index(match.upperBound, offsetBy: radius, limitedBy: cleaned.endIndex) ?? cleaned.endIndex
+
+        var snippet = String(cleaned[lowerBound..<upperBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        if lowerBound > cleaned.startIndex { snippet = "..." + snippet }
+        if upperBound < cleaned.endIndex { snippet += "..." }
+        return snippet
+    }
+
+    private func inMemorySearch(plan: BoardSearchQueryPlan, boardPaths: Set<String>, limit: Int) -> [BoardSearchResult] {
+        var rows: [BoardSearchRow] = []
+        for thread in threads.values where boardPaths.contains(thread.board) {
+            let threadMatches = plan.matchesThread(subject: thread.subject, text: thread.text, nick: thread.nick)
+            if threadMatches {
+                rows.append(
+                    BoardSearchRow(
+                        boardPath: thread.board,
+                        threadUUID: thread.uuid,
+                        postUUID: nil,
+                        subject: thread.subject,
+                        text: thread.text,
+                        nick: thread.nick,
+                        postDate: thread.postDate,
+                        editDate: thread.editDate,
+                        rank: 0,
+                        isPostMatch: false
+                    )
+                )
+            }
+
+            for post in thread.posts where plan.matchesPost(text: post.text, nick: post.nick) {
+                rows.append(
+                    BoardSearchRow(
+                        boardPath: thread.board,
+                        threadUUID: thread.uuid,
+                        postUUID: post.uuid,
+                        subject: thread.subject,
+                        text: post.text,
+                        nick: post.nick,
+                        postDate: post.postDate,
+                        editDate: post.editDate,
+                        rank: 0,
+                        isPostMatch: true
+                    )
+                )
+            }
+        }
+
+        return finalizeBoardSearchResults(rows: rows, plan: plan, limit: limit)
     }
 
     // MARK: - Protocol message handling

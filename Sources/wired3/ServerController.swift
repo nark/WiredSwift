@@ -650,6 +650,9 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.board.get_thread" {
             self.receiveBoardGetThread(client: client, message: message)
         }
+        else if message.name == "wired.board.search" {
+            self.receiveBoardSearch(client: client, message: message)
+        }
         else if message.name == "wired.board.add_board" {
             self.receiveBoardAddBoard(client: client, message: message)
         }
@@ -1140,6 +1143,91 @@ public class ServerController: ServerDelegate {
         let done = P7Message(withName: "wired.board.post_list.done", spec: self.spec)
         done.addParameter(field: "wired.board.thread", value: thread.uuid)
         self.reply(client: client, reply: done, message: message)
+    }
+
+    private func receiveBoardSearch(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard
+            user.hasPrivilege(name: "wired.account.board.read_boards"),
+            user.hasPrivilege(name: "wired.account.board.search_boards")
+        else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let query = message.string(forField: "wired.board.query") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            let done = P7Message(withName: "wired.board.search_list.done", spec: self.spec)
+            self.reply(client: client, reply: done, message: message)
+            return
+        }
+
+        let username = user.username ?? ""
+        let groupName = user.group ?? ""
+        let readableBoardPaths = Set(
+            App.boardsController
+                .getBoards(forUser: username, group: groupName)
+                .map(\.path)
+        )
+
+        let scopedBoardPaths: [String]
+        if let scopedBoardPath = message.string(forField: "wired.board.board"), !scopedBoardPath.isEmpty {
+            guard let board = App.boardsController.getBoardInfo(path: scopedBoardPath) else {
+                App.serverController.replyError(client: client, error: "wired.error.board_not_found", message: message)
+                return
+            }
+
+            guard board.canRead(user: username, group: groupName) else {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+
+            scopedBoardPaths = readableBoardPaths
+                .filter { $0 == scopedBoardPath || $0.hasPrefix(scopedBoardPath + "/") }
+                .sorted()
+        } else {
+            scopedBoardPaths = readableBoardPaths.sorted()
+        }
+
+        guard !scopedBoardPaths.isEmpty else {
+            let done = P7Message(withName: "wired.board.search_list.done", spec: self.spec)
+            self.reply(client: client, reply: done, message: message)
+            return
+        }
+
+        do {
+            let results = try App.boardsController.search(query: trimmed, boardPaths: scopedBoardPaths, limit: 100)
+            for result in results {
+                let reply = P7Message(withName: "wired.board.search_list", spec: self.spec)
+                reply.addParameter(field: "wired.board.board", value: result.boardPath)
+                reply.addParameter(field: "wired.board.thread", value: result.threadUUID)
+                reply.addParameter(field: "wired.board.subject", value: result.subject)
+                reply.addParameter(field: "wired.user.nick", value: result.nick)
+                reply.addParameter(field: "wired.board.post_date", value: result.postDate)
+                reply.addParameter(field: "wired.board.snippet", value: result.snippet)
+                if let postUUID = result.postUUID {
+                    reply.addParameter(field: "wired.board.post", value: postUUID)
+                }
+                if let editDate = result.editDate {
+                    reply.addParameter(field: "wired.board.edit_date", value: editDate)
+                }
+                self.reply(client: client, reply: reply, message: message)
+            }
+
+            let done = P7Message(withName: "wired.board.search_list.done", spec: self.spec)
+            self.reply(client: client, reply: done, message: message)
+        } catch {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+        }
     }
 
     private func receiveBoardAddBoard(client: Client, message: P7Message) {

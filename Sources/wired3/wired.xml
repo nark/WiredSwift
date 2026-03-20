@@ -426,6 +426,17 @@
                 Indicates whether the post was created by the currently logged in account.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.board.query" type="string" id="6023" version="2.0">
+            <p7:documentation>
+                Search query for board search requests.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.snippet" type="string" id="6024" version="2.0">
+            <p7:documentation>
+                Search result excerpt for a board thread or post. This field contains a snippet, not
+                the full body text.
+            </p7:documentation>
+        </p7:field>
 
         <p7:field name="wired.file.path" type="string" id="7000" version="2.0">
             <p7:documentation>
@@ -826,6 +837,11 @@
         <p7:field name="wired.account.board.delete_all_threads_and_posts" type="bool" id="8042" version="2.0">
             <p7:documentation>
                 Indicates whether the account gives the privilege of deleting all threads and posts.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.account.board.search_boards" type="bool" id="8094" version="2.0">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of searching boards.
             </p7:documentation>
         </p7:field>
         <p7:field name="wired.account.file.list_files" type="bool" id="8043" version="2.0">
@@ -1355,6 +1371,7 @@
             <p7:member field="wired.account.message.send_offline_messages" />
             <p7:member field="wired.account.message.broadcast" />
             <p7:member field="wired.account.board.read_boards" />
+            <p7:member field="wired.account.board.search_boards" />
             <p7:member field="wired.account.board.add_boards" />
             <p7:member field="wired.account.board.move_boards" />
             <p7:member field="wired.account.board.rename_boards" />
@@ -2273,6 +2290,38 @@
         <p7:message name="wired.board.unsubscribe_boards" id="6034" version="2.0">
             <p7:documentation>
                 TBD
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+        </p7:message>
+        <p7:message name="wired.board.search" id="6035" version="2.0">
+            <p7:documentation>
+                Search board threads and posts. [field:wired.board.query] may be the empty string, in
+                which case no results should be returned and the transaction should complete normally.
+                If [field:wired.board.board] is provided, the search should be limited to that board
+                and its descendants.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+            <p7:parameter field="wired.board.query" use="required" version="2.0" />
+            <p7:parameter field="wired.board.board" version="2.0" />
+        </p7:message>
+        <p7:message name="wired.board.search_list" id="6036" version="2.0">
+            <p7:documentation>
+                Board search result item. [field:wired.board.snippet] should contain an excerpt from
+                the matching thread or post, not the full body text.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+            <p7:parameter field="wired.board.board" use="required" version="2.0" />
+            <p7:parameter field="wired.board.thread" use="required" version="2.0" />
+            <p7:parameter field="wired.board.subject" use="required" version="2.0" />
+            <p7:parameter field="wired.user.nick" use="required" version="2.0" />
+            <p7:parameter field="wired.board.post_date" use="required" version="2.0" />
+            <p7:parameter field="wired.board.snippet" use="required" version="2.0" />
+            <p7:parameter field="wired.board.post" version="2.0" />
+            <p7:parameter field="wired.board.edit_date" version="2.0" />
+        </p7:message>
+        <p7:message name="wired.board.search_list.done" id="6037" version="2.0">
+            <p7:documentation>
+                Board search completion message.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
         </p7:message>
@@ -4280,6 +4329,32 @@
                 <p7:and>
                     <p7:reply message="wired.file.search_list" count="*" use="required" version="2.0" />
                     <p7:reply message="wired.file.search_list.done" count="1" use="required" version="2.0" />
+                </p7:and>
+                <p7:reply message="wired.error" count="1" use="required" version="2.0" />
+            </p7:or>
+        </p7:transaction>
+        <p7:transaction message="wired.board.search" originator="client" version="2.0">
+            <p7:documentation>
+                [message:wired.error] should be replied with [enum:wired.error.permission_denied]
+                if [field:wired.account.board.search_boards] or
+                [field:wired.account.board.read_boards] is not set for the user's account.
+
+                [message:wired.error] should be replied with [enum:wired.error.message_out_of_sequence]
+                if sent before [message:wired.client_info].
+
+                [message:wired.error] should be replied with [enum:wired.error.invalid_message] if the
+                message does not contain all the required parameters.
+
+                [message:wired.error] may be replied with [enum:wired.error.internal_error]
+                if an unknown error occurs.
+
+                Otherwise, zero or more [message:wired.board.search_list] terminated by a single
+                [message:wired.board.search_list.done] should be replied.
+            </p7:documentation>
+            <p7:or>
+                <p7:and>
+                    <p7:reply message="wired.board.search_list" count="*" use="required" version="2.0" />
+                    <p7:reply message="wired.board.search_list.done" count="1" use="required" version="2.0" />
                 </p7:and>
                 <p7:reply message="wired.error" count="1" use="required" version="2.0" />
             </p7:or>
