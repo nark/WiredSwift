@@ -337,12 +337,15 @@ class IndexController: TableController {
 
     private func fts5Search(query: String) throws -> [WiredIndex] {
         // Build a safe FTS5 MATCH expression:
-        //   each whitespace-delimited token is double-quoted (escaping inner quotes)
+        //   each token is double-quoted (escaping inner quotes)
         //   and suffixed with * for prefix matching.
         //   Multiple tokens are implicit AND.
-        let ftsQuery = query
-            .split(separator: " ")
+        let tokens = query
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+
+        let ftsQuery = (tokens.isEmpty ? [query.trimmingCharacters(in: .whitespacesAndNewlines)] : tokens)
             .map { token -> String in
                 let escaped = token.replacingOccurrences(of: "\"", with: "\"\"")
                 return "\"\(escaped)\"*"

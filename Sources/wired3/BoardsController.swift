@@ -53,7 +53,7 @@ private struct BoardSearchQueryPlan {
         let extractedTokens = Self.extractTokens(from: trimmed)
         self.tokens = extractedTokens.isEmpty ? [trimmed] : extractedTokens
         self.ftsQuery = self.tokens
-            .map(Self.escapedFTSTerm)
+            .map(Self.escapedPrefixFTSTerm)
             .joined(separator: " AND ")
         self.rawWildcard = "%\(trimmed)%"
     }
@@ -98,8 +98,8 @@ private struct BoardSearchQueryPlan {
         }
     }
 
-    private static func escapedFTSTerm(_ term: String) -> String {
-        "\"\(term.replacingOccurrences(of: "\"", with: "\"\""))\""
+    private static func escapedPrefixFTSTerm(_ term: String) -> String {
+        "\"\(term.replacingOccurrences(of: "\"", with: "\"\""))\"*"
     }
 }
 
