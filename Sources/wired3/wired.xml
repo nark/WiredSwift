@@ -3,7 +3,7 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://www.read-write.fr/wired/html/p7-specification.xsd"
              name="Wired"
-             version="3.0">
+             version="3.1">
     <p7:documentation>
         TBD
         
@@ -293,6 +293,12 @@
         <p7:field name="wired.chat.name" type="string" id="4005" version="3.0">
             <p7:documentation>
                 Name of a public chat. Should be unique.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.typing" type="bool" id="4006" version="3.1">
+            <p7:documentation>
+                Ephemeral typing state for a user in a chat. True indicates that the user is currently
+                typing, false indicates that typing has stopped.
             </p7:documentation>
         </p7:field>
 
@@ -1910,6 +1916,29 @@
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.chat.id" use="required" version="3.0" />
+        </p7:message>
+
+        <p7:message name="wired.chat.send_typing" id="4031" version="3.1">
+            <p7:documentation>
+                Send an ephemeral typing pulse for a chat. [field:wired.chat.typing] set to true indicates
+                that the user is currently typing. [field:wired.chat.typing] set to false explicitly clears
+                the typing state. Servers may later emit [message:wired.chat.typing] with false when the
+                typing timeout expires, even if no explicit stop message was sent.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+            <p7:parameter field="wired.chat.id" use="required" version="3.1" />
+            <p7:parameter field="wired.chat.typing" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.chat.typing" id="4032" version="3.1">
+            <p7:documentation>
+                Ephemeral typing state update for a user in a chat. True indicates that the user is
+                currently typing. False indicates that typing has stopped, either explicitly or because the
+                server expired the typing timeout.
+            </p7:documentation>
+            <p7:parameter field="wired.chat.id" use="required" version="3.1" />
+            <p7:parameter field="wired.user.id" use="required" version="3.1" />
+            <p7:parameter field="wired.chat.typing" use="required" version="3.1" />
         </p7:message>
 
         <p7:message name="wired.message.send_message" id="5000" version="2.0">
@@ -3704,7 +3733,33 @@
                 <p7:reply message="wired.error" count="1" use="required" version="2.0" />
             </p7:or>
         </p7:transaction>
-        
+
+        <p7:transaction message="wired.chat.send_typing" originator="client" version="3.1">
+            <p7:documentation>
+                [message:wired.error] should be replied with [enum:wired.error.chat_not_found]
+                if the chat is not the public chat or the chat has not been created.
+
+                [message:wired.error] should be replied with [enum:wired.error.not_on_chat] if the user is
+                not currently on the chat.
+
+                [message:wired.error] should be replied with [enum:wired.error.message_out_of_sequence]
+                if sent before [message:wired.client_info].
+
+                [message:wired.error] should be replied with [enum:wired.error.invalid_message] if the
+                message does not contain all the required parameters.
+
+                Otherwise, [message:wired.okay] should be replied.
+
+                Should cause [broadcast:wired.chat.typing] to be sent to the other users on the chat. A
+                server may also send [broadcast:wired.chat.typing] with false when the typing timeout
+                expires.
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.okay" count="1" use="required" version="2.0" />
+                <p7:reply message="wired.error" count="1" use="required" version="2.0" />
+            </p7:or>
+        </p7:transaction>
+
         <p7:transaction message="wired.chat.invite_user" originator="client" version="2.0">
             <p7:documentation>
                 [message:wired.error] should be replied with [enum:wired.error.chat_not_found]
@@ -5204,7 +5259,13 @@
                 TBD
             </p7:documentation>
         </p7:broadcast>
-        
+
+        <p7:broadcast message="wired.chat.typing" version="3.1">
+            <p7:documentation>
+                May be sent at any time to other users on a chat to reflect ephemeral typing state.
+            </p7:documentation>
+        </p7:broadcast>
+
         <p7:broadcast message="wired.message.message" version="2.0">
             <p7:documentation>
                 May be sent at any time from any other user.

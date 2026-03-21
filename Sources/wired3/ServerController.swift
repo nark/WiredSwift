@@ -637,6 +637,9 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.chat.send_me" {
             App.chatsController.receiveChatMe(client, message)
         }
+        else if message.name == "wired.chat.send_typing" {
+            App.chatsController.receiveChatTyping(client: client, message: message)
+        }
         else if message.name == "wired.chat.join_chat" {
             App.chatsController.userJoin(message: message, client: client)
         }

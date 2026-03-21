@@ -9,6 +9,11 @@ import Foundation
 import WiredSwift
 import GRDB
 
+private struct ChatTypingKey: Hashable {
+    let chatID: UInt32
+    let userID: UInt32
+}
+
 private extension ChatsController {
     // MARK: - Privates
 
@@ -39,6 +44,8 @@ private extension ChatsController {
     
     
     private func remove(chat:Chat) {
+        clearTypingState(forChatID: chat.chatID)
+
         self.chatsLock.exclusivelyWrite {
             self.chats[chat.chatID] = nil
             
@@ -132,6 +139,101 @@ private extension ChatsController {
             App.serverController.send(message: reply, client: toClient)
         }
     }
+
+    private func startTypingCleanupTimer() {
+        let timer = DispatchSource.makeTimerSource(queue: typingCleanupQueue)
+        timer.schedule(deadline: .now() + Self.typingCleanupInterval, repeating: Self.typingCleanupInterval)
+        timer.setEventHandler { [weak self] in
+            self?.expireTypingStates()
+        }
+        typingCleanupTimer = timer
+        timer.resume()
+    }
+
+    private func expireTypingStates() {
+        let now = Date()
+        let expiredKeys = typingStateLock.exclusivelyWrite { () -> [ChatTypingKey] in
+            let expired = typingStates.compactMap { key, expiresAt in
+                expiresAt <= now ? key : nil
+            }
+
+            for key in expired {
+                typingStates.removeValue(forKey: key)
+                typingPulseTimestamps.removeValue(forKey: key)
+            }
+
+            return expired
+        }
+
+        for key in expiredKeys {
+            broadcastTyping(chatID: key.chatID, userID: key.userID, isTyping: false, excludingUserID: key.userID)
+        }
+    }
+
+    private func broadcastTyping(chatID: UInt32, userID: UInt32, isTyping: Bool, excludingUserID: UInt32? = nil) {
+        guard let chat = self.chat(withID: chatID) else { return }
+
+        chat.withClients { toClient in
+            if let excludingUserID, toClient.userID == excludingUserID {
+                return
+            }
+
+            let reply = P7Message(withName: "wired.chat.typing", spec: toClient.socket.spec)
+            reply.addParameter(field: "wired.chat.id", value: chatID)
+            reply.addParameter(field: "wired.user.id", value: userID)
+            reply.addParameter(field: "wired.chat.typing", value: isTyping)
+            App.serverController.send(message: reply, client: toClient)
+        }
+    }
+
+    private func updateTypingState(chatID: UInt32, userID: UInt32, isTyping: Bool) -> Bool {
+        let key = ChatTypingKey(chatID: chatID, userID: userID)
+
+        return typingStateLock.exclusivelyWrite {
+            if isTyping {
+                typingStates[key] = Date().addingTimeInterval(Self.typingTimeout)
+                return true
+            }
+
+            let removed = typingStates.removeValue(forKey: key) != nil
+            typingPulseTimestamps.removeValue(forKey: key)
+            return removed
+        }
+    }
+
+    private func clearTypingState(forUserID userID: UInt32, inChatID chatID: UInt32, broadcastStop: Bool) {
+        let removed = updateTypingState(chatID: chatID, userID: userID, isTyping: false)
+
+        if removed && broadcastStop {
+            broadcastTyping(chatID: chatID, userID: userID, isTyping: false)
+        }
+    }
+
+    private func clearTypingState(forChatID chatID: UInt32) {
+        typingStateLock.exclusivelyWrite {
+            typingStates = typingStates.filter { $0.key.chatID != chatID }
+            typingPulseTimestamps = typingPulseTimestamps.filter { $0.key.chatID != chatID }
+        }
+    }
+
+    private func shouldRateLimitTypingPulse(chatID: UInt32, userID: UInt32, now: Date) -> Bool {
+        let key = ChatTypingKey(chatID: chatID, userID: userID)
+
+        return typingStateLock.exclusivelyWrite {
+            let cutoff = now.addingTimeInterval(-1.0)
+            var timestamps = typingPulseTimestamps[key] ?? []
+            timestamps = timestamps.filter { $0 > cutoff }
+
+            if timestamps.count >= Self.typingRateLimitPerSecond {
+                typingPulseTimestamps[key] = timestamps
+                return true
+            }
+
+            timestamps.append(now)
+            typingPulseTimestamps[key] = timestamps
+            return false
+        }
+    }
 }
 
 
@@ -150,9 +252,23 @@ public class ChatsController : TableController {
     private static let chatRateLimitPerSecond: Int = 10
     private var chatMessageTimestamps: [UInt32: [Date]] = [:]
     private let chatRateLock = NSLock()
+    private static let typingTimeout: TimeInterval = 6.0
+    private static let typingCleanupInterval: TimeInterval = 1.0
+    private static let typingRateLimitPerSecond: Int = 4
+    private var typingStates: [ChatTypingKey: Date] = [:]
+    private var typingPulseTimestamps: [ChatTypingKey: [Date]] = [:]
+    private let typingStateLock = Lock()
+    private let typingCleanupQueue = DispatchQueue(label: "wired3.chats.typing-cleanup")
+    private var typingCleanupTimer: DispatchSourceTimer?
     
     public override init(databaseController: DatabaseController) {
         super.init(databaseController: databaseController)
+        startTypingCleanupTimer()
+    }
+
+    deinit {
+        typingCleanupTimer?.cancel()
+        typingCleanupTimer = nil
     }
 
     
@@ -487,6 +603,7 @@ public class ChatsController : TableController {
     private func removeUser(chatID: UInt32, client: Client, broadcastLeave: Bool) {
         if let chat = self.chat(withID: chatID) {
             chat.removeClient(client.userID)
+            clearTypingState(forUserID: client.userID, inChatID: chatID, broadcastStop: true)
 
             if broadcastLeave {
                 chat.withClients { chatClient in
@@ -520,6 +637,39 @@ public class ChatsController : TableController {
         }
 
         self.receiveChat(string: say, client, message, isSay: false)
+    }
+
+    public func receiveChatTyping(client: Client, message: P7Message) {
+        guard let chatID = message.uint32(forField: "wired.chat.id"),
+              let isTyping = message.bool(forField: "wired.chat.typing") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let chat = self.chat(withID: chatID) else {
+            App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
+            return
+        }
+
+        guard chat.client(withID: client.userID) != nil else {
+            App.serverController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
+            return
+        }
+
+        let now = Date()
+        if shouldRateLimitTypingPulse(chatID: chatID, userID: client.userID, now: now) {
+            App.serverController.replyOK(client: client, message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+
+        if isTyping {
+            _ = updateTypingState(chatID: chatID, userID: client.userID, isTyping: true)
+            broadcastTyping(chatID: chatID, userID: client.userID, isTyping: true, excludingUserID: client.userID)
+        } else if updateTypingState(chatID: chatID, userID: client.userID, isTyping: false) {
+            broadcastTyping(chatID: chatID, userID: client.userID, isTyping: false, excludingUserID: client.userID)
+        }
     }
     
     
@@ -636,6 +786,7 @@ public class ChatsController : TableController {
         }
 
         chat.removeClient(target.userID)
+        clearTypingState(forUserID: target.userID, inChatID: chatID, broadcastStop: true)
         App.serverController.replyOK(client: client, message: message)
     }
     
