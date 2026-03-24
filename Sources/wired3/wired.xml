@@ -444,6 +444,32 @@
             </p7:documentation>
         </p7:field>
 
+        <p7:field name="wired.board.reaction.emoji" type="string" id="6025" version="3.1">
+            <p7:documentation>
+                Unicode emoji character(s) identifying a reaction. Any valid Unicode scalar sequence
+                is accepted, including multi-codepoint emoji (e.g. 👨‍👩‍👧, 🇫🇷). Typical standard values
+                are 👍, 👎, ❤️, 😂, and 😮.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.count" type="uint32" id="6026" version="3.1">
+            <p7:documentation>
+                Total number of distinct accounts that have reacted with a given emoji on the target
+                thread or post.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.is_own" type="bool" id="6027" version="3.1">
+            <p7:documentation>
+                Indicates whether the currently authenticated account has already reacted with this
+                emoji on the target content. Used by the client to render the toggle state.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.nick" type="string" id="6028" version="3.1">
+            <p7:documentation>
+                Public display nick of a user who reacted, captured as a snapshot at the time the
+                reaction was submitted. The underlying account login is never disclosed to other clients.
+            </p7:documentation>
+        </p7:field>
+
         <p7:field name="wired.file.path" type="string" id="7000" version="2.0">
             <p7:documentation>
                 Path to a file, separated by slashes, i.e. "/". The root directory is a single slash,
@@ -848,6 +874,12 @@
         <p7:field name="wired.account.board.search_boards" type="bool" id="8094" version="2.0">
             <p7:documentation>
                 Indicates whether the account gives the privilege of searching boards.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.account.board.add_reactions" type="bool" id="8095" version="3.1">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of adding or removing emoji reactions
+                on board threads and posts.
             </p7:documentation>
         </p7:field>
         <p7:field name="wired.account.file.list_files" type="bool" id="8043" version="2.0">
@@ -1392,6 +1424,7 @@
             <p7:member field="wired.account.board.edit_all_threads_and_posts" />
             <p7:member field="wired.account.board.delete_own_threads_and_posts" />
             <p7:member field="wired.account.board.delete_all_threads_and_posts" />
+            <p7:member field="wired.account.board.add_reactions" />
             <p7:member field="wired.account.file.list_files" />
             <p7:member field="wired.account.file.get_info" />
             <p7:member field="wired.account.file.search_files" />
@@ -2354,6 +2387,99 @@
                 Board search completion message.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
+        </p7:message>
+
+        <p7:message name="wired.board.get_reactions" id="6038" version="3.1">
+            <p7:documentation>
+                Request the reaction summary for a thread or a post. The server replies with zero or
+                more [message:wired.board.reaction_list] messages — one per distinct emoji — followed
+                by [message:wired.ok].
+
+                [field:wired.board.thread] identifies the parent thread. When [field:wired.board.post]
+                is also present, reactions are fetched for that specific reply post; otherwise reactions
+                are fetched for the thread body itself.
+
+                Requires [field:wired.account.board.read_boards].
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.reaction_list" id="6039" version="3.1">
+            <p7:documentation>
+                One reaction summary item sent in response to [message:wired.board.get_reactions].
+                Each message represents a single emoji and its aggregate count for the requested
+                target. [field:wired.board.reaction.is_own] tells the client whether the currently
+                authenticated account contributed to this reaction count.
+
+                The server sends one such message per distinct emoji, then sends [message:wired.ok]
+                to signal the end of the list.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.count" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.is_own" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.add_reaction" id="6040" version="3.1">
+            <p7:documentation>
+                Add or toggle an emoji reaction on a thread body or a reply post.
+
+                Toggle semantics: if the authenticated account has already reacted with the given
+                [field:wired.board.reaction.emoji] on the target, the reaction is removed; otherwise
+                it is added. The server broadcasts either [message:wired.board.reaction_added] or
+                [message:wired.board.reaction_removed] to all clients subscribed to the parent board.
+
+                [field:wired.board.thread] identifies the parent thread. When [field:wired.board.post]
+                is also present, the reaction targets that specific reply post; otherwise it targets
+                the thread body.
+
+                Requires [field:wired.account.board.add_reactions] and
+                [field:wired.account.board.read_boards] on the parent board.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.reaction_added" id="6041" version="3.1">
+            <p7:documentation>
+                Broadcast to all clients subscribed to the parent board when an emoji reaction is
+                added to a thread body or a reply post.
+
+                [field:wired.board.reaction.nick] contains the public display nick of the reacting
+                user as captured at the moment of the reaction. The underlying account login is
+                never included in this message to preserve user privacy.
+
+                [field:wired.board.reaction.count] reflects the updated total count for this emoji
+                on the target after the addition.
+            </p7:documentation>
+            <p7:parameter field="wired.board.board" use="required" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.count" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.nick" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.reaction_removed" id="6042" version="3.1">
+            <p7:documentation>
+                Broadcast to all clients subscribed to the parent board when an emoji reaction is
+                removed from a thread body or a reply post.
+
+                [field:wired.board.reaction.count] reflects the updated total count for this emoji
+                on the target after the removal. When the count reaches zero, clients should remove
+                the reaction indicator entirely from their UI.
+            </p7:documentation>
+            <p7:parameter field="wired.board.board" use="required" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.count" use="required" version="3.1" />
         </p7:message>
 
         <p7:message name="wired.file.list_directory" id="7000" version="2.0">
