@@ -130,6 +130,7 @@ public class BoardsController {
     public init(databasePath: String? = nil) {
         self.databasePath = databasePath
         createTablesIfNeeded()
+        migrateReactionsUniqueConstraintIfNeeded()
         loadFromDatabase()
     }
     
@@ -203,7 +204,7 @@ public class BoardsController {
                   login         TEXT    NOT NULL,
                   nick          TEXT    NOT NULL,
                   reaction_date REAL    NOT NULL,
-                  UNIQUE(target_uuid, target_type, emoji, login)
+                  UNIQUE(target_uuid, target_type, login)
                 );
                 """,
                 "CREATE INDEX IF NOT EXISTS idx_board_threads_board_path ON board_threads(board_path);",
@@ -217,6 +218,64 @@ public class BoardsController {
 
             self.hasSearchFTS5 = self.createBoardSearchIndexIfNeeded(db: db)
             
+            return true
+        }
+    }
+
+    /// Migrates `board_reactions` from UNIQUE(target_uuid, target_type, emoji, login)
+    /// to UNIQUE(target_uuid, target_type, login) — one reaction per user per target.
+    private func migrateReactionsUniqueConstraintIfNeeded() {
+        _ = withDatabase { db in
+            // Read the current schema text from sqlite_master.
+            var schemaStmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db,
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='board_reactions';",
+                -1, &schemaStmt, nil) == SQLITE_OK, let schemaStmt else { return false }
+            defer { sqlite3_finalize(schemaStmt) }
+
+            guard sqlite3_step(schemaStmt) == SQLITE_ROW,
+                  let sqlPtr = sqlite3_column_text(schemaStmt, 0)
+            else { return true } // table absent — nothing to do
+            let schema = String(cString: sqlPtr)
+
+            // If the UNIQUE constraint already uses 3 columns, we're done.
+            guard schema.contains("emoji, login") || schema.contains("emoji,login") else { return true }
+
+            // Recreate the table with the new constraint (SQLite cannot drop constraints).
+            let steps: [String] = [
+                "BEGIN TRANSACTION",
+                """
+                CREATE TABLE board_reactions_new (
+                  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                  target_uuid   TEXT    NOT NULL,
+                  target_type   TEXT    NOT NULL CHECK(target_type IN ('thread','post')),
+                  emoji         TEXT    NOT NULL,
+                  login         TEXT    NOT NULL,
+                  nick          TEXT    NOT NULL,
+                  reaction_date REAL    NOT NULL,
+                  UNIQUE(target_uuid, target_type, login)
+                )
+                """,
+                // Keep only the most recently inserted reaction per (target, login) pair.
+                """
+                INSERT OR IGNORE INTO board_reactions_new(target_uuid, target_type, emoji, login, nick, reaction_date)
+                SELECT target_uuid, target_type, emoji, login, nick, reaction_date
+                FROM board_reactions
+                WHERE id IN (
+                    SELECT MAX(id) FROM board_reactions GROUP BY target_uuid, target_type, login
+                )
+                """,
+                "DROP TABLE board_reactions",
+                "ALTER TABLE board_reactions_new RENAME TO board_reactions",
+                "CREATE INDEX IF NOT EXISTS idx_board_reactions_target ON board_reactions(target_uuid, target_type)",
+                "COMMIT"
+            ]
+            for sql in steps {
+                if sqlite3_exec(db, sql, nil, nil, nil) != SQLITE_OK {
+                    _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                    return false
+                }
+            }
             return true
         }
     }
@@ -1805,12 +1864,21 @@ public class BoardsController {
         public let isOwn: Bool
     }
 
+    /// Result of a toggle operation. When the user switches emojis, `replacedEmoji` carries
+    /// the old emoji and `replacedCount` its new (lower) count for broadcast purposes.
+    public struct ReactionToggleOutcome {
+        public let added: Bool
+        public let count: Int
+        public let replacedEmoji: String?
+        public let replacedCount: Int
+    }
+
     /// Toggle an emoji reaction for `login` on a thread body (`postUUID == nil`) or a reply post.
-    /// Returns `(added: true, count: newCount)` when added, `(added: false, count: newCount)` when removed,
-    /// or `nil` on database error.
+    /// One reaction per user per target: clicking a different emoji replaces the existing one.
+    /// Returns nil on database error.
     @discardableResult
     public func toggleReaction(threadUUID: String, postUUID: String?,
-                               emoji: String, login: String, nick: String) -> (added: Bool, count: Int)? {
+                               emoji: String, login: String, nick: String) -> ReactionToggleOutcome? {
         let targetUUID = canonicalUUID(postUUID ?? threadUUID)
         let targetType = postUUID != nil ? "post" : "thread"
         let now = Date().timeIntervalSince1970
@@ -1818,41 +1886,70 @@ public class BoardsController {
         return withDatabase { db in
             guard sqlite3_exec(db, "BEGIN TRANSACTION;", nil, nil, nil) == SQLITE_OK else { return nil }
 
-            // Check whether a row already exists for this (target, emoji, login) tuple.
+            // Find the user's existing reaction on this target (any emoji).
             var checkStmt: OpaquePointer?
             guard sqlite3_prepare_v2(db,
-                "SELECT id FROM board_reactions WHERE target_uuid=? AND target_type=? AND emoji=? AND login=?;",
+                "SELECT emoji FROM board_reactions WHERE target_uuid=? AND target_type=? AND login=?;",
                 -1, &checkStmt, nil) == SQLITE_OK, let checkStmt else {
                 _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                 return nil
             }
             sqlite3_bind_text(checkStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(checkStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(checkStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(checkStmt, 4, login,      -1, SQLITE_TRANSIENT)
-            let exists = sqlite3_step(checkStmt) == SQLITE_ROW
+            sqlite3_bind_text(checkStmt, 3, login,      -1, SQLITE_TRANSIENT)
+            var existingEmoji: String? = nil
+            if sqlite3_step(checkStmt) == SQLITE_ROW,
+               let ptr = sqlite3_column_text(checkStmt, 0) {
+                existingEmoji = String(cString: ptr)
+            }
             sqlite3_finalize(checkStmt)
 
             let added: Bool
-            if exists {
-                // Remove the reaction (toggle off).
+            let replacedEmoji: String?
+
+            if let existing = existingEmoji {
+                // Delete the existing row unconditionally (same emoji = toggle off, different = replace).
                 var delStmt: OpaquePointer?
                 guard sqlite3_prepare_v2(db,
-                    "DELETE FROM board_reactions WHERE target_uuid=? AND target_type=? AND emoji=? AND login=?;",
+                    "DELETE FROM board_reactions WHERE target_uuid=? AND target_type=? AND login=?;",
                     -1, &delStmt, nil) == SQLITE_OK, let delStmt else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return nil
                 }
                 sqlite3_bind_text(delStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
                 sqlite3_bind_text(delStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(delStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(delStmt, 4, login,      -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(delStmt, 3, login,      -1, SQLITE_TRANSIENT)
                 let ok = sqlite3_step(delStmt) == SQLITE_DONE
                 sqlite3_finalize(delStmt)
                 guard ok else { _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil); return nil }
-                added = false
+
+                if existing == emoji {
+                    // Same emoji — toggled off, nothing to insert.
+                    added = false
+                    replacedEmoji = nil
+                } else {
+                    // Different emoji — insert the new one.
+                    var insStmt: OpaquePointer?
+                    guard sqlite3_prepare_v2(db,
+                        "INSERT INTO board_reactions(target_uuid,target_type,emoji,login,nick,reaction_date) VALUES(?,?,?,?,?,?);",
+                        -1, &insStmt, nil) == SQLITE_OK, let insStmt else {
+                        _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                        return nil
+                    }
+                    sqlite3_bind_text(insStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insStmt, 2, targetType, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insStmt, 4, login,      -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insStmt, 5, nick,       -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_double(insStmt, 6, now)
+                    let ok2 = sqlite3_step(insStmt) == SQLITE_DONE
+                    sqlite3_finalize(insStmt)
+                    guard ok2 else { _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil); return nil }
+                    added = true
+                    replacedEmoji = existing
+                }
             } else {
-                // Add the reaction.
+                // No existing reaction — insert new one.
                 var insStmt: OpaquePointer?
                 guard sqlite3_prepare_v2(db,
                     "INSERT INTO board_reactions(target_uuid,target_type,emoji,login,nick,reaction_date) VALUES(?,?,?,?,?,?);",
@@ -1870,9 +1967,10 @@ public class BoardsController {
                 sqlite3_finalize(insStmt)
                 guard ok else { _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil); return nil }
                 added = true
+                replacedEmoji = nil
             }
 
-            // Count remaining reactions for this (target, emoji).
+            // Count remaining for the (new/toggled) emoji.
             var cntStmt: OpaquePointer?
             guard sqlite3_prepare_v2(db,
                 "SELECT COUNT(*) FROM board_reactions WHERE target_uuid=? AND target_type=? AND emoji=?;",
@@ -1887,8 +1985,27 @@ public class BoardsController {
             let count = Int(sqlite3_column_int(cntStmt, 0))
             sqlite3_finalize(cntStmt)
 
+            // Count for the old emoji if replaced.
+            var replacedCount = 0
+            if let old = replacedEmoji {
+                var cntOldStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db,
+                    "SELECT COUNT(*) FROM board_reactions WHERE target_uuid=? AND target_type=? AND emoji=?;",
+                    -1, &cntOldStmt, nil) == SQLITE_OK, let cntOldStmt else {
+                    _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                    return nil
+                }
+                sqlite3_bind_text(cntOldStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(cntOldStmt, 2, targetType, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(cntOldStmt, 3, old,        -1, SQLITE_TRANSIENT)
+                _ = sqlite3_step(cntOldStmt)
+                replacedCount = Int(sqlite3_column_int(cntOldStmt, 0))
+                sqlite3_finalize(cntOldStmt)
+            }
+
             _ = sqlite3_exec(db, "COMMIT;", nil, nil, nil)
-            return (added, count)
+            return ReactionToggleOutcome(added: added, count: count,
+                                         replacedEmoji: replacedEmoji, replacedCount: replacedCount)
         } ?? nil
     }
 

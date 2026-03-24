@@ -2351,7 +2351,7 @@ public class ServerController: ServerDelegate {
             reply.addParameter(field: "wired.board.reaction.emoji",   value: summary.emoji)
             reply.addParameter(field: "wired.board.reaction.count",   value: UInt32(summary.count))
             reply.addParameter(field: "wired.board.reaction.is_own",  value: summary.isOwn)
-            _ = App.serverController.send(message: reply, client: client)
+            self.reply(client: client, reply: reply, message: message)
         }
         App.serverController.replyOK(client: client, message: message)
     }
@@ -2397,6 +2397,12 @@ public class ServerController: ServerDelegate {
         }
 
         App.serverController.replyOK(client: client, message: message)
+
+        // If the user replaced their previous emoji, broadcast its removal first.
+        if let oldEmoji = result.replacedEmoji {
+            broadcastReactionChanged(board: board.path, threadUUID: threadUUID, postUUID: postUUID,
+                                     emoji: oldEmoji, count: result.replacedCount, nick: nick, added: false)
+        }
         broadcastReactionChanged(board: board.path, threadUUID: threadUUID, postUUID: postUUID,
                                  emoji: emoji, count: result.count, nick: nick, added: result.added)
     }
