@@ -327,9 +327,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
 
         for entry in tables {
             // Only insert where add_posts = true and add_reactions does not yet exist.
+            // Do NOT specify the id column — it is INTEGER PRIMARY KEY AUTOINCREMENT (Int64).
             let sql = """
-            INSERT OR IGNORE INTO "\(entry.table)" (id, name, value, \(entry.ownerColumn))
-            SELECT lower(hex(randomblob(16))), '\(reactionPrivilege)', 1, \(entry.ownerColumn)
+            INSERT OR IGNORE INTO "\(entry.table)" (name, value, \(entry.ownerColumn))
+            SELECT '\(reactionPrivilege)', 1, \(entry.ownerColumn)
             FROM "\(entry.table)"
             WHERE name = '\(postPrivilege)' AND value = 1
               AND \(entry.ownerColumn) NOT IN (
