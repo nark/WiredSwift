@@ -460,7 +460,7 @@ public class P7Socket: NSObject {
 
         } catch {
             if let socketError = error as? Socket.Error {
-                throw NetworkError.fromErrno(errno, host: hostname, port: port)
+                throw NetworkError.fromErrno(socketError.errno, host: hostname, port: port)
             } else {
                 throw error
             }
