@@ -194,8 +194,21 @@ public class BoardsController {
                   icon BLOB
                 );
                 """,
+                """
+                CREATE TABLE IF NOT EXISTS board_reactions (
+                  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                  target_uuid   TEXT    NOT NULL,
+                  target_type   TEXT    NOT NULL CHECK(target_type IN ('thread','post')),
+                  emoji         TEXT    NOT NULL,
+                  login         TEXT    NOT NULL,
+                  nick          TEXT    NOT NULL,
+                  reaction_date REAL    NOT NULL,
+                  UNIQUE(target_uuid, target_type, emoji, login)
+                );
+                """,
                 "CREATE INDEX IF NOT EXISTS idx_board_threads_board_path ON board_threads(board_path);",
-                "CREATE INDEX IF NOT EXISTS idx_board_posts_thread_uuid ON board_posts(thread_uuid);"
+                "CREATE INDEX IF NOT EXISTS idx_board_posts_thread_uuid ON board_posts(thread_uuid);",
+                "CREATE INDEX IF NOT EXISTS idx_board_reactions_target ON board_reactions(target_uuid, target_type);"
             ]
             
             for statement in sql where sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
@@ -838,7 +851,28 @@ public class BoardsController {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
-                
+
+                // Cascade-delete reactions for the thread body and all its reply posts.
+                var reactionsThreadStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, "DELETE FROM board_reactions WHERE target_uuid = ? AND target_type = 'thread';", -1, &reactionsThreadStmt, nil) == SQLITE_OK, let reactionsThreadStmt else {
+                    _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                    return false
+                }
+                sqlite3_bind_text(reactionsThreadStmt, 1, key, -1, SQLITE_TRANSIENT)
+                sqlite3_step(reactionsThreadStmt)
+                sqlite3_finalize(reactionsThreadStmt)
+
+                var reactionsPostsStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db,
+                    "DELETE FROM board_reactions WHERE target_type = 'post' AND target_uuid IN (SELECT uuid FROM board_posts WHERE thread_uuid = ?);",
+                    -1, &reactionsPostsStmt, nil) == SQLITE_OK, let reactionsPostsStmt else {
+                    _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                    return false
+                }
+                sqlite3_bind_text(reactionsPostsStmt, 1, key, -1, SQLITE_TRANSIENT)
+                sqlite3_step(reactionsPostsStmt)
+                sqlite3_finalize(reactionsPostsStmt)
+
                 var threadStatement: OpaquePointer?
                 guard sqlite3_prepare_v2(db, "DELETE FROM board_threads WHERE uuid = ?;", -1, &threadStatement, nil) == SQLITE_OK, let threadStatement else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
@@ -983,8 +1017,23 @@ public class BoardsController {
         return withLock {
             let key = canonicalUUID(uuid)
             if let persisted = withDatabase({ db -> Bool? in
+                guard sqlite3_exec(db, "BEGIN TRANSACTION;", nil, nil, nil) == SQLITE_OK else { return false }
+                defer { _ = sqlite3_exec(db, "COMMIT;", nil, nil, nil) }
+
+                var reactionsStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, "DELETE FROM board_reactions WHERE target_uuid = ? AND target_type = 'post';", -1, &reactionsStmt, nil) == SQLITE_OK, let reactionsStmt else {
+                    _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                    return false
+                }
+                sqlite3_bind_text(reactionsStmt, 1, key, -1, SQLITE_TRANSIENT)
+                sqlite3_step(reactionsStmt)
+                sqlite3_finalize(reactionsStmt)
+
                 var statement: OpaquePointer?
-                guard sqlite3_prepare_v2(db, "DELETE FROM board_posts WHERE uuid = ?;", -1, &statement, nil) == SQLITE_OK, let statement else { return false }
+                guard sqlite3_prepare_v2(db, "DELETE FROM board_posts WHERE uuid = ?;", -1, &statement, nil) == SQLITE_OK, let statement else {
+                    _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                    return false
+                }
                 defer { sqlite3_finalize(statement) }
                 sqlite3_bind_text(statement, 1, key, -1, SQLITE_TRANSIENT)
                 return sqlite3_step(statement) == SQLITE_DONE
@@ -1745,6 +1794,137 @@ public class BoardsController {
         guard deletePost(uuid: uuid) else { return [] }
         // No specific broadcast for individual post deletion; thread_changed covers count updates
         return []
+    }
+
+    // MARK: - Reactions
+
+    /// A single emoji reaction summary for a thread or post.
+    public struct ReactionSummary {
+        public let emoji: String
+        public let count: Int
+        public let isOwn: Bool
+    }
+
+    /// Toggle an emoji reaction for `login` on a thread body (`postUUID == nil`) or a reply post.
+    /// Returns `(added: true, count: newCount)` when added, `(added: false, count: newCount)` when removed,
+    /// or `nil` on database error.
+    @discardableResult
+    public func toggleReaction(threadUUID: String, postUUID: String?,
+                               emoji: String, login: String, nick: String) -> (added: Bool, count: Int)? {
+        let targetUUID = canonicalUUID(postUUID ?? threadUUID)
+        let targetType = postUUID != nil ? "post" : "thread"
+        let now = Date().timeIntervalSince1970
+
+        return withDatabase { db in
+            guard sqlite3_exec(db, "BEGIN TRANSACTION;", nil, nil, nil) == SQLITE_OK else { return nil }
+
+            // Check whether a row already exists for this (target, emoji, login) tuple.
+            var checkStmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db,
+                "SELECT id FROM board_reactions WHERE target_uuid=? AND target_type=? AND emoji=? AND login=?;",
+                -1, &checkStmt, nil) == SQLITE_OK, let checkStmt else {
+                _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                return nil
+            }
+            sqlite3_bind_text(checkStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(checkStmt, 2, targetType, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(checkStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(checkStmt, 4, login,      -1, SQLITE_TRANSIENT)
+            let exists = sqlite3_step(checkStmt) == SQLITE_ROW
+            sqlite3_finalize(checkStmt)
+
+            let added: Bool
+            if exists {
+                // Remove the reaction (toggle off).
+                var delStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db,
+                    "DELETE FROM board_reactions WHERE target_uuid=? AND target_type=? AND emoji=? AND login=?;",
+                    -1, &delStmt, nil) == SQLITE_OK, let delStmt else {
+                    _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                    return nil
+                }
+                sqlite3_bind_text(delStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(delStmt, 2, targetType, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(delStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(delStmt, 4, login,      -1, SQLITE_TRANSIENT)
+                let ok = sqlite3_step(delStmt) == SQLITE_DONE
+                sqlite3_finalize(delStmt)
+                guard ok else { _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil); return nil }
+                added = false
+            } else {
+                // Add the reaction.
+                var insStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db,
+                    "INSERT INTO board_reactions(target_uuid,target_type,emoji,login,nick,reaction_date) VALUES(?,?,?,?,?,?);",
+                    -1, &insStmt, nil) == SQLITE_OK, let insStmt else {
+                    _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                    return nil
+                }
+                sqlite3_bind_text(insStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insStmt, 2, targetType, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insStmt, 4, login,      -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insStmt, 5, nick,       -1, SQLITE_TRANSIENT)
+                sqlite3_bind_double(insStmt, 6, now)
+                let ok = sqlite3_step(insStmt) == SQLITE_DONE
+                sqlite3_finalize(insStmt)
+                guard ok else { _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil); return nil }
+                added = true
+            }
+
+            // Count remaining reactions for this (target, emoji).
+            var cntStmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db,
+                "SELECT COUNT(*) FROM board_reactions WHERE target_uuid=? AND target_type=? AND emoji=?;",
+                -1, &cntStmt, nil) == SQLITE_OK, let cntStmt else {
+                _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
+                return nil
+            }
+            sqlite3_bind_text(cntStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(cntStmt, 2, targetType, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(cntStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
+            _ = sqlite3_step(cntStmt)
+            let count = Int(sqlite3_column_int(cntStmt, 0))
+            sqlite3_finalize(cntStmt)
+
+            _ = sqlite3_exec(db, "COMMIT;", nil, nil, nil)
+            return (added, count)
+        } ?? nil
+    }
+
+    /// Returns the reaction summaries for a thread body (`postUUID == nil`) or a reply post,
+    /// including whether the `currentLogin` account has already reacted with each emoji.
+    public func getReactions(threadUUID: String, postUUID: String?,
+                             currentLogin: String) -> [ReactionSummary] {
+        let targetUUID = canonicalUUID(postUUID ?? threadUUID)
+        let targetType = postUUID != nil ? "post" : "thread"
+
+        return withDatabase { db -> [ReactionSummary]? in
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, """
+                SELECT emoji,
+                       COUNT(*) AS cnt,
+                       MAX(CASE WHEN login = ? THEN 1 ELSE 0 END) AS is_own
+                FROM board_reactions
+                WHERE target_uuid = ? AND target_type = ?
+                GROUP BY emoji
+                ORDER BY MIN(reaction_date);
+                """, -1, &stmt, nil) == SQLITE_OK, let stmt else { return nil }
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_text(stmt, 1, currentLogin, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(stmt, 2, targetUUID,   -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(stmt, 3, targetType,   -1, SQLITE_TRANSIENT)
+
+            var results: [ReactionSummary] = []
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                guard let emojiPtr = sqlite3_column_text(stmt, 0) else { continue }
+                let emoji = String(cString: emojiPtr)
+                let count = Int(sqlite3_column_int(stmt, 1))
+                let isOwn = sqlite3_column_int(stmt, 2) != 0
+                results.append(ReactionSummary(emoji: emoji, count: count, isOwn: isOwn))
+            }
+            return results
+        } ?? []
     }
 
     // MARK: - Helpers

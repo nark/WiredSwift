@@ -713,6 +713,12 @@ public class ServerController: ServerDelegate {
         else if message.name == "wired.board.delete_post" {
             self.receiveBoardDeletePost(client: client, message: message)
         }
+        else if message.name == "wired.board.get_reactions" {
+            self.receiveBoardGetReactions(client: client, message: message)
+        }
+        else if message.name == "wired.board.add_reaction" {
+            self.receiveBoardAddReaction(client: client, message: message)
+        }
         else if message.name == "wired.board.subscribe_boards" {
             self.receiveBoardSubscribeBoards(client: client, message: message)
         }
@@ -2302,6 +2308,121 @@ public class ServerController: ServerDelegate {
 
         client.isSubscribedToBoards = false
         App.serverController.replyOK(client: client, message: message)
+    }
+
+    // MARK: - Reaction handlers
+
+    private func receiveBoardGetReactions(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+        guard user.hasPrivilege(name: "wired.account.board.read_boards") else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let threadUUID = message.uuid(forField: "wired.board.thread"), !threadUUID.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+        let postUUID = message.uuid(forField: "wired.board.post")
+
+        guard let thread = App.boardsController.getThread(uuid: threadUUID),
+              let board = App.boardsController.getBoardInfo(path: thread.board) else {
+            App.serverController.replyError(client: client, error: "wired.error.thread_not_found", message: message)
+            return
+        }
+        let username = user.username ?? ""
+        guard board.canRead(user: username, group: user.group ?? "") else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let summaries = App.boardsController.getReactions(threadUUID: threadUUID,
+                                                          postUUID: postUUID,
+                                                          currentLogin: username)
+        for summary in summaries {
+            let reply = P7Message(withName: "wired.board.reaction_list", spec: self.spec)
+            reply.addParameter(field: "wired.board.thread", value: threadUUID)
+            if let postUUID {
+                reply.addParameter(field: "wired.board.post", value: postUUID)
+            }
+            reply.addParameter(field: "wired.board.reaction.emoji",   value: summary.emoji)
+            reply.addParameter(field: "wired.board.reaction.count",   value: UInt32(summary.count))
+            reply.addParameter(field: "wired.board.reaction.is_own",  value: summary.isOwn)
+            _ = App.serverController.send(message: reply, client: client)
+        }
+        App.serverController.replyOK(client: client, message: message)
+    }
+
+    private func receiveBoardAddReaction(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+        guard user.hasPrivilege(name: "wired.account.board.add_reactions") else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard
+            let threadUUID = message.uuid(forField: "wired.board.thread"), !threadUUID.isEmpty,
+            let emoji = message.string(forField: "wired.board.reaction.emoji"), !emoji.isEmpty
+        else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+        let postUUID = message.uuid(forField: "wired.board.post")
+
+        guard let thread = App.boardsController.getThread(uuid: threadUUID),
+              let board = App.boardsController.getBoardInfo(path: thread.board) else {
+            App.serverController.replyError(client: client, error: "wired.error.thread_not_found", message: message)
+            return
+        }
+        let username  = user.username ?? ""
+        let groupName = user.group ?? ""
+        guard board.canRead(user: username, group: groupName) else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let nick = client.nick ?? username
+        guard let result = App.boardsController.toggleReaction(
+            threadUUID: threadUUID, postUUID: postUUID,
+            emoji: emoji, login: username, nick: nick
+        ) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+        broadcastReactionChanged(board: board.path, threadUUID: threadUUID, postUUID: postUUID,
+                                 emoji: emoji, count: result.count, nick: nick, added: result.added)
+    }
+
+    private func broadcastReactionChanged(board: String, threadUUID: String, postUUID: String?,
+                                          emoji: String, count: Int, nick: String, added: Bool) {
+        let messageName = added ? "wired.board.reaction_added" : "wired.board.reaction_removed"
+        forEachBoardSubscriber { connectedClient, connectedUser in
+            let username  = connectedUser.username ?? ""
+            let groupName = connectedUser.group ?? ""
+            guard let boardInfo = App.boardsController.getBoardInfo(path: board),
+                  boardInfo.canRead(user: username, group: groupName) else { return }
+
+            let broadcast = P7Message(withName: messageName, spec: self.spec)
+            broadcast.addParameter(field: "wired.board.board",          value: board)
+            broadcast.addParameter(field: "wired.board.thread",         value: threadUUID)
+            if let postUUID {
+                broadcast.addParameter(field: "wired.board.post",       value: postUUID)
+            }
+            broadcast.addParameter(field: "wired.board.reaction.emoji", value: emoji)
+            broadcast.addParameter(field: "wired.board.reaction.count", value: UInt32(count))
+            if added {
+                broadcast.addParameter(field: "wired.board.reaction.nick", value: nick)
+            }
+            _ = self.send(message: broadcast, client: connectedClient)
+        }
     }
 
     private func broadcastBoardAdded(board: Board) {
