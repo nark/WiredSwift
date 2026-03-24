@@ -14,13 +14,17 @@ import Glibc
 #endif
 
 public protocol LoggerDelegate: class {
+    /// Called with the fully-formatted output string (for legacy consumers).
     func loggerDidOutput(logger: Logger, output: String)
+
+    /// Called with structured log data — implement this to capture entries for
+    /// real-time broadcast (e.g. `wired.log.message`) to subscribed clients.
+    func loggerDidLog(level: Logger.LogLevel, message: String, date: Date)
 }
 
 public extension LoggerDelegate {
-    func loggerDidOutput(logger: Logger, output: String) {
-        
-    }
+    func loggerDidOutput(logger: Logger, output: String) {}
+    func loggerDidLog(level: Logger.LogLevel, message: String, date: Date) {}
 }
 
 /**
@@ -44,22 +48,30 @@ public class Logger {
         case DEBUG   = 5
         case VERBOSE = 6
 
-        var description: String {
+        public var description: String {
             switch self {
-            case .FATAL:
-                return "FATAL"
-            case .NOTICE:
-                return "NOTICE"
-            case .INFO:
-                return "INFO"
-            case .VERBOSE:
-                return "VERBOSE"
-            case .DEBUG:
-                return "DEBUG"
-            case .WARNING:
-                return "WARNING"
-            case .ERROR:
-                return "ERROR"
+            case .FATAL:   return "FATAL"
+            case .ERROR:   return "ERROR"
+            case .WARNING: return "WARNING"
+            case .NOTICE:  return "NOTICE"
+            case .INFO:    return "INFO"
+            case .DEBUG:   return "DEBUG"
+            case .VERBOSE: return "VERBOSE"
+            }
+        }
+
+        /// Parse a human-readable level name from config (case-insensitive).
+        /// Accepted: fatal, error, warning/warn, notice, info, debug, verbose
+        public static func fromString(_ string: String) -> LogLevel? {
+            switch string.trimmingCharacters(in: .whitespaces).lowercased() {
+            case "fatal":           return .FATAL
+            case "error":           return .ERROR
+            case "warning", "warn": return .WARNING
+            case "notice":          return .NOTICE
+            case "info":            return .INFO
+            case "debug":           return .DEBUG
+            case "verbose":         return .VERBOSE
+            default:                return nil
             }
         }
     }
@@ -190,6 +202,7 @@ public class Logger {
         
         if let d = Logger.delegate {
             d.loggerDidOutput(logger: self, output: outputString)
+            d.loggerDidLog(level: severity, message: string, date: date)
         }
 
         let currentOutputs = withFileLock { outputs }
@@ -303,9 +316,12 @@ public class Logger {
 
      */
     public static func setMaxLevel(_ at: LogLevel) {
-        if 0 <= at.rawValue && at.rawValue <= 5 {
-            shared.maxLevel = at.rawValue
-        }
+        shared.maxLevel = at.rawValue
+    }
+
+    /// The currently active log level.
+    public static var currentLevel: LogLevel {
+        return LogLevel(rawValue: shared.maxLevel) ?? .INFO
     }
 
     public static func setLimitLogSize(_ at: UInt64) {

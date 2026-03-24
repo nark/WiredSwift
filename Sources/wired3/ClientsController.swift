@@ -22,21 +22,23 @@ public class ClientsController {
     public func addClient(client: Client) {
         self.clientsLock.exclusivelyWrite {
             self.connectedClients[client.userID] = client
-            
-            WiredSwift.Logger.info("Connected clients: \(self.connectedClients)")
         }
+        // Logger must NOT be called inside the write-lock: loggerDidLog →
+        // broadcastEntry → connectedClientsSnapshot() would try to re-acquire
+        // the same lock on the same thread, causing a deadlock.
+        WiredSwift.Logger.debug("Client \(client.userID) added — connected: \(self.connectedClientsSnapshot().count)")
     }
-    
 
-    
+
+
     public func removeClient(client: Client) {
         client.socket.disconnect()
-        
+
         self.clientsLock.exclusivelyWrite {
             self.connectedClients[client.userID] = nil
-            
-            WiredSwift.Logger.info("Connected users: \(self.connectedClients)")
         }
+        // Same re-entrancy risk as addClient — keep Logger calls outside the lock.
+        WiredSwift.Logger.debug("Client \(client.userID) removed — connected: \(self.connectedClientsSnapshot().count)")
     }
     
     

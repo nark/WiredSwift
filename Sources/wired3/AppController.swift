@@ -38,11 +38,15 @@ public class AppController {
     var indexController:IndexController!
     var transfersController:TransfersController!
     var bootstrapStateStore: BootstrapStateStore!
-    
+    var logsController: LogsController!
+
     var config:Config
-    
+
+    /// When true (--debug flag), log level is pinned to DEBUG and SIGHUP cannot lower it.
+    public var debugMode: Bool = false
+
     // MARK: - Public
-    public init(specPath:String, dbPath:String, rootPath:String, configPath: String, workingDirectoryPath: String) {
+    public init(specPath:String, dbPath:String, rootPath:String, configPath: String, workingDirectoryPath: String, debugMode: Bool = false) {
         let specUrl = URL(fileURLWithPath: specPath)
         
         self.workingDirectoryPath = workingDirectoryPath
@@ -50,6 +54,7 @@ public class AppController {
         self.configPath = configPath
         self.databaseURL = URL(fileURLWithPath: dbPath)
         self.config = Config(withPath: configPath)
+        self.debugMode = debugMode
 
         if !self.config.load() {
             Logger.fatal("Cannot load config file at path \(configPath)")
@@ -67,6 +72,12 @@ public class AppController {
 
     
     public func start() {
+        // Install LogsController as Logger.delegate first so that every log
+        // emitted during startup is captured in the buffer and can be
+        // replayed via wired.log.get_log once a client subscribes.
+        self.logsController = LogsController()
+        Logger.delegate = self.logsController
+
         self.bootstrapStateStore = BootstrapStateStore(workingDirectoryPath: self.workingDirectoryPath)
         self.databaseController = DatabaseController(baseURL: self.databaseURL, spec: self.spec)
 
@@ -157,6 +168,8 @@ public class AppController {
             return
         }
 
+        reloadLogLevel()
+
         if let raw = self.config["server", "files"] as? String {
             let newPath = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             if !newPath.isEmpty && newPath != self.rootPath {
@@ -170,6 +183,21 @@ public class AppController {
         self.indexController.configure(reindexInterval: resolvedReindexInterval())
 
         self.serverController.reloadConfig()
+    }
+
+    /// Apply `[log] level` from config, unless `--debug` is active (debug mode pins to DEBUG).
+    private func reloadLogLevel() {
+        guard !debugMode else { return }
+        guard let raw = self.config["log", "level"] as? String else { return }
+        guard let level = Logger.LogLevel.fromString(raw) else {
+            Logger.warning("  log.level: unknown value '\(raw)' — keeping current level")
+            return
+        }
+        let current = Logger.currentLevel
+        if level != current {
+            Logger.info("  log.level: \(current.description.lowercased()) → \(level.description.lowercased())")
+            Logger.setMaxLevel(level)
+        }
     }
 
     /// Read the reindex interval from config.

@@ -481,12 +481,16 @@ public class ServerController: ServerDelegate {
 
     private func disconnectClient(client: Client, broadcastLeaves: Bool) {
         if client.state == .LOGGED_IN {
+            let login = client.user?.username ?? "unknown"
+            let ip = client.socket.getClientIP() ?? "unknown"
+            Logger.info("Disconnect from '\(login)' (\(ip))")
             self.recordEvent(.userLoggedOut, client: client)
         }
         App.filesController.unsubscribeAll(client: client)
         client.isSubscribedToAccounts = false
         client.isSubscribedToBoards = false
         client.isSubscribedToEvents = false
+        client.isSubscribedToLog = false
         App.chatsController.removeUserFromAllChats(client: client, broadcastLeaves: broadcastLeaves)
         client.state = .DISCONNECTED
         App.clientsController.removeClient(client: client)
@@ -787,6 +791,15 @@ public class ServerController: ServerDelegate {
         }
         else if message.name == "wired.event.delete_events" {
             self.receiveEventDeleteEvents(client: client, message: message)
+        }
+        else if message.name == "wired.log.get_log" {
+            App.logsController.getLog(client: client, message: message)
+        }
+        else if message.name == "wired.log.subscribe" {
+            App.logsController.subscribe(client: client, message: message)
+        }
+        else if message.name == "wired.log.unsubscribe" {
+            App.logsController.unsubscribe(client: client, message: message)
         }
         else if message.name == "wired.account.list_users" {
             self.receiveAccountListUsers(client: client, message: message)
@@ -2489,7 +2502,7 @@ public class ServerController: ServerDelegate {
             ))
             App.serverController.reply(client: client, reply: reply, message: message)
 
-            Logger.error("Login failed for user '\(login)'")
+            Logger.warning("Login from \(clientIP) failed for '\(login)': Wrong password")
 
             // FINDING_A_001: Track failed attempt and apply ban if threshold reached
             loginAttemptsLock.lock()
@@ -2514,15 +2527,17 @@ public class ServerController: ServerDelegate {
 
         client.user     = user
         client.state    = .LOGGED_IN
-        
+
         let response = P7Message(withName: "wired.login", spec: self.spec)
-        
         response.addParameter(field: "wired.user.id", value: client.userID)
-        
         App.serverController.reply(client: client, reply: response, message: message)
-        
+
         client.loginTime = Date()
-                
+
+        let clientInfo = [client.applicationName, client.applicationVersion]
+            .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+        Logger.info("Login from \(clientIP) as '\(login)' succeeded using \(clientInfo.isEmpty ? "unknown client" : clientInfo)")
+
         App.serverController.reply(client: client, reply: accountPrivilegesMessage(for: user), message: message)
         self.recordEvent(
             .userLoggedIn,
@@ -3637,6 +3652,10 @@ public class ServerController: ServerDelegate {
                 connectedClient.isSubscribedToEvents = false
             }
 
+            if !refreshedUser.hasPrivilege(name: "wired.account.log.view_log") {
+                connectedClient.isSubscribedToLog = false
+            }
+
             _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
         }
     }
@@ -3663,6 +3682,10 @@ public class ServerController: ServerDelegate {
 
             if !refreshedUser.hasPrivilege(name: "wired.account.events.view_events") {
                 connectedClient.isSubscribedToEvents = false
+            }
+
+            if !refreshedUser.hasPrivilege(name: "wired.account.log.view_log") {
+                connectedClient.isSubscribedToLog = false
             }
 
             _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
@@ -3886,7 +3909,7 @@ public class ServerController: ServerDelegate {
                         checksum:    self.serverChecksum
                     )
 
-                    Logger.info("Accept new connection from \(p7Socket.remoteAddress ?? "unknown")")
+                    Logger.info("Connect from \(p7Socket.remoteAddress ?? "unknown")")
 
                     App.clientsController.addClient(client: client)
 

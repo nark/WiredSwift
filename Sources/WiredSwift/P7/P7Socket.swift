@@ -434,20 +434,20 @@ public class P7Socket: NSObject {
             if self.compression != .NONE {
                 self.configureCompression()
                 
-                Logger.info("Compression enabled for \(self.compression)")
+                Logger.debug("Compression enabled for \(self.compression)")
             }
 
             if self.checksum != .NONE {
                 self.configureChecksum()
-                
-                Logger.info("Checksum enabled for \(self.checksum)")
+
+                Logger.debug("Checksum enabled for \(self.checksum)")
             }
 
             if self.cipherType != .NONE {
                 // Key Exchange
                 try self.connectKeyExchange()
-                
-                Logger.info("Connect with encryption enabled for \(self.cipherType)")
+
+                Logger.debug("Connect with encryption enabled for \(self.cipherType)")
             }
 
             if self.remoteCompatibilityCheck {
@@ -476,21 +476,21 @@ public class P7Socket: NSObject {
         if self.compression != .NONE {
             self.configureCompression()
         
-            Logger.info("Compression enabled for \(self.compression)")
+            Logger.debug("Compression enabled for \(self.compression)")
 
         }
-        
+
         if self.checksum != .NONE {
             self.configureChecksum()
-        
-            Logger.info("Checkum enabled for \(self.checksum)")
+
+            Logger.debug("Checksum enabled for \(self.checksum)")
 
         }
-                        
+
         if self.cipherType != .NONE {
             try self.acceptKeyExchange(timeout: timeout)
-        
-            Logger.info("Accept with encryption enabled for \(self.cipherType)")
+
+            Logger.debug("Accept with encryption enabled for \(self.cipherType)")
         }
                 
         if self.localCompatibilityCheck {
@@ -542,7 +542,7 @@ public class P7Socket: NSObject {
                 
                 lengthData.append(uint32: UInt32(messageData.count))
                 
-                Logger.info("WRITE [\(self.hash)]: \(message.name!) \(messageData.count)")
+                Logger.debug("WRITE [\(self.hash)]: \(message.name!) \(messageData.count)")
                 //Logger.debug("\n\(message.xml())\n")
                 
                 // deflate
@@ -680,7 +680,7 @@ public class P7Socket: NSObject {
 
         // 6️⃣ Build message
         let message = P7Message(withData: payload, spec: spec)
-        Logger.info("READ [\(hash)]: \(message.name)")
+        Logger.debug("READ [\(hash)]: \(message.name)")
 
         return message
 

@@ -74,14 +74,17 @@ struct Wired: ParsableCommand {
             Logger.info("Backfilled security.strict_identity in \(resolved.configPath)")
         }
         bootstrapRuntimeFiles(using: resolved)
-        configureLogger(logFilePath: resolved.logPath)
+        configureLogger(logFilePath: resolved.logPath, configPath: resolved.configPath)
+
+        Logger.info("Starting \(WiredServerVersion.display)")
 
         App = AppController(
             specPath: resolved.specPath,
             dbPath: resolved.dbPath,
             rootPath: resolved.filesRootPath,
             configPath: resolved.configPath,
-            workingDirectoryPath: resolved.workingDirectoryPath
+            workingDirectoryPath: resolved.workingDirectoryPath,
+            debugMode: debugMode
         )
 
         writePID(to: resolved.pidPath)
@@ -301,6 +304,11 @@ checksum = SECURE_ONLY
 
 [security]
 strict_identity = yes
+
+[log]
+# Log level: fatal | error | warning | notice | info | debug | verbose
+# Use --debug at startup to force debug level regardless of this setting.
+level = info
 """
 
         do {
@@ -311,13 +319,35 @@ strict_identity = yes
         }
     }
 
-    private func configureLogger(logFilePath: String) {
+    private func configureLogger(logFilePath: String, configPath: String) {
         Logger.setDestinations([.Stdout, .File], filePath: "wired.log")
         _ = Logger.setFileDestination(logFilePath)
         // Rotate at most once per day (not every minute, which is the default).
         Logger.setTimeLimit(.Day)
         // Allow up to 50 MB before size-based rotation.
         Logger.setLimitLogSize(50 * 1024 * 1024)
+
+        // --debug flag forces DEBUG level and overrides config.
+        if debugMode {
+            Logger.setMaxLevel(.DEBUG)
+            return
+        }
+
+        // Read [log] level from config.ini (default: info).
+        let level = resolvedLogLevel(fromConfigAt: configPath)
+        Logger.setMaxLevel(level)
+    }
+
+    /// Read `[log] level` from config.ini, fallback to `.INFO`.
+    private func resolvedLogLevel(fromConfigAt configPath: String) -> Logger.LogLevel {
+        guard FileManager.default.fileExists(atPath: configPath) else { return .INFO }
+        let cfg = Config(withPath: configPath)
+        guard cfg.load() else { return .INFO }
+        if let raw = cfg["log", "level"] as? String,
+           let level = Logger.LogLevel.fromString(raw) {
+            return level
+        }
+        return .INFO
     }
 
     private func configuredFilesRoot(fromConfigAt configPath: String) -> String? {
