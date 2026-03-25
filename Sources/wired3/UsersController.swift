@@ -309,6 +309,42 @@ public class UsersController: TableController, SocketPasswordDelegate {
         migrateGroupsColorColumnIfNeeded(db: db)
         migrateUsersOfflineMessagingColumnsIfNeeded(db: db)
         migrateOfflineMessagesTableIfNeeded(db: db)
+        migrateAddReactionsPrivilegeIfNeeded(db: db)
+    }
+
+    /// For existing installations, grant `wired.account.board.add_reactions` (true) to every
+    /// user and group that already has `wired.account.board.add_posts`, so that accounts
+    /// created before this feature was introduced can immediately use reactions without manual
+    /// configuration. Accounts that did not have add_posts keep the privilege absent (false).
+    private func migrateAddReactionsPrivilegeIfNeeded(db: OpaquePointer) {
+        let reactionPrivilege = "wired.account.board.add_reactions"
+        let postPrivilege     = "wired.account.board.add_posts"
+
+        let tables: [(table: String, ownerColumn: String)] = [
+            ("user_privileges",  "user_id"),
+            ("group_privileges", "group_id")
+        ]
+
+        for entry in tables {
+            // Only insert where add_posts = true and add_reactions does not yet exist.
+            // Do NOT specify the id column — it is INTEGER PRIMARY KEY AUTOINCREMENT (Int64).
+            let sql = """
+            INSERT OR IGNORE INTO "\(entry.table)" (name, value, \(entry.ownerColumn))
+            SELECT '\(reactionPrivilege)', 1, \(entry.ownerColumn)
+            FROM "\(entry.table)"
+            WHERE name = '\(postPrivilege)' AND value = 1
+              AND \(entry.ownerColumn) NOT IN (
+                  SELECT \(entry.ownerColumn) FROM "\(entry.table)" WHERE name = '\(reactionPrivilege)'
+              );
+            """
+            if sqliteExec(db: db, sql) != SQLITE_OK {
+                if let msg = sqlite3_errmsg(db) {
+                    WiredSwift.Logger.error("migrateAddReactionsPrivilege (\(entry.table)): \(String(cString: msg))")
+                }
+            } else {
+                WiredSwift.Logger.info("Migrated \(reactionPrivilege) for \(entry.table)")
+            }
+        }
     }
 
     private func migratePrivilegesTableIfNeeded(db: OpaquePointer,
