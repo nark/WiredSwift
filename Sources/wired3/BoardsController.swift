@@ -1862,6 +1862,8 @@ public class BoardsController {
         public let emoji: String
         public let count: Int
         public let isOwn: Bool
+        /// Display nicks of everyone who reacted with this emoji (snapshot at reaction time).
+        public let nicks: [String]
     }
 
     /// Result of a toggle operation. When the user switches emojis, `replacedEmoji` carries
@@ -2021,7 +2023,8 @@ public class BoardsController {
             guard sqlite3_prepare_v2(db, """
                 SELECT emoji,
                        COUNT(*) AS cnt,
-                       MAX(CASE WHEN login = ? THEN 1 ELSE 0 END) AS is_own
+                       MAX(CASE WHEN login = ? THEN 1 ELSE 0 END) AS is_own,
+                       GROUP_CONCAT(nick, '|') AS nicks_concat
                 FROM board_reactions
                 WHERE target_uuid = ? AND target_type = ?
                 GROUP BY emoji
@@ -2038,7 +2041,9 @@ public class BoardsController {
                 let emoji = String(cString: emojiPtr)
                 let count = Int(sqlite3_column_int(stmt, 1))
                 let isOwn = sqlite3_column_int(stmt, 2) != 0
-                results.append(ReactionSummary(emoji: emoji, count: count, isOwn: isOwn))
+                let nicksConcat = sqlite3_column_text(stmt, 3).map { String(cString: $0) } ?? ""
+                let nicks = nicksConcat.isEmpty ? [] : nicksConcat.components(separatedBy: "|")
+                results.append(ReactionSummary(emoji: emoji, count: count, isOwn: isOwn, nicks: nicks))
             }
             return results
         } ?? []

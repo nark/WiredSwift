@@ -2355,6 +2355,9 @@ public class ServerController: ServerDelegate {
             reply.addParameter(field: "wired.board.reaction.emoji",   value: summary.emoji)
             reply.addParameter(field: "wired.board.reaction.count",   value: UInt32(summary.count))
             reply.addParameter(field: "wired.board.reaction.is_own",  value: summary.isOwn)
+            if !summary.nicks.isEmpty {
+                reply.addParameter(field: "wired.board.reaction.nicks", value: summary.nicks.joined(separator: "|"))
+            }
             self.reply(client: client, reply: reply, message: message)
         }
         App.serverController.replyOK(client: client, message: message)
