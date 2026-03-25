@@ -469,6 +469,21 @@
                 reaction was submitted. The underlying account login is never disclosed to other clients.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.board.reaction.nicks" type="string" id="6030" version="3.1">
+            <p7:documentation>
+                Pipe-separated list of display nicks that reacted with a specific emoji on a target,
+                e.g. "Alice|Bob|Charlie". Sent as an optional field in wired.board.reaction_list.
+                Only public display nicks are disclosed — account logins are never transmitted.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.emojis" type="string" id="6029" version="3.1">
+            <p7:documentation>
+                Pipe-separated list of distinct emoji characters that have at least one reaction on the
+                thread body (e.g. "👍|❤️|😂"). Sent as an optional field in wired.board.thread_list so
+                clients can render a compact reaction preview in the thread list without an additional
+                round-trip. Only includes thread-level reactions, not reply-post reactions.
+            </p7:documentation>
+        </p7:field>
 
         <p7:field name="wired.file.path" type="string" id="7000" version="2.0">
             <p7:documentation>
@@ -2054,6 +2069,7 @@
             <p7:parameter field="wired.board.latest_reply_date" version="2.0" />
             <p7:parameter field="wired.board.subject" use="required" version="2.0" />
             <p7:parameter field="wired.user.nick" use="required" version="2.0" />
+            <p7:parameter field="wired.board.reaction.emojis" version="3.1" />
         </p7:message>
 
         <p7:message name="wired.board.thread_list.done" id="6005" version="2.0">
@@ -2419,9 +2435,10 @@
             <p7:parameter field="wired.transaction" version="3.1" />
             <p7:parameter field="wired.board.thread" use="required" version="3.1" />
             <p7:parameter field="wired.board.post" version="3.1" />
-            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
-            <p7:parameter field="wired.board.reaction.count" use="required" version="3.1" />
-            <p7:parameter field="wired.board.reaction.is_own" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji"   use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.count"   use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.is_own"  use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.nicks"   version="3.1" />
         </p7:message>
 
         <p7:message name="wired.board.add_reaction" id="6040" version="3.1">
