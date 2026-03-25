@@ -1563,6 +1563,10 @@ public class ServerController: ServerDelegate {
             if let latestReplyDate = thread.latestReplyDate {
                 reply.addParameter(field: "wired.board.latest_reply_date", value: latestReplyDate)
             }
+            let emojiSummary = App.boardsController.getThreadReactionEmojis(threadUUID: thread.uuid)
+            if !emojiSummary.isEmpty {
+                reply.addParameter(field: "wired.board.reaction.emojis", value: emojiSummary)
+            }
             self.reply(client: client, reply: reply, message: message)
         }
 

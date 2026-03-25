@@ -2044,6 +2044,31 @@ public class BoardsController {
         } ?? []
     }
 
+    /// Returns a pipe-separated string of distinct emoji reacted on the thread body
+    /// (e.g. `"👍|❤️|😂"`), ordered by first reaction date. Returns an empty string
+    /// when there are no reactions.
+    public func getThreadReactionEmojis(threadUUID: String) -> String {
+        let targetUUID = canonicalUUID(threadUUID)
+        return withDatabase { db -> String? in
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, """
+                SELECT emoji
+                FROM board_reactions
+                WHERE target_uuid = ? AND target_type = 'thread'
+                GROUP BY emoji
+                ORDER BY MIN(reaction_date);
+                """, -1, &stmt, nil) == SQLITE_OK, let stmt else { return nil }
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_text(stmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
+            var emojis: [String] = []
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                guard let ptr = sqlite3_column_text(stmt, 0) else { continue }
+                emojis.append(String(cString: ptr))
+            }
+            return emojis.joined(separator: "|")
+        } ?? ""
+    }
+
     // MARK: - Helpers
 
     private func withLock<T>(_ block: () -> T) -> T {
