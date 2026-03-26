@@ -6,6 +6,7 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()
         runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_admin_2", password: "secret2")
         defer { try? runtime.stop() }
 
         let c1 = try runtime.connectClient(username: "it_admin", password: "secret")
@@ -19,10 +20,10 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
 
         // Stabilize CI by avoiding two near-simultaneous connection handshakes against
         // the same in-process runtime global state.
-        let c2 = try runtime.connectClient(username: "it_admin", password: "secret")
+        let c2 = try runtime.connectClient(username: "it_admin_2", password: "secret2")
         defer { c2.disconnect() }
         try sendClientInfoAndExpectServerInfo(socket: c2)
-        _ = try sendLoginAndExpectSuccess(socket: c2, username: "it_admin", password: "secret")
+        _ = try sendLoginAndExpectSuccess(socket: c2, username: "it_admin_2", password: "secret2")
         drainMessages(socket: c2)
 
         let create = P7Message(withName: "wired.chat.create_public_chat", spec: c1.spec)
@@ -31,10 +32,10 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
 
         var chatID: UInt32?
         var sawOkay = false
-        for _ in 0..<20 {
+        for _ in 0..<60 {
             let message: P7Message
             do {
-                message = try c1.readMessage(timeout: 3, enforceDeadline: true)
+                message = try c1.readMessage(timeout: 1, enforceDeadline: true)
             } catch {
                 continue
             }
@@ -512,6 +513,7 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()
         runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_admin_2", password: "secret2")
         defer { try? runtime.stop() }
 
         let subscriber = try runtime.connectClient(username: "it_admin", password: "secret")
@@ -520,10 +522,10 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = try sendLoginAndExpectSuccess(socket: subscriber, username: "it_admin", password: "secret")
         drainMessages(socket: subscriber)
 
-        let publisher = try runtime.connectClient(username: "it_admin", password: "secret")
+        let publisher = try runtime.connectClient(username: "it_admin_2", password: "secret2")
         defer { publisher.disconnect() }
         try sendClientInfoAndExpectServerInfo(socket: publisher)
-        _ = try sendLoginAndExpectSuccess(socket: publisher, username: "it_admin", password: "secret")
+        _ = try sendLoginAndExpectSuccess(socket: publisher, username: "it_admin_2", password: "secret2")
         drainMessages(socket: publisher)
 
         let subscribe = P7Message(withName: "wired.account.subscribe_accounts", spec: subscriber.spec)
@@ -537,7 +539,7 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertTrue(publisher.write(createUser))
         _ = try readMessage(from: publisher, expectedName: "wired.okay", maxReads: 20)
 
-        _ = try readMessage(from: subscriber, expectedName: "wired.account.accounts_changed", maxReads: 30)
+        _ = try readMessage(from: subscriber, expectedName: "wired.account.accounts_changed", maxReads: 80, timeout: 1)
     }
 
     func testListGroupsPermissionDeniedForGuestAndAllowedForAdmin() throws {
