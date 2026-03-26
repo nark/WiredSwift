@@ -151,7 +151,7 @@ final class WiredServerViewModel: ObservableObject {
     func startPolling() {
         guard pollTimer == nil else { return }
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.pollState()
             }
         }
@@ -320,7 +320,7 @@ final class WiredServerViewModel: ObservableObject {
             pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
                 let data = handle.availableData
                 guard !data.isEmpty, let line = String(data: data, encoding: .utf8) else { return }
-                Task { @MainActor in
+                Task { @MainActor [weak self] in
                     self?.appendLog(line)
                 }
             }
@@ -331,7 +331,7 @@ final class WiredServerViewModel: ObservableObject {
             statusMessage = L("status.server_started")
 
             task.terminationHandler = { [weak self] _ in
-                Task { @MainActor in
+                Task { @MainActor [weak self] in
                     self?.isRunning = false
                     self?.statusMessage = L("status.server_stopped")
                 }
