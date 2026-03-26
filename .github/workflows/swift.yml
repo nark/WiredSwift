@@ -42,5 +42,22 @@ jobs:
       - name: Build WiredChatBot
         run: swift build -v --product WiredChatBot
 
-      - name: Test
-        run: swift test -v
+      - name: Test (Unit)
+        run: |
+          set -euo pipefail
+          swift test -v --no-parallel --filter "^(WiredSwiftTests|wired3Tests)\\."
+
+      - name: Test (Integration Lot 1)
+        run: |
+          set -euo pipefail
+          swift test -v --no-parallel --filter "^wired3IntegrationTests\\.Lot1HandshakeAuthIntegrationTests\\."
+
+      - name: Test (Integration Lot 2)
+        run: |
+          set -euo pipefail
+          swift test -v --no-parallel --filter "^wired3IntegrationTests\\.Lot2FeatureIntegrationTests\\."
+
+      - name: Test (Integration Lot 3)
+        run: |
+          set -euo pipefail
+          swift test -v --no-parallel --filter "^wired3IntegrationTests\\.Lot3ResilienceIntegrationTests\\."
