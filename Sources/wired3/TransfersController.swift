@@ -571,7 +571,7 @@ public class TransfersController {
             return false
         }
         
-        let reply2: P7Message
+        var reply2: P7Message?
         while true {
             let incoming: P7Message
             do {
@@ -603,6 +603,11 @@ public class TransfersController {
 
             Logger.error("Could not accept message \(incoming.name ?? "nil") from \(client.user!.username!): Expected 'wired.transfer.upload'")
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: incoming)
+            return false
+        }
+
+        guard let reply2 else {
+            Logger.error("Missing 'wired.transfer.upload' payload from \(client.user!.username!) for \(transfer.path)")
             return false
         }
 
