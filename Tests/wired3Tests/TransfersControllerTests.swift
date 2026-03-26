@@ -4,6 +4,127 @@ import WiredSwift
 @testable import wired3Lib
 
 final class TransfersControllerTests: XCTestCase {
+    func testRunDownloadWithoutLimitsStartsImmediatelyAndCleansQueueState() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("payload.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data(repeating: 0x22, count: 32))
+
+        let transfers = makeTransfersController(root: root)
+        let client = makeAuthenticatedClient(userID: 20, username: "alice", includeWiredSpec: true)
+        let message = P7Message(withName: "wired.transfer.download_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.download(path: "/payload.bin", dataOffset: 0, rsrcOffset: 0, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        let result = transfers.run(transfer: transfer, client: client, message: message)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(transfer.state, .running)
+        XCTAssertTrue(transfers.transfers.isEmpty)
+        XCTAssertNil(transfers.usersDownloadTransfers["alice"])
+    }
+
+    func testRunDownloadWithActiveLimitAndDisconnectedClientDoesNotStartTransfer() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("queued.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data(repeating: 0x44, count: 16))
+
+        let transfers = makeTransfersController(root: root)
+        transfers.totalDownloadLimit = 1
+
+        let client = makeAuthenticatedClient(userID: 21, username: "bob", includeWiredSpec: true)
+        client.state = .DISCONNECTED
+        let message = P7Message(withName: "wired.transfer.download_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.download(path: "/queued.bin", dataOffset: 0, rsrcOffset: 0, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        let result = transfers.run(transfer: transfer, client: client, message: message)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(transfer.state, .queued)
+        XCTAssertTrue(transfers.transfers.isEmpty)
+        XCTAssertNil(transfers.usersDownloadTransfers["bob"])
+    }
+
+    func testRunUploadWithoutLimitsStartsImmediatelyAndCleansQueueState() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let transfers = makeTransfersController(root: root)
+        let client = makeAuthenticatedClient(userID: 22, username: "charlie", includeWiredSpec: true)
+        let message = P7Message(withName: "wired.transfer.upload_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.upload(path: "/upload-run.dat", dataSize: 24, rsrcSize: 0, executable: false, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        let result = transfers.run(transfer: transfer, client: client, message: message)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(transfer.state, .running)
+        XCTAssertTrue(transfers.transfers.isEmpty)
+        XCTAssertNil(transfers.usersUploadTransfers["charlie"])
+    }
+
+    func testRunUploadWithActiveLimitAndDisconnectedClientDoesNotStartTransfer() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let transfers = makeTransfersController(root: root)
+        transfers.totalUploadLimit = 1
+
+        let client = makeAuthenticatedClient(userID: 24, username: "eve", includeWiredSpec: true)
+        client.state = .DISCONNECTED
+        let message = P7Message(withName: "wired.transfer.upload_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.upload(path: "/upload-queued.dat", dataSize: 10, rsrcSize: 0, executable: false, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        let result = transfers.run(transfer: transfer, client: client, message: message)
+
+        XCTAssertFalse(result)
+        XCTAssertEqual(transfer.state, .queued)
+        XCTAssertTrue(transfers.transfers.isEmpty)
+        XCTAssertNil(transfers.usersUploadTransfers["eve"])
+    }
+
+    func testRunTreatsZeroLimitsAsUnlimited() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("nolimit.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data(repeating: 0x11, count: 8))
+
+        let transfers = makeTransfersController(root: root)
+        transfers.totalDownloadLimit = 0
+        transfers.perUserDownloadLimit = 0
+        transfers.totalUploadLimit = 0
+        transfers.perUserUploadLimit = 0
+
+        let client = makeAuthenticatedClient(userID: 23, username: "dana", includeWiredSpec: true)
+        let message = P7Message(withName: "wired.transfer.download_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.download(path: "/nolimit.bin", dataOffset: 0, rsrcOffset: 0, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        _ = transfers.run(transfer: transfer, client: client, message: message)
+        XCTAssertEqual(transfer.state, .running)
+    }
+
     func testDownloadInitializesTransferWithOffsetsAndRemainingSizes() throws {
         let root = try makeTemporaryDirectory()
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
@@ -13,7 +134,7 @@ final class TransfersControllerTests: XCTestCase {
         FileManager.default.createFile(atPath: filePath, contents: content)
 
         let transfers = makeTransfersController(root: root)
-        let client = makeClient(userID: 1)
+        let client = makeClientWithWiredSpec(userID: 1)
         let message = P7Message(withName: "wired.transfer.download_file", spec: client.socket.spec)
 
         let transfer = try XCTUnwrap(
@@ -35,7 +156,7 @@ final class TransfersControllerTests: XCTestCase {
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
 
         let transfers = makeTransfersController(root: root)
-        let client = makeClient(userID: 2)
+        let client = makeClientWithWiredSpec(userID: 2)
         let message = P7Message(withName: "wired.transfer.download_file", spec: client.socket.spec)
 
         let transfer = transfers.download(path: "/does-not-exist.bin", dataOffset: 0, rsrcOffset: 0, client: client, message: message)
@@ -47,7 +168,7 @@ final class TransfersControllerTests: XCTestCase {
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
 
         let transfers = makeTransfersController(root: root)
-        let client = makeClient(userID: 3)
+        let client = makeClientWithWiredSpec(userID: 3)
         let message = P7Message(withName: "wired.transfer.upload_file", spec: client.socket.spec)
 
         let transfer = try XCTUnwrap(
@@ -72,7 +193,7 @@ final class TransfersControllerTests: XCTestCase {
         FileManager.default.createFile(atPath: partialPath, contents: existing)
 
         let transfers = makeTransfersController(root: root)
-        let client = makeClient(userID: 4)
+        let client = makeClientWithWiredSpec(userID: 4)
         let message = P7Message(withName: "wired.transfer.upload_file", spec: client.socket.spec)
 
         let transfer = try XCTUnwrap(
@@ -89,5 +210,33 @@ final class TransfersControllerTests: XCTestCase {
     private func makeTransfersController(root: URL) -> TransfersController {
         let filesController = FilesController(rootPath: root.path)
         return TransfersController(filesController: filesController)
+    }
+
+    private func makeClientWithWiredSpec(userID: UInt32) -> Client {
+        let socket = P7Socket(hostname: "localhost", port: 0, spec: P7Spec(withPath: wiredSpecPath()))
+        return Client(userID: userID, socket: socket)
+    }
+
+    private func makeAuthenticatedClient(userID: UInt32, username: String, includeWiredSpec: Bool = false) -> Client {
+        let socket: P7Socket
+        if includeWiredSpec {
+            socket = P7Socket(hostname: "localhost", port: 0, spec: P7Spec(withPath: wiredSpecPath()))
+        } else {
+            socket = P7Socket(hostname: "localhost", port: 0, spec: P7Spec(withPath: nil))
+        }
+
+        let client = Client(userID: userID, socket: socket)
+        client.state = .LOGGED_IN
+        client.user = User(username: username, password: "password")
+        return client
+    }
+
+    private func wiredSpecPath() -> String {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent() // wired3Tests
+            .deletingLastPathComponent() // Tests
+            .deletingLastPathComponent() // package root
+            .appendingPathComponent("Sources/wired3/wired.xml")
+            .path
     }
 }
