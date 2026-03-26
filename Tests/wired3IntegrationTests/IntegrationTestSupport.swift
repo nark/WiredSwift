@@ -169,7 +169,7 @@ final class IntegrationServerRuntime {
         didStart = true
     }
 
-    func stop(cleanup: Bool = true) throws {
+    func stop(cleanup: Bool = false) throws {
         guard started else { return }
 
         app.stop()
