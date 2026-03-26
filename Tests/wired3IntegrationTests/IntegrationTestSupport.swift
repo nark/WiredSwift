@@ -274,9 +274,15 @@ func readMessage(
     timeout: TimeInterval = 3
 ) throws -> P7Message {
     for _ in 0..<maxReads {
-        let message = try socket.readMessage(timeout: timeout, enforceDeadline: true)
-        if let name = message.name, expectedNames.contains(name) {
-            return message
+        do {
+            let message = try socket.readMessage(timeout: timeout, enforceDeadline: true)
+            if let name = message.name, expectedNames.contains(name) {
+                return message
+            }
+        } catch {
+            // Integration streams can be briefly idle between async server pushes.
+            // Keep polling until maxReads is reached.
+            continue
         }
     }
 

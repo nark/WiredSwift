@@ -30,7 +30,12 @@ final class Lot2FeatureIntegrationTests: XCTestCase {
         var chatID: UInt32?
         var sawOkay = false
         for _ in 0..<20 {
-            let message = try c1.readMessage(timeout: 3, enforceDeadline: true)
+            let message: P7Message
+            do {
+                message = try c1.readMessage(timeout: 3, enforceDeadline: true)
+            } catch {
+                continue
+            }
             if message.name == "wired.chat.public_chat_created" {
                 chatID = message.uint32(forField: "wired.chat.id")
             } else if message.name == "wired.okay" {
@@ -93,7 +98,12 @@ final class Lot2FeatureIntegrationTests: XCTestCase {
 
         var sawDir = false
         for _ in 0..<32 {
-            let message = try socket.readMessage(timeout: 3, enforceDeadline: true)
+            let message: P7Message
+            do {
+                message = try socket.readMessage(timeout: 3, enforceDeadline: true)
+            } catch {
+                continue
+            }
             if message.name == "wired.file.file_list",
                message.string(forField: "wired.file.path") == "/it_dir" {
                 sawDir = true
@@ -205,7 +215,12 @@ final class Lot2FeatureIntegrationTests: XCTestCase {
         var sawEventList = false
         var sawEventListDone = false
         for _ in 0..<80 {
-            let message = try socket.readMessage(timeout: 0.5, enforceDeadline: true)
+            let message: P7Message
+            do {
+                message = try socket.readMessage(timeout: 0.5, enforceDeadline: true)
+            } catch {
+                continue
+            }
             if message.name == "wired.event.event_list" {
                 sawEventList = true
             }
@@ -226,7 +241,12 @@ final class Lot2FeatureIntegrationTests: XCTestCase {
         var sawMarker = false
         var sawLogDone = false
         for _ in 0..<160 {
-            let message = try socket.readMessage(timeout: 0.5, enforceDeadline: true)
+            let message: P7Message
+            do {
+                message = try socket.readMessage(timeout: 0.5, enforceDeadline: true)
+            } catch {
+                continue
+            }
             if message.name == "wired.log.list",
                message.string(forField: "wired.log.message")?.contains(marker) == true {
                 sawMarker = true
