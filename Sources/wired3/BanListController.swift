@@ -19,7 +19,7 @@ enum BanListError: Error {
     case notFound
 }
 
-private struct IPAddress {
+struct IPAddress {
     enum Family {
         case ipv4
         case ipv6
@@ -54,7 +54,7 @@ private struct IPAddress {
     }
 }
 
-private enum BanPattern {
+enum BanPattern {
     case exact(IPAddress)
     case wildcardIPv4([UInt8?])
     case cidr(IPAddress, Int)
@@ -144,7 +144,7 @@ private enum BanPattern {
         }
 
         guard remainingBits > 0 else { return true }
-        let mask = UInt8(0xFF << (8 - remainingBits))
+        let mask = UInt8(truncatingIfNeeded: 0xFF << (8 - remainingBits))
         return (lhs[fullBytes] & mask) == (rhs[fullBytes] & mask)
     }
 

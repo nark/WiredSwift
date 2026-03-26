@@ -1,39 +1,43 @@
-name: Swift
+name: CI
 
 on:
   push:
-    branches:
-      - wired3
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  macos:
-    runs-on: macOS-latest
+  build-and-test:
+    name: Build and Test (macOS)
+    runs-on: macos-14
+    timeout-minutes: 30
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/.swiftpm
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-swiftpm-
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Resolve Dependencies
+        run: swift package resolve
+
       - name: Build
         run: swift build -v
-  linux:
-    runs-on: ubuntu-latest
-    container:
-      image: swift:5.3.3-focal
-      options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
-    steps:
-      - name: Install dependencies
-        run: |
-          apt-get update
-          apt install build-essential make wget -y
-          apt install zlib1g-dev -y
-          apt install sqlite3 -y
-          apt install libsqlite3-dev -y
-          wget https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.3.2.tar.gz
-          tar -xzvf libressl-3.3.2.tar.gz
-          cd libressl-3.3.2
-          ./configure
-          make
-          make install
-          ldconfig
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Build
-        run: swift build -v
+
+      - name: Test
+        run: swift test -v

@@ -9,21 +9,21 @@ import Foundation
 import WiredSwift
 import GRDB
 
-private struct ChatTypingKey: Hashable {
+struct ChatTypingKey: Hashable {
     let chatID: UInt32
     let userID: UInt32
 }
 
-private extension ChatsController {
+extension ChatsController {
     // MARK: - Privates
 
-    private func describe(chat: Chat) -> String {
+    func describe(chat: Chat) -> String {
         let kind = chat is PrivateChat ? "private" : "public"
         let name = chat.name ?? "Private Chat"
         return "kind=\(kind) chatID=\(chat.chatID) name='\(name)'"
     }
     
-    private func add(chat:Chat) {
+    func add(chat:Chat) {
         self.chatsLock.exclusivelyWrite {
             if let existing = self.chats[chat.chatID] {
                 Logger.error("Replacing existing chat with duplicate ID: existing={\(self.describe(chat: existing))} incoming={\(self.describe(chat: chat))}")
@@ -43,7 +43,7 @@ private extension ChatsController {
     
     
     
-    private func remove(chat:Chat) {
+    func remove(chat:Chat) {
         clearTypingState(forChatID: chat.chatID)
 
         self.chatsLock.exclusivelyWrite {
@@ -63,7 +63,7 @@ private extension ChatsController {
     
     
     
-    private func chat(withID chatID:UInt32) -> Chat? {
+    func chat(withID chatID:UInt32) -> Chat? {
         return self.chatsLock.concurrentlyRead {
             self.chats[chatID]
         }
@@ -71,7 +71,7 @@ private extension ChatsController {
     
     
     // SECURITY (FINDING_C_009): Protect lastChatID increment with lock to prevent duplicate IDs
-    private func nextChatID() -> UInt32 {
+    func nextChatID() -> UInt32 {
         var newID: UInt32 = 0
         self.chatsLock.exclusivelyWrite {
             var candidate = self.lastChatID
@@ -92,7 +92,7 @@ private extension ChatsController {
     }
     
     
-    private func receiveChat(string:String, _ client:Client, _ message:P7Message, isSay:Bool) {
+    func receiveChat(string:String, _ client:Client, _ message:P7Message, isSay:Bool) {
         // SECURITY (FINDING_C_006): Rate limit chat messages (max 10/s per client)
         let now = Date()
         let exceeded: Bool = {
@@ -140,7 +140,7 @@ private extension ChatsController {
         }
     }
 
-    private func startTypingCleanupTimer() {
+    func startTypingCleanupTimer() {
         let timer = DispatchSource.makeTimerSource(queue: typingCleanupQueue)
         timer.schedule(deadline: .now() + Self.typingCleanupInterval, repeating: Self.typingCleanupInterval)
         timer.setEventHandler { [weak self] in
@@ -150,7 +150,7 @@ private extension ChatsController {
         timer.resume()
     }
 
-    private func expireTypingStates() {
+    func expireTypingStates() {
         let now = Date()
         let expiredKeys = typingStateLock.exclusivelyWrite { () -> [ChatTypingKey] in
             let expired = typingStates.compactMap { key, expiresAt in
@@ -170,7 +170,7 @@ private extension ChatsController {
         }
     }
 
-    private func broadcastTyping(chatID: UInt32, userID: UInt32, isTyping: Bool, excludingUserID: UInt32? = nil) {
+    func broadcastTyping(chatID: UInt32, userID: UInt32, isTyping: Bool, excludingUserID: UInt32? = nil) {
         guard let chat = self.chat(withID: chatID) else { return }
 
         chat.withClients { toClient in
@@ -186,7 +186,7 @@ private extension ChatsController {
         }
     }
 
-    private func updateTypingState(chatID: UInt32, userID: UInt32, isTyping: Bool) -> Bool {
+    func updateTypingState(chatID: UInt32, userID: UInt32, isTyping: Bool) -> Bool {
         let key = ChatTypingKey(chatID: chatID, userID: userID)
 
         return typingStateLock.exclusivelyWrite {
@@ -201,7 +201,7 @@ private extension ChatsController {
         }
     }
 
-    private func clearTypingState(forUserID userID: UInt32, inChatID chatID: UInt32, broadcastStop: Bool) {
+    func clearTypingState(forUserID userID: UInt32, inChatID chatID: UInt32, broadcastStop: Bool) {
         let removed = updateTypingState(chatID: chatID, userID: userID, isTyping: false)
 
         if removed && broadcastStop {
@@ -209,14 +209,14 @@ private extension ChatsController {
         }
     }
 
-    private func clearTypingState(forChatID chatID: UInt32) {
+    func clearTypingState(forChatID chatID: UInt32) {
         typingStateLock.exclusivelyWrite {
             typingStates = typingStates.filter { $0.key.chatID != chatID }
             typingPulseTimestamps = typingPulseTimestamps.filter { $0.key.chatID != chatID }
         }
     }
 
-    private func shouldRateLimitTypingPulse(chatID: UInt32, userID: UInt32, now: Date) -> Bool {
+    func shouldRateLimitTypingPulse(chatID: UInt32, userID: UInt32, now: Date) -> Bool {
         let key = ChatTypingKey(chatID: chatID, userID: userID)
 
         return typingStateLock.exclusivelyWrite {

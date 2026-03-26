@@ -7,7 +7,7 @@ import Foundation
 import GRDB
 import WiredSwift
 
-class IndexController: TableController {
+public class IndexController: TableController {
 
     let filesController: FilesController
 

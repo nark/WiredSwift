@@ -1,9 +1,9 @@
 import Foundation
 
-enum WiredServerVersion {
-    static let marketingVersion = "3.0"
-    static let buildNumber = "28"
-    static let commit = "local"
-    static let number = marketingVersion
-    static let display = "wired3 \(marketingVersion) (\(buildNumber)+\(commit))"
+public enum WiredServerVersion {
+    public static let marketingVersion = "3.0"
+    public static let buildNumber = "28"
+    public static let commit = "local"
+    public static let number = marketingVersion
+    public static let display = "wired3 \(marketingVersion) (\(buildNumber)+\(commit))"
 }

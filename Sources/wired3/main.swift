@@ -8,13 +8,13 @@
 import Foundation
 import ArgumentParser
 import WiredSwift
+import wired3Lib
 #if canImport(Darwin)
 import Darwin
 #else
 import Glibc
 #endif
 
-public var App:AppController!
 
 struct Wired: ParsableCommand {
     static let configuration = CommandConfiguration(

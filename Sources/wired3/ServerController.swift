@@ -387,6 +387,18 @@ public class ServerController: ServerDelegate {
         
         group.wait()
     }
+
+    public func stop() {
+        guard self.isRunning else { return }
+
+        self.isRunning = false
+
+        for client in App.clientsController.connectedClientsSnapshot() {
+            client.socket.disconnect()
+        }
+
+        self.socket?.close()
+    }
     
     
     /// Reloads all hot-reloadable parameters from `App.config`.
@@ -4057,6 +4069,9 @@ public class ServerController: ServerDelegate {
             }
 
         } catch let error {
+            if !self.isRunning {
+                return
+            }
             if let socketError = error as? Socket.Error {
                 Logger.error(socketError.description)
             } else {

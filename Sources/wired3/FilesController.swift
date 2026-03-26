@@ -32,7 +32,7 @@ public class FilesController {
     }
 
     /// Returns true if the resolved path is safely within the root jail.
-    private func isWithinJail(_ resolvedPath: String) -> Bool {
+    func isWithinJail(_ resolvedPath: String) -> Bool {
         let canonicalRoot = URL(fileURLWithPath: rootPath).resolvingSymlinksInPath().path
         let suffixed = canonicalRoot.hasSuffix("/") ? canonicalRoot : canonicalRoot + "/"
         return resolvedPath == canonicalRoot || resolvedPath.hasPrefix(suffixed)

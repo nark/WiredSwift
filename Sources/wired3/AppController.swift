@@ -35,7 +35,7 @@ public class AppController {
     var eventsController:EventsController!
     var boardsController:BoardsController!
     var filesController:FilesController!
-    var indexController:IndexController!
+    public var indexController:IndexController!
     var transfersController:TransfersController!
     var bootstrapStateStore: BootstrapStateStore!
     var logsController: LogsController!
@@ -142,6 +142,11 @@ public class AppController {
         }
 
         self.serverController.listen()
+    }
+
+    public func stop() {
+        self.serverController?.stop()
+        self.indexController?.configure(reindexInterval: 0)
     }
 
     private func resolvedServerPort() -> Int {

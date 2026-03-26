@@ -48,17 +48,47 @@ targets.append(
 targets.append(
     .testTarget(
         name: "WiredSwiftTests",
-        dependencies: ["WiredSwift"]
+        dependencies: ["WiredSwift"],
+        resources: [.copy("Resources/wired.xml")]
     )
 )
 targets.append(
     .target(
-        name: "wired3",
+        name: "wired3Lib",
         dependencies: [
             .byName(name: "WiredSwift"),
             .byName(name: "Configuration"),
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "GRDB", package: "GRDB.swift"),
+        ],
+        path: "Sources/wired3",
+        exclude: ["main.swift"]
+    )
+)
+targets.append(
+    .executableTarget(
+        name: "wired3",
+        dependencies: ["wired3Lib"],
+        path: "Sources/wired3",
+        sources: ["main.swift"]
+    )
+)
+targets.append(
+    .testTarget(
+        name: "wired3Tests",
+        dependencies: [
+            "wired3Lib",
+            "WiredSwift",
+            .product(name: "GRDB", package: "GRDB.swift"),
+        ]
+    )
+)
+targets.append(
+    .testTarget(
+        name: "wired3IntegrationTests",
+        dependencies: [
+            "wired3Lib",
+            "WiredSwift",
         ]
     )
 )
