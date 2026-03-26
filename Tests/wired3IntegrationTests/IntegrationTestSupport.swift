@@ -30,11 +30,11 @@ class SerializedIntegrationTestCase: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        Self.executionLock.lock()
+        SerializedIntegrationTestCase.executionLock.lock()
     }
 
     override func tearDownWithError() throws {
-        Self.executionLock.unlock()
+        SerializedIntegrationTestCase.executionLock.unlock()
         try super.tearDownWithError()
     }
 }
