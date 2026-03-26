@@ -36,8 +36,11 @@ jobs:
       - name: Resolve Dependencies
         run: swift package resolve
 
-      - name: Build
-        run: swift build -v
+      - name: Build wired3
+        run: swift build -v --product wired3
+
+      - name: Build WiredChatBot
+        run: swift build -v --product WiredChatBot
 
       - name: Test
         run: swift test -v
