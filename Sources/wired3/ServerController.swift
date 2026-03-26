@@ -498,14 +498,18 @@ public class ServerController: ServerDelegate {
             Logger.info("Disconnect from '\(login)' (\(ip))")
             self.recordEvent(.userLoggedOut, client: client)
         }
-        App.filesController.unsubscribeAll(client: client)
+
+        // During test/runtime shutdown, global App or controllers can already be tearing down.
+        // Avoid crashing disconnect paths on implicitly-unwrapped globals.
+        let app = App
+        app?.filesController?.unsubscribeAll(client: client)
         client.isSubscribedToAccounts = false
         client.isSubscribedToBoards = false
         client.isSubscribedToEvents = false
         client.isSubscribedToLog = false
-        App.chatsController.removeUserFromAllChats(client: client, broadcastLeaves: broadcastLeaves)
+        app?.chatsController?.removeUserFromAllChats(client: client, broadcastLeaves: broadcastLeaves)
         client.state = .DISCONNECTED
-        App.clientsController.removeClient(client: client)
+        app?.clientsController?.removeClient(client: client)
     }
     
     
