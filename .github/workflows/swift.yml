@@ -115,7 +115,7 @@ jobs:
             exit 0
           fi
 
-          read -r PROJECT_LINE_PCT PROJECT_REGION_PCT PROJECT_LINE_COVERED PROJECT_LINE_COUNT <<< "$(python3 -c 'import json; d=json.load(open(\".build/coverage-export.json\")); files=d.get(\"data\",[{}])[0].get(\"files\",[]); inc=(\"/Sources/WiredSwift/\",\"/Sources/wired3/\"); sel=[e for e in files if any(m in e.get(\"filename\",\"\") for m in inc)]; lc=sum(int(e.get(\"summary\",{}).get(\"lines\",{}).get(\"count\",0)) for e in sel); cc=sum(int(e.get(\"summary\",{}).get(\"lines\",{}).get(\"covered\",0)) for e in sel); rc=sum(int(e.get(\"summary\",{}).get(\"regions\",{}).get(\"count\",0)) for e in sel); cr=sum(int(e.get(\"summary\",{}).get(\"regions\",{}).get(\"covered\",0)) for e in sel); lp=(cc*100.0/lc) if lc else 0.0; rp=(cr*100.0/rc) if rc else 0.0; print(f\"{lp:.2f} {rp:.2f} {cc} {lc}\")')"
+          read -r PROJECT_LINE_PCT PROJECT_REGION_PCT PROJECT_LINE_COVERED PROJECT_LINE_COUNT <<< "$(python3 -c 'import json; d=json.load(open(".build/coverage-export.json")); files=d.get("data",[{}])[0].get("files",[]); inc=("/Sources/WiredSwift/","/Sources/wired3/"); sel=[e for e in files if any(m in e.get("filename","") for m in inc)]; lc=sum(int(e.get("summary",{}).get("lines",{}).get("count",0)) for e in sel); cc=sum(int(e.get("summary",{}).get("lines",{}).get("covered",0)) for e in sel); rc=sum(int(e.get("summary",{}).get("regions",{}).get("count",0)) for e in sel); cr=sum(int(e.get("summary",{}).get("regions",{}).get("covered",0)) for e in sel); lp=(cc*100.0/lc) if lc else 0.0; rp=(cr*100.0/rc) if rc else 0.0; print(f"{lp:.2f} {rp:.2f} {cc} {lc}")')"
 
           COVERAGE_MIN=50.00
           COVERAGE_STATUS="pass"
