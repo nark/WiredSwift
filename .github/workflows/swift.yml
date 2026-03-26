@@ -74,7 +74,7 @@ jobs:
           set -euo pipefail
 
           PROFILE_PATH="$(find .build -type f -name "*.profdata" | head -n 1 || true)"
-          TEST_BINARY="$(find .build -type f -path "*/WiredSwiftPackageTests.xctest/Contents/MacOS/*" | head -n 1 || true)"
+          TEST_BINARY="$(find .build -type f -path "*/WiredSwiftPackageTests.xctest/Contents/MacOS/WiredSwiftPackageTests" | head -n 1 || true)"
 
           if [[ -z "${PROFILE_PATH}" || -z "${TEST_BINARY}" ]]; then
             {
@@ -85,10 +85,20 @@ jobs:
             exit 0
           fi
 
-          xcrun llvm-cov report \
+          if ! xcrun llvm-cov report \
             "${TEST_BINARY}" \
             -instr-profile "${PROFILE_PATH}" \
-            > .build/coverage-report.txt
+            > .build/coverage-report.txt; then
+            {
+              echo "## Coverage"
+              echo
+              echo "Failed to compute coverage report."
+              echo
+              echo "- profile: \`${PROFILE_PATH}\`"
+              echo "- binary: \`${TEST_BINARY}\`"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
 
           TOTAL_LINE="$(grep -E "^TOTAL" .build/coverage-report.txt || true)"
 
