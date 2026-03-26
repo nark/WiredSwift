@@ -536,4 +536,185 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
 
         _ = try readMessage(from: subscriber, expectedName: "wired.account.accounts_changed", maxReads: 30)
     }
+
+    func testListGroupsPermissionDeniedForGuestAndAllowedForAdmin() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let guest = try runtime.connectClient(username: "guest", password: "")
+        defer { guest.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: guest)
+        _ = try sendLoginAndExpectSuccess(socket: guest, username: "guest", password: "")
+        drainMessages(socket: guest)
+
+        let listGroupsGuest = P7Message(withName: "wired.account.list_groups", spec: guest.spec)
+        XCTAssertTrue(guest.write(listGroupsGuest))
+        let denied = try readMessage(from: guest, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(denied.string(forField: "wired.error.string"), "wired.error.permission_denied")
+
+        let admin = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { admin.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: admin)
+        _ = try sendLoginAndExpectSuccess(socket: admin, username: "it_admin", password: "secret")
+        drainMessages(socket: admin)
+
+        let listGroupsAdmin = P7Message(withName: "wired.account.list_groups", spec: admin.spec)
+        XCTAssertTrue(admin.write(listGroupsAdmin))
+        _ = try readMessage(from: admin, expectedName: "wired.account.group_list.done", maxReads: 40)
+    }
+
+    func testAdminCreateReadEditAndDeleteGroupLifecycle() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let baseName = "integration_group_\(UUID().uuidString.prefix(8))"
+        let renamed = "\(baseName)_renamed"
+
+        let create = P7Message(withName: "wired.account.create_group", spec: socket.spec)
+        create.addParameter(field: "wired.account.name", value: baseName)
+        XCTAssertTrue(socket.write(create))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let readCreated = P7Message(withName: "wired.account.read_group", spec: socket.spec)
+        readCreated.addParameter(field: "wired.account.name", value: baseName)
+        XCTAssertTrue(socket.write(readCreated))
+        let created = try readMessage(from: socket, expectedName: "wired.account.group", maxReads: 20)
+        XCTAssertEqual(created.string(forField: "wired.account.name"), baseName)
+
+        let edit = P7Message(withName: "wired.account.edit_group", spec: socket.spec)
+        edit.addParameter(field: "wired.account.name", value: baseName)
+        edit.addParameter(field: "wired.account.new_name", value: renamed)
+        XCTAssertTrue(socket.write(edit))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let readOldName = P7Message(withName: "wired.account.read_group", spec: socket.spec)
+        readOldName.addParameter(field: "wired.account.name", value: baseName)
+        XCTAssertTrue(socket.write(readOldName))
+        let missingOld = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(missingOld.string(forField: "wired.error.string"), "wired.error.account_not_found")
+
+        let readRenamed = P7Message(withName: "wired.account.read_group", spec: socket.spec)
+        readRenamed.addParameter(field: "wired.account.name", value: renamed)
+        XCTAssertTrue(socket.write(readRenamed))
+        let renamedGroup = try readMessage(from: socket, expectedName: "wired.account.group", maxReads: 20)
+        XCTAssertEqual(renamedGroup.string(forField: "wired.account.name"), renamed)
+
+        let delete = P7Message(withName: "wired.account.delete_group", spec: socket.spec)
+        delete.addParameter(field: "wired.account.name", value: renamed)
+        XCTAssertTrue(socket.write(delete))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let readDeleted = P7Message(withName: "wired.account.read_group", spec: socket.spec)
+        readDeleted.addParameter(field: "wired.account.name", value: renamed)
+        XCTAssertTrue(socket.write(readDeleted))
+        let missingDeleted = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(missingDeleted.string(forField: "wired.error.string"), "wired.error.account_not_found")
+    }
+
+    func testBanlistGetBansReturnsInsertedEntryAndDone() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let pattern = "10.123.0.0/16"
+        let add = P7Message(withName: "wired.banlist.add_ban", spec: socket.spec)
+        add.addParameter(field: "wired.banlist.ip", value: pattern)
+        XCTAssertTrue(socket.write(add))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let get = P7Message(withName: "wired.banlist.get_bans", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+
+        var sawInsertedPattern = false
+        for _ in 0..<40 {
+            let message = try socket.readMessage(timeout: 3, enforceDeadline: true)
+            if message.name == "wired.banlist.list",
+               message.string(forField: "wired.banlist.ip") == pattern {
+                sawInsertedPattern = true
+            }
+            if message.name == "wired.banlist.list.done" {
+                break
+            }
+        }
+        XCTAssertTrue(sawInsertedPattern)
+
+        let delete = P7Message(withName: "wired.banlist.delete_ban", spec: socket.spec)
+        delete.addParameter(field: "wired.banlist.ip", value: pattern)
+        XCTAssertTrue(socket.write(delete))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+    }
+
+    func testEventFirstTimeAndDeleteEventsAreAccessibleForAdmin() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let firstTime = P7Message(withName: "wired.event.get_first_time", spec: socket.spec)
+        XCTAssertTrue(socket.write(firstTime))
+        let firstReply = try readMessage(from: socket, expectedName: "wired.event.first_time", maxReads: 20)
+        XCTAssertNotNil(firstReply.date(forField: "wired.event.first_time"))
+
+        let delete = P7Message(withName: "wired.event.delete_events", spec: socket.spec)
+        delete.addParameter(field: "wired.event.from_time", value: Date(timeIntervalSince1970: 0))
+        delete.addParameter(field: "wired.event.to_time", value: Date().addingTimeInterval(60))
+        XCTAssertTrue(socket.write(delete))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+    }
+
+    func testDirectorySubscriberReceivesDirectoryChangedBroadcast() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let subscriber = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { subscriber.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: subscriber)
+        _ = try sendLoginAndExpectSuccess(socket: subscriber, username: "it_admin", password: "secret")
+        drainMessages(socket: subscriber)
+
+        let actor = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { actor.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: actor)
+        _ = try sendLoginAndExpectSuccess(socket: actor, username: "it_admin", password: "secret")
+        drainMessages(socket: actor)
+
+        let subscribeRoot = P7Message(withName: "wired.file.subscribe_directory", spec: subscriber.spec)
+        subscribeRoot.addParameter(field: "wired.file.path", value: "/")
+        XCTAssertTrue(subscriber.write(subscribeRoot))
+        _ = try readMessage(from: subscriber, expectedName: "wired.okay", maxReads: 20)
+
+        let createdPath = "/notify_\(UUID().uuidString.prefix(6))"
+        let create = P7Message(withName: "wired.file.create_directory", spec: actor.spec)
+        create.addParameter(field: "wired.file.path", value: createdPath)
+        XCTAssertTrue(actor.write(create))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+
+        let changed = try readMessage(from: subscriber, expectedName: "wired.file.directory_changed", maxReads: 40, timeout: 1)
+        XCTAssertEqual(changed.string(forField: "wired.file.path"), "/")
+    }
 }
