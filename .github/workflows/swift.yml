@@ -115,74 +115,11 @@ jobs:
             exit 0
           fi
 
-          PROJECT_COVERAGE_JSON="$(python3 - <<'PY'
-import json
-from pathlib import Path
-
-path = Path(".build/coverage-export.json")
-data = json.loads(path.read_text())
-files = data.get("data", [{}])[0].get("files", [])
-
-included = ("/Sources/WiredSwift/", "/Sources/wired3/")
-line_count = 0
-line_covered = 0
-region_count = 0
-region_covered = 0
-
-for entry in files:
-    filename = entry.get("filename", "")
-    if not any(marker in filename for marker in included):
-        continue
-    summary = entry.get("summary", {})
-    lines = summary.get("lines", {})
-    regions = summary.get("regions", {})
-    line_count += int(lines.get("count", 0))
-    line_covered += int(lines.get("covered", 0))
-    region_count += int(regions.get("count", 0))
-    region_covered += int(regions.get("covered", 0))
-
-line_pct = (line_covered * 100.0 / line_count) if line_count else 0.0
-region_pct = (region_covered * 100.0 / region_count) if region_count else 0.0
-
-print(json.dumps({
-    "line_pct": line_pct,
-    "region_pct": region_pct,
-    "line_covered": line_covered,
-    "line_count": line_count
-}))
-PY
-)"
-
-          PROJECT_LINE_PCT="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
-import json, sys
-print(f"{json.loads(sys.argv[1])['line_pct']:.2f}")
-PY
-)"
-          PROJECT_REGION_PCT="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
-import json, sys
-print(f"{json.loads(sys.argv[1])['region_pct']:.2f}")
-PY
-)"
-          PROJECT_LINE_COVERED="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
-import json, sys
-print(json.loads(sys.argv[1])['line_covered'])
-PY
-)"
-          PROJECT_LINE_COUNT="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
-import json, sys
-print(json.loads(sys.argv[1])['line_count'])
-PY
-)"
+          read -r PROJECT_LINE_PCT PROJECT_REGION_PCT PROJECT_LINE_COVERED PROJECT_LINE_COUNT <<< "$(python3 -c 'import json; d=json.load(open(\".build/coverage-export.json\")); files=d.get(\"data\",[{}])[0].get(\"files\",[]); inc=(\"/Sources/WiredSwift/\",\"/Sources/wired3/\"); sel=[e for e in files if any(m in e.get(\"filename\",\"\") for m in inc)]; lc=sum(int(e.get(\"summary\",{}).get(\"lines\",{}).get(\"count\",0)) for e in sel); cc=sum(int(e.get(\"summary\",{}).get(\"lines\",{}).get(\"covered\",0)) for e in sel); rc=sum(int(e.get(\"summary\",{}).get(\"regions\",{}).get(\"count\",0)) for e in sel); cr=sum(int(e.get(\"summary\",{}).get(\"regions\",{}).get(\"covered\",0)) for e in sel); lp=(cc*100.0/lc) if lc else 0.0; rp=(cr*100.0/rc) if rc else 0.0; print(f\"{lp:.2f} {rp:.2f} {cc} {lc}\")')"
 
           COVERAGE_MIN=50.00
           COVERAGE_STATUS="pass"
-          if ! python3 - <<'PY' "${PROJECT_LINE_PCT}" "${COVERAGE_MIN}"
-import sys
-line_pct = float(sys.argv[1])
-minimum = float(sys.argv[2])
-sys.exit(0 if line_pct >= minimum else 1)
-PY
-          then
+          if ! awk "BEGIN { exit !(${PROJECT_LINE_PCT} >= ${COVERAGE_MIN}) }"; then
             COVERAGE_STATUS="fail"
           fi
 
