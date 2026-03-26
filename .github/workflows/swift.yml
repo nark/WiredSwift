@@ -100,10 +100,105 @@ jobs:
             exit 0
           fi
 
+          if ! xcrun llvm-cov export \
+            "${TEST_BINARY}" \
+            -instr-profile "${PROFILE_PATH}" \
+            > .build/coverage-export.json; then
+            {
+              echo "## Coverage"
+              echo
+              echo "Failed to export JSON coverage report."
+              echo
+              echo "- profile: \`${PROFILE_PATH}\`"
+              echo "- binary: \`${TEST_BINARY}\`"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          PROJECT_COVERAGE_JSON="$(python3 - <<'PY'
+import json
+from pathlib import Path
+
+path = Path(".build/coverage-export.json")
+data = json.loads(path.read_text())
+files = data.get("data", [{}])[0].get("files", [])
+
+included = ("/Sources/WiredSwift/", "/Sources/wired3/")
+line_count = 0
+line_covered = 0
+region_count = 0
+region_covered = 0
+
+for entry in files:
+    filename = entry.get("filename", "")
+    if not any(marker in filename for marker in included):
+        continue
+    summary = entry.get("summary", {})
+    lines = summary.get("lines", {})
+    regions = summary.get("regions", {})
+    line_count += int(lines.get("count", 0))
+    line_covered += int(lines.get("covered", 0))
+    region_count += int(regions.get("count", 0))
+    region_covered += int(regions.get("covered", 0))
+
+line_pct = (line_covered * 100.0 / line_count) if line_count else 0.0
+region_pct = (region_covered * 100.0 / region_count) if region_count else 0.0
+
+print(json.dumps({
+    "line_pct": line_pct,
+    "region_pct": region_pct,
+    "line_covered": line_covered,
+    "line_count": line_count
+}))
+PY
+)"
+
+          PROJECT_LINE_PCT="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
+import json, sys
+print(f"{json.loads(sys.argv[1])['line_pct']:.2f}")
+PY
+)"
+          PROJECT_REGION_PCT="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
+import json, sys
+print(f"{json.loads(sys.argv[1])['region_pct']:.2f}")
+PY
+)"
+          PROJECT_LINE_COVERED="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
+import json, sys
+print(json.loads(sys.argv[1])['line_covered'])
+PY
+)"
+          PROJECT_LINE_COUNT="$(python3 - <<'PY' "${PROJECT_COVERAGE_JSON}"
+import json, sys
+print(json.loads(sys.argv[1])['line_count'])
+PY
+)"
+
+          COVERAGE_MIN=50.00
+          COVERAGE_STATUS="pass"
+          if ! python3 - <<'PY' "${PROJECT_LINE_PCT}" "${COVERAGE_MIN}"
+import sys
+line_pct = float(sys.argv[1])
+minimum = float(sys.argv[2])
+sys.exit(0 if line_pct >= minimum else 1)
+PY
+          then
+            COVERAGE_STATUS="fail"
+          fi
+
           TOTAL_LINE="$(grep -E "^TOTAL" .build/coverage-report.txt || true)"
 
           {
             echo "## Coverage"
+            echo
+            echo "**Project sources coverage** (\`Sources/WiredSwift\` + \`Sources/wired3\`)"
+            echo
+            echo "- Line coverage: \`${PROJECT_LINE_PCT}%\` (\`${PROJECT_LINE_COVERED}/${PROJECT_LINE_COUNT}\`)"
+            echo "- Region coverage: \`${PROJECT_REGION_PCT}%\`"
+            echo "- Minimum target: \`${COVERAGE_MIN}%\`"
+            echo "- Status: \`${COVERAGE_STATUS}\`"
+            echo
+            echo "**Raw llvm-cov TOTAL** (includes dependencies/checkouts)"
             echo
             if [[ -n "${TOTAL_LINE}" ]]; then
               echo "\`${TOTAL_LINE}\`"
@@ -119,6 +214,11 @@ jobs:
             echo "</details>"
           } >> "${GITHUB_STEP_SUMMARY}"
 
+          if [[ "${COVERAGE_STATUS}" == "fail" ]]; then
+            echo "Project line coverage (${PROJECT_LINE_PCT}%) is below ${COVERAGE_MIN}%."
+            exit 1
+          fi
+
       - name: Upload test diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -129,6 +229,7 @@ jobs:
             .build/swift-test.log
             .build/test-results.xunit
             .build/coverage-report.txt
+            .build/coverage-export.json
             .build/**/codecov/*.profdata
             .build/**/codecov/*
             ~/Library/Logs/DiagnosticReports/*.crash
