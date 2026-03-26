@@ -1,5 +1,12 @@
 # WiredSwift
 
+[![CI](https://github.com/nark/WiredSwift/actions/workflows/swift.yml/badge.svg)](https://github.com/nark/WiredSwift/actions/workflows/swift.yml)
+[![Swift](https://img.shields.io/badge/swift-5.4%2B-orange.svg)](https://www.swift.org)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey)](https://github.com/nark/WiredSwift)
+[![Version](https://img.shields.io/github/v/tag/nark/WiredSwift?sort=semver)](https://github.com/nark/WiredSwift/tags)
+[![License](https://img.shields.io/github/license/nark/WiredSwift)](https://github.com/nark/WiredSwift/blob/main/LICENSE)
+[![Coverage](https://img.shields.io/badge/coverage-CI%20summary-informational)](https://github.com/nark/WiredSwift/actions/workflows/swift.yml)
+
 **Wired** is a bulletin board system (BBS) for group chat, private messaging, file sharing, and community administration. Originally created in 2003 by Axel Andersson at Zanka Software as a modern alternative to Hotline, it has been maintained as open-source software ever since.
 
 A Wired server lets you host a private community where users can join public or private chat rooms, exchange messages on discussion boards, share files, and manage accounts with fine-grained permissions. All communications are encrypted end-to-end between client and server.
