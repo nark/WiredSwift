@@ -18,14 +18,6 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = try sendLoginAndExpectSuccess(socket: c1, username: "it_admin", password: "secret")
         drainMessages(socket: c1)
 
-        // Stabilize CI by avoiding two near-simultaneous connection handshakes against
-        // the same in-process runtime global state.
-        let c2 = try runtime.connectClient(username: "it_admin_2", password: "secret2")
-        defer { c2.disconnect() }
-        try sendClientInfoAndExpectServerInfo(socket: c2)
-        _ = try sendLoginAndExpectSuccess(socket: c2, username: "it_admin_2", password: "secret2")
-        drainMessages(socket: c2)
-
         let create = P7Message(withName: "wired.chat.create_public_chat", spec: c1.spec)
         create.addParameter(field: "wired.chat.name", value: "Integration Room")
         XCTAssertTrue(c1.write(create))
@@ -59,6 +51,14 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertTrue(c1.write(joinCreator))
         _ = try readMessage(from: c1, expectedName: "wired.chat.user_list.done", maxReads: 20)
         _ = try readMessage(from: c1, expectedName: "wired.chat.topic", maxReads: 20)
+
+        // Defer second connection until the chat exists and creator already joined,
+        // which is less flaky on CI under strict identity/runtime timing.
+        let c2 = try runtime.connectClient(username: "it_admin_2", password: "secret2")
+        defer { c2.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: c2)
+        _ = try sendLoginAndExpectSuccess(socket: c2, username: "it_admin_2", password: "secret2")
+        drainMessages(socket: c2)
 
         let join = P7Message(withName: "wired.chat.join_chat", spec: c2.spec)
         join.addParameter(field: "wired.chat.id", value: createdChatID)
