@@ -14,6 +14,8 @@ jobs:
     name: Build and Test (macOS)
     runs-on: macos-14
     timeout-minutes: 30
+    env:
+      SWIFT_BACKTRACE: enable=yes,output-to=stderr,interactive=no
 
     steps:
       - name: Checkout
@@ -52,7 +54,11 @@ jobs:
             echo "::endgroup::"
 
             echo "::group::Crash and error markers"
-            rg -n "fatal error|Unexpectedly found nil|signal code|error:" "${LOG_FILE}" || true
+            if command -v rg >/dev/null 2>&1; then
+              rg -n "fatal error|Unexpectedly found nil|signal code|error:" "${LOG_FILE}" || true
+            else
+              grep -nE "fatal error|Unexpectedly found nil|signal code|error:" "${LOG_FILE}" || true
+            fi
             echo "::endgroup::"
 
             echo "::group::DiagnosticReports listing"
@@ -72,3 +78,4 @@ jobs:
             .build/swift-test.log
             .build/test-results.xunit
             ~/Library/Logs/DiagnosticReports/*.crash
+            ~/Library/Logs/DiagnosticReports/*.ips

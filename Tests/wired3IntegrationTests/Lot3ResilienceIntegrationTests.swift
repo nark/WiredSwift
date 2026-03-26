@@ -1,7 +1,7 @@
 import XCTest
 import WiredSwift
 
-final class Lot3ResilienceIntegrationTests: XCTestCase {
+final class Lot3ResilienceIntegrationTests: SerializedIntegrationTestCase {
     func testReconnectWorksForSameUser() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()

@@ -1,7 +1,7 @@
 import XCTest
 import WiredSwift
 
-final class Lot2FeatureIntegrationTests: XCTestCase {
+final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
     func testChatCreateJoinSayLeaveWithTwoClients() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()
@@ -9,16 +9,18 @@ final class Lot2FeatureIntegrationTests: XCTestCase {
         defer { try? runtime.stop() }
 
         let c1 = try runtime.connectClient(username: "it_admin", password: "secret")
-        let c2 = try runtime.connectClient(username: "it_admin", password: "secret")
         defer {
             c1.disconnect()
-            c2.disconnect()
         }
 
         try sendClientInfoAndExpectServerInfo(socket: c1)
         _ = try sendLoginAndExpectSuccess(socket: c1, username: "it_admin", password: "secret")
         drainMessages(socket: c1)
 
+        // Stabilize CI by avoiding two near-simultaneous connection handshakes against
+        // the same in-process runtime global state.
+        let c2 = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { c2.disconnect() }
         try sendClientInfoAndExpectServerInfo(socket: c2)
         _ = try sendLoginAndExpectSuccess(socket: c2, username: "it_admin", password: "secret")
         drainMessages(socket: c2)

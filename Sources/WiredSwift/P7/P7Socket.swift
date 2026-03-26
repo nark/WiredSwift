@@ -280,6 +280,7 @@ public class P7Socket: NSObject {
     private var socket: Socket?
     private let readLock = NSLock()
     private let writeLock = NSLock()
+    private let connectionStateLock = NSLock()
     
     public  var ecdh:ECDH!
     public var digest:Digest = Digest(type: .SHA2_256)
@@ -504,7 +505,15 @@ public class P7Socket: NSObject {
     
     
     public func disconnect() {
-        self.socket?.close()
+        // Disconnect can be triggered from multiple paths (client-side close,
+        // server-side disconnect callbacks). Make it idempotent and thread-safe
+        // to avoid double-closing guarded file descriptors on macOS.
+        connectionStateLock.lock()
+        let socketToClose = self.socket
+        self.socket = nil
+        connectionStateLock.unlock()
+
+        socketToClose?.close()
         
         self.connected = false
         

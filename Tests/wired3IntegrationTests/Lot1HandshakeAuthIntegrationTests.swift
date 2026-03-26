@@ -1,7 +1,7 @@
 import XCTest
 import WiredSwift
 
-final class Lot1HandshakeAuthIntegrationTests: XCTestCase {
+final class Lot1HandshakeAuthIntegrationTests: SerializedIntegrationTestCase {
     func testHandshakeClientInfoAndGuestLoginSucceed() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()

@@ -25,6 +25,20 @@ private let installSIGPIPEIgnore: Void = {
     #endif
 }()
 
+class SerializedIntegrationTestCase: XCTestCase {
+    private static let executionLock = NSLock()
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        Self.executionLock.lock()
+    }
+
+    override func tearDownWithError() throws {
+        Self.executionLock.unlock()
+        try super.tearDownWithError()
+    }
+}
+
 func integrationPackageRoot() -> URL {
     URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()
@@ -149,6 +163,10 @@ final class IntegrationServerRuntime {
         guard !started else { return }
         _ = installSIGPIPEIgnore
 
+        // Keep integration logs actionable without flooding the in-process logger
+        // pipeline between tests.
+        Logger.setMaxLevel(.INFO)
+
         integrationServerLock.lock()
         var didStart = false
         defer {
@@ -179,6 +197,10 @@ final class IntegrationServerRuntime {
             integrationServerLock.unlock()
             throw IntegrationTestError.serverStopTimedOut
         }
+
+        // Give background client loops a short grace period to unwind before
+        // allowing the next in-process runtime to replace the global App.
+        usleep(200_000)
 
         integrationServerLock.unlock()
         started = false
