@@ -47,31 +47,34 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
                 break
             }
         }
-        XCTAssertNotNil(chatID)
+        let createdChatID = try XCTUnwrap(
+            chatID,
+            "Expected wired.chat.public_chat_created with wired.chat.id after create_public_chat"
+        )
         XCTAssertTrue(sawOkay)
 
         let joinCreator = P7Message(withName: "wired.chat.join_chat", spec: c1.spec)
-        joinCreator.addParameter(field: "wired.chat.id", value: chatID!)
+        joinCreator.addParameter(field: "wired.chat.id", value: createdChatID)
         XCTAssertTrue(c1.write(joinCreator))
         _ = try readMessage(from: c1, expectedName: "wired.chat.user_list.done", maxReads: 20)
         _ = try readMessage(from: c1, expectedName: "wired.chat.topic", maxReads: 20)
 
         let join = P7Message(withName: "wired.chat.join_chat", spec: c2.spec)
-        join.addParameter(field: "wired.chat.id", value: chatID!)
+        join.addParameter(field: "wired.chat.id", value: createdChatID)
         XCTAssertTrue(c2.write(join))
         _ = try readMessage(from: c2, expectedName: "wired.chat.user_list.done", maxReads: 20)
         _ = try readMessage(from: c2, expectedName: "wired.chat.topic", maxReads: 20)
         _ = try readMessage(from: c1, expectedName: "wired.chat.user_join", maxReads: 20)
 
         let say = P7Message(withName: "wired.chat.send_say", spec: c2.spec)
-        say.addParameter(field: "wired.chat.id", value: chatID!)
+        say.addParameter(field: "wired.chat.id", value: createdChatID)
         say.addParameter(field: "wired.chat.say", value: "hello integration")
         XCTAssertTrue(c2.write(say))
         _ = try readMessage(from: c2, expectedName: "wired.okay", maxReads: 20)
         _ = try readMessage(from: c1, expectedName: "wired.chat.say", maxReads: 20)
 
         let leave = P7Message(withName: "wired.chat.leave_chat", spec: c2.spec)
-        leave.addParameter(field: "wired.chat.id", value: chatID!)
+        leave.addParameter(field: "wired.chat.id", value: createdChatID)
         XCTAssertTrue(c2.write(leave))
         _ = try readMessage(from: c2, expectedName: "wired.okay", maxReads: 20)
         _ = try readMessage(from: c1, expectedName: "wired.chat.user_leave", maxReads: 20)
