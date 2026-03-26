@@ -58,4 +58,21 @@ final class Lot1HandshakeAuthIntegrationTests: SerializedIntegrationTestCase {
         let response = try readMessage(from: socket, expectedName: "wired.error", maxReads: 6)
         XCTAssertEqual(response.name, "wired.error")
     }
+
+    func testSecondLoginAttemptAfterSuccessfulLoginReturnsOutOfSequenceError() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "guest", password: "")
+        defer { socket.disconnect() }
+
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "guest", password: "")
+        drainMessages(socket: socket)
+
+        let retry = try sendLoginAndExpectError(socket: socket, username: "guest", password: "")
+        XCTAssertEqual(retry.name, "wired.error")
+        XCTAssertEqual(retry.string(forField: "wired.error.string"), "wired.error.message_out_of_sequence")
+    }
 }

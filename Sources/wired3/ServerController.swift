@@ -1391,8 +1391,12 @@ public class ServerController: ServerDelegate {
         ip: String,
         parameters: [String] = []
     ) {
+        // In integration teardown, global App can transiently be swapped/reset
+        // while background client loops are still unwinding.
+        guard let eventsController = App?.eventsController else { return }
+
         do {
-            let entry = try App.eventsController.addEvent(
+            let entry = try eventsController.addEvent(
                 event,
                 parameters: parameters,
                 nick: nick ?? "",

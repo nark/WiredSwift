@@ -261,4 +261,132 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertTrue(sawLogDone)
         XCTAssertTrue(sawMarker)
     }
+
+    func testAccountSubscribeUnsubscribeLifecycleReturnsExpectedErrors() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let subscribe = P7Message(withName: "wired.account.subscribe_accounts", spec: socket.spec)
+        XCTAssertTrue(socket.write(subscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(subscribe))
+        let already = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(already.string(forField: "wired.error.string"), "wired.error.already_subscribed")
+
+        let unsubscribe = P7Message(withName: "wired.account.unsubscribe_accounts", spec: socket.spec)
+        XCTAssertTrue(socket.write(unsubscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(unsubscribe))
+        let notSubscribed = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(notSubscribed.string(forField: "wired.error.string"), "wired.error.not_subscribed")
+    }
+
+    func testEventSubscribeUnsubscribeLifecycleReturnsExpectedErrors() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let subscribe = P7Message(withName: "wired.event.subscribe", spec: socket.spec)
+        XCTAssertTrue(socket.write(subscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(subscribe))
+        let already = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(already.string(forField: "wired.error.string"), "wired.error.already_subscribed")
+
+        let unsubscribe = P7Message(withName: "wired.event.unsubscribe", spec: socket.spec)
+        XCTAssertTrue(socket.write(unsubscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(unsubscribe))
+        let notSubscribed = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(notSubscribed.string(forField: "wired.error.string"), "wired.error.not_subscribed")
+    }
+
+    func testLogSubscribeUnsubscribeLifecycleReturnsExpectedErrors() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let subscribe = P7Message(withName: "wired.log.subscribe", spec: socket.spec)
+        XCTAssertTrue(socket.write(subscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(subscribe))
+        let already = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(already.string(forField: "wired.error.string"), "wired.error.already_subscribed")
+
+        let unsubscribe = P7Message(withName: "wired.log.unsubscribe", spec: socket.spec)
+        XCTAssertTrue(socket.write(unsubscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(unsubscribe))
+        let notSubscribed = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(notSubscribed.string(forField: "wired.error.string"), "wired.error.not_subscribed")
+    }
+
+    func testAdminCreateReadAndDeleteUserLifecycle() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let createdUsername = "integration_user_\(UUID().uuidString.prefix(8))"
+
+        let createUser = P7Message(withName: "wired.account.create_user", spec: socket.spec)
+        createUser.addParameter(field: "wired.account.name", value: createdUsername)
+        createUser.addParameter(field: "wired.account.password", value: "integration-secret")
+        createUser.addParameter(field: "wired.account.full_name", value: "Integration User")
+        createUser.addParameter(field: "wired.account.comment", value: "Created by integration test")
+        XCTAssertTrue(socket.write(createUser))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let readCreated = P7Message(withName: "wired.account.read_user", spec: socket.spec)
+        readCreated.addParameter(field: "wired.account.name", value: createdUsername)
+        XCTAssertTrue(socket.write(readCreated))
+        let created = try readMessage(from: socket, expectedName: "wired.account.user", maxReads: 20)
+        XCTAssertEqual(created.string(forField: "wired.account.name"), createdUsername)
+
+        let deleteUser = P7Message(withName: "wired.account.delete_user", spec: socket.spec)
+        deleteUser.addParameter(field: "wired.account.name", value: createdUsername)
+        deleteUser.addParameter(field: "wired.account.disconnect_users", value: UInt8(0))
+        XCTAssertTrue(socket.write(deleteUser))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let readDeleted = P7Message(withName: "wired.account.read_user", spec: socket.spec)
+        readDeleted.addParameter(field: "wired.account.name", value: createdUsername)
+        XCTAssertTrue(socket.write(readDeleted))
+        let missing = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(missing.string(forField: "wired.error.string"), "wired.error.account_not_found")
+    }
 }
