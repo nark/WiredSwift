@@ -53,12 +53,12 @@ fi
 cat > "$VERSION_SWIFT" <<SWIFT
 import Foundation
 
-enum WiredServerVersion {
-    static let marketingVersion = "$MARKETING_VERSION"
-    static let buildNumber = "$BUILD_NUMBER"
-    static let commit = "$GIT_COMMIT"
-    static let number = marketingVersion
-    static let display = "wired3 \\(marketingVersion) (\\(buildNumber)+\\(commit))"
+public enum WiredServerVersion {
+    public static let marketingVersion = "$MARKETING_VERSION"
+    public static let buildNumber = "$BUILD_NUMBER"
+    public static let commit = "$GIT_COMMIT"
+    public static let number = marketingVersion
+    public static let display = "wired3 \\(marketingVersion) (\\(buildNumber)+\\(commit))"
 }
 SWIFT
 

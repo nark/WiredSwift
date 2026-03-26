@@ -389,4 +389,151 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         let missing = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
         XCTAssertEqual(missing.string(forField: "wired.error.string"), "wired.error.account_not_found")
     }
+
+    func testSettingsSetAndGetRoundTripForPrivilegedUser() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let marker = "Integration \(UUID().uuidString.prefix(6))"
+        let set = P7Message(withName: "wired.settings.set_settings", spec: socket.spec)
+        set.addParameter(field: "wired.info.name", value: marker)
+        set.addParameter(field: "wired.info.description", value: "integration settings roundtrip")
+        set.addParameter(field: "wired.info.downloads", value: UInt32(7))
+        set.addParameter(field: "wired.info.uploads", value: UInt32(9))
+        set.addParameter(field: "wired.info.download_speed", value: UInt32(11))
+        set.addParameter(field: "wired.info.upload_speed", value: UInt32(13))
+        set.addParameter(field: "wired.settings.register_with_trackers", value: UInt8(0))
+        XCTAssertTrue(socket.write(set))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let get = P7Message(withName: "wired.settings.get_settings", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let settings = try readMessage(from: socket, expectedName: "wired.settings.settings", maxReads: 20)
+        XCTAssertEqual(settings.string(forField: "wired.info.name"), marker)
+        XCTAssertEqual(settings.string(forField: "wired.info.description"), "integration settings roundtrip")
+        XCTAssertEqual(settings.uint32(forField: "wired.info.downloads"), UInt32(7))
+        XCTAssertEqual(settings.uint32(forField: "wired.info.uploads"), UInt32(9))
+        XCTAssertEqual(settings.uint32(forField: "wired.info.download_speed"), UInt32(11))
+        XCTAssertEqual(settings.uint32(forField: "wired.info.upload_speed"), UInt32(13))
+        XCTAssertEqual(settings.bool(forField: "wired.settings.register_with_trackers"), false)
+    }
+
+    func testSettingsSetDeniedForGuest() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "guest", password: "")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "guest", password: "")
+        drainMessages(socket: socket)
+
+        let set = P7Message(withName: "wired.settings.set_settings", spec: socket.spec)
+        set.addParameter(field: "wired.info.name", value: "Guest cannot set this")
+        XCTAssertTrue(socket.write(set))
+        let denied = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(denied.string(forField: "wired.error.string"), "wired.error.permission_denied")
+    }
+
+    func testBoardSubscribeUnsubscribeLifecycleReturnsExpectedErrors() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let subscribe = P7Message(withName: "wired.board.subscribe_boards", spec: socket.spec)
+        XCTAssertTrue(socket.write(subscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(subscribe))
+        let already = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(already.string(forField: "wired.error.string"), "wired.error.already_subscribed")
+
+        let unsubscribe = P7Message(withName: "wired.board.unsubscribe_boards", spec: socket.spec)
+        XCTAssertTrue(socket.write(unsubscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(unsubscribe))
+        let notSubscribed = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(notSubscribed.string(forField: "wired.error.string"), "wired.error.not_subscribed")
+    }
+
+    func testFileSubscribeUnsubscribeLifecycleReturnsExpectedErrors() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let createDir = P7Message(withName: "wired.file.create_directory", spec: socket.spec)
+        createDir.addParameter(field: "wired.file.path", value: "/watch_dir")
+        XCTAssertTrue(socket.write(createDir))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        let subscribe = P7Message(withName: "wired.file.subscribe_directory", spec: socket.spec)
+        subscribe.addParameter(field: "wired.file.path", value: "/watch_dir")
+        XCTAssertTrue(socket.write(subscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        let unsubscribe = P7Message(withName: "wired.file.unsubscribe_directory", spec: socket.spec)
+        unsubscribe.addParameter(field: "wired.file.path", value: "/watch_dir")
+        XCTAssertTrue(socket.write(unsubscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        XCTAssertTrue(socket.write(unsubscribe))
+        let notSubscribed = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
+        XCTAssertEqual(notSubscribed.string(forField: "wired.error.string"), "wired.error.not_subscribed")
+    }
+
+    func testAccountsSubscriberReceivesAccountsChangedBroadcastOnCreateUser() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let subscriber = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { subscriber.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: subscriber)
+        _ = try sendLoginAndExpectSuccess(socket: subscriber, username: "it_admin", password: "secret")
+        drainMessages(socket: subscriber)
+
+        let publisher = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { publisher.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: publisher)
+        _ = try sendLoginAndExpectSuccess(socket: publisher, username: "it_admin", password: "secret")
+        drainMessages(socket: publisher)
+
+        let subscribe = P7Message(withName: "wired.account.subscribe_accounts", spec: subscriber.spec)
+        XCTAssertTrue(subscriber.write(subscribe))
+        _ = try readMessage(from: subscriber, expectedName: "wired.okay", maxReads: 12)
+
+        let createdUsername = "integration_notify_\(UUID().uuidString.prefix(8))"
+        let createUser = P7Message(withName: "wired.account.create_user", spec: publisher.spec)
+        createUser.addParameter(field: "wired.account.name", value: createdUsername)
+        createUser.addParameter(field: "wired.account.password", value: "integration-secret")
+        XCTAssertTrue(publisher.write(createUser))
+        _ = try readMessage(from: publisher, expectedName: "wired.okay", maxReads: 20)
+
+        _ = try readMessage(from: subscriber, expectedName: "wired.account.accounts_changed", maxReads: 30)
+    }
 }

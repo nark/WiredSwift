@@ -1411,7 +1411,8 @@ public class ServerController: ServerDelegate {
 
     private func broadcastEvent(_ entry: EventEntry) {
         let broadcast = self.eventMessage(for: entry, name: "wired.event.event")
-        for connectedClient in App.clientsController.connectedClientsSnapshot() {
+        guard let clientsController = App?.clientsController else { return }
+        for connectedClient in clientsController.connectedClientsSnapshot() {
             guard connectedClient.state == .LOGGED_IN else { continue }
             guard connectedClient.isSubscribedToEvents else { continue }
             guard let connectedUser = connectedClient.user else { continue }

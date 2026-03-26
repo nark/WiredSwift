@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           LOG_FILE=".build/swift-test.log"
-          if ! swift test -v --xunit-output .build/test-results.xunit 2>&1 | tee "${LOG_FILE}"; then
+          if ! swift test -v --enable-code-coverage --xunit-output .build/test-results.xunit 2>&1 | tee "${LOG_FILE}"; then
             echo "::group::Last 300 lines of swift test log"
             tail -n 300 "${LOG_FILE}" || true
             echo "::endgroup::"
@@ -77,5 +77,7 @@ jobs:
           path: |
             .build/swift-test.log
             .build/test-results.xunit
+            .build/**/codecov/*.profdata
+            .build/**/codecov/*
             ~/Library/Logs/DiagnosticReports/*.crash
             ~/Library/Logs/DiagnosticReports/*.ips
