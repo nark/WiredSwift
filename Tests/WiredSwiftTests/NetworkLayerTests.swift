@@ -104,6 +104,39 @@ final class NetworkLayerTests: XCTestCase {
         XCTAssertEqual(connection.serverInfo?.applicationVersion, "3.0")
     }
 
+    func testConnectionHandleRegularMessageNotifiesReceiveDelegate() {
+        let connection = Connection(withSpec: spec)
+        let spy = DelegateSpy()
+        let didReceive = expectation(description: "did receive regular message")
+        spy.onDidReceiveMessage = { message in
+            XCTAssertEqual(message.name, "wired.chat.get_chats")
+            didReceive.fulfill()
+        }
+        connection.addDelegate(spy)
+
+        let message = P7Message(withName: "wired.chat.get_chats", spec: spec)
+        connection.handleMessage(message)
+
+        wait(for: [didReceive], timeout: 1.0)
+    }
+
+    func testConnectionHandlePingTriggersPingReplySend() {
+        let connection = Connection(withSpec: spec)
+        connection.socket = makeSocket(connected: true)
+        let spy = DelegateSpy()
+        let didSend = expectation(description: "did send ping reply")
+        spy.onDidSend = { message in
+            XCTAssertEqual(message.name, "wired.ping")
+            didSend.fulfill()
+        }
+        connection.addDelegate(spy)
+
+        let ping = P7Message(withName: "wired.send_ping", spec: spec)
+        connection.handleMessage(ping)
+
+        wait(for: [didSend], timeout: 1.0)
+    }
+
     func testConnectionDisconnectPostsNotificationsEvenWhenSocketIsNil() {
         let connection = Connection(withSpec: spec)
         connection.socket = nil
@@ -113,6 +146,31 @@ final class NetworkLayerTests: XCTestCase {
 
         connection.disconnect()
         wait(for: [willDisconnect, didClose], timeout: 1.0)
+    }
+
+    func testConnectionDisconnectNotifiesDelegates() {
+        let connection = Connection(withSpec: spec)
+        let spy = DelegateSpy()
+        let didDisconnect = expectation(description: "delegate disconnected")
+        spy.onDisconnected = { error in
+            XCTAssertNil(error)
+            didDisconnect.fulfill()
+        }
+        connection.addDelegate(spy)
+
+        connection.disconnect()
+        wait(for: [didDisconnect], timeout: 1.0)
+    }
+
+    func testConnectionIsConnectedReflectsSocketState() {
+        let connection = Connection(withSpec: spec)
+        XCTAssertFalse(connection.isConnected())
+
+        connection.socket = makeSocket(connected: false)
+        XCTAssertFalse(connection.isConnected())
+
+        connection.socket = makeSocket(connected: true)
+        XCTAssertTrue(connection.isConnected())
     }
 
     func testBlockConnectionSendWhenDisconnectedCompletesWithNil() {
@@ -285,10 +343,13 @@ private final class DelegateSpy: ConnectionDelegate {
     var onDidSend: ((P7Message) -> Void)?
     var onDidReceiveMessage: ((P7Message) -> Void)?
     var onDidReceiveError: ((P7Message) -> Void)?
+    var onDisconnected: ((Error?) -> Void)?
 
     func connectionDidConnect(connection: Connection) {}
     func connectionDidFailToConnect(connection: Connection, error: Error) {}
-    func connectionDisconnected(connection: Connection, error: Error?) {}
+    func connectionDisconnected(connection: Connection, error: Error?) {
+        onDisconnected?(error)
+    }
     func connectionDidLogin(connection: Connection, message: P7Message) {}
     func connectionDidReceivePriviledges(connection: Connection, message: P7Message) {}
 
