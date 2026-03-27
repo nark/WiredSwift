@@ -199,6 +199,7 @@ jobs:
         run: swift --version
 
       - name: Install Linux dependencies
+        shell: bash
         run: |
           set -euo pipefail
           apt-get update
