@@ -6,6 +6,7 @@
 [![Version](https://img.shields.io/github/v/tag/nark/WiredSwift?sort=semver)](https://github.com/nark/WiredSwift/tags)
 [![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/nark/WiredSwift/blob/main/LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage-CI%20summary-informational)](https://github.com/nark/WiredSwift/actions/workflows/swift.yml)
+[![Documentation](https://img.shields.io/badge/docs-DocC-blue)](https://nark.github.io/WiredSwift/documentation/wiredswift/)
 
 **Wired** is a bulletin board system (BBS) for group chat, private messaging, file sharing, and community administration. Originally created in 2003 by Axel Andersson at Zanka Software as a modern alternative to Hotline, it has been maintained as open-source software ever since.
 

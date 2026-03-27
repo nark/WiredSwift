@@ -71,6 +71,21 @@ swiftlint lint
 swiftlint --fix
 ```
 
+### Building documentation (DocC)
+
+```bash
+# Validate DocC generation for the WiredSwift module
+swift package generate-documentation --target WiredSwift
+
+# Build static output for hosting (for example GitHub Pages)
+swift package --allow-writing-to-directory ./docs \
+  generate-documentation \
+  --target WiredSwift \
+  --output-path ./docs \
+  --transform-for-static-hosting \
+  --hosting-base-path WiredSwift
+```
+
 CI fails if any **error**-level violation is introduced.
 Warnings are reported as annotations on pull requests but do not block merges.
 
