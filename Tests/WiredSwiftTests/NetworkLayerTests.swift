@@ -386,6 +386,75 @@ final class NetworkLayerTests: XCTestCase {
         }
     }
 
+    func testAsyncConnectionSendAndWaitManyYieldsAndFinishesOnOkay() async throws {
+        let pair = try makeConnectedPair()
+        let connection = AsyncConnection(withSpec: spec)
+        connection.socket = pair.client
+
+        let request = P7Message(withName: "wired.chat.get_chats", spec: spec)
+        let stream = try connection.sendAndWaitMany(request)
+        let transaction = try XCTUnwrap(request.uint32(forField: "wired.transaction"))
+
+        let reply = P7Message(withName: "wired.okay", spec: spec)
+        reply.addParameter(field: "wired.transaction", value: transaction)
+        connection.handleMessage(reply)
+
+        var iterator = stream.makeAsyncIterator()
+        let first = try await iterator.next()
+        XCTAssertEqual(first?.name, "wired.okay")
+        let second = try await iterator.next()
+        XCTAssertNil(second)
+    }
+
+    func testAsyncConnectionSendAndWaitManyYieldsAndFinishesOnDoneMessage() async throws {
+        let pair = try makeConnectedPair()
+        let connection = AsyncConnection(withSpec: spec)
+        connection.socket = pair.client
+
+        let request = P7Message(withName: "wired.chat.get_chats", spec: spec)
+        let stream = try connection.sendAndWaitMany(request)
+        let transaction = try XCTUnwrap(request.uint32(forField: "wired.transaction"))
+
+        let done = P7Message(withName: "wired.chat.chat_list.done", spec: spec)
+        done.addParameter(field: "wired.transaction", value: transaction)
+        connection.handleMessage(done)
+
+        var iterator = stream.makeAsyncIterator()
+        let first = try await iterator.next()
+        XCTAssertEqual(first?.name, "wired.chat.chat_list.done")
+        let second = try await iterator.next()
+        XCTAssertNil(second)
+    }
+
+    func testAsyncConnectionSendAndWaitManyPropagatesServerError() async throws {
+        let pair = try makeConnectedPair()
+        let connection = AsyncConnection(withSpec: spec)
+        connection.socket = pair.client
+
+        let request = P7Message(withName: "wired.chat.get_chats", spec: spec)
+        let stream = try connection.sendAndWaitMany(request)
+        let transaction = try XCTUnwrap(request.uint32(forField: "wired.transaction"))
+
+        let errorMessage = P7Message(withName: "wired.error", spec: spec)
+        errorMessage.addParameter(field: "wired.transaction", value: transaction)
+        errorMessage.addParameter(field: "wired.error", value: "wired.error.invalid_message")
+        connection.handleMessage(errorMessage)
+
+        var iterator = stream.makeAsyncIterator()
+        do {
+            _ = try await iterator.next()
+            XCTFail("Expected AsyncConnectionError.serverError")
+        } catch let error as AsyncConnectionError {
+            guard case .serverError(let message) = error else {
+                return XCTFail("Expected serverError, got \(error)")
+            }
+            XCTAssertEqual(message.name, "wired.error")
+            XCTAssertEqual(message.string(forField: "wired.error"), "wired.error.invalid_message")
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testTransactionManagerRegisterYieldAndFinish() async throws {
         let manager = TransactionManager()
         let message = P7Message(withName: "wired.okay", spec: spec)
@@ -465,6 +534,33 @@ final class NetworkLayerTests: XCTestCase {
         let socket = P7Socket(hostname: "localhost", port: 0, spec: spec)
         socket.connected = connected
         return socket
+    }
+
+    private func makeConnectedPair() throws -> (client: P7Socket, server: P7Socket, listener: Socket) {
+        let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
+        let port = Int(try listener.port())
+
+        var acceptedSocket: Socket?
+        let accepted = expectation(description: "accepted")
+        DispatchQueue.global().async {
+            acceptedSocket = try? listener.accept()
+            accepted.fulfill()
+        }
+
+        let client = P7Socket(hostname: "127.0.0.1", port: port, spec: spec)
+        try client.connect(withHandshake: false)
+
+        wait(for: [accepted], timeout: 2.0)
+        let serverNative = try XCTUnwrap(acceptedSocket)
+        let server = P7Socket(socket: serverNative, spec: spec)
+
+        addTeardownBlock {
+            client.disconnect()
+            server.disconnect()
+            listener.close()
+        }
+
+        return (client, server, listener)
     }
 
     private func serveOneConnectionSession(socket: P7Socket, spec: P7Spec, userID: UInt32) throws {
