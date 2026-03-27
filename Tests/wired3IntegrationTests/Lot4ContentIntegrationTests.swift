@@ -277,6 +277,134 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertEqual(deniedDownload.string(forField: "wired.error.string"), "wired.error.permission_denied")
     }
 
+    func testTransferUploadFileRoundTripWritesExpectedBytes() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let (admin, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { admin.disconnect() }
+
+        let remotePath = "/upload-\(UUID().uuidString.prefix(8)).bin"
+        let payload = Data((0..<1024).map { UInt8($0 % 251) })
+
+        let uploadFile = P7Message(withName: "wired.transfer.upload_file", spec: admin.spec)
+        uploadFile.addParameter(field: "wired.file.path", value: remotePath)
+        uploadFile.addParameter(field: "wired.transfer.data_size", value: UInt64(payload.count))
+        uploadFile.addParameter(field: "wired.transfer.rsrc_size", value: UInt64(0))
+        XCTAssertTrue(admin.write(uploadFile))
+
+        let uploadReady = try readMessage(from: admin, expectedName: "wired.transfer.upload_ready", maxReads: 40)
+        XCTAssertEqual(uploadReady.string(forField: "wired.file.path"), remotePath)
+        XCTAssertEqual(uploadReady.uint64(forField: "wired.transfer.data_offset"), UInt64(0))
+        XCTAssertEqual(uploadReady.uint64(forField: "wired.transfer.rsrc_offset"), UInt64(0))
+
+        let uploadGo = P7Message(withName: "wired.transfer.upload", spec: admin.spec)
+        uploadGo.addParameter(field: "wired.transfer.data", value: UInt64(payload.count))
+        uploadGo.addParameter(field: "wired.transfer.rsrc", value: UInt64(0))
+        XCTAssertTrue(admin.write(uploadGo))
+        try admin.writeOOB(data: payload, timeout: 3)
+
+        // Barrier: force a follow-up request so transfer processing has completed on server side.
+        let getInfo = P7Message(withName: "wired.file.get_info", spec: admin.spec)
+        getInfo.addParameter(field: "wired.file.path", value: remotePath)
+        XCTAssertTrue(admin.write(getInfo))
+        _ = try readMessage(from: admin, expectedNames: ["wired.file.info", "wired.error"], maxReads: 30)
+
+        let finalPath = runtime.filesURL.appendingPathComponent(String(remotePath.dropFirst())).path
+        let partialPath = "\(finalPath).WiredTransfer"
+
+        let receivedPath = try XCTUnwrap(waitForExistingPath([finalPath, partialPath], timeout: 3))
+        let received = try Data(contentsOf: URL(fileURLWithPath: receivedPath))
+        XCTAssertEqual(received, payload)
+    }
+
+    func testTransferUploadRejectsInvalidFollowUpMessage() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let (admin, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { admin.disconnect() }
+
+        let remotePath = "/upload-invalid-\(UUID().uuidString.prefix(8)).bin"
+        let uploadFile = P7Message(withName: "wired.transfer.upload_file", spec: admin.spec)
+        uploadFile.addParameter(field: "wired.file.path", value: remotePath)
+        uploadFile.addParameter(field: "wired.transfer.data_size", value: UInt64(8))
+        uploadFile.addParameter(field: "wired.transfer.rsrc_size", value: UInt64(0))
+        XCTAssertTrue(admin.write(uploadFile))
+        _ = try readMessage(from: admin, expectedName: "wired.transfer.upload_ready", maxReads: 40)
+
+        let invalid = P7Message(withName: "wired.chat.get_chats", spec: admin.spec)
+        XCTAssertTrue(admin.write(invalid))
+
+        var sawInvalidMessageError = false
+        var disconnected = false
+        for _ in 0..<12 {
+            do {
+                let reply = try admin.readMessage(timeout: 0.5, enforceDeadline: true)
+                if reply.name == "wired.error",
+                   reply.string(forField: "wired.error.string") == "wired.error.invalid_message" {
+                    sawInvalidMessageError = true
+                    break
+                }
+            } catch {
+                disconnected = true
+                break
+            }
+        }
+
+        XCTAssertTrue(
+            sawInvalidMessageError || disconnected,
+            "Expected wired.error.invalid_message or disconnect after invalid upload follow-up message"
+        )
+    }
+
+    func testTransferDownloadStreamsExpectedBytes() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let fixturePath = runtime.filesURL.appendingPathComponent("download-\(UUID().uuidString.prefix(8)).bin")
+        let payload = Data((0..<2048).map { UInt8($0 % 247) })
+        try payload.write(to: fixturePath)
+
+        let (admin, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { admin.disconnect() }
+
+        let request = P7Message(withName: "wired.transfer.download_file", spec: admin.spec)
+        request.addParameter(field: "wired.file.path", value: "/\(fixturePath.lastPathComponent)")
+        request.addParameter(field: "wired.transfer.data_offset", value: UInt64(0))
+        request.addParameter(field: "wired.transfer.rsrc_offset", value: UInt64(0))
+        XCTAssertTrue(admin.write(request))
+
+        let header = try readMessage(from: admin, expectedName: "wired.transfer.download", maxReads: 40)
+        let expectedSize = try XCTUnwrap(header.uint64(forField: "wired.transfer.data"))
+        XCTAssertEqual(expectedSize, UInt64(payload.count))
+
+        var received = Data()
+        while received.count < Int(expectedSize) {
+            let chunk = try admin.readOOB(timeout: 3)
+            received.append(chunk)
+        }
+
+        XCTAssertEqual(received.prefix(Int(expectedSize)), payload)
+    }
+
+    private func waitForExistingPath(_ candidates: [String], timeout: TimeInterval) -> String? {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            for path in candidates where FileManager.default.fileExists(atPath: path) {
+                return path
+            }
+            usleep(50_000)
+        }
+        return nil
+    }
+
     private func connectAndAuthenticate(
         runtime: IntegrationServerRuntime,
         username: String,
