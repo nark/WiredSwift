@@ -8,9 +8,13 @@
 
 import Foundation
 
+/// Namespace for global Wired protocol constants.
 public struct Wired {
+    /// The default TCP port used by Wired servers (4871).
     public static let wiredPort             = 4871
+    /// The URL scheme for Wired connections (`"wired"`).
     public static let wiredScheme           = "wired"
+    /// Base64-encoded PNG data for the default user avatar shown before a custom icon is set.
     public static let defaultUserIcon       = """
 iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr
 0AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJ
@@ -92,5 +96,6 @@ NpEuUzxm5d4s+rbh/uFYP7z9nkikXDUarUgl5NiRE/c
 UKkWd5KPloQA8QAXt3UpJYct+O7nmSqt965Ofh2TgX4
 k6d3UEBImrAAAAAElFTkSuQmCC
 """
+    /// File extension used for persisted transfer state files (`"WiredTransfer"`).
     public static let transfersFileExtension = "WiredTransfer"
 }

@@ -39,15 +39,28 @@ extension Data {
 // ----------------------
 // Cipher
 // ----------------------
+/// Symmetric cipher used for P7 wire encryption after the ECDH handshake.
+///
+/// Supports AES-256-CBC (legacy), AES-128/256-GCM, ChaCha20-Poly1305, and
+/// XChaCha20-Poly1305.  AEAD modes derive per-message nonces from the
+/// handshake IV by replacing the last 8 bytes with a monotonically
+/// increasing counter, so the IV must never be reused across sessions.
 public final class Cipher {
 
     // MARK: - Errors
+    /// Errors that can be thrown by `Cipher` operations.
     public enum CipherError: Error {
+        /// The supplied key is not the expected length.
         case invalidKey
+        /// The supplied nonce or IV is missing or has the wrong length.
         case invalidNonce
+        /// The requested cipher suite is not supported.
         case unsupportedCipher
+        /// Encryption of plaintext failed.
         case encryptionFailed
+        /// Decryption or authentication-tag verification failed.
         case decryptionFailed
+        /// The 64-bit message counter has wrapped around; the session must be rekeyed.
         case counterOverflow
     }
 
@@ -75,10 +88,17 @@ public final class Cipher {
     private static let tagSize = 16
 
     // MARK: - Init
-    /// - keyData: MUST be 32 bytes (derived from ECDH).
-    /// - iv: corresponds to p7.encryption.cipher.iv
-    ///     - AEAD: REQUIRED (12 bytes for GCM/ChaCha, 24 bytes for XChaCha)
-    ///     - legacy AES-CBC: ignored (IV generated per message)
+    /// Creates a `Cipher` instance for the given suite.
+    ///
+    /// - Parameters:
+    ///   - cipher: The negotiated cipher suite (from the P7 handshake).
+    ///   - keyData: 32-byte symmetric key derived from the ECDH shared secret.
+    ///   - iv: Handshake IV (`p7.encryption.cipher.iv`).
+    ///     Required for AEAD modes (12 bytes for GCM/ChaCha20, 24 bytes for
+    ///     XChaCha20); ignored for legacy AES-256-CBC.
+    /// - Throws: `CipherError.invalidKey` if `keyData` is not 32 bytes,
+    ///   `CipherError.invalidNonce` if the IV is missing or has the wrong size
+    ///   for an AEAD mode, or `CipherError.unsupportedCipher` for an unknown suite.
     public init(cipher: P7Socket.CipherType, keyData: Data, iv: Data?) throws {
         guard keyData.count == Self.ecdhKeySize else { throw CipherError.invalidKey }
 
@@ -121,6 +141,14 @@ public final class Cipher {
     }
 
     // MARK: - Counters
+    /// Resets the send and receive nonce counters.
+    ///
+    /// Call this only when both sides agree to restart the counter (e.g.
+    /// after rekeying).  The default resets both counters to zero.
+    ///
+    /// - Parameters:
+    ///   - send: New value for the outgoing message counter.
+    ///   - recv: New value for the incoming message counter.
     public func resetCounters(send: UInt64 = 0, recv: UInt64 = 0) {
         self.sendCounter = send
         self.recvCounter = recv
@@ -156,8 +184,17 @@ public final class Cipher {
     }
 
     // MARK: - Encrypt
-    /// - Legacy AES-CBC: [iv(16)][ciphertext]
-    /// - AEAD:           [ciphertext][tag(16)]
+    /// Encrypts `data` using the configured cipher suite.
+    ///
+    /// Output framing:
+    /// - Legacy AES-256-CBC: `[iv(16 B)][ciphertext]`
+    /// - AEAD suites: `[ciphertext][tag(16 B)]`  (nonce is derived from the counter)
+    ///
+    /// - Parameters:
+    ///   - data: Plaintext to encrypt.
+    ///   - additionalData: Associated data authenticated but not encrypted (AEAD only).
+    /// - Returns: Framed ciphertext as described above.
+    /// - Throws: `CipherError` on key/nonce validation failure or underlying crypto error.
     public func encrypt(data: Data, additionalData: Data = Data()) throws -> Data {
         switch mode {
 
@@ -198,7 +235,14 @@ public final class Cipher {
     }
 
     // MARK: - Decrypt
-    /// Expects input matching encrypt() output.
+    /// Decrypts `data` produced by `encrypt(data:additionalData:)`.
+    ///
+    /// - Parameters:
+    ///   - data: Framed ciphertext as returned by `encrypt`.
+    ///   - additionalData: Associated data that was authenticated during encryption (AEAD only).
+    /// - Returns: Recovered plaintext.
+    /// - Throws: `CipherError` on key/nonce validation failure, authentication-tag mismatch,
+    ///   or underlying crypto error.
     public func decrypt(data: Data, additionalData: Data = Data()) throws -> Data {
         switch mode {
 

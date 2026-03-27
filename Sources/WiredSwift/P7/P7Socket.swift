@@ -23,7 +23,12 @@ var sha3_384DigestLength  = 48
 var hmac_256DigestLength  = 32
 var hmac_384DigestLength  = 48
 
+/// Supplies per-user credentials to a server-side `P7Socket` during key exchange.
 public protocol SocketPasswordDelegate: AnyObject {
+    /// Returns the stored (pre-hashed) password for the given username.
+    ///
+    /// - Parameter username: The username received from the client.
+    /// - Returns: The stored password string, or `nil` if the user does not exist.
     func passwordForUsername(username: String) -> String?
     /// Returns the per-user stored salt (hex string) used to derive the base hash in key exchange.
     /// Return nil if the account has not yet been assigned a stored salt.
@@ -42,6 +47,20 @@ public protocol ServerIdentityProvider: AnyObject {
     func signWithIdentity(data: Data) -> Data?
 }
 
+/// Full-duplex P7 socket providing TLS-style handshake, ECDH key exchange,
+/// optional compression, and binary/XML message serialisation.
+///
+/// **Typical client usage:**
+/// 1. Create with `init(hostname:port:spec:)` and configure `cipherType`, `checksum`, etc.
+/// 2. Call `connect(withHandshake:)` to establish the TCP connection and run the P7 handshake.
+/// 3. Use `write(_:)` / `readMessage()` to exchange `P7Message` objects.
+/// 4. Call `disconnect()` when done.
+///
+/// **Typical server usage:**
+/// 1. Accept an incoming TCP connection and create with `init(socket:spec:)`.
+/// 2. Set `passwordProvider` (and optionally `identityProvider`).
+/// 3. Call `accept(compression:cipher:checksum:)` to run the handshake.
+/// 4. Use `write(_:)` / `readMessage()` to exchange messages.
 public class P7Socket: NSObject {
     enum P7SocketError: Error {
         case interactiveSocketFailed
@@ -66,18 +85,29 @@ public class P7Socket: NSObject {
     /// Prevents thread-pool exhaustion from clients that connect but never complete auth.
     private static let handshakeTimeout: TimeInterval = 30.0
 
+    /// Wire serialisation format used for P7 messages.
     public enum Serialization: Int {
+        /// Human-readable XML framing (debug / legacy).
         case XML            = 0
+        /// Compact binary TLV framing used in production.
         case BINARY         = 1
     }
 
+    /// Compression algorithm negotiated during the P7 handshake.
+    ///
+    /// Represented as an `OptionSet` so that multiple algorithms can be
+    /// advertised in a capability bitmask; only a single value is active
+    /// after negotiation completes.
     public struct Compression: OptionSet, CustomStringConvertible {
+        /// Raw bitmask value as transmitted on the wire.
         public let rawValue: UInt32
 
+        /// Creates a `Compression` from a raw wire value.
         public init(rawValue: UInt32 ) {
             self.rawValue = rawValue
         }
 
+        /// No compression.
         public static let NONE                              = Compression(rawValue: 1 << 0)
         public static let DEFLATE                           = Compression(rawValue: 1 << 1)
         public static let LZFSE                             = Compression(rawValue: 1 << 2)
@@ -105,13 +135,20 @@ public class P7Socket: NSObject {
         }
     }
 
+    /// Message-authentication algorithm negotiated during the P7 handshake.
+    ///
+    /// Like `Compression`, represented as an `OptionSet` for capability
+    /// advertising; only one value is active after negotiation.
     public struct Checksum: OptionSet, CustomStringConvertible, Collection {
+        /// Raw bitmask value as transmitted on the wire.
         public let rawValue: UInt32
 
+        /// Creates a `Checksum` from a raw wire value.
         public init(rawValue: UInt32 ) {
             self.rawValue = rawValue
         }
 
+        /// No message authentication.
         public static let NONE      = Checksum(rawValue: 1 << 0)
         public static let SHA2_256  = Checksum(rawValue: 1 << 1)
         public static let SHA2_384  = Checksum(rawValue: 1 << 2)
@@ -164,13 +201,22 @@ public class P7Socket: NSObject {
         }
     }
 
+    /// Cipher suite negotiated during the P7 ECDH key exchange.
+    ///
+    /// Represented as an `OptionSet` for capability advertising; the server
+    /// selects one cipher from the intersection with the client's offer.
+    /// AEAD suites (GCM, ChaCha20-Poly1305, XChaCha20-Poly1305) also provide
+    /// message integrity, making a separate `Checksum` redundant.
     public struct CipherType: OptionSet, CustomStringConvertible, Collection {
+        /// Raw bitmask value as transmitted on the wire.
         public let rawValue: UInt32
 
+        /// Creates a `CipherType` from a raw wire value.
         public init(rawValue: UInt32 ) {
             self.rawValue = rawValue
         }
 
+        /// No encryption.
         public static let NONE                      = CipherType(rawValue: 1 << 0)
         public static let ECDH_AES256_SHA256        = CipherType(rawValue: 1 << 1)
         public static let ECDH_AES128_GCM           = CipherType(rawValue: 1 << 2)
@@ -353,26 +399,47 @@ public class P7Socket: NSObject {
         return nil
     }
 
+    /// Creates a client-side socket that will connect to the given host.
+    ///
+    /// - Parameters:
+    ///   - hostname: Remote host name or IP address.
+    ///   - port: TCP port number.
+    ///   - spec: The P7 protocol specification used for message serialisation.
     public init(hostname: String, port: Int, spec: P7Spec) {
         self.hostname = hostname
         self.port = port
         self.spec = spec
     }
 
+    /// Creates a server-side socket wrapping an already-accepted TCP connection.
+    ///
+    /// - Parameters:
+    ///   - socket: The raw TCP socket returned by the server's accept loop.
+    ///   - spec: The P7 protocol specification used for message serialisation.
     public init(socket: Socket, spec: P7Spec) {
         self.socket     = socket
         self.spec       = spec
         self.connected  = true
     }
 
+    /// Returns the underlying `SocketSwift` socket, if connected.
     public func getNativeSocket() -> Socket? {
         return self.socket
     }
 
+    /// Returns whether the socket is currently in interactive (TCP_NODELAY) mode.
     public func isInteractive() -> Bool {
         return self.interactive
     }
 
+    /// Enables or disables TCP_NODELAY (Nagle's algorithm) on the underlying socket.
+    ///
+    /// Set `interactive` to `true` for latency-sensitive chat sessions and `false`
+    /// for bulk transfers.
+    ///
+    /// - Parameter interactive: `true` to disable Nagle's algorithm (low latency);
+    ///   `false` to enable it (higher throughput).
+    /// - Throws: `P7SocketError.interactiveSocketFailed` if `setsockopt` fails.
     public func set(interactive: Bool) throws {
         var option = interactive ? 1 : 0
 
@@ -387,6 +454,13 @@ public class P7Socket: NSObject {
     }
 
     // MARK: - CONNECTION
+    /// Opens a TCP connection to `hostname:port` and, by default, runs the full
+    /// P7 handshake (capability negotiation + ECDH key exchange).
+    ///
+    /// Configure `compression`, `cipherType`, and `checksum` before calling this.
+    ///
+    /// - Parameter handshake: Pass `false` to skip the P7 handshake (raw TCP only).
+    /// - Throws: `NetworkError` or `P7SocketError` on connection or handshake failure.
     public func connect(withHandshake handshake: Bool = true) throws {
         self.compression = normalizedCompression(self.compression)
         self.compressionFallback = normalizedCompression(self.compressionFallback)
@@ -455,6 +529,16 @@ public class P7Socket: NSObject {
         }
     }
 
+    /// Runs the server-side P7 handshake on an already-accepted TCP socket.
+    ///
+    /// The server advertises its supported `compression`, `cipher`, and `checksum`
+    /// capabilities and negotiates a single algorithm for each with the client.
+    ///
+    /// - Parameters:
+    ///   - compression: Compression algorithms the server is willing to accept.
+    ///   - cipher: Cipher suites the server is willing to accept.
+    ///   - checksum: Checksum algorithms the server is willing to accept.
+    /// - Throws: `P7SocketError` on handshake or key-exchange failure.
     public func accept(compression: Compression, cipher: CipherType, checksum: Checksum) throws {
         self.remoteAddress = self.clientAddress()
 
@@ -489,6 +573,9 @@ public class P7Socket: NSObject {
         }
     }
 
+    /// Closes the TCP connection and resets all session state.
+    ///
+    /// Safe to call from any thread and idempotent — subsequent calls are no-ops.
     public func disconnect() {
         // Disconnect can be triggered from multiple paths (client-side close,
         // server-side disconnect callbacks). Make it idempotent and thread-safe
@@ -515,6 +602,13 @@ public class P7Socket: NSObject {
     }
 
     // MARK: - MESSAGE READ/WRITE
+    /// Serialises and sends a `P7Message` over the wire.
+    ///
+    /// Applies compression and encryption according to the negotiated session
+    /// parameters, then appends a checksum if required.
+    ///
+    /// - Parameter message: The message to send.
+    /// - Returns: `true` if the message was written successfully; `false` on error.
     public func write(_ message: P7Message) -> Bool {
         writeLock.lock()
         defer { writeLock.unlock() }
@@ -598,6 +692,18 @@ public class P7Socket: NSObject {
         return true
     }
 
+    /// Reads the next `P7Message` from the wire.
+    ///
+    /// Validates the length header, decrypts, decompresses, and verifies the
+    /// checksum before deserialising the binary TLV payload into a `P7Message`.
+    ///
+    /// - Parameters:
+    ///   - timeout: Per-read I/O timeout in seconds.
+    ///   - enforceDeadline: When `true`, the cumulative read time is capped at
+    ///     `timeout` seconds across all internal read calls for this message.
+    /// - Returns: The next decoded message.
+    /// - Throws: `P7SocketError.readFailed` on I/O error, length validation
+    ///   failure, decryption error, or checksum mismatch.
     public func readMessage(
         timeout: TimeInterval = 1.0,
         enforceDeadline: Bool = false
@@ -771,6 +877,15 @@ public class P7Socket: NSObject {
     }
 
     // MARK: - OOB DATA
+    /// Reads a raw out-of-band (OOB) data blob from the wire.
+    ///
+    /// OOB transfers share the same length-prefixed framing and session
+    /// encryption/compression/checksum as regular messages but carry opaque
+    /// `Data` rather than a `P7Message`.  Used for file transfers.
+    ///
+    /// - Parameter timeout: Per-read I/O timeout in seconds.
+    /// - Returns: Decrypted, decompressed payload.
+    /// - Throws: `P7SocketError.readFailed` on any I/O or integrity error.
     public func readOOB(timeout: TimeInterval = 1.0) throws -> Data {
         let lengthData = try readExactly(size: 4, timeout: timeout, enforceDeadline: true)
 
@@ -809,6 +924,15 @@ public class P7Socket: NSObject {
         return messageData
     }
 
+    /// Sends a raw out-of-band (OOB) data blob over the wire.
+    ///
+    /// The data is compressed and encrypted according to the current session
+    /// parameters and framed with a 4-byte big-endian length prefix.
+    ///
+    /// - Parameters:
+    ///   - data: Raw payload to send (e.g. a file chunk).
+    ///   - timeout: Per-write I/O timeout in seconds.
+    /// - Throws: `P7SocketError.writeFailed` if the socket write fails.
     public func writeOOB(data: Data, timeout: TimeInterval = 1.0) throws {
         guard connected else {
             throw P7SocketError.readFailed("Not connected")
@@ -1589,6 +1713,10 @@ public class P7Socket: NSObject {
         }
     }
 
+    /// Returns the byte length of the authentication tag for the given checksum type.
+    ///
+    /// - Parameter type: The negotiated `Checksum` variant.
+    /// - Returns: Tag length in bytes (e.g. 32 for SHA2-256, 48 for SHA2-384), or 0 for `.NONE`.
     public func checksumLength(_ type: Checksum) -> Int {
         if type == .SHA2_256 {
             sha2_256DigestLength
@@ -1688,6 +1816,9 @@ public class P7Socket: NSObject {
 
     // MARK: -
 
+    /// Returns the remote peer's IP address as a string (IPv4 or IPv6).
+    ///
+    /// - Returns: Dotted-decimal IPv4 or colon-separated IPv6 string, or `nil` on failure.
     public func getClientIP() -> String? {
         if let fileDescriptor = self.socket?.fileDescriptor {
             return peerIPAddress(socketFD: fileDescriptor)
@@ -1696,6 +1827,9 @@ public class P7Socket: NSObject {
         return nil
     }
 
+    /// Returns the remote peer's hostname via reverse DNS, falling back to the IP address.
+    ///
+    /// - Returns: Hostname string, or `nil` on failure.
     public func getClientHostname() -> String? {
         if let fileDescriptor = self.socket?.fileDescriptor {
             return peerIPAddress(socketFD: fileDescriptor)
@@ -1704,6 +1838,9 @@ public class P7Socket: NSObject {
         return nil
     }
 
+    /// Returns the local socket address as a numeric IP string.
+    ///
+    /// - Returns: Numeric IP of the local end of the connection, or `nil` on failure.
     public func clientAddress() -> String? {
         var addresString: String?
         var address = sockaddr_in()

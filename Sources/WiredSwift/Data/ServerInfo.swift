@@ -8,6 +8,8 @@
 
 import Foundation
 
+/// Describes a remote Wired server, populated from the `wired.server_info`
+/// message received during connection handshake.
 public class ServerInfo {
     public var applicationName: String = ""
     public var applicationVersion: String = ""
@@ -28,14 +30,22 @@ public class ServerInfo {
 
     private var message: P7Message
 
+    /// A formatted string combining the application version and build number,
+    /// e.g. `"3.0.1 (500)"`.
     public var serverVersion: String {
         return "\(applicationVersion) (\(applicationBuild))"
     }
 
+    /// A formatted string combining OS name, version and CPU architecture,
+    /// e.g. `"macOS 14.0 (arm64)"`.
     public var hostInfo: String {
         return "\(osName) \(osVersion) (\(arch))"
     }
 
+    /// Creates a `ServerInfo` by extracting all `wired.info.*` fields from
+    /// the supplied `wired.server_info` P7 message.
+    ///
+    /// - Parameter message: The decoded `wired.server_info` P7 message.
     public init(message: P7Message) {
         self.message = message
 

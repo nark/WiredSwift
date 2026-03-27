@@ -10,9 +10,13 @@ import Foundation
 import Dispatch
 
 extension Notification.Name {
+    /// Posted on the main queue just before a link connection begins disconnecting.
     public static let linkConnectionWillDisconnect     = Notification.Name("linkConnectionWillDisconnect")
+    /// Posted on the main queue after the underlying socket has been closed.
     public static let linkConnectionDidClose           = Notification.Name("linkConnectionDidClose")
+    /// Posted on the main queue after a successful reconnect.
     public static let linkConnectionDidReconnect       = Notification.Name("linkConnectionDidReconnect")
+    /// Posted on the main queue when a reconnect attempt fails.
     public static let linkConnectionDidFailReconnect   = Notification.Name("linkConnectionDidFailReconnect")
 }
 
@@ -61,6 +65,12 @@ public extension ServerInfoDelegate {
     func serverInfoDidChange(for connection: Connection) {  }
 }
 
+/// High-level Wired protocol connection that manages the login handshake, ping keepalive,
+/// and delegate fan-out for a single server session.
+///
+/// Create a `Connection` with a `P7Spec`, optionally supply a `ConnectionDelegate`, then
+/// call `connect(withUrl:)` to perform the full handshake (client-info → set-user → login).
+/// Set `interactive` to `false` before connecting if you want to drive the read loop yourself.
 open class Connection: NSObject {
     enum ConnectionError: Error {
         case cannotReadMessage(_ message: String?)
@@ -75,8 +85,11 @@ open class Connection: NSObject {
     public var delegates: [ConnectionDelegate] = []
     public var clientInfoDelegate: ClientInfoDelegate?
     public var serverInfoDelegate: ServerInfoDelegate?
+    /// When `true` (the default) the connection starts a background read loop after connecting.
+    /// Set to `false` before calling `connect(withUrl:)` if you intend to call `readMessage()` manually.
     public var interactive: Bool = true
 
+    /// Monotonically-increasing counter used to tag each outgoing message with a unique transaction ID.
     public var transactionCounter: UInt32 = 1
 
     public var userID: UInt32!
@@ -98,10 +111,16 @@ open class Connection: NSObject {
 
     private var listener: DispatchWorkItem!
 
+    /// A compact human-readable identifier for this connection in the form `login@hostname:port`.
     public var URI: String {
         "\(self.url.login)@\(self.url.hostname):\(self.url.port)"
     }
 
+    /// Creates a connection backed by the given protocol spec.
+    ///
+    /// - Parameters:
+    ///   - spec: The `P7Spec` that describes message types and field definitions.
+    ///   - delegate: An optional initial delegate; additional delegates can be added later via `addDelegate(_:)`.
     public init(withSpec spec: P7Spec, delegate: ConnectionDelegate? = nil) {
         self.spec = spec
 
@@ -112,6 +131,9 @@ open class Connection: NSObject {
         }
     }
 
+    /// Registers a delegate if it is not already in the delegate list.
+    ///
+    /// - Parameter delegate: The object to add as a connection delegate.
     public func addDelegate(_ delegate: ConnectionDelegate) {
         if !delegates.contains(where: { $0 === delegate }) {
             self.delegates.append(delegate)
@@ -119,6 +141,9 @@ open class Connection: NSObject {
         Logger.debug("Connection \(self) addDelegate : \(delegate) \(delegates.count)")
     }
 
+    /// Removes a previously registered delegate.
+    ///
+    /// - Parameter delegate: The delegate to remove. No-op if the delegate is not registered.
     public func removeDelegate(_ delegate: ConnectionDelegate) {
         if let index = delegates.firstIndex(where: { $0 === delegate }) {
             delegates.remove(at: index)
@@ -187,6 +212,18 @@ open class Connection: NSObject {
 //
 //    }
 
+    /// Opens the socket, performs the full Wired handshake, and (when `interactive` is `true`) starts the background read loop.
+    ///
+    /// The sequence is: TCP connect → `wired.client_info` → `wired.user.set_nick/status/icon` → `wired.send_login`.
+    /// Delegates receive `connectionDidConnect` before the handshake and `connectionDidLogin` after.
+    ///
+    /// - Parameters:
+    ///   - url: The `Url` containing hostname, port, login, and password.
+    ///   - cipher: TLS cipher suite to negotiate. Defaults to ECDH + AES-256 + SHA-256.
+    ///   - compression: Payload compression algorithm. Defaults to DEFLATE.
+    ///   - checksum: Checksum algorithm for message integrity. Defaults to SHA-256.
+    /// - Throws: Any `Error` thrown by the socket or handshake steps. Delegates also receive
+    ///   `connectionDidFailToConnect` when the initial TCP connect fails.
     public func connect(withUrl url: Url, cipher: P7Socket.CipherType = .ECDH_AES256_SHA256, compression: P7Socket.Compression = .DEFLATE, checksum: P7Socket.Checksum = .SHA2_256) throws {
         self.url    = url
         self.socket = P7Socket(hostname: self.url.hostname, port: self.url.port, spec: self.spec)
@@ -239,6 +276,10 @@ open class Connection: NSObject {
         })
     }
 
+    /// Tears down the current socket and re-runs the full connection and handshake sequence
+    /// using the same URL and negotiated parameters.
+    ///
+    /// - Throws: Any `Error` thrown during socket reconnect or handshake.
     public func reconnect() throws {
         self.pingCheckTimer.invalidate()
         self.pingCheckTimer = nil
@@ -282,6 +323,9 @@ open class Connection: NSObject {
         })
     }
 
+    /// Closes the connection, stops the background listener, and notifies all delegates on the main queue.
+    ///
+    /// Idempotent — safe to call even if the socket is already `nil` or not connected.
     public func disconnect() {
         NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
 
@@ -303,14 +347,20 @@ open class Connection: NSObject {
         }
     }
 
+    /// Returns `true` when the underlying socket reports it is connected.
     public func isConnected() -> Bool {
         return self.socket?.connected ?? false
     }
 
+    /// Returns `true` if the given privilege key was granted in the server's account privileges message.
+    ///
+    /// - Parameter key: A Wired account privilege field name, e.g. `"wired.account.user.get_users"`.
     public func hasPrivilege(key: String) -> Bool {
         return self.privileges.contains(key)
     }
 
+    /// Returns `true` if the account holds at least one administration-level privilege
+    /// (settings, user management, log, banlist, or events).
     public func hasAdministrationPrivileges() -> Bool {
         return  self.hasPrivilege(key: "wired.account.settings.get_settings")   ||
                 self.hasPrivilege(key: "wired.account.settings.set_settings")   ||
@@ -320,6 +370,11 @@ open class Connection: NSObject {
                 self.hasPrivilege(key: "wired.account.events.view_events")
     }
 
+    /// Stamps `message` with the next transaction ID, writes it to the socket, and notifies
+    /// `connectionDidSendMessage` delegates on the main queue.
+    ///
+    /// - Parameter message: The `P7Message` to send. The `wired.transaction` field is set automatically.
+    /// - Returns: `true` on a successful socket write; `false` when not connected or the write fails.
     @discardableResult
     public func send(message: P7Message) -> Bool {
         if self.socket.connected {
@@ -340,10 +395,20 @@ open class Connection: NSObject {
         return false
     }
 
+    /// Reads and returns the next `P7Message` from the socket synchronously.
+    ///
+    /// Intended for use when `interactive` is `false` and the caller drives the read loop manually.
+    ///
+    /// - Returns: The next decoded `P7Message`.
+    /// - Throws: Any socket or decoding error.
     public func readMessage() throws -> P7Message {
         return try self.socket.readMessage()
     }
 
+    /// Sends a `wired.chat.join_chat` message for the specified chat room.
+    ///
+    /// - Parameter chatID: The numeric identifier of the chat room to join.
+    /// - Returns: `true` if the message was sent successfully.
     public func joinChat(chatID: UInt32) -> Bool {
         let message = P7Message(withName: "wired.chat.join_chat", spec: self.spec)
 
@@ -380,6 +445,9 @@ open class Connection: NSObject {
         DispatchQueue.global().async(execute: listener)
     }
 
+    /// Cancels the background read loop started by `connect(withUrl:)`.
+    ///
+    /// After calling this method no further delegate callbacks will be triggered by incoming messages.
     public func stopListening() {
         if let l = listener {
             l.cancel()
@@ -553,6 +621,7 @@ open class Connection: NSObject {
     }
 }
 
+/// Strongly-typed network errors that the P7 socket layer can surface instead of raw `errno` values.
 public enum NetworkError: Error, Equatable {
 
     // MARK: - DNS / Address resolution

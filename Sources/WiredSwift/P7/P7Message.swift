@@ -28,15 +28,24 @@ public class P7Message: NSObject {
 
     private var parameters: [String: Any] = [String: Any](minimumCapacity: 50)
 
+    /// The number of field parameters currently stored in the message.
     public var numberOfParameters: Int {
         self.parameters.count
     }
+
+    /// The field names of all parameters currently stored in the message.
     public var parameterKeys: [String] {
         Array(self.parameters.keys)
     }
 
+    /// Returns an XML representation of the message (same as `xml()`).
     public override var description: String { self.xml() }
 
+    /// Creates an empty message for the named message type defined in `spec`.
+    ///
+    /// - Parameters:
+    ///   - name: The spec-defined message name (e.g. `"wired.send_login"`).
+    ///   - spec: The `P7Spec` instance to look the message definition up in.
     public init(withName name: String, spec: P7Spec) {
         if let specMessage = spec.messagesByName[name] {
             self.specMessage    = specMessage
@@ -51,6 +60,11 @@ public class P7Message: NSObject {
         }
     }
 
+    /// Creates a message by parsing an XML-encoded P7 message string.
+    ///
+    /// - Parameters:
+    ///   - xml: An XML string whose root element is `<p7:message>`.
+    ///   - spec: The `P7Spec` instance used to validate field names and types.
     public init(withXML xml: String, spec: P7Spec) {
         super.init()
 
@@ -59,6 +73,14 @@ public class P7Message: NSObject {
         self.loadXMLMessage(xml)
     }
 
+    /// Creates a message by deserialising a raw binary P7 frame.
+    ///
+    /// The binary layout is: `msg_id (4B BE)` followed by zero or more
+    /// TLV fields, each `field_id (4B) | length (4B) | value`.
+    ///
+    /// - Parameters:
+    ///   - data: The raw bytes of a complete P7 message frame.
+    ///   - spec: The `P7Spec` instance used to resolve field IDs to typed fields.
     public init(withData data: Data, spec: P7Spec) {
         super.init()
 
@@ -68,10 +90,21 @@ public class P7Message: NSObject {
         self.loadBinaryMessage(data)
     }
 
+    /// Stores a field value in the message parameter dictionary.
+    ///
+    /// - Parameters:
+    ///   - field: The spec-defined field name.
+    ///   - value: The value to associate with the field, or `nil` to clear it.
     public func addParameter(field: String, value: Any?) {
         self.parameters[field] = value
     }
 
+    /// Returns a string representation of the value stored for `field`,
+    /// coercing numeric and binary types to their string forms.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: A string representation, or `nil` if the type is unsupported
+    ///   or the field is absent.
     public func lazy(field: String) -> String? {
         let value = self.parameters[field]
 
@@ -107,6 +140,11 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the UTF-8 string value for a `.string`-typed field,
+    /// stripping leading/trailing control characters.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: The string value, or `nil` if absent or of the wrong type.
     public func string(forField field: String) -> String? {
         if let str = self.parameters[field] as? String {
             return str.trimmingCharacters(in: .controlCharacters)
@@ -114,6 +152,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the UUID string value for a `.uuid`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: The UUID as an uppercase hyphenated string, or `nil` if absent.
     public func uuid(forField field: String) -> String? {
         if let str = self.parameters[field] as? String {
             return str
@@ -121,6 +163,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the raw byte value for a `.data` or `.oobdata`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: The raw `Data`, or `nil` if absent or of the wrong type.
     public func data(forField field: String) -> Data? {
         if let data = self.parameters[field] as? Data {
             return data
@@ -128,6 +174,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the untyped list value for a `.list`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: An array of list items, or `nil` if absent or of the wrong type.
     public func list(forField field: String) -> [Any]? {
         if let list = self.parameters[field] as? [Any] {
             return list
@@ -135,6 +185,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the string list value for a `.list`-typed field whose list type is `string`.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: An array of strings, or `nil` if absent or not a string list.
     public func stringList(forField field: String) -> [String]? {
         if let list = self.parameters[field] as? [String] {
             return list
@@ -142,6 +196,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the `Date` value for a `.date`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: The decoded `Date`, or `nil` if absent or of the wrong type.
     public func date(forField field: String) -> Date? {
         if let value = self.parameters[field] as? Date {
             return value
@@ -149,6 +207,11 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the Boolean value for a `.bool`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: `true` if the stored byte is `1`, `false` if `0`,
+    ///   or `nil` if absent or of the wrong type.
     public func bool(forField field: String) -> Bool? {
         if let value = self.parameters[field] as? UInt8 {
             return value == 1 ? true : false
@@ -156,6 +219,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the 32-bit unsigned integer value for a `.uint32` or `.int32`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: The `UInt32` value, or `nil` if absent or of the wrong type.
     public func uint32(forField field: String) -> UInt32? {
         if let value = self.parameters[field] as? UInt32 {
             return value
@@ -163,6 +230,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the 64-bit unsigned integer value for a `.uint64` or `.int64`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: The `UInt64` value, or `nil` if absent or of the wrong type.
     public func uint64(forField field: String) -> UInt64? {
         if let value = self.parameters[field] as? UInt64 {
             return value
@@ -170,6 +241,10 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Returns the enumeration value for an `.enum32`-typed field.
+    ///
+    /// - Parameter field: The spec-defined field name.
+    /// - Returns: The raw `UInt32` enum discriminant, or `nil` if absent or of the wrong type.
     public func enumeration(forField field: String) -> UInt32? {
         if let value = self.parameters[field] as? UInt32 {
             return value
@@ -177,6 +252,12 @@ public class P7Message: NSObject {
         return nil
     }
 
+    /// Serialises the message to an XML string.
+    ///
+    /// The returned document has the form:
+    /// `<p7:message name="…"><p7:field name="…">value</p7:field>…</p7:message>`.
+    ///
+    /// - Returns: An XML string representation of the message.
     public func xml() -> String {
         let message = AEXMLDocument()
         let root = message.addChild(name: "p7:message", attributes: ["name": self.name] )
@@ -224,6 +305,14 @@ public class P7Message: NSObject {
         return "\(message.xml)"
     }
 
+    /// Serialises the message to a binary P7 frame.
+    ///
+    /// The frame layout is: `msg_id (4B BE)` followed by zero or more TLV fields,
+    /// each encoded as `field_id (4B BE) | [length (4B BE)] | value`.
+    /// Variable-length types (string, data, list) include the 4-byte length prefix;
+    /// fixed-size types omit it.
+    ///
+    /// - Returns: The binary representation of the message, ready to transmit over the wire.
     public func bin() -> Data {
         var data = Data()
 

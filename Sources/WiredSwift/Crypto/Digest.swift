@@ -8,8 +8,15 @@
 import Foundation
 import CryptoSwift
 
+/// HMAC-based message authentication used on the P7 wire.
+///
+/// Wraps SHA-2/SHA-3 hashes and HMAC variants negotiated during the
+/// P7 handshake.  For HMAC modes the `key` must be set to the hex-encoded
+/// session key derived during key exchange.
 public class Digest {
+    /// The checksum algorithm negotiated for this session.
     public var type: P7Socket.Checksum
+    /// Hex-encoded HMAC key; required when `type` is `.HMAC_256` or `.HMAC_384`.
     public var key: String?
 
     private var hmac: HMAC?
@@ -20,6 +27,11 @@ public class Digest {
         case unsupportedDigest
     }
 
+    /// Creates a `Digest` authenticator for the given checksum algorithm.
+    ///
+    /// - Parameters:
+    ///   - type: The checksum variant to use.
+    ///   - key: Hex-encoded key required for HMAC variants; ignored for plain hash variants.
     public init(type: P7Socket.Checksum, key: String? = nil) {
         self.type   = type
         self.key    = key
@@ -31,6 +43,13 @@ public class Digest {
         }
     }
 
+    /// Authenticates `data` using the configured checksum algorithm.
+    ///
+    /// - Parameter data: The message bytes to authenticate (typically the raw wire payload).
+    /// - Returns: Authentication tag whose length matches the negotiated algorithm
+    ///   (e.g. 32 bytes for SHA2-256 / HMAC-256).
+    /// - Throws: `DigestError.unsupportedDigest` for unknown types;
+    ///   `DigestError.digestNotProperlyInitialized` if an HMAC key was not provided.
     public func authenticate(data: Data) throws -> Data {
         switch self.type {
         case P7Socket.Checksum.SHA2_256:

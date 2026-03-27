@@ -7,14 +7,27 @@
 
 import Foundation
 
+/// A simple INI-style configuration file reader and writer.
+///
+/// The file format uses `[section]` headers followed by `key = value` lines.
+/// Values are accessed and mutated via the `subscript(section:key:)` subscript,
+/// which automatically persists changes back to disk.
 public class Config {
     private var config: [String: [String: Any]] = [:]
     private var path: String
 
+    /// Creates a `Config` instance pointing at the given file path.
+    ///
+    /// The file is not read until `load()` is called.
+    ///
+    /// - Parameter path: Absolute path to the INI-style configuration file.
     public init(withPath path: String) {
         self.path = path
     }
 
+    /// Reads the configuration file from disk and populates the in-memory store.
+    ///
+    /// - Returns: `true` on success; `false` if the file cannot be read or does not exist.
     public func load() -> Bool {
         do {
             let contents = try String(contentsOfFile: path)
@@ -57,6 +70,9 @@ public class Config {
         return true
     }
 
+    /// Serialises the in-memory store and writes it atomically to the file on disk.
+    ///
+    /// - Returns: `true` on success; `false` if the write fails.
     @discardableResult
     public func save() -> Bool {
         var string: String = ""
@@ -79,6 +95,13 @@ public class Config {
         return true
     }
 
+    /// Accesses the value for `key` within `section`.
+    ///
+    /// Setting a value writes the updated config back to disk immediately.
+    ///
+    /// - Parameters:
+    ///   - section: The section name without brackets, e.g. `"server"`.
+    ///   - key: The key within that section.
     public subscript(section: String, key: String) -> Any? {
         get {
             return config["[\(section)]"]?[key]

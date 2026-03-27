@@ -12,12 +12,20 @@ import Darwin
 import Glibc
 #endif
 
+/// Represents a Wired filesystem entry and provides helpers for reading and
+/// writing Wired-specific metadata stored as hidden `.wired/` sub-files.
 public class File {
+    /// Relative path of the per-directory type metadata file.
     public static let wiredFileMetaType: String          = "/.wired/type"
+    /// Relative path of the per-directory comments metadata file.
     public static let wiredFileMetaComments: String      = "/.wired/comments"
+    /// Relative path of the per-directory permissions metadata file.
     public static let wiredFileMetaPermissions: String   = "/.wired/permissions"
+    /// Relative path of the per-directory labels metadata file.
     public static let wiredFileMetaLabels: String        = "/.wired/labels"
 
+    /// Unicode field-separator (U+001C) used to delimit owner, group and mode
+    /// within the permissions metadata file.
     public static let wiredPermissionsFieldSeparator    = "\u{1C}"
 
     fileprivate static func readData(atPath path: String) -> Data? {
@@ -53,12 +61,20 @@ public class File {
         }
     }
 
+    /// Wired file-system entry type, mirroring the `wired.file.type` field values.
     public enum FileType: UInt32 {
         case file       = 0
         case directory  = 1
         case uploads    = 2
         case dropbox    = 3
 
+        /// Persists `type` to the `.wired/type` metadata file inside `path`.
+        ///
+        /// - Parameters:
+        ///   - type: The desired `FileType`; must not be `.file` (only directories may carry a custom type).
+        ///   - path: Absolute filesystem path of the directory to annotate.
+        /// - Returns: `true` on success, `false` if the path does not exist, is not a directory,
+        ///   or if any I/O error occurs.
         public static func set(type: File.FileType, path: String) -> Bool {
             var isDir: ObjCBool = false
 
@@ -105,6 +121,13 @@ public class File {
             return true
         }
 
+        /// Reads the effective `FileType` for the item at `path`.
+        ///
+        /// Returns `.file` for regular files, `.directory` for plain directories,
+        /// or the value stored in the `.wired/type` metadata file for annotated directories.
+        ///
+        /// - Parameter path: Absolute filesystem path to inspect.
+        /// - Returns: The resolved `FileType`, or `nil` if the path does not exist.
         public static func type(path: String) -> FileType? {
             var isDir: ObjCBool = false
             var type: FileType? = .file
@@ -135,21 +158,33 @@ public class File {
         }
     }
 
+    /// Unix-style read/write permission flags for owner, group and everyone,
+    /// stored in `wired.file.permissions` as a bitmask.
     public struct FilePermissions: OptionSet {
         public let rawValue: UInt32
 
+        /// Creates a `FilePermissions` from a raw bitmask value.
+        ///
+        /// - Parameter rawValue: The bitmask representing combined permission flags.
         public init(rawValue: UInt32 ) {
             self.rawValue = rawValue
         }
 
+        /// Owner has write permission.
         public static let ownerWrite       = FilePermissions(rawValue: 2 << 6)
+        /// Owner has read permission.
         public static let ownerRead        = FilePermissions(rawValue: 4 << 6)
+        /// Group has write permission.
         public static let groupWrite       = FilePermissions(rawValue: 2 << 3)
+        /// Group has read permission.
         public static let groupRead        = FilePermissions(rawValue: 4 << 3)
+        /// Everyone has read permission.
         public static let everyoneRead     = FilePermissions(rawValue: 2 << 0)
+        /// Everyone has write permission.
         public static let everyoneWrite    = FilePermissions(rawValue: 4 << 0)
     }
 
+    /// Finder-style colour labels that can be attached to a Wired directory.
     public enum FileLabel: UInt32 {
         case LABEL_NONE     = 0
         case LABEL_RED
@@ -161,6 +196,14 @@ public class File {
         case LABEL_GRAY
     }
 
+    /// Returns whether `path` is safe to use as a Wired virtual path.
+    ///
+    /// Rejects null bytes, URL-encoded traversal sequences and any form of
+    /// `../` that could escape the server root, both before and after
+    /// percent-decoding.
+    ///
+    /// - Parameter path: The client-supplied virtual path to validate.
+    /// - Returns: `true` if the path contains no traversal or injection hazards.
     public static func isValid(path: String) -> Bool {
         // Reject null bytes (can truncate path in C-level APIs)
         if path.contains("\0") {
@@ -201,10 +244,18 @@ public class File {
         return true
     }
 
+    /// Returns the byte size of the file at `path`, or `0` if unavailable.
+    ///
+    /// - Parameter path: Absolute filesystem path to the file.
+    /// - Returns: File size in bytes.
     public static func size(path: String) -> UInt64 {
         return FileManager.sizeOfFile(atPath: path) ?? 0
     }
 
+    /// Returns the number of visible (non-dot) items inside the directory at `path`.
+    ///
+    /// - Parameter path: Absolute filesystem path to a directory.
+    /// - Returns: Item count, or `0` if the path does not exist or is not a directory.
     public static func count(path: String) -> UInt32 {
         var isDir: ObjCBool = false
 
@@ -231,17 +282,33 @@ public class File {
     }
 }
 
+/// Owner + group + permission-mode triplet for a Wired directory.
+///
+/// Serialised to / deserialised from the `/.wired/permissions` extended
+/// attribute file using U+001C as a field separator.
 public class FilePrivilege {
     public var owner: String?
     public var group: String?
     public var mode: File.FilePermissions?
 
+    /// Creates a `FilePrivilege` with explicit owner, group and mode values.
+    ///
+    /// - Parameters:
+    ///   - owner: Account name of the directory owner.
+    ///   - group: Group name associated with the directory.
+    ///   - mode: Combined `FilePermissions` bitmask for owner, group and everyone.
     public init(owner: String, group: String, mode: File.FilePermissions) {
         self.owner = owner
         self.group = group
         self.mode = mode
     }
 
+    /// Reads a `FilePrivilege` from the `.wired/permissions` metadata file
+    /// inside the directory at `path`.
+    ///
+    /// - Parameter path: Absolute filesystem path to a directory.
+    /// - Returns: A populated `FilePrivilege`, or `nil` if the path does not
+    ///   exist, is not a directory, or the metadata file is absent or malformed.
     public init?(path: String) {
         var isDir: ObjCBool = false
 
@@ -272,6 +339,12 @@ public class FilePrivilege {
         self.mode   = File.FilePermissions(rawValue: UInt32(String(components[2])) ?? 0)
     }
 
+    /// Persists `privileges` to the `.wired/permissions` metadata file inside `path`.
+    ///
+    /// - Parameters:
+    ///   - privileges: The `FilePrivilege` value to write.
+    ///   - path: Absolute filesystem path of the target directory.
+    /// - Returns: `true` on success, `false` if the path does not exist or an I/O error occurs.
     public static func set(privileges: FilePrivilege, path: String) -> Bool {
         var isDir: ObjCBool = false
 

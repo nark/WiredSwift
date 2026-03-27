@@ -353,13 +353,18 @@ public class P7Spec: NSObject, XMLParserDelegate {
         return nil
     }
 
+    /// Returns the `SpecError` whose spec name matches `withName`.
+    ///
+    /// - Parameter withName: The fully-qualified error name (e.g. `"wired.error.internal_error"`).
+    /// - Returns: The matching `SpecError`, or `nil` if not found.
     public func error(withName: String) -> SpecError? {
         return errorsByName[withName]
     }
 
-    /**
-     XMLParser parser method
-    */
+    /// `XMLParserDelegate` callback fired when the parser encounters an opening element.
+    ///
+    /// Dispatches to the appropriate loader (`loadField`, `loadMessage`, `loadParam`,
+    /// `loadError`) based on the element name.
     public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         if elementName == "p7:protocol" {
             if let name = attributeDict["name"] {
@@ -393,6 +398,9 @@ public class P7Spec: NSObject, XMLParserDelegate {
         }
     }
 
+    /// `XMLParserDelegate` callback fired when the parser encounters a closing element.
+    ///
+    /// Used to close collection-scope tracking (e.g. `wired.account.privileges`).
     public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         if elementName == "p7:collection" {
             if accountPrivilegesLock {
