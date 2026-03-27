@@ -12,17 +12,11 @@ import FoundationXML
 #endif
 import AEXML
 
-
-
 public typealias SpecItem       = P7SpecItem
 public typealias SpecType       = P7SpecType
 public typealias SpecField      = P7SpecField
 public typealias SpecMessage    = P7SpecMessage
 public typealias SpecError      = P7SpecError
-
-
-
-
 
 /**
  This class is a wrapper for the Wired 2.0 specification.
@@ -43,31 +37,31 @@ public typealias SpecError      = P7SpecError
  @author Rafaël Warnault (mailto:rw@read-write.fr)
  */
 public class P7Spec: NSObject, XMLParserDelegate {
-    private var parser:XMLParser = XMLParser(data: Data())
-    
+    private var parser: XMLParser = XMLParser(data: Data())
+
     public var xml: String?
-    
+
     public var builtinProtocolVersion: String?
     public var protocolVersion: String?
-    public var protocolName:    String?
-    
-    public var fields:          [SpecField]             = []
-    public var fieldsByName:    [String:SpecField]      = [:]
-    public var fieldsByID:      [UInt32:SpecField]         = [:]
-    
-    public var messages:        [SpecMessage]           = []
-    public var messagesByName:  [String:SpecMessage]    = [:]
-    public var messagesByID:    [Int:SpecMessage]       = [:]
-    
-    private var accountPrivilegesLock:Bool = false
-    public var accountPrivileges:[String]? = nil
-    
-    public var errors:          [SpecError]             = []
-    public var errorsByID:      [Int:SpecError]         = [:]
-    public var errorsByName:    [String:SpecError]         = [:]
-    
+    public var protocolName: String?
+
+    public var fields: [SpecField]             = []
+    public var fieldsByName: [String: SpecField]      = [:]
+    public var fieldsByID: [UInt32: SpecField]         = [:]
+
+    public var messages: [SpecMessage]           = []
+    public var messagesByName: [String: SpecMessage]    = [:]
+    public var messagesByID: [Int: SpecMessage]       = [:]
+
+    private var accountPrivilegesLock: Bool = false
+    public var accountPrivileges: [String]?
+
+    public var errors: [SpecError]             = []
+    public var errorsByID: [Int: SpecError]         = [:]
+    public var errorsByName: [String: SpecError]         = [:]
+
     private var currentMessage: SpecMessage?
-    
+
     public var path: String?
 
     /**
@@ -202,7 +196,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
     <p7:message name="p7.compatibility_check.specification" id="8">
       <p7:parameter field="p7.compatibility_check.specification" use="required" />
     </p7:message>
-    
+
     <p7:message name="p7.compatibility_check.status" id="9">
       <p7:parameter field="p7.compatibility_check.status" use="required" />
     </p7:message>
@@ -242,21 +236,20 @@ public class P7Spec: NSObject, XMLParserDelegate {
   </p7:transactions>
 </p7:protocol>
 """
-    
-    
+
     /**
     Init the built-in spec
     */
-    
+
     private override init() {
         super.init()
-        
+
         let data = p7xml.data(using: .utf8)
         self.parser = XMLParser(data: data!)
         self.parser.delegate = self
-        
+
         self.parser.parse()
-        
+
         do {
             let builtinDoc = try AEXMLDocument(xml: p7xml)
             self.builtinProtocolVersion = builtinDoc.root.attributes["version"]
@@ -265,9 +258,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
             Logger.error("ERROR: Cannot parse built-in spec, fatal")
         }
     }
-    
-    
-    
+
     /**
      Init a new specification object for a given XML
      specification file.
@@ -279,7 +270,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
     */
     public convenience init(withPath path: String? = nil) {
         self.init()
-        
+
         if let p = path {
             self.loadFile(path: p)
         } else {
@@ -290,7 +281,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
             }
         }
     }
-    
+
     /**
      Init a new specification object for a given XML
      specification file.
@@ -300,16 +291,14 @@ public class P7Spec: NSObject, XMLParserDelegate {
 
     - Returns: An instance of P7Spec
     */
-    public convenience init?(withUrl url:URL) {
+    public convenience init?(withUrl url: URL) {
         self.init()
-        
+
         if !self.loadFile(at: url) {
             return nil
         }
     }
-    
-    
-    
+
     /**
     Check whether the given specification name and version
      are compatible with the current protocol.
@@ -320,7 +309,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
 
     - Returns: A boolean set to `true` if compatible
     */
-    public func isCompatibleWithProtocol(withName name:String, version: String) -> Bool {
+    public func isCompatibleWithProtocol(withName name: String, version: String) -> Bool {
         // Verify protocol name matches
         guard let localName = self.protocolName, localName == name else {
             Logger.error("Protocol name mismatch: local=\(self.protocolName ?? "nil") remote=\(name)")
@@ -348,8 +337,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
 
         return true
     }
-    
-    
+
     /**
      Returns an error for a given P7 Message
 
@@ -364,17 +352,15 @@ public class P7Spec: NSObject, XMLParserDelegate {
         }
         return nil
     }
-    
+
     public func error(withName: String) -> SpecError? {
         return errorsByName[withName]
     }
-    
 
-    
     /**
      XMLParser parser method
     */
-    public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String: String] = [:]) {
         if elementName == "p7:protocol" {
             if let name = attributeDict["name"] {
                 self.protocolName = name
@@ -382,29 +368,23 @@ public class P7Spec: NSObject, XMLParserDelegate {
             if let version = attributeDict["version"] {
                 self.protocolVersion = version
             }
-        }
-        else if elementName == "p7:field" {
+        } else if elementName == "p7:field" {
             self.loadField(attributeDict)
-        }
-        else if elementName == "p7:message" {
+        } else if elementName == "p7:message" {
             self.loadMessage(attributeDict)
-        }
-        else if elementName == "p7:collection" {
+        } else if elementName == "p7:collection" {
             if attributeDict["name"] == "wired.account.privileges" {
                 accountPrivileges = []
                 accountPrivilegesLock = true
             }
-        }
-        else if elementName == "p7:member" {
+        } else if elementName == "p7:member" {
             // SECURITY (FINDING_P_015): guard against missing "field" attribute
             if accountPrivilegesLock, let fieldName = attributeDict["field"] {
                 accountPrivileges?.append(fieldName)
             }
-        }
-        else if elementName == "p7:parameter" {
+        } else if elementName == "p7:parameter" {
             self.loadParam(attributeDict)
-        }
-        else if elementName == "p7:enum" {
+        } else if elementName == "p7:enum" {
             if let name = attributeDict["name"] {
                 if name.starts(with: "wired.error.") {
                     self.loadError(attributeDict)
@@ -412,8 +392,7 @@ public class P7Spec: NSObject, XMLParserDelegate {
             }
         }
     }
-    
-    
+
     public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
         if elementName == "p7:collection" {
             if accountPrivilegesLock {
@@ -421,36 +400,32 @@ public class P7Spec: NSObject, XMLParserDelegate {
             }
         }
     }
-    
-    
-    
-    private func loadError(_ attributes: [String : String]) {
+
+    private func loadError(_ attributes: [String: String]) {
         guard let name = attributes["name"] else {
             return
         }
-        
+
         guard let value = attributes["value"], let asInt = Int(value) else {
             return
         }
-        
+
         let e = SpecError(name: name, spec: self, attributes: attributes)
         e.id = value
-        
+
         errors.append(e)
         errorsByID[asInt] = e
         errorsByName[name] = e
     }
-    
-    
+
     private func loadFile(path: String) {
         let url = URL(fileURLWithPath: path)
-        
+
         self.loadFile(at: url)
     }
-    
-    
+
     @discardableResult
-    private func loadFile(at url:URL) -> Bool {
+    private func loadFile(at url: URL) -> Bool {
         do {
             self.xml = try String(contentsOf: url, encoding: .utf8)
 
@@ -461,10 +436,10 @@ public class P7Spec: NSObject, XMLParserDelegate {
             self.parser = xmlParser
             self.parser.delegate = self
             self.parser.parse()
-            
+
             // SECURITY (FINDING_P_011): nil-coalescing instead of force unwrap
             Logger.debug("Loaded spec \(self.protocolName ?? "unknown") version \(self.protocolVersion ?? "unknown")")
-            
+
         } catch let e {
             Logger.error("Cannot load spec at URL: \(e.localizedDescription)")
             return false
@@ -472,55 +447,50 @@ public class P7Spec: NSObject, XMLParserDelegate {
         return true
     }
 
-    
-    
-    private func loadField(_ attributes: [String : String]) {
+    private func loadField(_ attributes: [String: String]) {
         guard let name = attributes["name"] else {
             return
         }
-        
+
         guard let strID = attributes["id"], let fieldID = UInt32(strID) else {
             return
         }
-        
+
         let field = SpecField(name: name, spec: self, attributes: attributes)
         self.fields.append(field)
         self.fieldsByName[name]     = field
         self.fieldsByID[fieldID]    = field
     }
-    
-    
-    private func loadMessage(_ attributes: [String : String]) {
+
+    private func loadMessage(_ attributes: [String: String]) {
         guard let name = attributes["name"] else {
             return
         }
-        
+
         guard let strID = attributes["id"], let messageID = Int(strID) else {
             return
         }
-        
+
         let message = SpecMessage(name: name, spec: self, attributes: attributes)
         self.messages.append(message)
-        
+
         self.messagesByName[name]       = message
         self.messagesByID[messageID]    = message
-        
+
         self.currentMessage = message
     }
-    
-    
-    private func loadParam(_ attributes: [String : String]) {
+
+    private func loadParam(_ attributes: [String: String]) {
         guard let fieldName = attributes["field"] else {
             return
         }
-        
+
         if let cm = self.currentMessage, let field = self.fieldsByName[fieldName] {
             cm.parameters.append(field)
         }
     }
 
-    
     private func loadTransaction() {
-        
+
     }
 }

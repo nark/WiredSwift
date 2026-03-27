@@ -36,9 +36,9 @@ public enum BotLogger {
         }
     }
 
-    public static func info   (_ msg: String) { Logger.info   ("[Bot] \(msg)") }
-    public static func debug  (_ msg: String) { Logger.debug  ("[Bot] \(msg)") }
+    public static func info(_ msg: String) { Logger.info("[Bot] \(msg)") }
+    public static func debug(_ msg: String) { Logger.debug("[Bot] \(msg)") }
     public static func warning(_ msg: String) { Logger.warning("[Bot] \(msg)") }
-    public static func error  (_ msg: String) { Logger.error  ("[Bot] \(msg)") }
-    public static func fatal  (_ msg: String) { Logger.fatal  ("[Bot] \(msg)") }
+    public static func error(_ msg: String) { Logger.error("[Bot] \(msg)") }
+    public static func fatal(_ msg: String) { Logger.fatal("[Bot] \(msg)") }
 }

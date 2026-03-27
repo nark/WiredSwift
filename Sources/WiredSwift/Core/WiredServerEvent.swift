@@ -1,3 +1,5 @@
+// swiftlint:disable cyclomatic_complexity
+// TODO: Replace the large switch in WiredServerEvent with a dispatch table
 import Foundation
 
 public enum WiredServerEventCategory: String, CaseIterable, Sendable {

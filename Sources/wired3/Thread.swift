@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 public class Thread {
     public var uuid: String
     public var board: String

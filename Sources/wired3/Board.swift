@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 public class Board {
     public var path: String
     public var owner: String

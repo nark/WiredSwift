@@ -7,9 +7,9 @@ import Foundation
 // MARK: - Single context (one user↔bot conversation)
 
 public final class ConversationContext {
-    private var history:             [LLMMessage] = []
+    private var history: [LLMMessage] = []
     private var lastInteractionDate: Date          = .distantPast
-    private let maxMessages:         Int
+    private let maxMessages: Int
     private let lock =               NSLock()
 
     public init(maxMessages: Int) {
@@ -98,10 +98,10 @@ public final class ConversationContext {
     ///     system message so the bot knows what has been discussed around it.
     ///   - userInput: The current user turn (already formatted as "Nick: text").
     ///   - maxAgeSeconds: Drop history entries older than this. 0 = keep all.
-    public func buildMessages(systemPrompt:      String,
-                              channelAwareness:  String? = nil,
-                              userInput:         String,
-                              maxAgeSeconds:     Double  = 0) -> [LLMMessage] {
+    public func buildMessages(systemPrompt: String,
+                              channelAwareness: String? = nil,
+                              userInput: String,
+                              maxAgeSeconds: Double  = 0) -> [LLMMessage] {
         lock.lock(); defer { lock.unlock() }
 
         var msgs = [LLMMessage(role: "system", content: systemPrompt)]
@@ -137,7 +137,7 @@ public final class ConversationContext {
 // MARK: - Manager: one context per (channel, user) pair or per DM user
 
 public final class ConversationContextManager {
-    private var contexts:    [String: ConversationContext] = [:]
+    private var contexts: [String: ConversationContext] = [:]
     private let lock =       NSLock()
     private let maxMessages: Int
 

@@ -25,22 +25,22 @@ public enum BotError: Error, LocalizedError {
 public final class BotController: NSObject {
 
     // MARK: Public config / services (read from SwiftUI wrapper if needed)
-    public let config:      BotConfig
+    public let config: BotConfig
     public let triggerEngine: TriggerEngine
     public let contextManager: ConversationContextManager
     public private(set) var llmProvider: LLMProvider?
 
     // MARK: Event handlers
-    public let chatHandler:  ChatEventHandler  = ChatEventHandler()
-    public let userHandler:  UserEventHandler  = UserEventHandler()
-    public let fileHandler:  FileEventHandler  = FileEventHandler()
+    public let chatHandler: ChatEventHandler  = ChatEventHandler()
+    public let userHandler: UserEventHandler  = UserEventHandler()
+    public let fileHandler: FileEventHandler  = FileEventHandler()
     public let boardHandler: BoardEventHandler = BoardEventHandler()
 
     // MARK: Private state
-    private var connection:       Connection?
-    private var spec:             P7Spec?
-    private var eventDispatcher:  EventDispatcher!
-    private var isRunning:        Bool = false
+    private var connection: Connection?
+    private var spec: P7Spec?
+    private var eventDispatcher: EventDispatcher!
+    private var isRunning: Bool = false
     private var reconnectAttempts: Int = 0
 
     // Rate limiting
@@ -51,8 +51,8 @@ public final class BotController: NSObject {
 
     // Spontaneous interjection — passive channel log
     private var channelMessageBuffer: [UInt32: [(nick: String, text: String)]] = [:]
-    private var channelMessageCount:  [UInt32: Int]  = [:]
-    private var lastSpontaneousDate:  [UInt32: Date] = [:]
+    private var channelMessageCount: [UInt32: Int]  = [:]
+    private var lastSpontaneousDate: [UInt32: Date] = [:]
     private let maxPassiveBufferSize = 20
 
     // Board thread context — injected into chat LLM calls so users can
@@ -199,7 +199,7 @@ public final class BotController: NSObject {
         }
 
         let msg = P7Message(withName: "wired.chat.send_say", spec: spec)
-        msg.addParameter(field: "wired.chat.id",  value: chatID)
+        msg.addParameter(field: "wired.chat.id", value: chatID)
         msg.addParameter(field: "wired.chat.say", value: body)
         _ = connection.send(message: msg)
         lastResponseDate = Date()
@@ -276,10 +276,10 @@ public final class BotController: NSObject {
 
                 // ── Step 4: Build message array with temporal filtering ──
                 let messages = ctx.buildMessages(
-                    systemPrompt:     system,
+                    systemPrompt: system,
                     channelAwareness: awareness,
-                    userInput:        userTurn,
-                    maxAgeSeconds:    llmCfg.contextMaxAgeSeconds
+                    userInput: userTurn,
+                    maxAgeSeconds: llmCfg.contextMaxAgeSeconds
                 )
 
                 // ── Step 5: Call LLM ──
@@ -326,7 +326,7 @@ public final class BotController: NSObject {
             lines.append("You are \(id.nick), an AI chatbot connected to a Wired chat server.")
             if !serverName.isEmpty { lines.append("Server: \(serverName)") }
             lines.append("Your nick: \(id.nick)")
-            if !id.status.isEmpty  { lines.append("Your status: \(id.status)") }
+            if !id.status.isEmpty { lines.append("Your status: \(id.status)") }
             lines.append("You are powered by \(llm.model) (\(llm.provider)).")
             lines.append("""
                 Your capabilities:

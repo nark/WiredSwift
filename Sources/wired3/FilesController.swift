@@ -4,30 +4,29 @@
 //
 //  Created by Rafael Warnault on 25/03/2021.
 //
-
+// swiftlint:disable type_body_length
+// TODO: Split FilesController into smaller focused types
 import Foundation
 import WiredSwift
 
 public class FilesController {
-    public var rootPath:String
+    public var rootPath: String
     private let subscriptionsQueue = DispatchQueue(label: "wired3.files.subscriptions")
-    private var subscribedRealPathsByClient:[UInt32:Set<String>] = [:]
-    private var subscribedVirtualPathsByClient:[UInt32:[String:String]] = [:]
-    
-    
-    public init(rootPath:String) {
+    private var subscribedRealPathsByClient: [UInt32: Set<String>] = [:]
+    private var subscribedVirtualPathsByClient: [UInt32: [String: String]] = [:]
+
+    public init(rootPath: String) {
         self.rootPath = rootPath
-        
+
         self.initFilesSystem()
     }
-    
-    
+
     // MARK: -
-    public func real(path:String) -> String {
+    public func real(path: String) -> String {
         return self.rootPath.stringByAppendingPathComponent(path: path)
     }
-    
-    public func virtual(path:String) -> String {
+
+    public func virtual(path: String) -> String {
         return "/" + path.deletingPrefix(self.rootPath)
     }
 
@@ -37,8 +36,8 @@ public class FilesController {
         let suffixed = canonicalRoot.hasSuffix("/") ? canonicalRoot : canonicalRoot + "/"
         return resolvedPath == canonicalRoot || resolvedPath.hasPrefix(suffixed)
     }
-    
-    public func listDirectory(client:Client, message:P7Message) {
+
+    public func listDirectory(client: Client, message: P7Message) {
         var recursive = false
 
         guard let user = client.user else { return }
@@ -68,11 +67,11 @@ public class FilesController {
                 return
             }
         }
-        
+
         if let r = message.bool(forField: "wired.file.recursive") {
             recursive = r
         }
-        
+
         self.replyList(normalizedPath, recursive, client, message)
     }
 
@@ -166,8 +165,8 @@ public class FilesController {
         App.serverController.reply(client: client, reply: reply, message: message)
         App.serverController.recordEvent(.fileGotInfo, client: client, parameters: [normalizedPath])
     }
-    
-    public func createDirectory(client:Client, message:P7Message) {
+
+    public func createDirectory(client: Client, message: P7Message) {
         guard let user = client.user else { return }
 
         guard let path = message.string(forField: "wired.file.path") else {
@@ -366,11 +365,8 @@ public class FilesController {
         App.serverController.replyOK(client: client, message: message)
         App.serverController.recordEvent(.fileSetPermissions, client: client, parameters: [normalizedPath])
     }
-    
-    
-    
-    
-    public func delete(client:Client, message:P7Message) {
+
+    public func delete(client: Client, message: P7Message) {
         guard let user = client.user else { return }
 
         guard let path = message.string(forField: "wired.file.path") else {
@@ -405,7 +401,7 @@ public class FilesController {
                 return
             }
         }
-        
+
         if self.delete(path: normalizedPath, client: client, message: message) {
             App.serverController.replyOK(client: client, message: message)
             App.serverController.recordEvent(.fileDeleted, client: client, parameters: [normalizedPath])
@@ -458,10 +454,8 @@ public class FilesController {
             App.serverController.recordEvent(.fileMoved, client: client, parameters: [normalizedFromPath, normalizedToPath])
         }
     }
-    
-    
-    
-    private func delete(path:String, client:Client, message:P7Message) -> Bool {
+
+    private func delete(path: String, client: Client, message: P7Message) -> Bool {
         let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
         let parentPath = path.stringByDeletingLastPathComponent
 
@@ -482,13 +476,13 @@ public class FilesController {
 
         do {
             try FileManager.default.removeItem(atPath: finalPath)
-            
+
             App.indexController.removeIndex(forPath: finalPath)
         } catch let error {
             Logger.error("Cannot delete file \(finalPath) \(error)")
-            
+
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            
+
             return false
         }
 
@@ -497,7 +491,7 @@ public class FilesController {
         if isDirectory {
             self.notifyDirectoryDeleted(path: path)
         }
-        
+
         return true
     }
 
@@ -538,9 +532,8 @@ public class FilesController {
 
         return true
     }
-    
-    
-    private func replyList(_ path:String, _ recursive:Bool, _ client:Client, _ message:P7Message) {
+
+    private func replyList(_ path: String, _ recursive: Bool, _ client: Client, _ message: P7Message) {
         DispatchQueue.global(qos: .default).async {
             let rawRealPath: String = (path == "/") ? self.rootPath : self.real(path: path)
             let realPath = URL(fileURLWithPath: rawRealPath).resolvingSymlinksInPath().path
@@ -563,7 +556,7 @@ public class FilesController {
                 App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
                 return
             }
-            
+
             let reply = P7Message(withName: "wired.file.file_list.done", spec: message.spec)
             reply.addParameter(field: "wired.file.path", value: path)
             reply.addParameter(field: "wired.file.available", value: UInt64(1))
@@ -715,8 +708,7 @@ public class FilesController {
 
         return true
     }
-    
-    
+
     // MARK: -
     private func initFilesSystem() {
         try? FileManager.default.createDirectory(atPath: rootPath, withIntermediateDirectories: true, attributes: nil)
@@ -738,7 +730,7 @@ public class FilesController {
             _ = FilePrivilege.set(privileges: privileges, path: path)
         }
     }
-    
+
     private func createPath(_ path: String, type: File.FileType, user: User, message: P7Message) -> Bool {
         // Resolve the parent directory's symlinks to check jail containment,
         // since the target directory does not exist yet.
@@ -759,7 +751,7 @@ public class FilesController {
         if !File.FileType.set(type: type, path: realPath) {
             return false
         }
-        
+
         return true
     }
 
@@ -833,7 +825,6 @@ public class FilesController {
 
         return nil
     }
-
 
     // MARK: - Directory subscriptions
     public func subscribeDirectory(client: Client, message: P7Message) {
@@ -958,7 +949,7 @@ public class FilesController {
                 for userID in userIDs {
                     subscribedRealPathsByClient[userID]?.remove(realPath)
                     subscribedVirtualPathsByClient[userID]?[realPath] = nil
-                    
+
                     if subscribedRealPathsByClient[userID]?.isEmpty == true {
                         subscribedRealPathsByClient.removeValue(forKey: userID)
                     }

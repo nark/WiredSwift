@@ -1,3 +1,5 @@
+// swiftlint:disable file_length type_body_length
+// TODO: Split WiredServerViewModel into focused sub-view-models
 import AppKit
 import Foundation
 import Network
@@ -514,6 +516,7 @@ final class WiredServerViewModel: ObservableObject {
                     let hash = sha256(newAdminPassword.isEmpty ? "admin" : newAdminPassword)
                     try executeSQL(
                         db,
+                        // swiftlint:disable:next line_length
                         "INSERT INTO users (username, password, full_name, identity, creation_time, modification_time, color, `group`) VALUES (?, ?, 'Administrator', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '1', 'admin');",
                         values: ["admin", hash]
                     )
@@ -1313,6 +1316,7 @@ strict_identity = yes
             let defaultPassword = sha256("admin")
             try executeSQL(
                 db,
+                // swiftlint:disable:next line_length
                 "INSERT INTO users (username, password, full_name, identity, creation_time, modification_time, color, `group`) VALUES (?, ?, 'Administrator', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '1', 'admin');",
                 values: ["admin", defaultPassword]
             )

@@ -9,9 +9,9 @@
 import Foundation
 
 public class P7SpecMessage: P7SpecItem {
-    public var parameters : [P7SpecField] = []
-    
-    public override init(name: String, spec: P7Spec, attributes: [String : Any]) {
+    public var parameters: [P7SpecField] = []
+
+    public override init(name: String, spec: P7Spec, attributes: [String: Any]) {
         super.init(name: name, spec: spec, attributes: attributes)
     }
 }

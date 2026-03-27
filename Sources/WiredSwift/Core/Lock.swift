@@ -9,17 +9,17 @@ import Foundation
 
 public class Lock {
     private let queue = DispatchQueue(label: "fr.read-write.WiredLock", attributes: .concurrent)
-    
+
     public init() {
-        
+
     }
-    
+
     public func concurrentlyRead<T>(_ block: (() throws -> T)) rethrows -> T {
         return try queue.sync {
             try block()
         }
     }
-    
+
     @discardableResult
     public func exclusivelyWrite<T>(_ block: (() throws -> T)) rethrows -> T {
         try queue.sync(flags: .barrier) {

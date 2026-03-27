@@ -7,7 +7,7 @@
 
 import Foundation
 
-//class Privilege: Model {
+// class Privilege: Model {
 //    static var schema: String = "privileges"
 //    
 //    @ID(key: .id)
@@ -31,4 +31,4 @@ import Foundation
 //        self.name = name
 //        self.value = value
 //    }
-//}
+// }

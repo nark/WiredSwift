@@ -22,8 +22,8 @@ extension ChatsController {
         let name = chat.name ?? "Private Chat"
         return "kind=\(kind) chatID=\(chat.chatID) name='\(name)'"
     }
-    
-    func add(chat:Chat) {
+
+    func add(chat: Chat) {
         self.chatsLock.exclusivelyWrite {
             if let existing = self.chats[chat.chatID] {
                 Logger.error("Replacing existing chat with duplicate ID: existing={\(self.describe(chat: existing))} incoming={\(self.describe(chat: chat))}")
@@ -32,7 +32,7 @@ extension ChatsController {
             self.publicChats.removeAll { $0.chatID == chat.chatID }
             self.privateChats.removeAll { $0.chatID == chat.chatID }
             self.chats[chat.chatID] = chat
-            
+
             if let privateChat = chat as? PrivateChat {
                 self.privateChats.append(privateChat)
             } else {
@@ -40,15 +40,13 @@ extension ChatsController {
             }
         }
     }
-    
-    
-    
-    func remove(chat:Chat) {
+
+    func remove(chat: Chat) {
         clearTypingState(forChatID: chat.chatID)
 
         self.chatsLock.exclusivelyWrite {
             self.chats[chat.chatID] = nil
-            
+
             if let privateChat = chat as? PrivateChat {
                 if let i = self.privateChats.firstIndex(where: { (inchat) -> Bool in privateChat.chatID == inchat.chatID }) {
                     self.privateChats.remove(at: i)
@@ -60,16 +58,13 @@ extension ChatsController {
             }
         }
     }
-    
-    
-    
-    func chat(withID chatID:UInt32) -> Chat? {
+
+    func chat(withID chatID: UInt32) -> Chat? {
         return self.chatsLock.concurrentlyRead {
             self.chats[chatID]
         }
     }
-    
-    
+
     // SECURITY (FINDING_C_009): Protect lastChatID increment with lock to prevent duplicate IDs
     func nextChatID() -> UInt32 {
         var newID: UInt32 = 0
@@ -90,9 +85,8 @@ extension ChatsController {
         }
         return newID
     }
-    
-    
-    func receiveChat(string:String, _ client:Client, _ message:P7Message, isSay:Bool) {
+
+    func receiveChat(string: String, _ client: Client, _ message: P7Message, isSay: Bool) {
         // SECURITY (FINDING_C_006): Rate limit chat messages (max 10/s per client)
         let now = Date()
         let exceeded: Bool = {
@@ -117,7 +111,7 @@ extension ChatsController {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-           
+
         guard let chat = self.chat(withID: chatID) else {
             App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
@@ -236,17 +230,14 @@ extension ChatsController {
     }
 }
 
+public class ChatsController: TableController {
+    var chats: [UInt32: Chat] = [:]
+    var publicChats: [Chat] = []
+    var privateChats: [Chat] = []
+    var chatsLock: Lock = Lock()
+    var publicChat: Chat!
 
-
-
-public class ChatsController : TableController {
-    var chats:[UInt32:Chat] = [:]
-    var publicChats:[Chat] = []
-    var privateChats:[Chat] = []
-    var chatsLock:Lock = Lock()
-    var publicChat:Chat!
-
-    private var lastChatID:UInt32 = 1
+    private var lastChatID: UInt32 = 1
 
     // SECURITY (FINDING_C_006): Rate limiting for chat messages per client
     private static let chatRateLimitPerSecond: Int = 10
@@ -260,7 +251,7 @@ public class ChatsController : TableController {
     private let typingStateLock = Lock()
     private let typingCleanupQueue = DispatchQueue(label: "wired3.chats.typing-cleanup")
     private var typingCleanupTimer: DispatchSourceTimer?
-    
+
     public override init(databaseController: DatabaseController) {
         super.init(databaseController: databaseController)
         startTypingCleanupTimer()
@@ -271,24 +262,22 @@ public class ChatsController : TableController {
         typingCleanupTimer = nil
     }
 
-    
-    public func getChats(message:P7Message, client:Client) {
+    public func getChats(message: P7Message, client: Client) {
         self.chatsLock.concurrentlyRead {
             for (chat) in self.publicChats {
                 let response = P7Message(withName: "wired.chat.chat_list", spec: client.socket.spec)
                 response.addParameter(field: "wired.chat.id", value: chat.chatID)
                 response.addParameter(field: "wired.chat.name", value: chat.name)
                 App.serverController.reply(client: client, reply: response, message: message)
-                
+
             }
         }
-            
+
         let response = P7Message(withName: "wired.chat.chat_list.done", spec: client.socket.spec)
         App.serverController.reply(client: client, reply: response, message: message)
     }
-    
-    
-    public func createPublicChat(message:P7Message, client:Client) {
+
+    public func createPublicChat(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
@@ -298,7 +287,7 @@ public class ChatsController : TableController {
 
             return
         }
-        
+
         guard let name = message.string(forField: "wired.chat.name"),
               // SECURITY (FINDING_C_013): Reject empty/whitespace-only or oversized chat names
               !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -314,7 +303,7 @@ public class ChatsController : TableController {
             try databaseController.dbQueue.write { db in try newChat.insert(db) }
 
             self.add(chat: newChat)
-            
+
             let broadcast = P7Message(withName: "wired.chat.public_chat_created", spec: message.spec)
             broadcast.addParameter(field: "wired.chat.id", value: newChat.chatID)
             broadcast.addParameter(field: "wired.chat.name", value: newChat.name)
@@ -324,14 +313,12 @@ public class ChatsController : TableController {
         } catch let error {
             Logger.error("Cannot create public chat")
             Logger.error("\(error)")
-            
+
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
     }
-    
-    
-    
-    public func deletePublicChat(message:P7Message, client:Client) {
+
+    public func deletePublicChat(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
@@ -341,23 +328,23 @@ public class ChatsController : TableController {
 
             return
         }
-        
+
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         guard let publicChat = self.chat(withID: chatID) else {
             App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
-        
+
         if chatID == 1 {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             Logger.error("Cannot delete public chat with ID '1'")
             return
         }
-              
+
         // SECURITY (FINDING_F_014): Perform DB delete first, then broadcast/remove from memory
         do {
             try databaseController.dbQueue.write { db in try publicChat.delete(db) }
@@ -375,12 +362,11 @@ public class ChatsController : TableController {
 
         App.serverController.replyOK(client: client, message: message)
     }
-    
-    
+
     // SECURITY (FINDING_C_008): Maximum private chats per user
     private static let maxPrivateChatsPerUser: Int = 50
 
-    public func createPrivateChat(message:P7Message, client:Client) {
+    public func createPrivateChat(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
@@ -404,36 +390,35 @@ public class ChatsController : TableController {
         let newPrivateChat = PrivateChat(chatID: self.nextChatID())
         // add invitation for initiator user
         newPrivateChat.addInvitation(client: client)
-        
+
         self.add(chat: newPrivateChat)
-        
+
         let reply = P7Message(withName: "wired.chat.chat_created", spec: message.spec)
         reply.addParameter(field: "wired.chat.id", value: newPrivateChat.chatID)
         App.serverController.reply(client: client, reply: reply, message: message)
     }
-    
-    
-    public func inviteUser(message:P7Message, client:Client) {
+
+    public func inviteUser(message: P7Message, client: Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         guard let userID = message.uint32(forField: "wired.user.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         guard let privateChat = self.chat(withID: chatID) as? PrivateChat else {
             App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
-                
+
         guard let peer = App.clientsController.user(withID: userID) else {
             App.serverController.replyError(client: client, error: "wired.error.user_not_found", message: message)
             return
         }
-        
+
         guard privateChat.client(withID: client.userID) != nil else {
             App.serverController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
             return
@@ -443,14 +428,14 @@ public class ChatsController : TableController {
             App.serverController.replyError(client: client, error: "wired.error.already_on_chat", message: message)
             return
         }
-        
+
         privateChat.addInvitation(client: peer)
-        
+
         let reply = P7Message(withName: "wired.chat.invitation", spec: peer.socket.spec)
         reply.addParameter(field: "wired.user.id", value: client.userID)
         reply.addParameter(field: "wired.chat.id", value: chatID)
         App.serverController.send(message: reply, client: peer)
-        
+
         App.serverController.replyOK(client: client, message: message)
     }
 
@@ -487,37 +472,36 @@ public class ChatsController : TableController {
 
         App.serverController.replyOK(client: client, message: message)
     }
-    
-    
-    public func userJoin(message: P7Message, client:Client) {
+
+    public func userJoin(message: P7Message, client: Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         guard let chat = self.chat(withID: chatID) else {
             App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
-        
+
         if chat.client(withID: client.userID) != nil {
             App.serverController.replyError(client: client, error: "wired.error.already_on_chat", message: message)
             return
         }
-    
+
         if let privateChat = chat as? PrivateChat {
             if !privateChat.isInvited(client: client) {
                 App.serverController.replyError(client: client, error: "wired.error.not_invited_to_chat", message: message)
                 return
             }
         }
-        
+
         chat.addClient(client)
-        
+
         if let privateChat = chat as? PrivateChat {
             privateChat.removeInvitation(client: client)
         }
-        
+
         // reply users
         chat.withClients { chatClient in
             let response = P7Message(withName: "wired.chat.user_list", spec: client.socket.spec)
@@ -528,25 +512,25 @@ public class ChatsController : TableController {
             response.addParameter(field: "wired.user.status", value: chatClient.status)
             response.addParameter(field: "wired.user.icon", value: chatClient.icon)
             response.addParameter(field: "wired.account.color", value: chatClient.accountColor)
-            
+
             App.serverController.reply(client: client, reply: response, message: message)
-            
+
         }
-        
+
         let response = P7Message(withName: "wired.chat.user_list.done", spec: client.socket.spec)
         response.addParameter(field: "wired.chat.id", value: chatID)
-        
+
         App.serverController.reply(client: client, reply: response, message: message)
-        
+
         // reply topic
         let topicMessage = P7Message(withName: "wired.chat.topic", spec: client.socket.spec)
         topicMessage.addParameter(field: "wired.chat.id", value: chatID)
         topicMessage.addParameter(field: "wired.user.nick", value: chat.topicNick)
         topicMessage.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
         topicMessage.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
-        
+
         App.serverController.reply(client: client, reply: topicMessage, message: message)
-        
+
         // broadcast to joined users
         chat.withClients { chatClient in
             if chatClient.userID != client.userID {
@@ -558,14 +542,13 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.user.status", value: client.status)
                 reply.addParameter(field: "wired.user.icon", value: client.icon)
                 reply.addParameter(field: "wired.account.color", value: client.accountColor)
-                
+
                 App.serverController.send(message: reply, client: chatClient)
             }
         }
     }
-    
-    
-    public func userLeave(client:Client) {
+
+    public func userLeave(client: Client) {
         removeUserFromAllChats(client: client, broadcastLeaves: true)
     }
 
@@ -577,29 +560,27 @@ public class ChatsController : TableController {
             }
         }
     }
-    
-    
-    public func userLeave(message:P7Message, client:Client) {
+
+    public func userLeave(message: P7Message, client: Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         guard let chat = self.chat(withID: chatID) else {
             App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
-        
+
         if chat.client(withID: client.userID) == nil {
             App.serverController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
             return
         }
-    
+
         removeUser(chatID: chatID, client: client, broadcastLeave: true)
         App.serverController.replyOK(client: client, message: message)
     }
-    
-    
+
     private func removeUser(chatID: UInt32, client: Client, broadcastLeave: Bool) {
         if let chat = self.chat(withID: chatID) {
             chat.removeClient(client.userID)
@@ -615,8 +596,8 @@ public class ChatsController : TableController {
             }
         }
     }
-    
-    public func receiveChatSay(_ client:Client, _ message:P7Message) {
+
+    public func receiveChatSay(_ client: Client, _ message: P7Message) {
         guard let say = message.string(forField: "wired.chat.say"),
               // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
               !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -627,8 +608,7 @@ public class ChatsController : TableController {
         self.receiveChat(string: say, client, message, isSay: true)
     }
 
-
-    public func receiveChatMe(_ client:Client, _ message:P7Message) {
+    public func receiveChatMe(_ client: Client, _ message: P7Message) {
         guard let say = message.string(forField: "wired.chat.me"),
               // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
               !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -671,10 +651,8 @@ public class ChatsController : TableController {
             broadcastTyping(chatID: chatID, userID: client.userID, isTyping: false, excludingUserID: client.userID)
         }
     }
-    
-    
-    
-    public func setTopic(message: P7Message, client:Client) {
+
+    public func setTopic(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
@@ -683,27 +661,27 @@ public class ChatsController : TableController {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
-        
+
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         guard let topic = message.string(forField: "wired.chat.topic.topic") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
-        
+
         guard let chat = self.chat(withID: chatID) else {
             App.serverController.replyError(client: client, error: "wired.error.chat_not_found", message: message)
             return
         }
-        
+
         if chat.client(withID: client.userID) == nil {
             App.serverController.replyError(client: client, error: "wired.error.not_on_chat", message: message)
             return
         }
-        
+
         do {
             chat.topic = topic
             chat.topicNick = client.nick ?? ""
@@ -712,10 +690,10 @@ public class ChatsController : TableController {
             if !(chat is PrivateChat) {
                 try databaseController.dbQueue.write { db in try chat.update(db) }
             }
-            
+
             // reply okay msg
             App.serverController.replyOK(client: client, message: message)
-            
+
             // broadcast topic update
             chat.withClients { toClient in
                 let reply = P7Message(withName: "wired.chat.topic", spec: message.spec)
@@ -723,14 +701,14 @@ public class ChatsController : TableController {
                 reply.addParameter(field: "wired.user.nick", value: client.nick)
                 reply.addParameter(field: "wired.chat.topic.topic", value: chat.topic)
                 reply.addParameter(field: "wired.chat.topic.time", value: chat.topicTime)
-                
+
                 App.serverController.send(message: reply, client: toClient)
             }
-            
+
         } catch let error {
             Logger.error("Database error: \(error)")
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
-            
+
             return
         }
     }
@@ -789,8 +767,7 @@ public class ChatsController : TableController {
         clearTypingState(forUserID: target.userID, inChatID: chatID, broadcastStop: true)
         App.serverController.replyOK(client: client, message: message)
     }
-    
-    
+
     /// Seed le chat public si la table est vide (remplace createTables)
     public func seedDefaultDataIfNeeded() {
         do {
@@ -805,9 +782,7 @@ public class ChatsController : TableController {
             Logger.error("Cannot seed default public chat: \(error)")
         }
     }
-    
-    
-    
+
     public func loadChats() {
         self.chatsLock.exclusivelyWrite {
             self.chats.removeAll()

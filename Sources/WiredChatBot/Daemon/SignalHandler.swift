@@ -12,7 +12,7 @@ import Darwin
 
 public enum SignalHandler {
     public static var onTerminate: (() -> Void)?
-    public static var onReload:    (() -> Void)?
+    public static var onReload: (() -> Void)?
 
     // Strong references so DispatchSources are not released prematurely
     private static var sources: [DispatchSourceSignal] = []
@@ -21,8 +21,8 @@ public enum SignalHandler {
         // Let DispatchSource intercept these signals instead of default handlers
         signal(SIGPIPE, SIG_IGN)
         signal(SIGTERM, SIG_IGN)
-        signal(SIGINT,  SIG_IGN)
-        signal(SIGHUP,  SIG_IGN)
+        signal(SIGINT, SIG_IGN)
+        signal(SIGHUP, SIG_IGN)
 
         let sigterm = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
         sigterm.setEventHandler {

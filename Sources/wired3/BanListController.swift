@@ -152,7 +152,7 @@ enum BanPattern {
         let segments = raw.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
         guard (1...4).contains(segments.count) else { return nil }
 
-        var octets = Array<UInt8?>(repeating: nil, count: 4)
+        var octets = [UInt8?](repeating: nil, count: 4)
         var sawWildcard = false
 
         for (index, segment) in segments.enumerated() {

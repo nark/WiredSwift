@@ -8,21 +8,21 @@
 
 import Foundation
 
-public class P7SpecItem : NSObject {
+public class P7SpecItem: NSObject {
     public var spec: P7Spec!
     public var name: String!
     public var id: String!
     public var version: String?
-    public var attributes: [String : Any] = [:]
-    
-    public init(name: String, spec: P7Spec, attributes: [String : Any]) {
+    public var attributes: [String: Any] = [:]
+
+    public init(name: String, spec: P7Spec, attributes: [String: Any]) {
         self.spec       = spec
         self.name       = name
         self.id         = attributes["id"] as? String
         self.version    = attributes["version"] as? String
         self.attributes = attributes
     }
-    
+
     public override var description: String {
         // SECURITY (FINDING_P_019): nil-coalescing instead of force unwrap
         return "[\(self.id ?? "?")] \(self.name ?? "unknown")"

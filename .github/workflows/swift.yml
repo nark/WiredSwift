@@ -35,6 +35,12 @@ jobs:
       - name: Swift Version
         run: swift --version
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Lint
+        run: swiftlint lint --reporter github-actions-logging
+
       - name: Resolve Dependencies
         run: swift package resolve
 

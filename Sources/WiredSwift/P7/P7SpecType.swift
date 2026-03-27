@@ -8,8 +8,7 @@
 
 import Foundation
 
-
-public enum P7SpecType : UInt32 {
+public enum P7SpecType: UInt32 {
     case bool    = 1
     case enum32  = 2
     case int32   = 3
@@ -23,8 +22,7 @@ public enum P7SpecType : UInt32 {
     case data    = 11
     case oobdata = 12
     case list    = 13
-    
-    
+
     // SECURITY (FINDING_P_017): return nil for unknown type strings instead of silent .uint32 default
     public static func specType(forString: String) -> P7SpecType? {
         switch forString {
@@ -59,7 +57,7 @@ public enum P7SpecType : UInt32 {
             return nil
         }
     }
-    
+
     public static func size(forType: P7SpecType) -> Int {
         switch forType {
         case bool:      return 1
@@ -72,7 +70,7 @@ public enum P7SpecType : UInt32 {
         case uuid:      return 16
         case date:      return 8
         case oobdata:   return 8
-            
+
         default:
             return 0
         }

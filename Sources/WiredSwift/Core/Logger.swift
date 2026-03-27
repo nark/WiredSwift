@@ -35,11 +35,10 @@ public extension LoggerDelegate {
  */
 public class Logger {
 
-
     /**
      Enumeration for severity level
      */
-    public enum LogLevel : Int {
+    public enum LogLevel: Int {
         case FATAL   = 0
         case ERROR   = 1
         case WARNING = 2
@@ -93,11 +92,9 @@ public class Logger {
         case Month  = 3
     }
 
-
-
     /**/
 
-    public var targetName:String {
+    public var targetName: String {
         get {
             if let bundleName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String {
                 return bundleName
@@ -105,78 +102,74 @@ public class Logger {
             return "Wired3"
         }
     }
-    
+
     private static var shared = Logger()
-    public static var delegate:LoggerDelegate? = nil
+    public static var delegate: LoggerDelegate?
     private let fileLock = NSRecursiveLock()
-    
+
     private func withFileLock<T>(_ body: () -> T) -> T {
         fileLock.lock()
         defer { fileLock.unlock() }
         return body()
     }
-    
+
     private var maxLevel: Int       = 6
-    public lazy var fileName:String = targetName + ".log"
-    lazy var filePath:URL? = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(fileName)
-    public var outputs:[Output]     = [.Stdout]
-    public var sizeLimit:UInt64     = 1_000_000
-    public var timeLimit:TimeLimit  = .Minute
-    public var startDate:Date       = Date()
-    
-    
+    public lazy var fileName: String = targetName + ".log"
+    lazy var filePath: URL? = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(fileName)
+    public var outputs: [Output]     = [.Stdout]
+    public var sizeLimit: UInt64     = 1_000_000
+    public var timeLimit: TimeLimit  = .Minute
+    public var startDate: Date       = Date()
+
     /**/
 
-
-    public static func notice(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+    public static func notice(_ string: String, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.NOTICE.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.NOTICE)
         }
     }
 
-    public static func info(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+    public static func info(_ string: String, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.INFO.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.INFO)
         }
     }
 
-    public static func verbose(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+    public static func verbose(_ string: String, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.NOTICE.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.NOTICE)
         }
     }
 
-    public static func debug(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+    public static func debug(_ string: String, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.DEBUG.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.DEBUG)
         }
     }
 
-    public static func warning(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+    public static func warning(_ string: String, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.WARNING.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.WARNING)
         }
     }
 
-    public static func error(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+    public static func error(_ string: String, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.ERROR.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.ERROR)
         }
     }
-    
-    public static func error(_ error:WiredError, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+
+    public static func error(_ error: WiredError, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.ERROR.rawValue <= shared.maxLevel {
             shared.output(string: error.message, error.title, file, function, line: line, severity: LogLevel.ERROR)
         }
     }
 
-    public static func fatal(_ string:String, _ tag:String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
+    public static func fatal(_ string: String, _ tag: String? = nil, _ file: String = #file, _ function: String = #function, line: Int = #line) {
         if LogLevel.FATAL.rawValue <= shared.maxLevel {
             shared.output(string: string, tag, file, function, line: line, severity: LogLevel.FATAL)
         }
     }
-    
-
 
     /**
      Format the output
@@ -189,17 +182,17 @@ public class Logger {
      - parameter severity: level of severity of the log (see enum)
 
      */
-    public func output(string:String, _ tag:String?, _ file: String = #file, _ function: String = #function, line: Int = #line, severity:LogLevel) {
+    public func output(string: String, _ tag: String?, _ file: String = #file, _ function: String = #function, line: Int = #line, severity: LogLevel) {
         let date = Date()
         let df = DateFormatter()
         // formatting date
         df.dateFormat = "dd-MM-yyyy HH:mm:ss"
         // if tag is nil, tag is name of target
-        let tagName:String = tag ?? self.targetName
+        let tagName: String = tag ?? self.targetName
 
         /* DATE SEVERITY -> [TAG]        MESSAGE */
-        let outputString:String = "\(df.string(from: date)) \(severity.description) -> [\(tagName)]\t \(string)"
-        
+        let outputString: String = "\(df.string(from: date)) \(severity.description) -> [\(tagName)]\t \(string)"
+
         if let d = Logger.delegate {
             d.loggerDidOutput(logger: self, output: outputString)
             d.loggerDidLog(level: severity, message: string, date: date)
@@ -223,7 +216,7 @@ public class Logger {
      - parameter message: the log to be printed in the console
 
      */
-    public func consoleLog(message:String) {
+    public func consoleLog(message: String) {
         print(message)
         fflush(stdout)
     }
@@ -248,8 +241,7 @@ public class Logger {
         if getFileSize(atPath: path) > self.sizeLimit {
             do {
                 try FileManager.default.removeItem(at: fileURL)
-            }
-            catch {}
+            } catch {}
         }
 
         Logger.eraseFileByTime()
@@ -269,7 +261,6 @@ public class Logger {
         return appendLinePOSIX(path: path, message: message)
     }
 
-
     /**
      Set the destination for output : file (with name of file), console.
      Default log file is dicom.log
@@ -280,7 +271,7 @@ public class Logger {
     public static func setDestinations(_ destinations: [Output], filePath: String? = nil) {
         shared.withFileLock {
             shared.outputs = destinations
-            if let fileName:String = filePath {
+            if let fileName: String = filePath {
                 shared.fileName = fileName
             }
         }
@@ -308,7 +299,6 @@ public class Logger {
 
         return true
     }
-
 
     /**
      Set the level of logs printed
@@ -338,7 +328,7 @@ public class Logger {
 
     public static func removeDestination(_ dest: Output) {
         shared.withFileLock {
-            shared.outputs = shared.outputs.filter{$0 != dest}
+            shared.outputs = shared.outputs.filter { $0 != dest }
         }
     }
 
@@ -358,7 +348,7 @@ public class Logger {
     public static func eraseFileByTime() {
         let startDate = shared.withFileLock { shared.startDate }
         let range = -Int(startDate.timeIntervalSinceNow)
-        let t:Int
+        let t: Int
 
         let timeLimit = shared.withFileLock { shared.timeLimit }
         switch timeLimit {
@@ -390,14 +380,10 @@ public class Logger {
     public static func removeLogFile(_ at: URL) {
         do {
             try FileManager.default.removeItem(at: at)
-        }
-        catch {}
+        } catch {}
     }
 
-
-
     /**/
-
 
     private func getFileSize(atPath path: String) -> UInt64 {
         var fileStat = stat()
@@ -433,7 +419,6 @@ public class Logger {
         shared.withFileLock { shared.sizeLimit }
     }
 
-
     public static func getFileDestination() -> String? {
         shared.withFileLock { shared.filePath?.path }
     }
@@ -442,19 +427,13 @@ public class Logger {
         shared.withFileLock { shared.timeLimit.rawValue }
     }
 
-
-
-
-
-
-
     /**
      Set the logger according to the settings in UserDefaults
 
      */
     public static func setPreferences() {
         /* set the destinations output */
-        var destinations:[Logger.Output] = []
+        var destinations: [Logger.Output] = []
         if UserDefaults.standard.bool(forKey: "Print LogsInLogFile") {
             destinations.append(Logger.Output.Stdout)
         }

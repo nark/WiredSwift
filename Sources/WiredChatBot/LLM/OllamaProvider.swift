@@ -21,10 +21,10 @@ public class OllamaProvider: LLMProvider {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body: [String: Any] = [
-            "model":    config.model,
-            "stream":   false,
+            "model": config.model,
+            "stream": false,
             "messages": messages.map { ["role": $0.role, "content": $0.content] },
-            "options":  ["temperature": config.temperature, "num_predict": config.maxTokens],
+            "options": ["temperature": config.temperature, "num_predict": config.maxTokens]
         ]
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
 

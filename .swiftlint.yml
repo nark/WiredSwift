@@ -1,0 +1,82 @@
+# .swiftlint.yml — WiredSwift / wired3
+# https://github.com/realm/SwiftLint
+# Run:  swiftlint lint
+# Fix:  swiftlint --fix
+
+# ──────────────────────────────────────────────
+# Exclusions
+# ──────────────────────────────────────────────
+excluded:
+  - Sources/SocketSwift   # vendored third-party
+  - Sources/CLZ4
+  - Sources/CZlib
+  - Sources/SQLite3
+  - Vendor                # vendored third-party
+  - .build
+  - Tests
+
+# ──────────────────────────────────────────────
+# Enabled rules (SwiftLint defaults + opt-ins)
+# ──────────────────────────────────────────────
+opt_in_rules:
+  - closure_spacing
+  - contains_over_first_not_nil
+  - empty_count
+  - empty_string
+  - first_where
+  - sorted_first_last
+  - array_init
+
+# ──────────────────────────────────────────────
+# Disabled rules
+# ──────────────────────────────────────────────
+disabled_rules:
+  - todo  # TODOs are tracked via GitHub Issues
+
+# ──────────────────────────────────────────────
+# Thresholds — tuned for a protocol implementation
+# ──────────────────────────────────────────────
+line_length:
+  warning: 160
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+# GRDB models use snake_case column names by convention;
+# short names (db, t, c, v, i, …) are idiomatic in Swift closures.
+# Upper-cased global lets (WiredTransfer*) are legacy C-style — warn, don't error.
+identifier_name:
+  min_length:
+    warning: 2   # warn on single-char names
+    error: 1     # never error on length (only validates_start_with_lowercase)
+  allowed_symbols: ["_"]
+  validates_start_with_lowercase: warning  # WiredTransfer* → warning not error
+  excluded:
+    - db  # GRDB Database parameter
+    - t   # GRDB TableDefinition
+    - c   # GRDB ColumnDefinition / loop var
+
+type_body_length:
+  warning: 350
+  error: 600   # P7Socket and ServerController are intentionally large
+
+file_length:
+  warning: 500
+  error: 1200
+  ignore_comment_only_lines: true
+
+function_body_length:
+  warning: 80
+  error: 200
+
+cyclomatic_complexity:
+  warning: 15
+  error: 30
+
+function_parameter_count:
+  warning: 6
+  error: 10
+
+# force_try is an error by default — downgrade to warning
+# (two existing sites use it with validated static data)
+force_try: warning

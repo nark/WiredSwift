@@ -24,8 +24,7 @@ public final class EventDispatcher: NSObject, ConnectionDelegate {
     }
 
     public func connectionDisconnected(connection: Connection, error: Error?) {
-        if let e = error { BotLogger.warning("Disconnected: \(e.localizedDescription)") }
-        else              { BotLogger.info("Disconnected") }
+        if let e = error { BotLogger.warning("Disconnected: \(e.localizedDescription)") } else { BotLogger.info("Disconnected") }
         bot?.handleDisconnect(error: error)
     }
 

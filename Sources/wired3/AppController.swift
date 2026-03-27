@@ -8,7 +8,6 @@
 import Foundation
 import WiredSwift
 
-
 public let DEFAULT_PORT = 4871
 private let defaultWelcomeBoardPath = "Welcome"
 private let defaultWelcomeThreadSubject = "Welcome to Wired Server 3"
@@ -17,37 +16,37 @@ private let welcomeBoardSeed = "boards.welcome.v1"
 private let defaultFilesSeed = "files.defaults.v1"
 
 public class AppController {
-    var workingDirectoryPath:String
-    var rootPath:String
-    var configPath:String
-    
-    var spec:P7Spec!
-    
-    var serverController:ServerController!
-    
-    var databaseURL:URL!
-    var databaseController:DatabaseController!
-    var clientsController:ClientsController!
-    var usersController:UsersController!
-    var chatsController:ChatsController!
-    var banListController:BanListController!
-    var eventsController:EventsController!
-    var boardsController:BoardsController!
-    var filesController:FilesController!
-    public var indexController:IndexController!
-    var transfersController:TransfersController!
+    var workingDirectoryPath: String
+    var rootPath: String
+    var configPath: String
+
+    var spec: P7Spec!
+
+    var serverController: ServerController!
+
+    var databaseURL: URL!
+    var databaseController: DatabaseController!
+    var clientsController: ClientsController!
+    var usersController: UsersController!
+    var chatsController: ChatsController!
+    var banListController: BanListController!
+    var eventsController: EventsController!
+    var boardsController: BoardsController!
+    var filesController: FilesController!
+    public var indexController: IndexController!
+    var transfersController: TransfersController!
     var bootstrapStateStore: BootstrapStateStore!
     var logsController: LogsController!
 
-    var config:Config
+    var config: Config
 
     /// When true (--debug flag), log level is pinned to DEBUG and SIGHUP cannot lower it.
     public var debugMode: Bool = false
 
     // MARK: - Public
-    public init(specPath:String, dbPath:String, rootPath:String, configPath: String, workingDirectoryPath: String, debugMode: Bool = false) {
+    public init(specPath: String, dbPath: String, rootPath: String, configPath: String, workingDirectoryPath: String, debugMode: Bool = false) {
         let specUrl = URL(fileURLWithPath: specPath)
-        
+
         self.workingDirectoryPath = workingDirectoryPath
         self.rootPath = rootPath
         self.configPath = configPath
@@ -59,7 +58,7 @@ public class AppController {
             Logger.fatal("Cannot load config file at path \(configPath)")
             exit(-1)
         }
-        
+
         if let spec = P7Spec(withUrl: specUrl) {
             self.spec = spec
         } else {
@@ -67,9 +66,7 @@ public class AppController {
             exit(-1)
         }
     }
-    
 
-    
     public func start() {
         // Install LogsController as Logger.delegate first so that every log
         // emitted during startup is captured in the buffer and can be
@@ -128,7 +125,7 @@ public class AppController {
             ?? {
                 if let s = (self.config["security", "strict_identity"] as? String)?
                     .trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-                    return ["1","true","yes","on"].contains(s)
+                    return ["1", "true", "yes", "on"].contains(s)
                 }
                 return true
             }()
@@ -298,7 +295,5 @@ public class AppController {
 
         return entries.isEmpty
     }
-    
-    
-    
+
 }

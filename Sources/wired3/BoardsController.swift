@@ -5,6 +5,8 @@
 //  Created by Rafael Warnault on 01/03/2020.
 //  Copyright © 2020 Read-Write. All rights reserved.
 //
+// swiftlint:disable file_length type_body_length
+// TODO: Split BoardsController into focused sub-controllers
 
 import Foundation
 import WiredSwift
@@ -103,7 +105,6 @@ private struct BoardSearchQueryPlan {
     }
 }
 
-
 /// Manages all boards, threads and posts for a Wired server.
 /// Storage is in-memory; persist `boards`, `threads` and `posts`
 /// externally if needed.
@@ -133,27 +134,27 @@ public class BoardsController {
         migrateReactionsUniqueConstraintIfNeeded()
         loadFromDatabase()
     }
-    
+
     private func canonicalUUID(_ uuid: String) -> String {
         uuid.lowercased()
     }
-    
+
     // MARK: - Persistence
-    
+
     private func withDatabase<T>(_ body: (OpaquePointer) -> T?) -> T? {
         guard let databasePath else { return nil }
-        
+
         var db: OpaquePointer?
         guard sqlite3_open_v2(databasePath, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil) == SQLITE_OK, let db else {
             sqlite3_close(db)
             return nil
         }
         defer { sqlite3_close(db) }
-        
+
         _ = sqlite3_exec(db, "PRAGMA foreign_keys = ON;", nil, nil, nil)
         return body(db)
     }
-    
+
     private func createTablesIfNeeded() {
         _ = withDatabase { db in
             let sql = [
@@ -211,13 +212,13 @@ public class BoardsController {
                 "CREATE INDEX IF NOT EXISTS idx_board_posts_thread_uuid ON board_posts(thread_uuid);",
                 "CREATE INDEX IF NOT EXISTS idx_board_reactions_target ON board_reactions(target_uuid, target_type);"
             ]
-            
+
             for statement in sql where sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
                 return false
             }
 
             self.hasSearchFTS5 = self.createBoardSearchIndexIfNeeded(db: db)
-            
+
             return true
         }
     }
@@ -389,16 +390,16 @@ public class BoardsController {
 
         return true
     }
-    
+
     private func loadFromDatabase() {
         guard databasePath != nil else { return }
-        
+
         _ = withDatabase { db in
             var loadedBoards: [String: Board] = [:]
             var loadedBoardThreads: [String: [String]] = [:]
             var loadedThreads: [String: Thread] = [:]
             var loadedPosts: [String: Post] = [:]
-            
+
             var boardStatement: OpaquePointer?
             let boardQuery = """
                 SELECT path, owner, group_name, owner_read, owner_write, group_read, group_write, everyone_read, everyone_write
@@ -410,7 +411,7 @@ public class BoardsController {
                     guard let pathC = sqlite3_column_text(boardStatement, 0),
                           let ownerC = sqlite3_column_text(boardStatement, 1),
                           let groupC = sqlite3_column_text(boardStatement, 2) else { continue }
-                    
+
                     let path = String(cString: pathC)
                     let board = Board(
                         path: path,
@@ -428,7 +429,7 @@ public class BoardsController {
                 }
             }
             sqlite3_finalize(boardStatement)
-            
+
             var threadStatement: OpaquePointer?
             let threadQuery = """
                 SELECT uuid, board_path, subject, text, nick, login, post_date, edit_date, icon
@@ -443,7 +444,7 @@ public class BoardsController {
                           let textC = sqlite3_column_text(threadStatement, 3),
                           let nickC = sqlite3_column_text(threadStatement, 4),
                           let loginC = sqlite3_column_text(threadStatement, 5) else { continue }
-                    
+
                     let uuid = canonicalUUID(String(cString: uuidC))
                     let boardPath = String(cString: boardC)
                     let thread = Thread(
@@ -459,13 +460,13 @@ public class BoardsController {
                     if sqlite3_column_type(threadStatement, 7) != SQLITE_NULL {
                         thread.editDate = Date(timeIntervalSince1970: sqlite3_column_double(threadStatement, 7))
                     }
-                    
+
                     loadedThreads[uuid] = thread
                     loadedBoardThreads[boardPath, default: []].append(uuid)
                 }
             }
             sqlite3_finalize(threadStatement)
-            
+
             var postStatement: OpaquePointer?
             let postQuery = """
                 SELECT uuid, thread_uuid, text, nick, login, post_date, edit_date, icon
@@ -479,7 +480,7 @@ public class BoardsController {
                           let textC = sqlite3_column_text(postStatement, 2),
                           let nickC = sqlite3_column_text(postStatement, 3),
                           let loginC = sqlite3_column_text(postStatement, 4) else { continue }
-                    
+
                     let uuid = canonicalUUID(String(cString: uuidC))
                     let threadUUID = canonicalUUID(String(cString: threadC))
                     let post = Post(
@@ -494,27 +495,27 @@ public class BoardsController {
                     if sqlite3_column_type(postStatement, 6) != SQLITE_NULL {
                         post.editDate = Date(timeIntervalSince1970: sqlite3_column_double(postStatement, 6))
                     }
-                    
+
                     loadedPosts[uuid] = post
                 }
             }
             sqlite3_finalize(postStatement)
-            
+
             self.withLock {
                 self.boards = loadedBoards
                 self.boardThreads = loadedBoardThreads
                 self.threads = loadedThreads
                 self.posts = loadedPosts
-                
+
                 for post in loadedPosts.values {
                     self.threads[post.thread]?.posts.append(post)
                 }
             }
-            
+
             return true
         }
     }
-    
+
     private func dataColumn(statement: OpaquePointer, index: Int32) -> Data? {
         guard sqlite3_column_type(statement, index) != SQLITE_NULL,
               let bytes = sqlite3_column_blob(statement, index) else { return nil }
@@ -566,7 +567,7 @@ public class BoardsController {
             }), !persisted {
                 return nil
             }
-            
+
             let board = Board(path: path,
                                    owner: owner,
                                    group: group,
@@ -590,7 +591,7 @@ public class BoardsController {
             if let persisted = withDatabase({ db -> Bool? in
                 guard sqlite3_exec(db, "BEGIN TRANSACTION;", nil, nil, nil) == SQLITE_OK else { return false }
                 defer { _ = sqlite3_exec(db, "COMMIT;", nil, nil, nil) }
-                
+
                 var postsStatement: OpaquePointer?
                 let deletePosts = """
                     DELETE FROM board_posts WHERE thread_uuid IN (
@@ -608,7 +609,7 @@ public class BoardsController {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
-                
+
                 var threadsStatement: OpaquePointer?
                 guard sqlite3_prepare_v2(db, "DELETE FROM board_threads WHERE board_path = ?;", -1, &threadsStatement, nil) == SQLITE_OK, let threadsStatement else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
@@ -621,7 +622,7 @@ public class BoardsController {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
-                
+
                 var boardStatement: OpaquePointer?
                 guard sqlite3_prepare_v2(db, "DELETE FROM boards WHERE path = ?;", -1, &boardStatement, nil) == SQLITE_OK, let boardStatement else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
@@ -634,12 +635,12 @@ public class BoardsController {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
-                
+
                 return true
             }), !persisted {
                 return false
             }
-            
+
             boards.removeValue(forKey: path)
             if let uuids = boardThreads.removeValue(forKey: path) {
                 for uuid in uuids {
@@ -662,7 +663,7 @@ public class BoardsController {
             if let persisted = withDatabase({ db -> Bool? in
                 guard sqlite3_exec(db, "BEGIN TRANSACTION;", nil, nil, nil) == SQLITE_OK else { return false }
                 defer { _ = sqlite3_exec(db, "COMMIT;", nil, nil, nil) }
-                
+
                 var boardStatement: OpaquePointer?
                 guard sqlite3_prepare_v2(db, "UPDATE boards SET path = ? WHERE path = ?;", -1, &boardStatement, nil) == SQLITE_OK, let boardStatement else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
@@ -676,7 +677,7 @@ public class BoardsController {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
-                
+
                 var threadsStatement: OpaquePointer?
                 guard sqlite3_prepare_v2(db, "UPDATE board_threads SET board_path = ? WHERE board_path = ?;", -1, &threadsStatement, nil) == SQLITE_OK, let threadsStatement else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
@@ -690,13 +691,13 @@ public class BoardsController {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
-                
+
                 return true
             }), !persisted {
                 boards[path] = board
                 return false
             }
-            
+
             board.path = newPath
             boards[newPath] = board
             if let uuids = boardThreads.removeValue(forKey: path) {
@@ -755,7 +756,7 @@ public class BoardsController {
             }), !persisted {
                 return false
             }
-            
+
             board.owner        = owner
             board.group        = group
             board.ownerRead    = ownerRead
@@ -833,7 +834,7 @@ public class BoardsController {
             }), !persisted {
                 return nil
             }
-            
+
             threads[uuid] = thread
             boardThreads[board, default: []].append(uuid)
             return thread
@@ -897,7 +898,7 @@ public class BoardsController {
             if let persisted = withDatabase({ db -> Bool? in
                 guard sqlite3_exec(db, "BEGIN TRANSACTION;", nil, nil, nil) == SQLITE_OK else { return false }
                 defer { _ = sqlite3_exec(db, "COMMIT;", nil, nil, nil) }
-                
+
                 var postsStatement: OpaquePointer?
                 guard sqlite3_prepare_v2(db, "DELETE FROM board_posts WHERE thread_uuid = ?;", -1, &postsStatement, nil) == SQLITE_OK, let postsStatement else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
@@ -913,6 +914,7 @@ public class BoardsController {
 
                 // Cascade-delete reactions for the thread body and all its reply posts.
                 var reactionsThreadStmt: OpaquePointer?
+                // swiftlint:disable:next line_length
                 guard sqlite3_prepare_v2(db, "DELETE FROM board_reactions WHERE target_uuid = ? AND target_type = 'thread';", -1, &reactionsThreadStmt, nil) == SQLITE_OK, let reactionsThreadStmt else {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
@@ -944,12 +946,12 @@ public class BoardsController {
                     _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil)
                     return false
                 }
-                
+
                 return true
             }), !persisted {
                 return false
             }
-            
+
             guard let thread = threads.removeValue(forKey: key) else { return false }
             boardThreads[thread.board]?.removeAll { $0 == key }
             for post in thread.posts {
@@ -1014,7 +1016,7 @@ public class BoardsController {
             }), !persisted {
                 return nil
             }
-            
+
             posts[uuid] = post
             thread.posts.append(post)
             return post
@@ -1561,7 +1563,7 @@ public class BoardsController {
         var messages: [P7Message] = []
         for board in getBoards(forUser: user, group: group) {
             let m = P7Message(withName: "wired.board.board_list", spec: spec)
-            m.addParameter(field: "wired.board.board",    value: board.path)
+            m.addParameter(field: "wired.board.board", value: board.path)
             m.addParameter(field: "wired.board.readable", value: board.canRead(user: user, group: group))
             m.addParameter(field: "wired.board.writable", value: board.canWrite(user: user, group: group))
             messages.append(m)
@@ -1583,13 +1585,13 @@ public class BoardsController {
 
         for thread in threads {
             let m = P7Message(withName: "wired.board.thread_list", spec: spec)
-            m.addParameter(field: "wired.board.board",             value: thread.board)
-            m.addParameter(field: "wired.board.thread",            value: thread.uuid)
-            m.addParameter(field: "wired.board.subject",           value: thread.subject)
-            m.addParameter(field: "wired.user.nick",               value: thread.nick)
-            m.addParameter(field: "wired.board.post_date",         value: thread.postDate)
-            m.addParameter(field: "wired.board.replies",           value: UInt32(thread.replies))
-            m.addParameter(field: "wired.board.own_thread",        value: thread.login == user)
+            m.addParameter(field: "wired.board.board", value: thread.board)
+            m.addParameter(field: "wired.board.thread", value: thread.uuid)
+            m.addParameter(field: "wired.board.subject", value: thread.subject)
+            m.addParameter(field: "wired.user.nick", value: thread.nick)
+            m.addParameter(field: "wired.board.post_date", value: thread.postDate)
+            m.addParameter(field: "wired.board.replies", value: UInt32(thread.replies))
+            m.addParameter(field: "wired.board.own_thread", value: thread.login == user)
             if let editDate = thread.editDate {
                 m.addParameter(field: "wired.board.edit_date", value: editDate)
             }
@@ -1612,20 +1614,20 @@ public class BoardsController {
         // First message: the thread itself
         let tm = P7Message(withName: "wired.board.thread", spec: spec)
         tm.addParameter(field: "wired.board.thread", value: thread.uuid)
-        tm.addParameter(field: "wired.board.text",   value: thread.text)
-        tm.addParameter(field: "wired.user.icon",    value: thread.icon ?? Data())
+        tm.addParameter(field: "wired.board.text", value: thread.text)
+        tm.addParameter(field: "wired.user.icon", value: thread.icon ?? Data())
         messages.append(tm)
 
         // Subsequent messages: the replies
         for post in getPosts(forThread: uuid) {
             let pm = P7Message(withName: "wired.board.post_list", spec: spec)
-            pm.addParameter(field: "wired.board.thread",    value: post.thread)
-            pm.addParameter(field: "wired.board.post",      value: post.uuid)
-            pm.addParameter(field: "wired.board.text",      value: post.text)
-            pm.addParameter(field: "wired.user.nick",       value: post.nick)
-            pm.addParameter(field: "wired.user.icon",       value: post.icon ?? Data())
+            pm.addParameter(field: "wired.board.thread", value: post.thread)
+            pm.addParameter(field: "wired.board.post", value: post.uuid)
+            pm.addParameter(field: "wired.board.text", value: post.text)
+            pm.addParameter(field: "wired.user.nick", value: post.nick)
+            pm.addParameter(field: "wired.user.icon", value: post.icon ?? Data())
             pm.addParameter(field: "wired.board.post_date", value: post.postDate)
-            pm.addParameter(field: "wired.board.own_post",  value: false)
+            pm.addParameter(field: "wired.board.own_post", value: false)
             if let editDate = post.editDate {
                 pm.addParameter(field: "wired.board.edit_date", value: editDate)
             }
@@ -1660,7 +1662,7 @@ public class BoardsController {
         else { return [] }
 
         let broadcast = P7Message(withName: "wired.board.board_added", spec: spec)
-        broadcast.addParameter(field: "wired.board.board",    value: board.path)
+        broadcast.addParameter(field: "wired.board.board", value: board.path)
         broadcast.addParameter(field: "wired.board.readable", value: board.canRead(user: user, group: group))
         broadcast.addParameter(field: "wired.board.writable", value: board.canWrite(user: user, group: group))
         return [broadcast]
@@ -1683,7 +1685,7 @@ public class BoardsController {
         guard renameBoard(path: path, newPath: newPath) else { return [] }
 
         let broadcast = P7Message(withName: "wired.board.board_renamed", spec: spec)
-        broadcast.addParameter(field: "wired.board.board",     value: path)
+        broadcast.addParameter(field: "wired.board.board", value: path)
         broadcast.addParameter(field: "wired.board.new_board", value: newPath)
         return [broadcast]
     }
@@ -1696,7 +1698,7 @@ public class BoardsController {
         guard moveBoard(path: path, newPath: newPath) else { return [] }
 
         let broadcast = P7Message(withName: "wired.board.board_moved", spec: spec)
-        broadcast.addParameter(field: "wired.board.board",     value: path)
+        broadcast.addParameter(field: "wired.board.board", value: path)
         broadcast.addParameter(field: "wired.board.new_board", value: newPath)
         return [broadcast]
     }
@@ -1708,14 +1710,14 @@ public class BoardsController {
         else { return [] }
 
         let reply = P7Message(withName: "wired.board.board_info", spec: spec)
-        reply.addParameter(field: "wired.board.board",          value: board.path)
-        reply.addParameter(field: "wired.board.owner",          value: board.owner)
-        reply.addParameter(field: "wired.board.owner.read",     value: board.ownerRead)
-        reply.addParameter(field: "wired.board.owner.write",    value: board.ownerWrite)
-        reply.addParameter(field: "wired.board.group",          value: board.group)
-        reply.addParameter(field: "wired.board.group.read",     value: board.groupRead)
-        reply.addParameter(field: "wired.board.group.write",    value: board.groupWrite)
-        reply.addParameter(field: "wired.board.everyone.read",  value: board.everyoneRead)
+        reply.addParameter(field: "wired.board.board", value: board.path)
+        reply.addParameter(field: "wired.board.owner", value: board.owner)
+        reply.addParameter(field: "wired.board.owner.read", value: board.ownerRead)
+        reply.addParameter(field: "wired.board.owner.write", value: board.ownerWrite)
+        reply.addParameter(field: "wired.board.group", value: board.group)
+        reply.addParameter(field: "wired.board.group.read", value: board.groupRead)
+        reply.addParameter(field: "wired.board.group.write", value: board.groupWrite)
+        reply.addParameter(field: "wired.board.everyone.read", value: board.everyoneRead)
         reply.addParameter(field: "wired.board.everyone.write", value: board.everyoneWrite)
         return [reply]
     }
@@ -1741,7 +1743,7 @@ public class BoardsController {
         else { return [] }
 
         let broadcast = P7Message(withName: "wired.board.board_info_changed", spec: spec)
-        broadcast.addParameter(field: "wired.board.board",    value: board.path)
+        broadcast.addParameter(field: "wired.board.board", value: board.path)
         broadcast.addParameter(field: "wired.board.readable", value: board.everyoneRead)
         broadcast.addParameter(field: "wired.board.writable", value: board.everyoneWrite)
         return [broadcast]
@@ -1763,13 +1765,13 @@ public class BoardsController {
         else { return [] }
 
         let broadcast = P7Message(withName: "wired.board.thread_added", spec: spec)
-        broadcast.addParameter(field: "wired.board.board",      value: thread.board)
-        broadcast.addParameter(field: "wired.board.thread",     value: thread.uuid)
-        broadcast.addParameter(field: "wired.board.subject",    value: thread.subject)
-        broadcast.addParameter(field: "wired.user.nick",        value: thread.nick)
-        broadcast.addParameter(field: "wired.user.icon",        value: icon ?? Data())
-        broadcast.addParameter(field: "wired.board.post_date",  value: thread.postDate)
-        broadcast.addParameter(field: "wired.board.replies",    value: UInt32(0))
+        broadcast.addParameter(field: "wired.board.board", value: thread.board)
+        broadcast.addParameter(field: "wired.board.thread", value: thread.uuid)
+        broadcast.addParameter(field: "wired.board.subject", value: thread.subject)
+        broadcast.addParameter(field: "wired.user.nick", value: thread.nick)
+        broadcast.addParameter(field: "wired.user.icon", value: icon ?? Data())
+        broadcast.addParameter(field: "wired.board.post_date", value: thread.postDate)
+        broadcast.addParameter(field: "wired.board.replies", value: UInt32(0))
         broadcast.addParameter(field: "wired.board.own_thread", value: true)
         return [broadcast]
     }
@@ -1783,7 +1785,7 @@ public class BoardsController {
         guard let thread = editThread(uuid: uuid, subject: subject, text: text) else { return [] }
 
         let broadcast = P7Message(withName: "wired.board.thread_changed", spec: spec)
-        broadcast.addParameter(field: "wired.board.thread",  value: thread.uuid)
+        broadcast.addParameter(field: "wired.board.thread", value: thread.uuid)
         broadcast.addParameter(field: "wired.board.subject", value: thread.subject)
         broadcast.addParameter(field: "wired.board.replies", value: UInt32(thread.replies))
         if let editDate = thread.editDate {
@@ -1803,7 +1805,7 @@ public class BoardsController {
         guard let thread = moveThread(uuid: uuid, toBoard: toBoard) else { return [] }
 
         let broadcast = P7Message(withName: "wired.board.thread_moved", spec: spec)
-        broadcast.addParameter(field: "wired.board.thread",    value: thread.uuid)
+        broadcast.addParameter(field: "wired.board.thread", value: thread.uuid)
         broadcast.addParameter(field: "wired.board.new_board", value: thread.board)
         return [broadcast]
     }
@@ -1830,10 +1832,10 @@ public class BoardsController {
         // The thread_changed broadcast informs subscribed clients of the new reply count
         guard let thread = getThread(uuid: threadUUID) else { return [] }
         let broadcast = P7Message(withName: "wired.board.thread_changed", spec: spec)
-        broadcast.addParameter(field: "wired.board.thread",            value: thread.uuid)
-        broadcast.addParameter(field: "wired.board.subject",           value: thread.subject)
-        broadcast.addParameter(field: "wired.board.replies",           value: UInt32(thread.replies))
-        broadcast.addParameter(field: "wired.board.latest_reply",      value: post.uuid)
+        broadcast.addParameter(field: "wired.board.thread", value: thread.uuid)
+        broadcast.addParameter(field: "wired.board.subject", value: thread.subject)
+        broadcast.addParameter(field: "wired.board.replies", value: UInt32(thread.replies))
+        broadcast.addParameter(field: "wired.board.latest_reply", value: post.uuid)
         broadcast.addParameter(field: "wired.board.latest_reply_date", value: post.postDate)
         return [broadcast]
     }
@@ -1898,8 +1900,8 @@ public class BoardsController {
             }
             sqlite3_bind_text(checkStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(checkStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(checkStmt, 3, login,      -1, SQLITE_TRANSIENT)
-            var existingEmoji: String? = nil
+            sqlite3_bind_text(checkStmt, 3, login, -1, SQLITE_TRANSIENT)
+            var existingEmoji: String?
             if sqlite3_step(checkStmt) == SQLITE_ROW,
                let ptr = sqlite3_column_text(checkStmt, 0) {
                 existingEmoji = String(cString: ptr)
@@ -1920,7 +1922,7 @@ public class BoardsController {
                 }
                 sqlite3_bind_text(delStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
                 sqlite3_bind_text(delStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(delStmt, 3, login,      -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(delStmt, 3, login, -1, SQLITE_TRANSIENT)
                 let ok = sqlite3_step(delStmt) == SQLITE_DONE
                 sqlite3_finalize(delStmt)
                 guard ok else { _ = sqlite3_exec(db, "ROLLBACK;", nil, nil, nil); return nil }
@@ -1940,9 +1942,9 @@ public class BoardsController {
                     }
                     sqlite3_bind_text(insStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
                     sqlite3_bind_text(insStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insStmt, 4, login,      -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insStmt, 5, nick,       -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insStmt, 3, emoji, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insStmt, 4, login, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insStmt, 5, nick, -1, SQLITE_TRANSIENT)
                     sqlite3_bind_double(insStmt, 6, now)
                     let ok2 = sqlite3_step(insStmt) == SQLITE_DONE
                     sqlite3_finalize(insStmt)
@@ -1961,9 +1963,9 @@ public class BoardsController {
                 }
                 sqlite3_bind_text(insStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
                 sqlite3_bind_text(insStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(insStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(insStmt, 4, login,      -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(insStmt, 5, nick,       -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insStmt, 3, emoji, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insStmt, 4, login, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insStmt, 5, nick, -1, SQLITE_TRANSIENT)
                 sqlite3_bind_double(insStmt, 6, now)
                 let ok = sqlite3_step(insStmt) == SQLITE_DONE
                 sqlite3_finalize(insStmt)
@@ -1982,7 +1984,7 @@ public class BoardsController {
             }
             sqlite3_bind_text(cntStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
             sqlite3_bind_text(cntStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(cntStmt, 3, emoji,      -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(cntStmt, 3, emoji, -1, SQLITE_TRANSIENT)
             _ = sqlite3_step(cntStmt)
             let count = Int(sqlite3_column_int(cntStmt, 0))
             sqlite3_finalize(cntStmt)
@@ -1999,7 +2001,7 @@ public class BoardsController {
                 }
                 sqlite3_bind_text(cntOldStmt, 1, targetUUID, -1, SQLITE_TRANSIENT)
                 sqlite3_bind_text(cntOldStmt, 2, targetType, -1, SQLITE_TRANSIENT)
-                sqlite3_bind_text(cntOldStmt, 3, old,        -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(cntOldStmt, 3, old, -1, SQLITE_TRANSIENT)
                 _ = sqlite3_step(cntOldStmt)
                 replacedCount = Int(sqlite3_column_int(cntOldStmt, 0))
                 sqlite3_finalize(cntOldStmt)
@@ -2032,8 +2034,8 @@ public class BoardsController {
                 """, -1, &stmt, nil) == SQLITE_OK, let stmt else { return nil }
             defer { sqlite3_finalize(stmt) }
             sqlite3_bind_text(stmt, 1, currentLogin, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 2, targetUUID,   -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 3, targetType,   -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(stmt, 2, targetUUID, -1, SQLITE_TRANSIENT)
+            sqlite3_bind_text(stmt, 3, targetType, -1, SQLITE_TRANSIENT)
 
             var results: [ReactionSummary] = []
             while sqlite3_step(stmt) == SQLITE_ROW {

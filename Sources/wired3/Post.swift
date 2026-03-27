@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 public class Post {
     public var uuid: String
     public var thread: String

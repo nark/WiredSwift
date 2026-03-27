@@ -10,13 +10,13 @@ import WiredSwift
 
 struct WiredChatBotCommand: ParsableCommand {
     static var configuration = CommandConfiguration(
-        commandName:     "wiredbot",
-        abstract:        "AI-powered chatbot for the Wired 3 protocol",
-        discussion:      """
+        commandName: "wiredbot",
+        abstract: "AI-powered chatbot for the Wired 3 protocol",
+        discussion: """
             Connects to a Wired server and responds to chat messages using a
             configurable LLM backend (Ollama, OpenAI-compatible, or Anthropic).
             """,
-        subcommands:     [RunCommand.self, GenerateConfigCommand.self],
+        subcommands: [RunCommand.self, GenerateConfigCommand.self],
         defaultSubcommand: RunCommand.self
     )
 }
@@ -26,7 +26,7 @@ struct WiredChatBotCommand: ParsableCommand {
 struct RunCommand: ParsableCommand {
     static var configuration = CommandConfiguration(
         commandName: "run",
-        abstract:    "Start the chatbot daemon"
+        abstract: "Start the chatbot daemon"
     )
 
     @Option(name: .shortAndLong, help: "Path to JSON configuration file")
@@ -120,7 +120,7 @@ struct RunCommand: ParsableCommand {
 struct GenerateConfigCommand: ParsableCommand {
     static var configuration = CommandConfiguration(
         commandName: "generate-config",
-        abstract:    "Write a default wiredbot.json to disk"
+        abstract: "Write a default wiredbot.json to disk"
     )
 
     @Option(name: .shortAndLong, help: "Output file path")

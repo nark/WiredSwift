@@ -59,7 +59,7 @@ public class ConfigLoader {
             candidates += [
                 execDir.appendingPathComponent("wired.xml").path,
                 execDir.appendingPathComponent("Resources/wired.xml").path,
-                execDir.appendingPathComponent("../Resources/wired.xml").path,
+                execDir.appendingPathComponent("../Resources/wired.xml").path
             ]
         }
 
@@ -69,7 +69,7 @@ public class ConfigLoader {
             "./Resources/wired.xml",
             "/etc/wiredbot/wired.xml",
             "/usr/share/wiredbot/wired.xml",
-            "/usr/local/share/wiredbot/wired.xml",
+            "/usr/local/share/wiredbot/wired.xml"
         ]
 
         return candidates.first { FileManager.default.fileExists(atPath: $0) }

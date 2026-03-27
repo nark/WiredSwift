@@ -9,57 +9,54 @@
 import Foundation
 
 struct FileManagerFinderInfo {
-    var length:UInt32 = 0
-    var data:[UInt32?] = [UInt32?](repeating: nil, count: 8)
+    var length: UInt32 = 0
+    var data: [UInt32?] = [UInt32?](repeating: nil, count: 8)
 }
 
 extension FileManager {
-    public static func set(mode: Int, toPath path:String) -> Bool {
-        var attributes = [FileAttributeKey : Any]()
-        
+    public static func set(mode: Int, toPath path: String) -> Bool {
+        var attributes = [FileAttributeKey: Any]()
+
         attributes[.posixPermissions] = mode // ex: 0o777
-        
+
         do {
             try FileManager.default.setAttributes(attributes, ofItemAtPath: path)
-        }catch let error {
+        } catch let error {
             Logger.error("Cannot set mode to file \(path) error: \(error)")
             return false
         }
-        
+
         return true
     }
-    
-    public static func sizeOfFile(atPath path:String) -> UInt64? {
+
+    public static func sizeOfFile(atPath path: String) -> UInt64? {
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: path)
-        
+
             return attributes[.size] as? UInt64
-            
+
         } catch { }
-        
+
         return nil
     }
-    
-    public static func resourceForkPath(forPath path:String) -> String {
+
+    public static func resourceForkPath(forPath path: String) -> String {
         var nspath = path as NSString
-        
+
         nspath = nspath.appendingPathComponent("..namedfork") as NSString
         nspath = nspath.appendingPathComponent("rsrc") as NSString
-        
+
         return nspath as String
     }
-    
-        
-    public func setFinderInfo(_ finderInfo: Data, atPath path:String) -> Bool {
+
+    public func setFinderInfo(_ finderInfo: Data, atPath path: String) -> Bool {
         return true
     }
-    
-    
-    
-    public func finderInfo(atPath path:String?) -> Data? {
+
+    public func finderInfo(atPath path: String?) -> Data? {
         guard let path, !path.isEmpty else { return nil }
         guard fileExists(atPath: path) else { return nil }
-        
+
         #if os(Linux)
             return nil
         #else
@@ -95,11 +92,10 @@ extension FileManager {
             padded.replaceSubrange(0..<data.count, with: data)
             return padded
         }
-        
+
         #endif
-        
+
         return nil
     }
-    
-    
+
 }

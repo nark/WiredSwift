@@ -5,6 +5,8 @@
 //  Created by Rafael Warnault on 18/07/2019.
 //  Copyright © 2019 Read-Write. All rights reserved.
 //
+// swiftlint:disable cyclomatic_complexity
+// TODO: Replace large switch in P7Message serialization with a dispatch table
 
 import Foundation
 import AEXML
@@ -22,23 +24,23 @@ public class P7Message: NSObject {
     public var name: String!
     public var spec: P7Spec!
     public var specMessage: SpecMessage!
-    public var size:Int = 0
-    
-    private var parameters: [String:Any] = [String:Any](minimumCapacity: 50)
-    
-    public var numberOfParameters:Int {
+    public var size: Int = 0
+
+    private var parameters: [String: Any] = [String: Any](minimumCapacity: 50)
+
+    public var numberOfParameters: Int {
         get {
             return self.parameters.count
         }
     }
-    public var parameterKeys:[String] {
+    public var parameterKeys: [String] {
         get {
             return Array(self.parameters.keys)
         }
     }
-    
+
     public override var description: String { self.xml() }
-    
+
     public init(withName name: String, spec: P7Spec) {
         if let specMessage = spec.messagesByName[name] {
             self.specMessage    = specMessage
@@ -53,63 +55,54 @@ public class P7Message: NSObject {
         }
     }
 
-    
     public init(withXML xml: String, spec: P7Spec) {
         super.init()
-        
+
         self.spec = spec
-        
+
         self.loadXMLMessage(xml)
     }
-    
-    
+
     public init(withData data: Data, spec: P7Spec) {
         super.init()
-        
+
         self.spec = spec
         self.size = data.count
-        
+
         self.loadBinaryMessage(data)
     }
-    
-    
+
     public func addParameter(field: String, value: Any?) {
         self.parameters[field] = value
     }
-    
-    
+
     public func lazy(field: String) -> String? {
         let value = self.parameters[field]
-        
+
         if  spec.fieldsByName[field]?.type == .string ||
             spec.fieldsByName[field]?.type == .uuid {
             if let string = value as? String {
                 return string
             }
-        }
-        else if spec.fieldsByName[field]?.type == .int32 ||
+        } else if spec.fieldsByName[field]?.type == .int32 ||
                 spec.fieldsByName[field]?.type == .uint32 {
             if let val = value as? UInt32 {
                 return String(val)
             }
-        }
-        else if spec.fieldsByName[field]?.type == .int64 ||
+        } else if spec.fieldsByName[field]?.type == .int64 ||
                 spec.fieldsByName[field]?.type == .uint64 {
             if let val = value as? UInt64 {
                 return String(val)
             }
-        }
-        else if spec.fieldsByName[field]?.type == .enum32 {
+        } else if spec.fieldsByName[field]?.type == .enum32 {
             if let _ = value as? UInt32 {
-                //print("field")
+                // print("field")
             }
-        }
-        else if spec.fieldsByName[field]?.type == .data {
+        } else if spec.fieldsByName[field]?.type == .data {
             if let val = value as? Data {
                 return val.toHex()
             }
-        }
-        else if spec.fieldsByName[field]?.type == .oobdata {
+        } else if spec.fieldsByName[field]?.type == .oobdata {
             if let val = value as? Data {
                 return val.toHex()
             }
@@ -117,23 +110,21 @@ public class P7Message: NSObject {
         // TODO: complete all types
         return nil
     }
-    
-    
+
     public func string(forField field: String) -> String? {
         if let str = self.parameters[field] as? String {
             return str.trimmingCharacters(in: .controlCharacters)
         }
         return nil
     }
-    
+
     public func uuid(forField field: String) -> String? {
         if let str = self.parameters[field] as? String {
             return str
         }
         return nil
     }
-    
-    
+
     public func data(forField field: String) -> Data? {
         if let data = self.parameters[field] as? Data {
             return data
@@ -154,46 +145,42 @@ public class P7Message: NSObject {
         }
         return nil
     }
-    
-    
-    public func date(forField field: String) -> Date? {        
+
+    public func date(forField field: String) -> Date? {
         if let value = self.parameters[field] as? Date {
             return value
         }
         return nil
     }
-    
-    
+
     public func bool(forField field: String) -> Bool? {
         if let value = self.parameters[field] as? UInt8 {
             return value == 1 ? true : false
         }
         return nil
     }
-    
-    
+
     public func uint32(forField field: String) -> UInt32? {
         if let value = self.parameters[field] as? UInt32 {
             return value
         }
         return nil
     }
-    
-    public func uint64(forField field: String) -> UInt64? {        
+
+    public func uint64(forField field: String) -> UInt64? {
         if let value = self.parameters[field] as? UInt64 {
             return value
         }
         return nil
     }
-    
+
     public func enumeration(forField field: String) -> UInt32? {
         if let value = self.parameters[field] as? UInt32 {
             return value
         }
         return nil
     }
-    
-    
+
     public func xml() -> String {
         let message = AEXMLDocument()
         let root = message.addChild(name: "p7:message", attributes: ["name": self.name] )
@@ -206,37 +193,31 @@ public class P7Message: NSObject {
                 if let string = value as? String {
                     p.value = string
                 }
-            }
-            else if spec.fieldsByName[field]?.type == .int32 ||
+            } else if spec.fieldsByName[field]?.type == .int32 ||
                     spec.fieldsByName[field]?.type == .uint32 {
                 if let val = value as? UInt32 {
                     p.value = String(val)
                 }
-            }
-            else if spec.fieldsByName[field]?.type == .bool {
+            } else if spec.fieldsByName[field]?.type == .bool {
                 if let val = value as? UInt32 {
                     p.value = val == 1 ? "true" : "false"
                 }
-            }
-            else if spec.fieldsByName[field]?.type == .int64 ||
+            } else if spec.fieldsByName[field]?.type == .int64 ||
                     spec.fieldsByName[field]?.type == .uint64 {
                 if let val = value as? UInt64 {
                     p.value = String(val)
                 }
-            }
-            else if spec.fieldsByName[field]?.type == .data ||
+            } else if spec.fieldsByName[field]?.type == .data ||
                     spec.fieldsByName[field]?.type == .oobdata {
                 if let val = value as? Data {
                     p.value = val.toHex()
                 }
-            }
-            else if spec.fieldsByName[field]?.type == .date {
+            } else if spec.fieldsByName[field]?.type == .date {
                 if let val = value as? Double {
                     let dateFormatter = ISO8601DateFormatter()
                     p.value = dateFormatter.string(from: Date(timeIntervalSince1970: val))
                 }
-            }
-            else if spec.fieldsByName[field]?.type == .list {
+            } else if spec.fieldsByName[field]?.type == .list {
                 if let val = value as? [String] {
                     p.value = val.joined(separator: ",")
                 }
@@ -246,59 +227,57 @@ public class P7Message: NSObject {
 
         return "\(message.xml)"
     }
-    
-    
-    
+
     public func bin() -> Data {
         var data = Data()
-                
+
         // append message ID
         if let messageID = UInt32(self.id) {
             data.append(uint32: messageID, bigEndian: true)
-            
+
             // append fields
             for (field, value) in self.parameters {
                 if let specField = spec.fieldsByName[field] {
-                    //print("specField \(specField.name)")
+                    // print("specField \(specField.name)")
                     if let fieldIDStr = specField.id {
                         // append field ID
                         if let fieldID = UInt32(fieldIDStr) {
                             data.append(uint32: fieldID, bigEndian: true)
-                            
+
                             // append value
                             if specField.type == .bool { // boolean (1)
                                 let v = (value as? Bool) == true ? UInt8(1) : UInt8(0)
                                 data.append(uint8: v, bigEndian: true)
-                                
+
                             } else if specField.type == .enum32 { // enum (4)
                                 data.append(uint32: self.coerceUInt32(value), bigEndian: true)
-                                
+
                             } else if specField.type == .int32 { // int32 (4)
                                 data.append(uint32: self.coerceUInt32(value), bigEndian: true)
-                                
+
                             } else if specField.type == .uint32 { // uint32 (4)
                                 data.append(uint32: self.coerceUInt32(value), bigEndian: true)
-                                
+
                             } else if specField.type == .int64 { // int64 (4)
                                 data.append(uint64: self.coerceUInt64(value), bigEndian: true)
-                                
+
                             } else if specField.type == .uint64 { // uint64 (4)
                                 data.append(uint64: self.coerceUInt64(value), bigEndian: true)
-                                
+
                             } else if specField.type == .double { // double (4)
                                 if let doubleValue = value as? Double {
                                     data.append(double: doubleValue, bigEndian: true)
                                 } else {
                                     Logger.error("WARNING: Expected Double for field '\(field)', skipping")
                                 }
-                                
+
                             } else if specField.type == .string { // string (x)
                                 if let str = value as? String {
-                                    //if let d = str.nullTerminated {
+                                    // if let d = str.nullTerminated {
                                         let l = UInt32(str.bytes.count)
                                         data.append(uint32: l, bigEndian: true)
                                         data.append(Data(str.bytes))
-                                    //}
+                                    // }
                                 }
                             } else if specField.type == .uuid { // uuid (16)
                                 if let str = value as? String,
@@ -351,9 +330,9 @@ public class P7Message: NSObject {
                 }
             }
         }
-        
+
         self.size = data.count
-        
+
         return data
     }
 
@@ -412,11 +391,8 @@ public class P7Message: NSObject {
         }
         return 0
     }
-    
-    
 
-    
-    private func loadXMLMessage(_ xml:String) {
+    private func loadXMLMessage(_ xml: String) {
         print("TODO: reimplement with AEXML")
 //        do {
 //            let xmlDoc  = try XMLDocument(xmlString: xml)
@@ -449,9 +425,7 @@ public class P7Message: NSObject {
 //            Logger.error("ERROR: Cannot parse XML message")
 //        }
     }
-    
-    
-    
+
     /// Maximum size for a single TLV field value (16 MB).
     private static let maxFieldSize: Int = 16 * 1024 * 1024
 
@@ -483,10 +457,10 @@ public class P7Message: NSObject {
         if let specMessage = spec.messagesByID[Int(messageIDValue)] {
             self.name = specMessage.name!
             self.specMessage = specMessage
-            
-            var fieldIDData:Data!
-            var fieldID:UInt32!
-            
+
+            var fieldIDData: Data!
+            var fieldID: UInt32!
+
             while offset < data.count {
                 // SECURITY: bounds check before reading field ID (4 bytes)
                 guard offset + 4 <= data.count else {
@@ -494,21 +468,21 @@ public class P7Message: NSObject {
                     break
                 }
                 fieldIDData = data.subdata(in: offset..<offset+4)
-                
+
                 if let v = fieldIDData.uint32 {
                     fieldID = UInt32(v)
                 } else {
                     Logger.error("ERROR : Cannot read field ID")
                     return
                 }
-                
+
                 offset += 4
-                
+
                 if let specField = spec.fieldsByID[fieldID] {
                     var fieldLength = 0
-                    
-                    //Logger.debug("READ field: \(specField.name) [\(fieldID)]")
-                    
+
+                    // Logger.debug("READ field: \(specField.name) [\(fieldID)]")
+
                     // read length if needed
                     if specField.type == .string || specField.type == .data || specField.type == .list {
                         // SECURITY: bounds check before reading field length (4 bytes)
@@ -531,7 +505,7 @@ public class P7Message: NSObject {
                     } else {
                         fieldLength = SpecType.size(forType: specField.type)
                     }
-                
+
                     if fieldLength == 0 && specField.type == .string {
                         // Keep explicit empty strings (length=0) instead of dropping the field.
                         self.addParameter(field: specField.name, value: "")
@@ -543,52 +517,40 @@ public class P7Message: NSObject {
                         }
                         // read value
                         let fieldData = data.subdata(in: offset..<offset+fieldLength)
-                        
+
                         if specField.type == .bool {
                             self.addParameter(field: specField.name, value: fieldData.uint8.bigEndian)
-                        }
-                        else if specField.type == .enum32 {
+                        } else if specField.type == .enum32 {
                             // Data.uint32 already converts BE→host via CFSwapInt32HostToBig.
                             // Applying .bigEndian again would double-swap, corrupting the value.
                             self.addParameter(field: specField.name, value: fieldData.uint32)
-                        }
-                        else if specField.type == .int32 {
+                        } else if specField.type == .int32 {
                             self.addParameter(field: specField.name, value: fieldData.uint32)
-                        }
-                        else if specField.type == .uint32 {
+                        } else if specField.type == .uint32 {
                             self.addParameter(field: specField.name, value: fieldData.uint32)
-                        }
-                        else if specField.type == .int64 {
+                        } else if specField.type == .int64 {
                             self.addParameter(field: specField.name, value: fieldData.uint64)
-                        }
-                        else if specField.type == .uint64 {
+                        } else if specField.type == .uint64 {
                             self.addParameter(field: specField.name, value: fieldData.uint64)
-                        }
-                        else if specField.type == .double {
+                        } else if specField.type == .double {
                             self.addParameter(field: specField.name, value: fieldData.double)
-                        }
-                        else if specField.type == .string {
+                        } else if specField.type == .string {
                             if let str = String(bytes: fieldData, encoding: .utf8) {
                                 self.addParameter(field: specField.name, value: str)
                             } else {
                                 Logger.error("WARNING: Invalid UTF-8 in field '\(specField.name)' — field rejected")
                             }
-                        }
-                        else if specField.type == .uuid {
+                        } else if specField.type == .uuid {
                             self.addParameter(field: specField.name, value: NSUUID(uuidBytes: Array(fieldData)).uuidString)
-                        }
-                        else if specField.type == .date {
+                        } else if specField.type == .date {
                             if let interval = fieldData.to(type: Double.self) {
                                 self.addParameter(field: specField.name, value: Date(timeIntervalSince1970: interval))
                             }
-                        }
-                        else if specField.type == .data {
+                        } else if specField.type == .data {
                             self.addParameter(field: specField.name, value: fieldData)
-                        }
-                        else if specField.type == .oobdata {
+                        } else if specField.type == .oobdata {
                             self.addParameter(field: specField.name, value: fieldData)
-                        }
-                        else if specField.type == .list {
+                        } else if specField.type == .list {
                             let listType = specField.attributes["listtype"] as? String
                             if listType == "string" {
                                 var items: [String] = []
@@ -618,19 +580,19 @@ public class P7Message: NSObject {
                                 self.addParameter(field: specField.name, value: items)
                             }
                         }
-                        
+
                         // TODO: complete all types
                     }
-                    
+
                     offset += fieldLength
-                    
+
                 } else {
                     Logger.error("ERROR : Unknow field ID: \(String(describing: fieldID))")
                     return
                 }
-                
+
             }
-        
+
         } else {
             Logger.error("ERROR : Unknow message ID \(String(describing: self.id))")
             return

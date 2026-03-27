@@ -330,7 +330,7 @@ private struct LinuxLZFSE {
 
     init() {
         let candidates = ["liblzfse.so", "liblzfse.so.1", "liblzfse.so.0"]
-        var loadedHandle: UnsafeMutableRawPointer? = nil
+        var loadedHandle: UnsafeMutableRawPointer?
 
         for library in candidates {
             if let handle = dlopen(library, RTLD_LAZY | RTLD_LOCAL) {

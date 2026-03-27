@@ -15,22 +15,19 @@ public class Url: NSObject {
     public var password: String = ""
     public var hostname: String = ""
     public var port: Int        = Wired.wiredPort
-    
-    
+
     public init(withString baseString: String) {
         super.init()
-        
+
         self.base = baseString
-        
+
         self.decompose()
     }
-    
-    
+
     public func urlString() -> String {
         return "wired://\(self.hostname):\(self.port)"
     }
-    
-    
+
     private func decompose() {
         if let u = URL(string: self.base) {
             self.hostname   = u.host!

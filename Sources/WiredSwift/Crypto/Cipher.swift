@@ -353,11 +353,11 @@ private struct HChaCha20 {
 
         var state: [UInt32] = [
             constants[0], constants[1], constants[2], constants[3],
-            u32(key[0..<4]),   u32(key[4..<8]),
-            u32(key[8..<12]),  u32(key[12..<16]),
+            u32(key[0..<4]), u32(key[4..<8]),
+            u32(key[8..<12]), u32(key[12..<16]),
             u32(key[16..<20]), u32(key[20..<24]),
             u32(key[24..<28]), u32(key[28..<32]),
-            u32(nonce16[0..<4]),  u32(nonce16[4..<8]),
+            u32(nonce16[0..<4]), u32(nonce16[4..<8]),
             u32(nonce16[8..<12]), u32(nonce16[12..<16])
         ]
 

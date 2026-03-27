@@ -6,20 +6,20 @@ import Foundation
 // MARK: - Match results
 
 public struct TriggerMatch {
-    public let trigger:   TriggerConfig
-    public let input:     String
-    public let nick:      String
-    public let chatID:    UInt32
+    public let trigger: TriggerConfig
+    public let input: String
+    public let nick: String
+    public let chatID: UInt32
     public let isPrivate: Bool
 }
 
 /// Result returned when a board trigger fires (thread_added or thread_changed).
 public struct BoardTriggerMatch {
-    public let trigger:  TriggerConfig
-    public let subject:  String   // thread subject
-    public let text:     String   // body of the new post (empty for thread_added)
-    public let nick:     String   // author
-    public let board:    String   // board path
+    public let trigger: TriggerConfig
+    public let subject: String   // thread subject
+    public let text: String   // body of the new post (empty for thread_added)
+    public let nick: String   // author
+    public let board: String   // board path
 }
 
 // MARK: - Engine
@@ -42,7 +42,7 @@ public final class TriggerEngine {
             let types = trigger.eventTypes
             if !types.contains("all") {
                 if isPrivate  && !types.contains("private") { continue }
-                if !isPrivate && !types.contains("chat")    { continue }
+                if !isPrivate && !types.contains("chat") { continue }
             }
 
             // 2. Cooldown check

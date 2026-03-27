@@ -15,7 +15,6 @@ import Darwin
 import Glibc
 #endif
 
-
 struct Wired: ParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Wired 3 server"
@@ -38,19 +37,19 @@ struct Wired: ParsableCommand {
 
     @Option(help: "Sqlite database file")
     var db: String?
-    
+
     @Option(help: "Server root files path")
     var root: String?
-    
+
     @Option(help: "Server config file path (.ini)")
     var config: String?
-    
+
     @Option(help: "Path to XML specification file")
     var spec: String?
 
     @Argument(help: "Optional working directory path. For compatibility, an .xml path here is treated as the specification file path.")
     var path: String?
-    
+
     mutating func run() throws {
         if showVersion {
             print(WiredServerVersion.display)

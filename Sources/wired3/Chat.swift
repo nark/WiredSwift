@@ -95,20 +95,17 @@ public class Chat: FetchableRecord, PersistableRecord {
     }
 }
 
-
-
-public class PrivateChat : Chat {
-    private var invitedClients:[Client] = []
+public class PrivateChat: Chat {
+    private var invitedClients: [Client] = []
     private var invitedClientsLock: Lock = Lock()
 
-    public func addInvitation(client:Client) {
+    public func addInvitation(client: Client) {
         invitedClientsLock.exclusivelyWrite {
             self.invitedClients.append(client)
         }
     }
 
-
-    public func removeInvitation(client:Client) {
+    public func removeInvitation(client: Client) {
         invitedClientsLock.exclusivelyWrite {
             self.invitedClients.removeAll { (c) -> Bool in
                 c.userID == client.userID
@@ -116,8 +113,7 @@ public class PrivateChat : Chat {
         }
     }
 
-
-    public func isInvited(client:Client) -> Bool {
+    public func isInvited(client: Client) -> Bool {
         invitedClientsLock.concurrentlyRead {
             for c in self.invitedClients {
                 if c.userID == client.userID {

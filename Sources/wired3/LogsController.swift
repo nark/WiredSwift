@@ -95,8 +95,8 @@ public class LogsController: LoggerDelegate {
 
         for entry in snapshot {
             let reply = P7Message(withName: "wired.log.list", spec: client.socket.spec)
-            reply.addParameter(field: "wired.log.time",    value: entry.date)
-            reply.addParameter(field: "wired.log.level",   value: wiredLevel(from: entry.level))
+            reply.addParameter(field: "wired.log.time", value: entry.date)
+            reply.addParameter(field: "wired.log.level", value: wiredLevel(from: entry.level))
             reply.addParameter(field: "wired.log.message", value: entry.message)
             App.serverController.reply(client: client, reply: reply, message: message)
         }
@@ -177,8 +177,8 @@ public class LogsController: LoggerDelegate {
 
         for client in subscribers {
             let message = P7Message(withName: "wired.log.message", spec: client.socket.spec)
-            message.addParameter(field: "wired.log.time",    value: entry.date)
-            message.addParameter(field: "wired.log.level",   value: wiredLevel(from: entry.level))
+            message.addParameter(field: "wired.log.time", value: entry.date)
+            message.addParameter(field: "wired.log.level", value: wiredLevel(from: entry.level))
             message.addParameter(field: "wired.log.message", value: entry.message)
             _ = serverController.send(message: message, client: client)
         }

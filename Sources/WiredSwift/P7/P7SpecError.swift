@@ -9,5 +9,5 @@
 import Foundation
 
 public class P7SpecError: P7SpecItem {
-    
+
 }

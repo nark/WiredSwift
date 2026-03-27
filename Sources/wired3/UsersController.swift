@@ -26,7 +26,6 @@ public class UsersController: TableController, SocketPasswordDelegate {
         return self.lastUserID
     }
 
-
     // MARK: - Database (SocketPasswordDelegate)
     public func passwordForUsername(username: String) -> String? {
         user(withUsername: username)?.password
@@ -35,7 +34,6 @@ public class UsersController: TableController, SocketPasswordDelegate {
     public func passwordSaltForUsername(username: String) -> String? {
         user(withUsername: username)?.passwordSalt
     }
-
 
     // MARK: - Fetch
     public func user(withUsername username: String, password: String) -> User? {
@@ -140,7 +138,6 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
-
     // MARK: - Write
     @discardableResult
     public func save(user: User) -> Bool {
@@ -230,7 +227,6 @@ public class UsersController: TableController, SocketPasswordDelegate {
         } catch { return false }
     }
 
-
     // MARK: - Seeding (appelé une seule fois à la première exécution)
     public func seedDefaultDataIfNeeded() {
         do {
@@ -286,7 +282,6 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
-
     // MARK: - Legacy schema migrations (raw SQLite, conservées pour bases Fluent existantes)
     public func migrateLegacyPrivilegesSchemaIfNeeded() {
         var db: OpaquePointer?
@@ -321,7 +316,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
         let postPrivilege     = "wired.account.board.add_posts"
 
         let tables: [(table: String, ownerColumn: String)] = [
-            ("user_privileges",  "user_id"),
+            ("user_privileges", "user_id"),
             ("group_privileges", "group_id")
         ]
 
@@ -357,6 +352,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
         let migratedTable = "\(table)_migrated"
         let statements = [
             "BEGIN TRANSACTION;",
+            // swiftlint:disable:next line_length
             "CREATE TABLE IF NOT EXISTS \"\(migratedTable)\" (\"id\" UUID PRIMARY KEY, \"name\" TEXT NOT NULL, \"value\" INTEGER NOT NULL, \"\(ownerColumn)\" UUID NOT NULL, CONSTRAINT \"\(constraintName)\" UNIQUE (\"name\", \"\(ownerColumn)\"));",
             "INSERT OR IGNORE INTO \"\(migratedTable)\" (\"id\", \"name\", \"value\", \"\(ownerColumn)\") SELECT \"id\", \"name\", \"value\", \"\(ownerColumn)\" FROM \"\(table)\";",
             "DROP TABLE \"\(table)\";",
@@ -392,10 +388,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
     private func migrateUsersOfflineMessagingColumnsIfNeeded(db: OpaquePointer) {
         guard let schema = readSchema(db: db, table: "users") else { return }
         let columnStatements: [(column: String, statement: String)] = [
-            ("identity",          "ALTER TABLE \"users\" ADD COLUMN \"identity\" TEXT;"),
+            ("identity", "ALTER TABLE \"users\" ADD COLUMN \"identity\" TEXT;"),
             ("offline_public_key", "ALTER TABLE \"users\" ADD COLUMN \"offline_public_key\" BLOB;"),
-            ("offline_key_id",    "ALTER TABLE \"users\" ADD COLUMN \"offline_key_id\" TEXT;"),
-            ("offline_crypto",    "ALTER TABLE \"users\" ADD COLUMN \"offline_crypto\" TEXT;")
+            ("offline_key_id", "ALTER TABLE \"users\" ADD COLUMN \"offline_key_id\" TEXT;"),
+            ("offline_crypto", "ALTER TABLE \"users\" ADD COLUMN \"offline_crypto\" TEXT;")
         ]
         for (column, statement) in columnStatements where !schema.contains("\"\(column)\"") {
             if sqliteExec(db: db, statement) != SQLITE_OK {
@@ -495,7 +491,6 @@ public class UsersController: TableController, SocketPasswordDelegate {
         let tail: UnsafeMutablePointer<UnsafePointer<CChar>?>? = nil
         return sqlite3_prepare_v2(db, query, -1, &statement, tail)
     }
-
 
     // MARK: - Identity backfill
     public func backfillStableIdentitiesIfNeeded() {

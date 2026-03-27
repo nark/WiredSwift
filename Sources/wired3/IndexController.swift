@@ -55,7 +55,6 @@ public class IndexController: TableController {
         }
     }
 
-
     // MARK: - Public API
 
     /// Configure the automatic periodic reindex interval.
@@ -167,7 +166,6 @@ public class IndexController: TableController {
         }
     }
 
-
     // MARK: - Private — periodic timer
 
     /// Arm (or re-arm) the periodic reindex timer. Always called from `indexQueue`.
@@ -198,7 +196,6 @@ public class IndexController: TableController {
         reindexTimer = timer
         Logger.info("IndexController: periodic reindex armed — every \(Int(interval))s")
     }
-
 
     // MARK: - Private — rebuild
 
@@ -323,7 +320,6 @@ public class IndexController: TableController {
         }
     }
 
-
     // MARK: - Private — search
 
     /// Run a database query and return matching WiredIndex rows.
@@ -367,8 +363,8 @@ public class IndexController: TableController {
     private func likeSearch(query: String) throws -> [WiredIndex] {
         // Escape LIKE special characters so user input is treated as a literal string.
         var escaped = query.replacingOccurrences(of: "\\", with: "\\\\")
-        escaped = escaped.replacingOccurrences(of: "%",  with: "\\%")
-        escaped = escaped.replacingOccurrences(of: "_",  with: "\\_")
+        escaped = escaped.replacingOccurrences(of: "%", with: "\\%")
+        escaped = escaped.replacingOccurrences(of: "_", with: "\\_")
         let pattern = "%\(escaped)%"
 
         return try databaseController.dbQueue.read { db in
@@ -380,7 +376,6 @@ public class IndexController: TableController {
             .fetchAll(db)
         }
     }
-
 
     // MARK: - Private — response building
 
@@ -405,10 +400,10 @@ public class IndexController: TableController {
         reply.addParameter(field: "wired.file.modification_time",
                            value: (attrs?[.modificationDate] as? Date) ?? Date(timeIntervalSince1970: 0))
 
-        reply.addParameter(field: "wired.file.link",       value: entry.alias)
+        reply.addParameter(field: "wired.file.link", value: entry.alias)
         reply.addParameter(field: "wired.file.executable", value: false)
-        reply.addParameter(field: "wired.file.label",      value: WiredSwift.File.FileLabel.LABEL_NONE.rawValue)
-        reply.addParameter(field: "wired.file.volume",     value: UInt32(0))
+        reply.addParameter(field: "wired.file.label", value: WiredSwift.File.FileLabel.LABEL_NONE.rawValue)
+        reply.addParameter(field: "wired.file.volume", value: UInt32(0))
 
         switch type {
         case .file:
@@ -432,7 +427,6 @@ public class IndexController: TableController {
         let done = P7Message(withName: "wired.file.search_list.done", spec: message.spec)
         App.serverController.reply(client: client, reply: done, message: message)
     }
-
 
     // MARK: - Private — FTS5 detection
 

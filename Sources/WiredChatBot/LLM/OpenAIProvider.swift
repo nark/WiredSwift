@@ -26,10 +26,10 @@ public class OpenAIProvider: LLMProvider {
         }
 
         let body: [String: Any] = [
-            "model":       config.model,
-            "messages":    messages.map { ["role": $0.role, "content": $0.content] },
-            "max_tokens":  config.maxTokens,
-            "temperature": config.temperature,
+            "model": config.model,
+            "messages": messages.map { ["role": $0.role, "content": $0.content] },
+            "max_tokens": config.maxTokens,
+            "temperature": config.temperature
         ]
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
 

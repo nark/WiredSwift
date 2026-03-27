@@ -9,7 +9,6 @@ import Foundation
 import WiredSwift
 import GRDB
 
-
 public class Group: Codable, FetchableRecord, PersistableRecord {
     public static let databaseTableName = "groups"
 

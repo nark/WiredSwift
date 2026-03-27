@@ -20,12 +20,12 @@ public class AnthropicProvider: LLMProvider {
 
         var req = URLRequest(url: Self.apiURL, timeoutInterval: config.timeoutSeconds)
         req.httpMethod = "POST"
-        req.setValue("application/json",   forHTTPHeaderField: "Content-Type")
-        req.setValue(apiKey,               forHTTPHeaderField: "x-api-key")
-        req.setValue(Self.apiVersion,      forHTTPHeaderField: "anthropic-version")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        req.setValue(Self.apiVersion, forHTTPHeaderField: "anthropic-version")
 
         // Separate system message from conversation turns
-        var systemContent: String? = nil
+        var systemContent: String?
         var turns: [[String: Any]] = []
 
         for msg in messages {
@@ -37,9 +37,9 @@ public class AnthropicProvider: LLMProvider {
         }
 
         var body: [String: Any] = [
-            "model":      config.model,
+            "model": config.model,
             "max_tokens": config.maxTokens,
-            "messages":   turns,
+            "messages": turns
         ]
         if let system = systemContent { body["system"] = system }
 

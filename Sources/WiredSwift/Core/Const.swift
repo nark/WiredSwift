@@ -8,9 +8,7 @@
 
 import Foundation
 
-
-
-public struct Wired {    
+public struct Wired {
     public static let wiredPort             = 4871
     public static let wiredScheme           = "wired"
     public static let defaultUserIcon       = """

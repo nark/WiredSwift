@@ -9,7 +9,6 @@ import Foundation
 import WiredSwift
 import GRDB
 
-
 // PersistableRecord (non-MutablePersistableRecord) fournit des méthodes non-mutating
 // adaptées aux classes (reference types). Les structs utilisent MutablePersistableRecord.
 public class User: Codable, FetchableRecord, PersistableRecord {
@@ -131,10 +130,10 @@ public class User: Codable, FetchableRecord, PersistableRecord {
         if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
         if let mode = privilege.mode {
             if mode.contains(File.FilePermissions.everyoneRead) { return true }
-            if let g = privilege.group, g.count > 0,
+            if let g = privilege.group, !g.isEmpty,
                mode.contains(File.FilePermissions.groupRead),
                self.hasGroup(string: g) { return true }
-            if let o = privilege.owner, o.count > 0,
+            if let o = privilege.owner, !o.isEmpty,
                mode.contains(File.FilePermissions.ownerRead),
                self.username == o { return true }
         }
@@ -145,10 +144,10 @@ public class User: Codable, FetchableRecord, PersistableRecord {
         if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
         if let mode = privilege.mode {
             if mode.contains(File.FilePermissions.everyoneWrite) { return true }
-            if let g = privilege.group, g.count > 0,
+            if let g = privilege.group, !g.isEmpty,
                mode.contains(File.FilePermissions.groupWrite),
                self.hasGroup(string: g) { return true }
-            if let o = privilege.owner, o.count > 0,
+            if let o = privilege.owner, !o.isEmpty,
                mode.contains(File.FilePermissions.ownerWrite),
                self.username == o { return true }
         }

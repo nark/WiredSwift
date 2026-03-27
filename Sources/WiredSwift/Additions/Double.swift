@@ -7,7 +7,7 @@
 
 import Foundation
 
-//extension Double {
+// extension Double {
 //    var roundTo2f: Double {return Double(round(100  * self)/100)  }
 //    var roundTo3f: Double {return Double(round(1000 * self)/1000) }
-//}
+// }

@@ -103,30 +103,30 @@ struct GeneralTabView: View {
                             Task { await model.installServer() }
                         }
                         .disabled(model.isInstalled || model.isBusy)
-                        
+
                         Button(L("general.install.uninstall")) {
                             model.uninstallServer()
                         }
                         .disabled(!model.isInstalled || model.isBusy || model.isRunning)
-                        
+
                         Spacer()
-                        
+
                         Image(systemName: model.isInstalled ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundStyle(model.isInstalled ? .green : .secondary)
-                        
+
                         Text(model.isInstalled ? L("general.install.state.installed") : L("general.install.state.uninstalled"))
                             .foregroundStyle(model.isInstalled ? .green : .secondary)
                     }
-                    
+
                     HStack(spacing: 8) {
                         Text(L("general.install.directory"))
                             .bold()
-                        
+
                         Text(model.workingDirectory)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .textSelection(.enabled)
-                        
+
                         Button {
                             NSWorkspace.shared.open(URL(fileURLWithPath: model.workingDirectory))
                         } label: {
@@ -134,16 +134,16 @@ struct GeneralTabView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        
+
                         Spacer(minLength: 0)
-                        
+
                         Button(L("common.choose")) {
                             model.chooseWorkingDirectory()
                         }
                         .disabled(model.isRunning)
                     }
                 }
-                
+
                 Section("Versions") {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))
@@ -181,9 +181,9 @@ struct GeneralTabView: View {
                     HStack {
                         StatusDot(color: model.isRunning ? .green : .red)
                         Text(model.isRunning ? L("general.execution.running") : L("general.execution.stopped"))
-                        
+
                         Spacer()
-                        
+
                         Button(model.isRunning ? L("general.execution.stop") : L("general.execution.start")) {
                             if model.isRunning {
                                 model.stopServer()
@@ -192,13 +192,13 @@ struct GeneralTabView: View {
                             }
                         }
                     }
-                    
+
                     Toggle(L("general.execution.start_on_login"), isOn: Binding(
                         get: { model.launchAtLogin },
                         set: { model.toggleLaunchAtLogin($0) }
                     ))
                 }
-                
+
 //                if !model.statusMessage.isEmpty {
 //                    Text(model.statusMessage)
 //                        .font(.footnote)
@@ -222,31 +222,31 @@ struct NetworkTabView: View {
                     HStack {
                         Text(L("network.port"))
                             .bold()
-                        
+
                         Spacer()
-                        
+
                         TextField("", value: $model.serverPort, formatter: Formatters.integer)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: UIConstants.numberFieldWidth)
-                        
+
                         Button(L("common.save")) {
                             model.saveNetworkSettings()
                         }
                     }
-                    
+
                     HStack(spacing: 8) {
                         StatusDot(color: color(for: model.portStatus))
                         Text(model.portStatus.description)
-                        
+
                         Spacer()
-                        
+
                         Button(L("network.check")) {
                             model.checkPort()
                         }
                     }
-                    
+
                 }
-                
+
                 Section {
                     Text(L("network.restart_required"))
                         .font(.footnote)
@@ -280,12 +280,12 @@ struct FilesTabView: View {
                     HStack {
                         Text(L("files.directory"))
                             .bold()
-                        
+
                         Text(model.filesDirectory)
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .textSelection(.enabled)
-                        
+
                         Button {
                             NSWorkspace.shared.open(URL(fileURLWithPath: model.filesDirectory))
                         } label: {
@@ -293,23 +293,23 @@ struct FilesTabView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        
+
                         Spacer()
-                        
+
                         Button(L("common.choose")) {
                             model.chooseFilesDirectory()
                         }
                     }
                 }
-                
+
                 Section(L("files.index.section")) {
                     HStack {
                         Text(L("files.index.every"))
-                        
+
                         TextField("", value: $model.filesReindexInterval, formatter: Formatters.integer)
                             .frame(width: UIConstants.numberFieldWidth)
                             .textFieldStyle(.roundedBorder)
-                        
+
                         Text(L("files.index.seconds"))
 
                         Spacer(minLength: 0)
