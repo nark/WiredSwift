@@ -1,5 +1,8 @@
 import XCTest
 @testable import WiredSwift
+#if !os(Linux)
+import Darwin
+#endif
 
 final class FileManagerResourceForkTests: XCTestCase {
     func testResourceForkPathAppendsNamedforkAndRsrc() {
@@ -46,10 +49,101 @@ final class FileManagerResourceForkTests: XCTestCase {
         XCTAssertNil(fm.finderInfo(atPath: filePath))
     }
 
+    func testSetFinderInfoReturnsTrue() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("finder.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data([0x01, 0x02, 0x03]))
+
+        let result = FileManager.default.setFinderInfo(Data(repeating: 0xAB, count: 32), atPath: filePath)
+        XCTAssertTrue(result)
+    }
+
+    func testFinderInfoReturnsPaddedDataWhenAttributeIsShorterThan32Bytes() throws {
+        #if os(Linux)
+        throw XCTSkip("Extended attributes branch is disabled on Linux in finderInfo(atPath:).")
+        #else
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("finder-short.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data([0x00]))
+
+        let short = Data([0xDE, 0xAD, 0xBE, 0xEF, 0xAA, 0xBB, 0xCC, 0xDD])
+        try requireFinderInfoXattr(short, atPath: filePath)
+
+        guard let finderInfo = FileManager.default.finderInfo(atPath: filePath) else {
+            XCTFail("Expected padded FinderInfo")
+            return
+        }
+
+        XCTAssertEqual(finderInfo.count, 32)
+        XCTAssertEqual(finderInfo.prefix(short.count), short)
+        XCTAssertEqual(finderInfo.dropFirst(short.count), Data(repeating: 0, count: 32 - short.count))
+        #endif
+    }
+
+    func testFinderInfoReturnsFirst32BytesWhenAttributeIsLonger() throws {
+        #if os(Linux)
+        throw XCTSkip("Extended attributes branch is disabled on Linux in finderInfo(atPath:).")
+        #else
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("finder-long.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data([0x00]))
+
+        let payload = Data((0..<48).map { UInt8($0) })
+        try requireFinderInfoXattr(payload, atPath: filePath)
+
+        guard let finderInfo = FileManager.default.finderInfo(atPath: filePath) else {
+            XCTFail("Expected FinderInfo")
+            return
+        }
+
+        XCTAssertEqual(finderInfo.count, 32)
+        XCTAssertEqual(finderInfo, payload.prefix(32))
+        #endif
+    }
+
+    func testFinderInfoReturnsNilWhenAttributeExistsButHasZeroLength() throws {
+        #if os(Linux)
+        throw XCTSkip("Extended attributes branch is disabled on Linux in finderInfo(atPath:).")
+        #else
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("finder-empty.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data([0x00]))
+
+        try requireFinderInfoXattr(Data(), atPath: filePath)
+        XCTAssertNil(FileManager.default.finderInfo(atPath: filePath))
+        #endif
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("wiredswift-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
+
+    #if !os(Linux)
+    @discardableResult
+    private func setFinderInfoXattr(_ data: Data, atPath path: String) -> Int32 {
+        let name = "com.apple.FinderInfo"
+        return data.withUnsafeBytes { rawBuffer in
+            let base = rawBuffer.baseAddress
+            return setxattr(path, name, base, rawBuffer.count, 0, 0)
+        }
+    }
+
+    private func requireFinderInfoXattr(_ data: Data, atPath path: String) throws {
+        if setFinderInfoXattr(data, atPath: path) == 0 {
+            return
+        }
+        throw XCTSkip("FinderInfo xattr not supported in this environment (errno \(errno))")
+    }
+    #endif
 }

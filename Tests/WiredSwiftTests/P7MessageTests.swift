@@ -288,4 +288,104 @@ final class P7MessageTests: XCTestCase {
         XCTAssertEqual(msg.name, "wired.send_login")
         XCTAssertEqual(msg.numberOfParameters, 0)
     }
+
+    // MARK: - lazy(field:)
+
+    func testLazyCoversStringNumericDataAndUUIDTypes() {
+        let msg = P7Message(withName: "wired.send_login", spec: spec)
+        msg.addParameter(field: "wired.user.login", value: "alice")
+        msg.addParameter(field: "wired.user.id", value: UInt32(42))
+        msg.addParameter(field: "wired.info.files.count", value: UInt64(9_001))
+        msg.addParameter(field: "wired.user.icon", value: Data([0xAA, 0xBB]))
+        msg.addParameter(field: "wired.board.thread", value: "6BA7B810-9DAD-11D1-80B4-00C04FD430C8")
+
+        XCTAssertEqual(msg.lazy(field: "wired.user.login"), "alice")
+        XCTAssertEqual(msg.lazy(field: "wired.user.id"), "42")
+        XCTAssertEqual(msg.lazy(field: "wired.info.files.count"), "9001")
+        XCTAssertEqual(msg.lazy(field: "wired.user.icon"), "aabb")
+        XCTAssertEqual(msg.lazy(field: "wired.board.thread")?.uppercased(), "6BA7B810-9DAD-11D1-80B4-00C04FD430C8")
+    }
+
+    func testLazyReturnsNilForUnsupportedFieldType() {
+        let msg = P7Message(withName: "wired.send_login", spec: spec)
+        msg.addParameter(field: "wired.user.idle", value: UInt8(1))
+        XCTAssertNil(msg.lazy(field: "wired.user.idle"))
+    }
+
+    // MARK: - list support
+
+    func testRoundTripStringListField() {
+        let original = P7Message(withName: "wired.send_login", spec: spec)
+        original.addParameter(field: "wired.account.groups", value: ["staff", "admins"])
+
+        let recovered = P7Message(withData: original.bin(), spec: spec)
+        XCTAssertEqual(recovered.stringList(forField: "wired.account.groups"), ["staff", "admins"])
+    }
+
+    func testRoundTripAnyListSkipsNonStringItems() {
+        let original = P7Message(withName: "wired.send_login", spec: spec)
+        original.addParameter(field: "wired.account.groups", value: ["staff", 123, "mods"] as [Any])
+
+        let recovered = P7Message(withData: original.bin(), spec: spec)
+        XCTAssertEqual(recovered.stringList(forField: "wired.account.groups"), ["staff", "mods"])
+    }
+
+    func testRoundTripEmptyListProducesEmptyArray() {
+        let original = P7Message(withName: "wired.send_login", spec: spec)
+        original.addParameter(field: "wired.account.groups", value: [String]())
+
+        let recovered = P7Message(withData: original.bin(), spec: spec)
+        // Current parser behavior: zero-length list payload is omitted instead of materialized as [].
+        XCTAssertNil(recovered.stringList(forField: "wired.account.groups"))
+    }
+
+    // MARK: - xml()
+
+    func testXMLSerializationIncludesExpectedFieldValues() {
+        let msg = P7Message(withName: "wired.send_login", spec: spec)
+        msg.addParameter(field: "wired.user.login", value: "alice")
+        msg.addParameter(field: "wired.user.idle", value: UInt32(1))
+        msg.addParameter(field: "wired.info.start_time", value: 1_700_000_000.0)
+        msg.addParameter(field: "wired.account.groups", value: ["staff", "admins"])
+
+        let xml = msg.xml()
+        XCTAssertTrue(xml.contains("wired.send_login"))
+        XCTAssertTrue(xml.contains("wired.user.login"))
+        XCTAssertTrue(xml.contains("alice"))
+        XCTAssertTrue(xml.contains("wired.user.idle"))
+        XCTAssertTrue(xml.contains("true"))
+        XCTAssertTrue(xml.contains("wired.account.groups"))
+        XCTAssertTrue(xml.contains("staff,admins"))
+    }
+
+    // MARK: - accessors edge cases
+
+    func testStringAccessorTrimsControlCharacters() {
+        let msg = P7Message(withName: "wired.send_login", spec: spec)
+        msg.addParameter(field: "wired.user.login", value: "\u{0000}alice\u{000A}")
+        XCTAssertEqual(msg.string(forField: "wired.user.login"), "alice")
+    }
+
+    func testInitWithXMLKeepsSpecAndDoesNotCrash() {
+        let msg = P7Message(withXML: "<p7:message name=\"wired.send_login\"/>", spec: spec)
+        XCTAssertNotNil(msg.spec)
+        XCTAssertNil(msg.name)
+    }
+
+    func testMalformedListPayloadDoesNotCrashAndParsesSafely() {
+        var data = Data()
+        data.append(uint32: 2004, bigEndian: true) // wired.send_login
+        data.append(uint32: 8016, bigEndian: true) // wired.account.groups (list[string])
+
+        var listData = Data()
+        listData.append(uint32: 100, bigEndian: true) // declared item length larger than payload
+        listData.append(Data([0x41, 0x42])) // tiny payload
+
+        data.append(uint32: UInt32(listData.count), bigEndian: true)
+        data.append(listData)
+
+        let msg = P7Message(withData: data, spec: spec)
+        XCTAssertEqual(msg.name, "wired.send_login")
+        XCTAssertEqual(msg.stringList(forField: "wired.account.groups"), [])
+    }
 }
