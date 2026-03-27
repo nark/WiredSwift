@@ -59,10 +59,29 @@ Wired 3.0 brings both major functional additions and a full overhaul of the prot
 Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader set of collaborative and search capabilities:
 
 - **Multiple public chats** instead of a single default public room, with protocol support for listing, creating, and deleting public chats
+- **Live typing indicator** in chat conversations, including protocol-level typing state broadcasts
+- **Board reactions** on posts, with dedicated account privilege support for adding reactions
 - **Remote board search** so clients can query discussions server-side and jump directly to matching threads or snippets
 - **FTS5-backed file search** on supported SQLite builds, with automatic fallback to `LIKE` queries when FTS5 is unavailable
 - **Expanded search privileges** for boards and files, making search a first-class capability in the protocol and server permission model
 - **A more modern platform foundation** for current Swift clients, server tooling, and GUI-based administration around the same Wired 3.0 protocol stack
+
+#### Feature comparison (Wired 2.0 vs Wired 3.0)
+
+| Feature | Wired 2.0 | Wired 3.0 |
+|---|---|---|
+| Public chats | ⚠️ Single default public room | ✅ Multiple public chats (list/create/delete) |
+| Live typing indicator | ❌ Not available | ✅ Available (`wired.chat.typing` states) |
+| Board reactions | ❌ Not available | ✅ Available (with privilege gating) |
+| Remote board search | ⚠️ Limited / client-side patterns | ✅ Server-side remote search |
+| File search | ⚠️ Basic listing/search | ✅ FTS5-backed search with `LIKE` fallback |
+| Server settings (admin) | ✅ Available | ✅ Available (`wired.settings.get_settings` / `wired.settings.set_settings`) |
+| Logs (admin) | ✅ Available | ✅ Available (`wired.log.get_log`, `wired.log.subscribe`) |
+| Events (admin/audit) | ✅ Available | ✅ Available (`wired.event.*` including subscribe/delete range) |
+| Accounts (admin) | ✅ Available | ✅ Available (list/read/create/edit/delete users/groups, subscribe changes) |
+| Banlist (admin) | ✅ Available | ✅ Available (`wired.banlist.get_bans` / `add_ban` / `delete_ban`) |
+| Tracker (admin/discovery) | ✅ Available | ⚠️ Spec exists (`wired.tracker.*`), not yet implemented in wired3 server |
+| Monitor (admin) | ✅ Available | ❌ Not yet implemented in Wired 3.0 |
 
 ### Security
 
