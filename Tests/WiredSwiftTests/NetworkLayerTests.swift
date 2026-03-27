@@ -397,7 +397,8 @@ final class NetworkLayerTests: XCTestCase {
 
         let reply = P7Message(withName: "wired.okay", spec: spec)
         reply.addParameter(field: "wired.transaction", value: transaction)
-        connection.handleMessage(reply)
+        // Dispatch after iterator.next() suspends so the registration Task runs first
+        Task { connection.handleMessage(reply) }
 
         var iterator = stream.makeAsyncIterator()
         let first = try await iterator.next()
@@ -417,7 +418,8 @@ final class NetworkLayerTests: XCTestCase {
 
         let done = P7Message(withName: "wired.chat.chat_list.done", spec: spec)
         done.addParameter(field: "wired.transaction", value: transaction)
-        connection.handleMessage(done)
+        // Dispatch after iterator.next() suspends so the registration Task runs first
+        Task { connection.handleMessage(done) }
 
         var iterator = stream.makeAsyncIterator()
         let first = try await iterator.next()
