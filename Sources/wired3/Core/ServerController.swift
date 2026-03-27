@@ -405,7 +405,7 @@ public class ServerController: ServerDelegate {
         // On Linux, a blocking accept() may not always be interrupted quickly by
         // close() alone. Shutdown first to actively wake the listener thread.
         if let listeningSocket = self.socket {
-            _ = shutdown(listeningSocket.fileDescriptor, SHUT_RDWR)
+            _ = shutdown(listeningSocket.fileDescriptor, Int32(SHUT_RDWR))
         }
         self.socket?.close()
     }
