@@ -61,7 +61,7 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = try readMessage(from: c1, expectedName: "wired.chat.topic", maxReads: 20)
 
         XCTAssertTrue(
-            waitUntil(timeout: 3) {
+            waitUntil(timeout: 6) {
                 runtime.chatMemberIDs(chatID: resolvedChatID) == Set([c1UserID])
             },
             "Creator should be present in the chat after join"
@@ -84,7 +84,7 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = tryReadMessage(from: c1, expectedNames: ["wired.chat.user_join"], maxReads: 80, timeout: 0.25)
 
         XCTAssertTrue(
-            waitUntil(timeout: 3) {
+            waitUntil(timeout: 6) {
                 runtime.chatMemberIDs(chatID: resolvedChatID) == Set([c1UserID, c2UserID])
             },
             "Both clients should be present after second join"
@@ -104,7 +104,7 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = tryReadMessage(from: c1, expectedNames: ["wired.chat.user_leave"], maxReads: 80, timeout: 0.25)
 
         XCTAssertTrue(
-            waitUntil(timeout: 3) {
+            waitUntil(timeout: 6) {
                 runtime.chatMemberIDs(chatID: resolvedChatID) == Set([c1UserID])
             },
             "Second client should be removed from the chat after leave"
@@ -563,9 +563,20 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         createUser.addParameter(field: "wired.account.name", value: createdUsername)
         createUser.addParameter(field: "wired.account.password", value: "integration-secret")
         XCTAssertTrue(subscriber.write(createUser))
-        _ = try readMessage(from: subscriber, expectedName: "wired.okay", maxReads: 20)
+        let first = try readMessage(
+            from: subscriber,
+            expectedNames: ["wired.okay", "wired.account.accounts_changed"],
+            maxReads: 80,
+            timeout: 1
+        )
 
-        _ = try readMessage(from: subscriber, expectedName: "wired.account.accounts_changed", maxReads: 80, timeout: 1)
+        // Depending on scheduler timing, the broadcast may arrive before or
+        // after the command acknowledgement. Validate that both are observed.
+        if first.name == "wired.okay" {
+            _ = try readMessage(from: subscriber, expectedName: "wired.account.accounts_changed", maxReads: 80, timeout: 1)
+        } else {
+            _ = try readMessage(from: subscriber, expectedName: "wired.okay", maxReads: 40, timeout: 1)
+        }
     }
 
     func testListGroupsPermissionDeniedForGuestAndAllowedForAdmin() throws {

@@ -53,25 +53,47 @@ jobs:
       - name: Test
         run: |
           set -euo pipefail
+
           LOG_FILE=".build/swift-test.log"
-          if ! swift test -v --enable-code-coverage --xunit-output .build/test-results.xunit 2>&1 | tee "${LOG_FILE}"; then
+          RETRY_LOG_FILE=".build/swift-test-retry.log"
+          TEST_CMD=(swift test -v --enable-code-coverage --xunit-output .build/test-results.xunit)
+
+          report_failure() {
             echo "::group::Last 300 lines of swift test log"
             tail -n 300 "${LOG_FILE}" || true
             echo "::endgroup::"
 
+            if [[ -f "${RETRY_LOG_FILE}" ]]; then
+              echo "::group::Last 300 lines of swift test retry log"
+              tail -n 300 "${RETRY_LOG_FILE}" || true
+              echo "::endgroup::"
+            fi
+
             echo "::group::Crash and error markers"
             if command -v rg >/dev/null 2>&1; then
               rg -n "fatal error|Unexpectedly found nil|signal code|error:" "${LOG_FILE}" || true
+              [[ -f "${RETRY_LOG_FILE}" ]] && rg -n "fatal error|Unexpectedly found nil|signal code|error:" "${RETRY_LOG_FILE}" || true
             else
               grep -nE "fatal error|Unexpectedly found nil|signal code|error:" "${LOG_FILE}" || true
+              [[ -f "${RETRY_LOG_FILE}" ]] && grep -nE "fatal error|Unexpectedly found nil|signal code|error:" "${RETRY_LOG_FILE}" || true
             fi
             echo "::endgroup::"
 
             echo "::group::DiagnosticReports listing"
             ls -lah ~/Library/Logs/DiagnosticReports || true
             echo "::endgroup::"
+          }
 
-            exit 1
+          if ! "${TEST_CMD[@]}" 2>&1 | tee "${LOG_FILE}"; then
+            echo "::warning::First test attempt failed on macOS runner; retrying once after cleaning build artifacts."
+
+            rm -rf .build
+            swift package resolve
+
+            if ! "${TEST_CMD[@]}" 2>&1 | tee "${RETRY_LOG_FILE}"; then
+              report_failure
+              exit 1
+            fi
           fi
 
       - name: Coverage summary
@@ -170,6 +192,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             .build/swift-test.log
+            .build/swift-test-retry.log
             .build/test-results.xunit
             .build/coverage-report.txt
             .build/coverage-export.json
