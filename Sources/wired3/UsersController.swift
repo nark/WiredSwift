@@ -102,7 +102,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
             let f = ($0.fullName ?? "").lowercased()
             let i = ($0.identity ?? "").lowercased()
             return u.contains(normalized) || f.contains(normalized) || i.contains(normalized)
-        }.prefix(limit)
+        }.prefix(limit).map { $0 }
     }
 
     public func isIdentityAvailable(_ identity: String) -> Bool {

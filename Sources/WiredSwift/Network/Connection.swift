@@ -464,7 +464,7 @@ open class Connection: NSObject {
 
         var password = "".sha256()
 
-        if self.url?.password != nil && self.url?.password?.isEmpty == false {
+        if let pass = self.url?.password, !pass.isEmpty {
             password = self.url!.password.sha256()
         }
 
