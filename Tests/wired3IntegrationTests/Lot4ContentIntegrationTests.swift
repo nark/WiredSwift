@@ -394,6 +394,180 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertEqual(received.prefix(Int(expectedSize)), payload)
     }
 
+    func testUserSetNickStatusIconIdleBroadcastsChatUserStatus() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_admin_2", password: "secret2")
+        defer { try? runtime.stop() }
+
+        let (actor, actorID) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { actor.disconnect() }
+        let (observer, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin_2", password: "secret2")
+        defer { observer.disconnect() }
+
+        let create = P7Message(withName: "wired.chat.create_public_chat", spec: actor.spec)
+        create.addParameter(field: "wired.chat.name", value: "Status Room")
+        XCTAssertTrue(actor.write(create))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 40)
+
+        let getChats = P7Message(withName: "wired.chat.get_chats", spec: actor.spec)
+        XCTAssertTrue(actor.write(getChats))
+        var chatID: UInt32?
+        for _ in 0..<60 {
+            let message = try actor.readMessage(timeout: 1, enforceDeadline: true)
+            if message.name == "wired.chat.chat_list",
+               message.string(forField: "wired.chat.name") == "Status Room" {
+                chatID = message.uint32(forField: "wired.chat.id")
+            }
+            if message.name == "wired.chat.chat_list.done" {
+                break
+            }
+        }
+        let roomID = try XCTUnwrap(chatID)
+
+        let joinActor = P7Message(withName: "wired.chat.join_chat", spec: actor.spec)
+        joinActor.addParameter(field: "wired.chat.id", value: roomID)
+        XCTAssertTrue(actor.write(joinActor))
+        _ = try readMessage(from: actor, expectedName: "wired.chat.user_list.done", maxReads: 20)
+        _ = try readMessage(from: actor, expectedName: "wired.chat.topic", maxReads: 20)
+
+        let joinObserver = P7Message(withName: "wired.chat.join_chat", spec: observer.spec)
+        joinObserver.addParameter(field: "wired.chat.id", value: roomID)
+        XCTAssertTrue(observer.write(joinObserver))
+        _ = try readMessage(from: observer, expectedName: "wired.chat.user_list.done", maxReads: 20)
+        _ = try readMessage(from: observer, expectedName: "wired.chat.topic", maxReads: 20)
+        _ = try readMessage(from: actor, expectedName: "wired.chat.user_join", maxReads: 20)
+
+        let setNick = P7Message(withName: "wired.user.set_nick", spec: actor.spec)
+        setNick.addParameter(field: "wired.user.nick", value: "Captain Integration")
+        XCTAssertTrue(actor.write(setNick))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+        let nickStatus = try waitForUserStatusUpdate(from: observer, userID: actorID) { status in
+            status.string(forField: "wired.user.nick") == "Captain Integration"
+        }
+        XCTAssertEqual(nickStatus.string(forField: "wired.user.nick"), "Captain Integration")
+
+        let setStatus = P7Message(withName: "wired.user.set_status", spec: actor.spec)
+        setStatus.addParameter(field: "wired.user.status", value: "On duty")
+        XCTAssertTrue(actor.write(setStatus))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+        let statusUpdate = try waitForUserStatusUpdate(from: observer, userID: actorID) { status in
+            status.string(forField: "wired.user.status") == "On duty"
+        }
+        XCTAssertEqual(statusUpdate.string(forField: "wired.user.status"), "On duty")
+
+        let setIcon = P7Message(withName: "wired.user.set_icon", spec: actor.spec)
+        setIcon.addParameter(field: "wired.user.icon", value: Data([0x01, 0x02, 0x03]))
+        XCTAssertTrue(actor.write(setIcon))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+        let iconUpdate = try waitForUserStatusUpdate(from: observer, userID: actorID) { status in
+            status.data(forField: "wired.user.icon") == Data([0x01, 0x02, 0x03])
+        }
+        XCTAssertEqual(iconUpdate.data(forField: "wired.user.icon"), Data([0x01, 0x02, 0x03]))
+
+        let setIdle = P7Message(withName: "wired.user.set_idle", spec: actor.spec)
+        XCTAssertTrue(actor.write(setIdle))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+        let idleUpdate = try waitForUserStatusUpdate(from: observer, userID: actorID) { status in
+            status.bool(forField: "wired.user.idle") == true
+        }
+        XCTAssertEqual(idleUpdate.bool(forField: "wired.user.idle"), true)
+    }
+
+    func testBoardReactionsLifecycleWithBroadcastAndList() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_admin_2", password: "secret2")
+        defer { try? runtime.stop() }
+
+        let (actor, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { actor.disconnect() }
+        let (observer, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin_2", password: "secret2")
+        defer { observer.disconnect() }
+
+        let boardPath = "reaction-board-\(UUID().uuidString.prefix(8))"
+        let addBoard = P7Message(withName: "wired.board.add_board", spec: actor.spec)
+        addBoard.addParameter(field: "wired.board.board", value: boardPath)
+        addBoard.addParameter(field: "wired.board.owner", value: "admin")
+        addBoard.addParameter(field: "wired.board.owner.read", value: true)
+        addBoard.addParameter(field: "wired.board.owner.write", value: true)
+        addBoard.addParameter(field: "wired.board.group", value: "admin")
+        addBoard.addParameter(field: "wired.board.group.read", value: true)
+        addBoard.addParameter(field: "wired.board.group.write", value: true)
+        addBoard.addParameter(field: "wired.board.everyone.read", value: true)
+        addBoard.addParameter(field: "wired.board.everyone.write", value: false)
+        XCTAssertTrue(actor.write(addBoard))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+
+        let subscribeObserver = P7Message(withName: "wired.board.subscribe_boards", spec: observer.spec)
+        XCTAssertTrue(observer.write(subscribeObserver))
+        _ = try readMessage(from: observer, expectedName: "wired.okay", maxReads: 20)
+
+        let addThread = P7Message(withName: "wired.board.add_thread", spec: actor.spec)
+        addThread.addParameter(field: "wired.board.board", value: boardPath)
+        addThread.addParameter(field: "wired.board.subject", value: "Reaction thread")
+        addThread.addParameter(field: "wired.board.text", value: "react here")
+        XCTAssertTrue(actor.write(addThread))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+
+        let getThreads = P7Message(withName: "wired.board.get_threads", spec: actor.spec)
+        getThreads.addParameter(field: "wired.board.board", value: boardPath)
+        XCTAssertTrue(actor.write(getThreads))
+        var threadID: String?
+        for _ in 0..<60 {
+            let message = try actor.readMessage(timeout: 1, enforceDeadline: true)
+            if message.name == "wired.board.thread_list" {
+                threadID = message.uuid(forField: "wired.board.thread")
+            }
+            if message.name == "wired.board.thread_list.done" {
+                break
+            }
+        }
+        let createdThread = try XCTUnwrap(threadID)
+
+        let addReaction = P7Message(withName: "wired.board.add_reaction", spec: actor.spec)
+        addReaction.addParameter(field: "wired.board.thread", value: createdThread)
+        addReaction.addParameter(field: "wired.board.reaction.emoji", value: ":+1:")
+        XCTAssertTrue(actor.write(addReaction))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+
+        let broadcastAdded = try readMessage(from: observer, expectedName: "wired.board.reaction_added", maxReads: 40)
+        XCTAssertEqual(broadcastAdded.uuid(forField: "wired.board.thread"), createdThread)
+        XCTAssertEqual(broadcastAdded.string(forField: "wired.board.reaction.emoji"), ":+1:")
+        XCTAssertEqual(broadcastAdded.uint32(forField: "wired.board.reaction.count"), UInt32(1))
+
+        let getReactions = P7Message(withName: "wired.board.get_reactions", spec: actor.spec)
+        getReactions.addParameter(field: "wired.board.thread", value: createdThread)
+        XCTAssertTrue(actor.write(getReactions))
+
+        var sawList = false
+        for _ in 0..<40 {
+            let message = try actor.readMessage(timeout: 1, enforceDeadline: true)
+            if message.name == "wired.board.reaction_list" {
+                sawList = true
+                XCTAssertEqual(message.string(forField: "wired.board.reaction.emoji"), ":+1:")
+                XCTAssertEqual(message.uint32(forField: "wired.board.reaction.count"), UInt32(1))
+            }
+            if message.name == "wired.okay" {
+                break
+            }
+        }
+        XCTAssertTrue(sawList)
+
+        let toggleOff = P7Message(withName: "wired.board.add_reaction", spec: actor.spec)
+        toggleOff.addParameter(field: "wired.board.thread", value: createdThread)
+        toggleOff.addParameter(field: "wired.board.reaction.emoji", value: ":+1:")
+        XCTAssertTrue(actor.write(toggleOff))
+        _ = try readMessage(from: actor, expectedName: "wired.okay", maxReads: 20)
+
+        let removed = try readMessage(from: observer, expectedName: "wired.board.reaction_removed", maxReads: 40)
+        XCTAssertEqual(removed.uuid(forField: "wired.board.thread"), createdThread)
+        XCTAssertEqual(removed.string(forField: "wired.board.reaction.emoji"), ":+1:")
+        XCTAssertEqual(removed.uint32(forField: "wired.board.reaction.count"), UInt32(0))
+    }
+
     private func waitForExistingPath(_ candidates: [String], timeout: TimeInterval) -> String? {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
@@ -403,6 +577,30 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
             usleep(50_000)
         }
         return nil
+    }
+
+    private func waitForUserStatusUpdate(
+        from socket: P7Socket,
+        userID: UInt32,
+        timeout: TimeInterval = 3,
+        predicate: (P7Message) -> Bool
+    ) throws -> P7Message {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            do {
+                let message = try socket.readMessage(timeout: 0.5, enforceDeadline: true)
+                guard message.name == "wired.chat.user_status" else { continue }
+                guard message.uint32(forField: "wired.user.id") == userID else { continue }
+                if predicate(message) {
+                    return message
+                }
+            } catch {
+                continue
+            }
+        }
+
+        XCTFail("Expected matching wired.chat.user_status before timeout")
+        return P7Message(withName: "wired.error", spec: socket.spec)
     }
 
     private func connectAndAuthenticate(
