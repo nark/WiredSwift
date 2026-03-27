@@ -402,6 +402,11 @@ public class ServerController: ServerDelegate {
             client.socket.disconnect()
         }
 
+        // On Linux, a blocking accept() may not always be interrupted quickly by
+        // close() alone. Shutdown first to actively wake the listener thread.
+        if let listeningSocket = self.socket {
+            _ = shutdown(listeningSocket.fileDescriptor, SHUT_RDWR)
+        }
         self.socket?.close()
     }
 
@@ -843,6 +848,10 @@ public class ServerController: ServerDelegate {
     private func acceptThread() {
         do {
             let socket = try self.socket.accept()
+            if !self.isRunning {
+                try? socket.close()
+                return
+            }
 
             // SECURITY (FUZZ_002): Reject connections that would exceed the concurrent limit
             let currentPending: Int = pendingConnectionLock.withLock {

@@ -282,8 +282,13 @@ public class IndexController: TableController {
                       isAlias: isAlias,
                       generation: newGen)
 
-            if isDir { newDirs += 1 } else { newFiles += 1 }
-            newSize += size
+            if isDir {
+                newDirs += 1
+            } else {
+                newFiles += 1
+                // "totalFilesSize" intentionally excludes directory entry sizes.
+                newSize += size
+            }
         }
 
         // Atomically remove old-generation entries now that new ones are all inserted.

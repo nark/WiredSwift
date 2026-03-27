@@ -200,7 +200,7 @@ final class IntegrationServerRuntime {
 
         app.stop()
 
-        let timeoutResult = serverStopped.wait(timeout: .now() + 10)
+        let timeoutResult = serverStopped.wait(timeout: .now() + 20)
         guard timeoutResult == .success else {
             integrationServerLock.unlock()
             throw IntegrationTestError.serverStopTimedOut

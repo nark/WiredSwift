@@ -23,7 +23,12 @@ public class FilesController {
 
     // MARK: -
     public func real(path: String) -> String {
-        return self.rootPath.stringByAppendingPathComponent(path: path)
+        // Keep path joins stable across platforms (Linux Foundation can keep
+        // duplicate separators when appending absolute components).
+        let relativePath = path.deletingPrefix("/")
+        return URL(fileURLWithPath: self.rootPath)
+            .appendingPathComponent(relativePath)
+            .path
     }
 
     public func virtual(path: String) -> String {
