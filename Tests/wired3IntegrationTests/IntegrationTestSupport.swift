@@ -250,6 +250,17 @@ final class IntegrationServerRuntime {
         return socket
     }
 
+    func chatMemberIDs(chatID: UInt32) -> Set<UInt32> {
+        guard let chat = app.chatsController.chat(withID: chatID) else {
+            return []
+        }
+
+        var memberIDs = Set<UInt32>()
+        chat.withClients { client in
+            memberIDs.insert(client.userID)
+        }
+        return memberIDs
+    }
 }
 
 func sendClientInfoAndExpectServerInfo(socket: P7Socket) throws {
@@ -295,9 +306,18 @@ func readMessage(
     maxReads: Int,
     timeout: TimeInterval = 3
 ) throws -> P7Message {
+    var seenNames: [String] = []
     for _ in 0..<maxReads {
         do {
             let message = try socket.readMessage(timeout: timeout, enforceDeadline: true)
+            if let name = message.name {
+                if seenNames.count < 40 {
+                    seenNames.append(name)
+                }
+            } else if seenNames.count < 40 {
+                seenNames.append("<nil>")
+            }
+
             if let name = message.name, expectedNames.contains(name) {
                 return message
             }
@@ -308,8 +328,33 @@ func readMessage(
         }
     }
 
-    XCTFail("Expected one of \(expectedNames.sorted()) within \(maxReads) reads")
+    XCTFail(
+        """
+        Expected one of \(expectedNames.sorted()) within \(maxReads) reads (timeout=\(timeout)s).
+        Seen: \(seenNames)
+        """
+    )
     return P7Message(withName: "wired.error", spec: socket.spec)
+}
+
+func tryReadMessage(
+    from socket: P7Socket,
+    expectedNames: Set<String>,
+    maxReads: Int,
+    timeout: TimeInterval = 3
+) -> P7Message? {
+    for _ in 0..<maxReads {
+        do {
+            let message = try socket.readMessage(timeout: timeout, enforceDeadline: true)
+            if let name = message.name, expectedNames.contains(name) {
+                return message
+            }
+        } catch {
+            continue
+        }
+    }
+
+    return nil
 }
 
 func drainMessages(socket: P7Socket, count: Int = 12) {

@@ -15,7 +15,8 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         }
 
         try sendClientInfoAndExpectServerInfo(socket: c1)
-        _ = try sendLoginAndExpectSuccess(socket: c1, username: "it_admin", password: "secret")
+        let c1Login = try sendLoginAndExpectSuccess(socket: c1, username: "it_admin", password: "secret")
+        let c1UserID = try XCTUnwrap(c1Login.uint32(forField: "wired.user.id"))
         drainMessages(socket: c1)
 
         let create = P7Message(withName: "wired.chat.create_public_chat", spec: c1.spec)
@@ -59,12 +60,20 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = try readMessage(from: c1, expectedName: "wired.chat.user_list.done", maxReads: 20)
         _ = try readMessage(from: c1, expectedName: "wired.chat.topic", maxReads: 20)
 
+        XCTAssertTrue(
+            waitUntil(timeout: 3) {
+                runtime.chatMemberIDs(chatID: resolvedChatID) == Set([c1UserID])
+            },
+            "Creator should be present in the chat after join"
+        )
+
         // Defer second connection until the chat exists and creator already joined,
         // which is less flaky on CI under strict identity/runtime timing.
         let c2 = try runtime.connectClient(username: "it_admin_2", password: "secret2")
         defer { c2.disconnect() }
         try sendClientInfoAndExpectServerInfo(socket: c2)
-        _ = try sendLoginAndExpectSuccess(socket: c2, username: "it_admin_2", password: "secret2")
+        let c2Login = try sendLoginAndExpectSuccess(socket: c2, username: "it_admin_2", password: "secret2")
+        let c2UserID = try XCTUnwrap(c2Login.uint32(forField: "wired.user.id"))
         drainMessages(socket: c2)
 
         let join = P7Message(withName: "wired.chat.join_chat", spec: c2.spec)
@@ -72,20 +81,34 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertTrue(c2.write(join))
         _ = try readMessage(from: c2, expectedName: "wired.chat.user_list.done", maxReads: 20)
         _ = try readMessage(from: c2, expectedName: "wired.chat.topic", maxReads: 20)
-        _ = try readMessage(from: c1, expectedName: "wired.chat.user_join", maxReads: 20)
+        _ = tryReadMessage(from: c1, expectedNames: ["wired.chat.user_join"], maxReads: 80, timeout: 0.25)
+
+        XCTAssertTrue(
+            waitUntil(timeout: 3) {
+                runtime.chatMemberIDs(chatID: resolvedChatID) == Set([c1UserID, c2UserID])
+            },
+            "Both clients should be present after second join"
+        )
 
         let say = P7Message(withName: "wired.chat.send_say", spec: c2.spec)
         say.addParameter(field: "wired.chat.id", value: resolvedChatID)
         say.addParameter(field: "wired.chat.say", value: "hello integration")
         XCTAssertTrue(c2.write(say))
         _ = try readMessage(from: c2, expectedName: "wired.okay", maxReads: 20)
-        _ = try readMessage(from: c1, expectedName: "wired.chat.say", maxReads: 20)
+        _ = tryReadMessage(from: c1, expectedNames: ["wired.chat.say"], maxReads: 80, timeout: 0.25)
 
         let leave = P7Message(withName: "wired.chat.leave_chat", spec: c2.spec)
         leave.addParameter(field: "wired.chat.id", value: resolvedChatID)
         XCTAssertTrue(c2.write(leave))
         _ = try readMessage(from: c2, expectedName: "wired.okay", maxReads: 20)
-        _ = try readMessage(from: c1, expectedName: "wired.chat.user_leave", maxReads: 20)
+        _ = tryReadMessage(from: c1, expectedNames: ["wired.chat.user_leave"], maxReads: 80, timeout: 0.25)
+
+        XCTAssertTrue(
+            waitUntil(timeout: 3) {
+                runtime.chatMemberIDs(chatID: resolvedChatID) == Set([c1UserID])
+            },
+            "Second client should be removed from the chat after leave"
+        )
     }
 
     func testFilesCreateMoveDeleteAndJailValidation() throws {
@@ -729,4 +752,15 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         let changed = try readMessage(from: subscriber, expectedName: "wired.file.directory_changed", maxReads: 40, timeout: 1)
         XCTAssertEqual(changed.string(forField: "wired.file.path"), "/")
     }
+}
+
+private func waitUntil(timeout: TimeInterval, interval: TimeInterval = 0.05, condition: () -> Bool) -> Bool {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        if condition() {
+            return true
+        }
+        Thread.sleep(forTimeInterval: interval)
+    }
+    return condition()
 }

@@ -216,6 +216,111 @@ final class P7SocketIOTests: XCTestCase {
         XCTAssertNil(socket.getClientHostname())
     }
 
+    func testConnectAndAcceptHandshakeSucceedsWithNoCrypto() throws {
+        let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
+        let port = Int(try listener.port())
+        let serverSpec = try XCTUnwrap(loadSpec())
+
+        var serverError: Error?
+        var serverSocket: P7Socket?
+        let accepted = expectation(description: "server accept finished")
+
+        DispatchQueue.global().async {
+            defer { accepted.fulfill() }
+            do {
+                let native = try listener.accept()
+                let server = P7Socket(socket: native, spec: serverSpec)
+                serverSocket = server
+                try server.accept(compression: .NONE, cipher: .NONE, checksum: .NONE)
+            } catch {
+                serverError = error
+            }
+        }
+
+        let client = P7Socket(hostname: "127.0.0.1", port: port, spec: spec)
+        try client.connect()
+        wait(for: [accepted], timeout: 3.0)
+
+        XCTAssertNil(serverError)
+        XCTAssertEqual(client.remoteName, "Wired")
+        XCTAssertEqual(client.remoteVersion, "3.1")
+        XCTAssertFalse(client.compressionEnabled)
+        XCTAssertFalse(client.encryptionEnabled)
+        XCTAssertFalse(client.checksumEnabled)
+        XCTAssertNotNil(serverSocket)
+
+        client.disconnect()
+        serverSocket?.disconnect()
+        listener.close()
+    }
+
+    func testAcceptRejectsClientWhenServerRequiresEncryptionAndClientRequestsNone() throws {
+        let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
+        let port = Int(try listener.port())
+        let serverSpec = try XCTUnwrap(loadSpec())
+
+        var serverError: Error?
+        let accepted = expectation(description: "server accept rejected")
+
+        DispatchQueue.global().async {
+            defer { accepted.fulfill() }
+            do {
+                let native = try listener.accept()
+                let server = P7Socket(socket: native, spec: serverSpec)
+                do {
+                    try server.accept(compression: .NONE, cipher: .ECDH_AES256_SHA256, checksum: .SHA2_256)
+                } catch {
+                    serverError = error
+                }
+                server.disconnect()
+            } catch {
+                serverError = error
+            }
+        }
+
+        let client = P7Socket(hostname: "127.0.0.1", port: port, spec: spec)
+        XCTAssertThrowsError(try client.connect())
+        wait(for: [accepted], timeout: 3.0)
+
+        XCTAssertNotNil(serverError)
+        client.disconnect()
+        listener.close()
+    }
+
+    func testConnectAndAcceptWithCompatibilityCheckEnabledFailsOnMajorMismatch() throws {
+        let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
+        let port = Int(try listener.port())
+        let serverSpec = try XCTUnwrap(loadSpec())
+        // Force protocol mismatch vs client hardcoded "Wired 3.0" in connectHandshake.
+        serverSpec.protocolVersion = "4.0"
+
+        var serverError: Error?
+        let accepted = expectation(description: "server accept compat failed")
+
+        DispatchQueue.global().async {
+            defer { accepted.fulfill() }
+            do {
+                let native = try listener.accept()
+                let server = P7Socket(socket: native, spec: serverSpec)
+                do {
+                    try server.accept(compression: .NONE, cipher: .NONE, checksum: .NONE)
+                } catch {
+                    serverError = error
+                }
+                server.disconnect()
+            } catch {
+                serverError = error
+            }
+        }
+
+        let client = P7Socket(hostname: "127.0.0.1", port: port, spec: spec)
+        XCTAssertThrowsError(try client.connect())
+        wait(for: [accepted], timeout: 3.0)
+        XCTAssertNotNil(serverError)
+        client.disconnect()
+        listener.close()
+    }
+
     private func makeConnectedPair() throws -> (client: P7Socket, server: P7Socket, listener: Socket) {
         let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
         let port = Int(try listener.port())
@@ -241,5 +346,12 @@ final class P7SocketIOTests: XCTestCase {
         }
 
         return (client, server, listener)
+    }
+
+    private func loadSpec() -> P7Spec? {
+        guard let xmlURL = Bundle.module.url(forResource: "wired", withExtension: "xml") else {
+            return nil
+        }
+        return P7Spec(withUrl: xmlURL)
     }
 }

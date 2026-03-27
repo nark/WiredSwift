@@ -1,5 +1,6 @@
 import XCTest
 @testable import WiredSwift
+import SocketSwift
 
 final class NetworkLayerTests: XCTestCase {
     private var spec: P7Spec!
@@ -191,6 +192,91 @@ final class NetworkLayerTests: XCTestCase {
         XCTAssertEqual(connection.delegates.count, 1)
     }
 
+    func testConnectionConnectCompletesHandshakeUserSetupAndLoginFlow() throws {
+        let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
+        let port = Int(try listener.port())
+        let serverSpec = try XCTUnwrap(P7Spec(withUrl: try XCTUnwrap(Bundle.module.url(forResource: "wired", withExtension: "xml"))))
+
+        var serverError: Error?
+        let serverDone = expectation(description: "server done")
+        DispatchQueue.global().async {
+            defer { serverDone.fulfill() }
+            do {
+                let native = try listener.accept()
+                let serverSocket = P7Socket(socket: native, spec: serverSpec)
+                try serverSocket.accept(compression: .NONE, cipher: .NONE, checksum: .NONE)
+                try self.serveOneConnectionSession(socket: serverSocket, spec: serverSpec, userID: 123)
+                serverSocket.disconnect()
+            } catch {
+                serverError = error
+            }
+        }
+
+        let spy = DelegateSpy()
+        let didLogin = expectation(description: "did login")
+        let didPrivileges = expectation(description: "did privileges")
+        spy.onDidLogin = { message in
+            XCTAssertEqual(message.uint32(forField: "wired.user.id"), 123)
+            didLogin.fulfill()
+        }
+        spy.onDidReceivePrivileges = { _ in
+            didPrivileges.fulfill()
+        }
+
+        let connection = Connection(withSpec: spec, delegate: spy)
+        connection.interactive = false
+        let url = Url(withString: "wired://alice:secret@127.0.0.1:\(port)")
+        try connection.connect(withUrl: url, cipher: .NONE, compression: .NONE, checksum: .NONE)
+
+        wait(for: [didLogin, didPrivileges, serverDone], timeout: 5.0)
+        XCTAssertNil(serverError)
+        XCTAssertEqual(connection.userID, 123)
+        XCTAssertEqual(connection.serverInfo?.serverName, "Test Wired")
+        XCTAssertTrue(connection.privileges.contains("wired.account.settings.get_settings"))
+
+        connection.disconnect()
+        listener.close()
+    }
+
+    func testConnectionReconnectReestablishesSession() throws {
+        let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
+        let port = Int(try listener.port())
+        let serverSpec = try XCTUnwrap(P7Spec(withUrl: try XCTUnwrap(Bundle.module.url(forResource: "wired", withExtension: "xml"))))
+
+        var serverError: Error?
+        let serverDone = expectation(description: "server done twice")
+        DispatchQueue.global().async {
+            defer { serverDone.fulfill() }
+            do {
+                for userID: UInt32 in [101, 202] {
+                    let native = try listener.accept()
+                    let serverSocket = P7Socket(socket: native, spec: serverSpec)
+                    try serverSocket.accept(compression: .NONE, cipher: .NONE, checksum: .NONE)
+                    try self.serveOneConnectionSession(socket: serverSocket, spec: serverSpec, userID: userID)
+                    serverSocket.disconnect()
+                }
+            } catch {
+                serverError = error
+            }
+        }
+
+        let connection = Connection(withSpec: spec)
+        connection.interactive = false
+        let url = Url(withString: "wired://alice:secret@127.0.0.1:\(port)")
+
+        try connection.connect(withUrl: url, cipher: .NONE, compression: .NONE, checksum: .NONE)
+        XCTAssertEqual(connection.userID, 101)
+
+        try connection.reconnect()
+        XCTAssertEqual(connection.userID, 202)
+
+        wait(for: [serverDone], timeout: 5.0)
+        XCTAssertNil(serverError)
+
+        connection.disconnect()
+        listener.close()
+    }
+
     func testConnectionDisconnectNotifiesDelegates() {
         let connection = Connection(withSpec: spec)
         let spy = DelegateSpy()
@@ -380,6 +466,29 @@ final class NetworkLayerTests: XCTestCase {
         socket.connected = connected
         return socket
     }
+
+    private func serveOneConnectionSession(socket: P7Socket, spec: P7Spec, userID: UInt32) throws {
+        _ = try socket.readMessage(timeout: 2.0, enforceDeadline: true) // wired.client_info
+
+        let serverInfo = P7Message(withName: "wired.server_info", spec: spec)
+        serverInfo.addParameter(field: "wired.info.name", value: "Test Wired")
+        serverInfo.addParameter(field: "wired.info.application.version", value: "3.1")
+        _ = socket.write(serverInfo)
+
+        for _ in 0..<3 { // set_nick, set_status, set_icon
+            _ = try socket.readMessage(timeout: 2.0, enforceDeadline: true)
+            _ = socket.write(P7Message(withName: "wired.okay", spec: spec))
+        }
+
+        _ = try socket.readMessage(timeout: 2.0, enforceDeadline: true) // wired.send_login
+        let loginReply = P7Message(withName: "wired.okay", spec: spec)
+        loginReply.addParameter(field: "wired.user.id", value: userID)
+        _ = socket.write(loginReply)
+
+        let privileges = P7Message(withName: "wired.okay", spec: spec)
+        privileges.addParameter(field: "wired.account.settings.get_settings", value: UInt32(1))
+        _ = socket.write(privileges)
+    }
 }
 
 private final class DelegateSpy: ConnectionDelegate {
@@ -387,14 +496,20 @@ private final class DelegateSpy: ConnectionDelegate {
     var onDidReceiveMessage: ((P7Message) -> Void)?
     var onDidReceiveError: ((P7Message) -> Void)?
     var onDisconnected: ((Error?) -> Void)?
+    var onDidLogin: ((P7Message) -> Void)?
+    var onDidReceivePrivileges: ((P7Message) -> Void)?
 
     func connectionDidConnect(connection: Connection) {}
     func connectionDidFailToConnect(connection: Connection, error: Error) {}
     func connectionDisconnected(connection: Connection, error: Error?) {
         onDisconnected?(error)
     }
-    func connectionDidLogin(connection: Connection, message: P7Message) {}
-    func connectionDidReceivePriviledges(connection: Connection, message: P7Message) {}
+    func connectionDidLogin(connection: Connection, message: P7Message) {
+        onDidLogin?(message)
+    }
+    func connectionDidReceivePriviledges(connection: Connection, message: P7Message) {
+        onDidReceivePrivileges?(message)
+    }
 
     func connectionDidSendMessage(connection: Connection, message: P7Message) {
         onDidSend?(message)
