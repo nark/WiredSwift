@@ -4,6 +4,7 @@
 import PackageDescription
 
 var dependencies: [Package.Dependency] = []
+var products: [Product] = []
 var targetDependencies: [Target.Dependency] = []
 var targets: [Target] = []
 
@@ -90,6 +91,8 @@ targets.append(
         ]
     )
 )
+
+#if !os(Linux)
 targets.append(
     .target(
         name: "WiredServerApp",
@@ -102,6 +105,7 @@ targets.append(
         ]
     )
 )
+#endif
 targets.append(
     .executableTarget(
         name: "WiredChatBot",
@@ -111,6 +115,29 @@ targets.append(
         ],
         path: "Sources/WiredChatBot"
     )
+)
+
+products.append(
+    .library(
+        name: "WiredSwift",
+        targets: ["WiredSwift"])
+)
+products.append(
+    .executable(
+        name: "wired3",
+        targets: ["wired3"])
+)
+#if !os(Linux)
+products.append(
+    .executable(
+        name: "WiredServerApp",
+        targets: ["WiredServerApp"])
+)
+#endif
+products.append(
+    .executable(
+        name: "WiredChatBot",
+        targets: ["WiredChatBot"])
 )
 
 #if os(Linux)
@@ -140,23 +167,7 @@ let package = Package(
     name: "WiredSwift",
     defaultLocalization: "en",
     platforms: [.iOS(.v13), .macOS("13.0")],
-    products: [
-        .library(
-            name: "WiredSwift",
-            targets: ["WiredSwift"]),
-
-        .executable(
-            name: "wired3",
-            targets: ["wired3"]),
-        
-        .executable(
-            name: "WiredServerApp",
-            targets: ["WiredServerApp"]),
-        
-        .executable(
-            name: "WiredChatBot",
-            targets: ["WiredChatBot"])
-    ],
+    products: products,
     dependencies: dependencies,
     targets: targets
 )
