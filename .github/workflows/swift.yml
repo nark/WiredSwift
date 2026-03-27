@@ -177,3 +177,35 @@ jobs:
             .build/**/codecov/*
             ~/Library/Logs/DiagnosticReports/*.crash
             ~/Library/Logs/DiagnosticReports/*.ips
+
+  build-linux:
+    name: Build and Test (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.0-jammy
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache SwiftPM
+        uses: actions/cache@v4
+        with:
+          path: .build
+          key: linux-swiftpm-${{ hashFiles('Package.resolved') }}
+          restore-keys: linux-swiftpm-
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Resolve Dependencies
+        run: swift package resolve
+
+      - name: Build wired3
+        run: swift build --product wired3
+
+      - name: Build WiredChatBot
+        run: swift build --product WiredChatBot
+
+      - name: Test
+        run: swift test
