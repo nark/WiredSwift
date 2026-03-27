@@ -2,7 +2,9 @@
 
 WiredSwift provides three ways to drive client messaging.
 
-## 1) ``Connection`` (delegate-driven)
+## 1) ``Connection``
+
+Delegate-driven.
 
 Use when you want explicit lifecycle control and delegate callbacks.
 
@@ -30,7 +32,9 @@ while connection.isConnected() {
 }
 ```
 
-## 2) ``AsyncConnection`` (async/await)
+## 2) ``AsyncConnection``
+
+Async/await.
 
 Use in modern Swift concurrency codebases.
 
@@ -56,7 +60,9 @@ for try await response in stream {
 }
 ```
 
-## 3) ``BlockConnection`` (callbacks)
+## 3) ``BlockConnection``
+
+Callbacks.
 
 Use when your architecture is callback-centric.
 
