@@ -1,0 +1,31 @@
+# .editorconfig — WiredSwift / wired3
+# https://editorconfig.org
+# Supported by Xcode 15+, VS Code, vim/neovim, JetBrains IDEs, etc.
+
+root = true
+
+# ── Defaults (all files) ──────────────────────────────────────────────
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# ── Swift sources ─────────────────────────────────────────────────────
+[*.swift]
+indent_style = space
+indent_size = 4
+
+# ── YAML / GitHub Actions ─────────────────────────────────────────────
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# ── Markdown ──────────────────────────────────────────────────────────
+[*.md]
+trim_trailing_whitespace = false  # trailing spaces are significant in Markdown
+
+# ── Shell scripts ─────────────────────────────────────────────────────
+[*.sh]
+indent_style = space
+indent_size = 4
