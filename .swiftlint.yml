@@ -14,6 +14,7 @@ excluded:
   - Vendor                # vendored third-party
   - .build
   - Tests
+  - Package.swift         # not linted per project rules
 
 # ──────────────────────────────────────────────
 # Enabled rules (SwiftLint defaults + opt-ins)
