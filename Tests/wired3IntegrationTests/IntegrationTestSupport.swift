@@ -16,6 +16,14 @@ enum IntegrationTestError: Error {
     case serverStopTimedOut
 }
 
+private var streamSocketType: Int32 {
+    #if canImport(Darwin)
+    return SOCK_STREAM
+    #else
+    return Int32(SOCK_STREAM.rawValue)
+    #endif
+}
+
 private let integrationServerLock = NSLock()
 private let installSIGPIPEIgnore: Void = {
     #if canImport(Darwin)
@@ -47,7 +55,7 @@ func integrationPackageRoot() -> URL {
 }
 
 func findAvailableLoopbackPort() throws -> Int {
-    let fd = socket(AF_INET, Int32(SOCK_STREAM), 0)
+    let fd = socket(AF_INET, streamSocketType, 0)
     guard fd >= 0 else { throw IntegrationTestError.socketCreationFailed }
     defer { _ = close(fd) }
 
@@ -79,7 +87,7 @@ func waitForLoopbackPort(_ port: Int, timeout: TimeInterval) throws {
     let deadline = Date().addingTimeInterval(timeout)
 
     while Date() < deadline {
-        let fd = socket(AF_INET, Int32(SOCK_STREAM), 0)
+        let fd = socket(AF_INET, streamSocketType, 0)
         if fd >= 0 {
             var address = sockaddr_in()
             address.sin_family = sa_family_t(AF_INET)
