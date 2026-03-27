@@ -7,36 +7,36 @@ Swift foundation for building Wired 3 clients and tools.
 `WiredSwift` exposes the protocol, networking, and crypto primitives used by Wired 3.
 It is used by the `wired3` server, the macOS app wrapper, and standalone client tools.
 
-This DocC catalog is organized to help integrators go from setup to production concerns.
+This DocC catalog is intentionally compact: a small set of guides plus symbol-level API documentation.
 
 ## Topics
 
-### Essentials
+### Start Here
 
 - <doc:GettingStarted>
-- <doc:IntegrationNotes>
-- <doc:ArchitectureOverview>
-
-### API Surface
-
-- <doc:ClientAPIOverview>
-- ``Connection``
-- ``AsyncConnection``
-- ``BlockConnection``
-- ``P7Socket``
-- ``P7Message``
+- <doc:ConnectionPatterns>
+- <doc:Operations>
 
 ### Security And Protocol
 
 - <doc:ProtocolAndSecurity>
+- ``P7Socket``
+- ``P7Message``
 - ``ECDH``
 - ``ECDSA``
 - ``Cipher``
 - ``Digest``
 - ``ServerIdentity``
 
-### Operational Support
+### Architecture
 
+- <doc:ArchitectureOverview>
+
+### Core APIs
+
+- ``Connection``
+- ``AsyncConnection``
+- ``BlockConnection``
+- ``P7Spec``
+- ``Url``
 - ``Logger``
-- ``WiredLogEntry``
-- ``WiredServerEvent``

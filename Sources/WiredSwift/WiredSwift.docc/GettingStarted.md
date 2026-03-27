@@ -1,34 +1,68 @@
 # Getting Started
 
-## Prerequisites
+## Requirements
 
-- Swift 5.9+
-- macOS or Linux
+- Swift Package Manager
+- Platform support declared in this package: iOS 13+, macOS 13+
 
-## Add Dependency
+## Add The Dependency
 
 ```swift
 .package(url: "https://github.com/nark/WiredSwift.git", from: "3.0.0")
 ```
 
-Then link the `WiredSwift` product to your target.
+Then add `WiredSwift` to your target dependencies.
 
-## Build And Test
+## Version Mapping
+
+This repository uses one release line across `WiredSwift`, `wired3`, and `WiredServerApp`.
+
+- Git tag format: `v3.0+N` (example: `v3.0+4`)
+- SwiftPM semantic version: `3.0.0+N` (example: `3.0.0+4`)
+
+If you need an exact release build match, checkout the matching Git tag first.
 
 ```bash
-swift build --product wired3
-swift test
+git checkout v3.0+4
+swift build -c release --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
 ```
 
-## Minimal Integration Flow
+## Load The Protocol Spec
 
-1. Create a ``Connection`` (or ``AsyncConnection`` for async/await code).
-2. Configure client identity (`nick`, status, icon).
-3. Connect to the server and authenticate.
-4. Send and receive ``P7Message`` values.
-5. Observe logs and server events during runtime.
+Use a local `wired.xml` file and initialize ``P7Spec`` with its path.
 
-## Where To Go Next
+```swift
+let spec = P7Spec(withPath: "/absolute/path/to/wired.xml")
+```
 
-- Read <doc:ClientAPIOverview> for the main API choices.
-- Read <doc:ProtocolAndSecurity> for crypto and trust model details.
+## First Connection Example
+
+```swift
+import Foundation
+import WiredSwift
+
+final class ClientDelegate: ConnectionDelegate {
+    func connectionDidReceiveMessage(connection: Connection, message: P7Message) {
+        print("recv:", message.name ?? "<unknown>")
+    }
+
+    func connectionDidReceiveError(connection: Connection, message: P7Message) {
+        print("error:", message.xml())
+    }
+}
+
+let spec = P7Spec(withPath: "/absolute/path/to/wired.xml")
+let delegate = ClientDelegate()
+
+let connection = Connection(withSpec: spec, delegate: delegate)
+connection.nick = "My Swift Client"
+connection.status = "Online"
+
+let serverURL = Url(withString: "wired://guest@127.0.0.1:4871")
+try connection.connect(withUrl: serverURL)
+_ = connection.joinChat(chatID: 1)
+```
+
+## Next Step
+
+Read <doc:ConnectionPatterns> to choose between delegate, async/await, and callback styles.
