@@ -36,6 +36,12 @@ final class NetworkLayerTests: XCTestCase {
         XCTAssertTrue(connection.hasAdministrationPrivileges())
     }
 
+    func testConnectionHasAdministrationPrivilegesFalseWhenNoAdminFlags() {
+        let connection = Connection(withSpec: spec)
+        connection.privileges = ["wired.chat.say"]
+        XCTAssertFalse(connection.hasAdministrationPrivileges())
+    }
+
     func testConnectionSendDisconnectedReturnsFalseAndKeepsTransactionCounter() {
         let connection = Connection(withSpec: spec)
         connection.socket = makeSocket(connected: false)
@@ -63,6 +69,28 @@ final class NetworkLayerTests: XCTestCase {
         XCTAssertEqual(connection.transactionCounter, initialCounter + 1)
         XCTAssertEqual(message.uint32(forField: "wired.transaction"), initialCounter)
 
+        wait(for: [didSend], timeout: 1.0)
+    }
+
+    func testConnectionJoinChatDisconnectedReturnsFalse() {
+        let connection = Connection(withSpec: spec)
+        connection.socket = makeSocket(connected: false)
+        XCTAssertFalse(connection.joinChat(chatID: 99))
+    }
+
+    func testConnectionJoinChatConnectedSendsExpectedMessage() {
+        let connection = Connection(withSpec: spec)
+        connection.socket = makeSocket(connected: true)
+        let spy = DelegateSpy()
+        let didSend = expectation(description: "join chat sent")
+        spy.onDidSend = { message in
+            XCTAssertEqual(message.name, "wired.chat.join_chat")
+            XCTAssertEqual(message.uint32(forField: "wired.chat.id"), 12)
+            didSend.fulfill()
+        }
+        connection.addDelegate(spy)
+
+        XCTAssertFalse(connection.joinChat(chatID: 12), "socket write is expected to fail in test mode")
         wait(for: [didSend], timeout: 1.0)
     }
 
@@ -146,6 +174,21 @@ final class NetworkLayerTests: XCTestCase {
 
         connection.disconnect()
         wait(for: [willDisconnect, didClose], timeout: 1.0)
+    }
+
+    func testConnectionURIRendersLoginHostAndPort() {
+        let connection = Connection(withSpec: spec)
+        connection.url = Url(withString: "wired://alice:secret@localhost:4871")
+        XCTAssertEqual(connection.URI, "alice@localhost:4871")
+    }
+
+    func testConnectionRemoveDelegateIgnoresUnknownDelegate() {
+        let connection = Connection(withSpec: spec)
+        let first = DelegateSpy()
+        let second = DelegateSpy()
+        connection.addDelegate(first)
+        connection.removeDelegate(second)
+        XCTAssertEqual(connection.delegates.count, 1)
     }
 
     func testConnectionDisconnectNotifiesDelegates() {

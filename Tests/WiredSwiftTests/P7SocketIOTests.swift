@@ -29,6 +29,51 @@ final class P7SocketIOTests: XCTestCase {
         XCTAssertEqual(incoming.uint32(forField: "wired.user.id"), 42)
     }
 
+    func testWriteAndReadMessageWithDeflateCompression() throws {
+        let pair = try makeConnectedPair()
+        pair.client.compression = .DEFLATE
+        pair.server.compression = .DEFLATE
+        pair.client.compressionEnabled = true
+        pair.server.compressionEnabled = true
+
+        let outgoing = P7Message(withName: "wired.user.get_info", spec: spec)
+        outgoing.addParameter(field: "wired.user.id", value: UInt32(77))
+
+        XCTAssertTrue(pair.client.write(outgoing))
+        let incoming = try pair.server.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(incoming.uint32(forField: "wired.user.id"), 77)
+    }
+
+    func testWriteAndReadMessageWithLZ4Compression() throws {
+        let pair = try makeConnectedPair()
+        pair.client.compression = .LZ4
+        pair.server.compression = .LZ4
+        pair.client.compressionEnabled = true
+        pair.server.compressionEnabled = true
+
+        let outgoing = P7Message(withName: "wired.user.get_info", spec: spec)
+        outgoing.addParameter(field: "wired.user.id", value: UInt32(88))
+
+        XCTAssertTrue(pair.client.write(outgoing))
+        let incoming = try pair.server.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(incoming.uint32(forField: "wired.user.id"), 88)
+    }
+
+    func testWriteAndReadMessageWithChecksum() throws {
+        let pair = try makeConnectedPair()
+        pair.client.checksum = .SHA2_256
+        pair.server.checksum = .SHA2_256
+        pair.client.checksumEnabled = true
+        pair.server.checksumEnabled = true
+
+        let outgoing = P7Message(withName: "wired.user.get_info", spec: spec)
+        outgoing.addParameter(field: "wired.user.id", value: UInt32(91))
+
+        XCTAssertTrue(pair.client.write(outgoing))
+        let incoming = try pair.server.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(incoming.uint32(forField: "wired.user.id"), 91)
+    }
+
     func testWriteAndReadOOBRoundTripAcrossLocalSocketPair() throws {
         let pair = try makeConnectedPair()
         let payload = Data("hello-oob".utf8)
@@ -36,6 +81,19 @@ final class P7SocketIOTests: XCTestCase {
         try pair.client.writeOOB(data: payload, timeout: 1.0)
         let received = try pair.server.readOOB(timeout: 1.0)
 
+        XCTAssertEqual(received, payload)
+    }
+
+    func testWriteAndReadOOBWithChecksum() throws {
+        let pair = try makeConnectedPair()
+        pair.client.checksum = .SHA2_256
+        pair.server.checksum = .SHA2_256
+        pair.client.checksumEnabled = true
+        pair.server.checksumEnabled = true
+
+        let payload = Data("hello-oob-checksum".utf8)
+        try pair.client.writeOOB(data: payload, timeout: 1.0)
+        let received = try pair.server.readOOB(timeout: 1.0)
         XCTAssertEqual(received, payload)
     }
 
@@ -49,11 +107,45 @@ final class P7SocketIOTests: XCTestCase {
         XCTAssertThrowsError(try pair.server.readMessage(timeout: 1.0, enforceDeadline: true))
     }
 
+    func testReadMessageRejectsFrameLargerThanMaximum() throws {
+        let pair = try makeConnectedPair()
+        var rawLength = Data()
+        rawLength.append(uint32: (64 * 1024 * 1024) + 1, bigEndian: true)
+
+        try pair.client.getNativeSocket()?.write(Array(rawLength))
+        XCTAssertThrowsError(try pair.server.readMessage(timeout: 1.0, enforceDeadline: true))
+    }
+
+    func testReadMessageChecksumMismatchThrows() throws {
+        let pair = try makeConnectedPair()
+        pair.server.checksum = .SHA2_256
+        pair.server.checksumEnabled = true
+
+        let payload = P7Message(withName: "wired.user.get_info", spec: spec).bin()
+        var length = Data()
+        length.append(uint32: UInt32(payload.count), bigEndian: true)
+
+        var bogusChecksum = Data(repeating: 0, count: pair.server.checksumLength(.SHA2_256))
+        bogusChecksum[0] = 0xFF
+
+        try pair.client.getNativeSocket()?.write(Array(length))
+        try pair.client.getNativeSocket()?.write(Array(payload))
+        try pair.client.getNativeSocket()?.write(Array(bogusChecksum))
+
+        XCTAssertThrowsError(try pair.server.readMessage(timeout: 1.0, enforceDeadline: true))
+    }
+
     func testReadMessageThrowsWhenSerializationIsNotBinary() {
         let socket = P7Socket(hostname: "localhost", port: 0, spec: spec)
         socket.connected = true
         socket.serialization = .XML
 
+        XCTAssertThrowsError(try socket.readMessage(timeout: 0.1, enforceDeadline: true))
+    }
+
+    func testReadMessageThrowsWhenDisconnected() {
+        let socket = P7Socket(hostname: "localhost", port: 0, spec: spec)
+        socket.connected = false
         XCTAssertThrowsError(try socket.readMessage(timeout: 0.1, enforceDeadline: true))
     }
 
@@ -108,6 +200,13 @@ final class P7SocketIOTests: XCTestCase {
         XCTAssertFalse(socket.localCompatibilityCheck)
         XCTAssertFalse(socket.remoteCompatibilityCheck)
         XCTAssertNil(socket.ecdh)
+    }
+
+    func testDisconnectIsIdempotent() throws {
+        let pair = try makeConnectedPair()
+        pair.client.disconnect()
+        pair.client.disconnect()
+        XCTAssertFalse(pair.client.connected)
     }
 
     func testClientAddressAndPeerHelpersReturnNilWhenSocketIsMissing() {
