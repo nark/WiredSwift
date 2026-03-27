@@ -8,7 +8,7 @@
 //  Domain-specific handlers live in the ServerController+*.swift extensions.
 //
 
-// swiftlint:disable cyclomatic_complexity
+// swiftlint:disable cyclomatic_complexity type_body_length
 import Foundation
 import WiredSwift
 import SocketSwift

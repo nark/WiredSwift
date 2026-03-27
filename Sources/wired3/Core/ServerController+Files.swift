@@ -7,7 +7,6 @@
 //  by FilesController and routed via handleMessage.
 //
 
-// swiftlint:disable file_length function_body_length cyclomatic_complexity
 import Foundation
 import WiredSwift
 

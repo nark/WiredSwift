@@ -2,7 +2,6 @@
 //  ServerController+Users.swift
 //  wired3
 //
-// swiftlint:disable file_length function_body_length cyclomatic_complexity
 import Foundation
 import WiredSwift
 

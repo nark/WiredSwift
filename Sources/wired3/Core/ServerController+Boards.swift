@@ -7,7 +7,7 @@
 //  change notifications to subscribed clients.
 //
 
-// swiftlint:disable file_length function_body_length cyclomatic_complexity
+// swiftlint:disable file_length
 import Foundation
 import WiredSwift
 
