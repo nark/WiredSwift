@@ -71,16 +71,16 @@ Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader 
 | Feature | Wired 2.0 | Wired 3.0 |
 |---|---|---|
 | Public chats | ⚠️ Single default public room | ✅ Multiple public chats (list/create/delete) |
-| Live typing indicator | ❌ Not available | ✅ Available (`wired.chat.typing` states) |
+| Live typing indicator | ❌ Not available | ✅ Available |
 | Board reactions | ❌ Not available | ✅ Available (with privilege gating) |
 | Remote board search | ⚠️ Limited / client-side patterns | ✅ Server-side remote search |
 | File search | ⚠️ Basic listing/search | ✅ FTS5-backed search with `LIKE` fallback |
-| Server settings (admin) | ✅ Available | ✅ Available (`wired.settings.get_settings` / `wired.settings.set_settings`) |
-| Logs (admin) | ✅ Available | ✅ Available (`wired.log.get_log`, `wired.log.subscribe`) |
-| Events (admin/audit) | ✅ Available | ✅ Available (`wired.event.*` including subscribe/delete range) |
+| Server settings (admin) | ✅ Available | ✅ Available |
+| Logs (admin) | ✅ Available | ✅ Available |
+| Events (admin/audit) | ✅ Available | ✅ Available (including subscription and cleanup) |
 | Accounts (admin) | ✅ Available | ✅ Available (list/read/create/edit/delete users/groups, subscribe changes) |
-| Banlist (admin) | ✅ Available | ✅ Available (`wired.banlist.get_bans` / `add_ban` / `delete_ban`) |
-| Tracker (admin/discovery) | ✅ Available | ⚠️ Spec exists (`wired.tracker.*`), not yet implemented in wired3 server |
+| Banlist (admin) | ✅ Available | ✅ Available |
+| Tracker (admin/discovery) | ✅ Available | ⚠️ Planned in spec, not yet implemented in wired3 server |
 | Monitor (admin) | ✅ Available | ❌ Not yet implemented in Wired 3.0 |
 
 ### Security
