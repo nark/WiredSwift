@@ -21,10 +21,16 @@
 import Foundation
 import WiredSwift
 
+/// Implements the `wired.log.*` protocol family and acts as `LoggerDelegate`.
+///
+/// Every log entry is stored in a thread-safe circular buffer (max 500 entries).
+/// Clients subscribed via `wired.log.subscribe` receive live `wired.log.message`
+/// broadcasts; `wired.log.get_log` replays the buffer as a list response.
 public class LogsController: LoggerDelegate {
 
     // MARK: - Types
 
+    /// A single buffered log entry.
     public struct LogEntry {
         public let date: Date
         public let level: Logger.LogLevel
@@ -46,14 +52,22 @@ public class LogsController: LoggerDelegate {
 
     // MARK: - Init
 
+    /// Creates a new `LogsController` with an empty log buffer.
     public init() {}
 
     // MARK: - LoggerDelegate
 
+    /// No-op — raw output strings are ignored; structured log entries use `loggerDidLog`.
     public func loggerDidOutput(logger: Logger, output: String) {
         // No-op — we use the structured callback below.
     }
 
+    /// Stores a new log entry in the circular buffer and broadcasts it to subscribed clients.
+    ///
+    /// - Parameters:
+    ///   - level: The severity level of the log entry.
+    ///   - message: The formatted log message string.
+    ///   - date: The timestamp of the log entry.
     public func loggerDidLog(level: Logger.LogLevel, message: String, date: Date) {
         let entry = LogEntry(date: date, level: level, message: message)
 

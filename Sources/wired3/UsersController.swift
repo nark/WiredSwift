@@ -14,11 +14,20 @@ import CSQLite
 import SQLite3
 #endif
 
+/// Manages user and group accounts, authentication, and privilege lookups.
+///
+/// Implements `SocketPasswordDelegate` so that the P7 socket layer can retrieve
+/// the stored SHA-256 password hash and per-user salt during key-exchange without
+/// coupling to the database directly.
 public class UsersController: TableController, SocketPasswordDelegate {
     var lastUserID: UInt32 = 0
     var lastUserIDLock: NSLock = NSLock()
 
     // MARK: - Public
+
+    /// Returns the next available user session ID in a thread-safe manner.
+    ///
+    /// - Returns: A monotonically increasing `UInt32` session identifier.
     public func nextUserID() -> UInt32 {
         lastUserIDLock.lock()
         defer { lastUserIDLock.unlock() }
@@ -27,15 +36,36 @@ public class UsersController: TableController, SocketPasswordDelegate {
     }
 
     // MARK: - Database (SocketPasswordDelegate)
+
+    /// Returns the stored SHA-256 password hash for `username`, or `nil` if the user does not exist.
+    ///
+    /// - Parameter username: The account login name.
+    /// - Returns: The stored SHA-256 hash, or `nil`.
     public func passwordForUsername(username: String) -> String? {
         user(withUsername: username)?.password
     }
 
+    /// Returns the per-user stored salt for `username`, or `nil` if not yet assigned.
+    ///
+    /// - Parameter username: The account login name.
+    /// - Returns: The hex-encoded salt string, or `nil`.
     public func passwordSaltForUsername(username: String) -> String? {
         user(withUsername: username)?.passwordSalt
     }
 
     // MARK: - Fetch
+
+    /// Authenticates a user by verifying the supplied SHA-256 password hash.
+    ///
+    /// On the first successful login for an account that lacks a stored salt, a new
+    /// per-user salt is generated and persisted (lazy P7 v1.2 migration).
+    /// Privileges are loaded eagerly and attached to the returned `User`.
+    ///
+    /// - Parameters:
+    ///   - username: The account login name.
+    ///   - password: The client-supplied SHA-256 hash of the plaintext password.
+    /// - Returns: The authenticated `User` with privileges loaded, or `nil` if
+    ///   authentication fails.
     public func user(withUsername username: String, password: String) -> User? {
         guard let user = user(withUsername: username) else { return nil }
 
@@ -63,12 +93,20 @@ public class UsersController: TableController, SocketPasswordDelegate {
         return user
     }
 
+    /// Fetches a user by login name without loading privileges.
+    ///
+    /// - Parameter username: The account login name.
+    /// - Returns: The matching `User`, or `nil` if not found.
     public func user(withUsername username: String) -> User? {
         try? databaseController.dbQueue.read { db in
             try User.filter(Column("username") == username).fetchOne(db)
         }
     }
 
+    /// Fetches a user by login name and eagerly loads their privilege set.
+    ///
+    /// - Parameter username: The account login name.
+    /// - Returns: The matching `User` with privileges populated, or `nil` if not found.
     public func userWithPrivileges(withUsername username: String) -> User? {
         try? databaseController.dbQueue.read { db in
             if let user = try User.filter(Column("username") == username).fetchOne(db) {
@@ -81,6 +119,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    /// Fetches a user by their stable identity token and eagerly loads their privilege set.
+    ///
+    /// - Parameter identity: The user's unique identity string.
+    /// - Returns: The matching `User` with privileges populated, or `nil` if not found.
     public func userWithPrivileges(identity: String) -> User? {
         try? databaseController.dbQueue.read { db in
             if let user = try User.filter(Column("identity") == identity).fetchOne(db) {
@@ -93,6 +135,12 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    /// Returns users whose username, full name, or identity contains `query` (case-insensitive).
+    ///
+    /// - Parameters:
+    ///   - query: The search string.
+    ///   - limit: Maximum number of results to return (default 50).
+    /// - Returns: Matching users, up to `limit` entries.
     public func users(matchingIdentityQuery query: String, limit: Int = 50) -> [User] {
         let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !normalized.isEmpty else { return [] }
@@ -105,6 +153,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }.prefix(limit).map { $0 }
     }
 
+    /// Returns `true` if no existing user has the given `identity` token.
+    ///
+    /// - Parameter identity: The candidate identity string.
+    /// - Returns: `true` if the identity is not yet taken.
     public func isIdentityAvailable(_ identity: String) -> Bool {
         let existing = try? databaseController.dbQueue.read { db in
             try User.filter(Column("identity") == identity).fetchOne(db)
@@ -112,20 +164,34 @@ public class UsersController: TableController, SocketPasswordDelegate {
         return existing == nil
     }
 
+    /// Returns all user accounts (without privileges loaded).
+    ///
+    /// - Returns: Every `User` row in the database.
     public func users() -> [User] {
         (try? databaseController.dbQueue.read { db in try User.fetchAll(db) }) ?? []
     }
 
+    /// Returns all groups (without privileges loaded).
+    ///
+    /// - Returns: Every `Group` row in the database.
     public func groups() -> [Group] {
         (try? databaseController.dbQueue.read { db in try Group.fetchAll(db) }) ?? []
     }
 
+    /// Fetches a group by name without loading privileges.
+    ///
+    /// - Parameter name: The group name.
+    /// - Returns: The matching `Group`, or `nil` if not found.
     public func group(withName name: String) -> Group? {
         try? databaseController.dbQueue.read { db in
             try Group.filter(Column("name") == name).fetchOne(db)
         }
     }
 
+    /// Fetches a group by name and eagerly loads its privilege set.
+    ///
+    /// - Parameter name: The group name.
+    /// - Returns: The matching `Group` with privileges populated, or `nil` if not found.
     public func groupWithPrivileges(withName name: String) -> Group? {
         try? databaseController.dbQueue.read { db in
             if let group = try Group.filter(Column("name") == name).fetchOne(db) {
@@ -139,6 +205,11 @@ public class UsersController: TableController, SocketPasswordDelegate {
     }
 
     // MARK: - Write
+
+    /// Persists a `User` record (insert or update).
+    ///
+    /// - Parameter user: The user to save.
+    /// - Returns: `true` on success, `false` if the write fails.
     @discardableResult
     public func save(user: User) -> Bool {
         do {
@@ -147,6 +218,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
         } catch { return false }
     }
 
+    /// Persists a `Group` record (insert or update).
+    ///
+    /// - Parameter group: The group to save.
+    /// - Returns: `true` on success, `false` if the write fails.
     @discardableResult
     public func save(group: Group) -> Bool {
         do {
@@ -155,6 +230,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
         } catch { return false }
     }
 
+    /// Deletes a user and all their associated privilege rows in a single transaction.
+    ///
+    /// - Parameter user: The user to delete.
+    /// - Returns: `true` on success, `false` if the delete fails or the user has no ID.
     @discardableResult
     public func delete(user: User) -> Bool {
         guard let userID = user.id else { return false }
@@ -172,6 +251,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    /// Deletes a group and all its associated privilege rows in a single transaction.
+    ///
+    /// - Parameter group: The group to delete.
+    /// - Returns: `true` on success, `false` if the delete fails or the group has no ID.
     @discardableResult
     public func delete(group: Group) -> Bool {
         guard let groupID = group.id else { return false }
@@ -189,6 +272,13 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    /// Upserts a single privilege flag for a user.
+    ///
+    /// - Parameters:
+    ///   - name: The privilege field name (e.g. `"wired.account.chat.create_chats"`).
+    ///   - value: The desired boolean value.
+    ///   - user: The target user.
+    /// - Returns: `true` on success, `false` if the user has no ID or the write fails.
     @discardableResult
     public func setUserPrivilege(_ name: String, value: Bool, for user: User) -> Bool {
         guard let userID = user.id else { return false }
@@ -208,6 +298,13 @@ public class UsersController: TableController, SocketPasswordDelegate {
         } catch { return false }
     }
 
+    /// Upserts a single privilege flag for a group.
+    ///
+    /// - Parameters:
+    ///   - name: The privilege field name.
+    ///   - value: The desired boolean value.
+    ///   - group: The target group.
+    /// - Returns: `true` on success, `false` if the group has no ID or the write fails.
     @discardableResult
     public func setGroupPrivilege(_ name: String, value: Bool, for group: Group) -> Bool {
         guard let groupID = group.id else { return false }
@@ -228,6 +325,11 @@ public class UsersController: TableController, SocketPasswordDelegate {
     }
 
     // MARK: - Seeding (appelé une seule fois à la première exécution)
+
+    /// Seeds the default `admin` and `guest` users and groups on a fresh database.
+    ///
+    /// A random 16-character password is generated for the `admin` account and printed
+    /// to the log at INFO level. This method is a no-op if any users already exist.
     public func seedDefaultDataIfNeeded() {
         do {
             let userCount = try databaseController.dbQueue.read { db in
@@ -283,6 +385,13 @@ public class UsersController: TableController, SocketPasswordDelegate {
     }
 
     // MARK: - Legacy schema migrations (raw SQLite, conservées pour bases Fluent existantes)
+
+    /// Runs raw-SQLite migrations for databases created by earlier Fluent-based server versions.
+    ///
+    /// Handles the privilege unique-constraint migration, the `groups.color` column addition,
+    /// the offline-messaging columns on `users`, the `offline_messages` table creation, and
+    /// the `wired.account.board.add_reactions` privilege backfill. All operations are
+    /// idempotent — each is a no-op if the schema is already up to date.
     public func migrateLegacyPrivilegesSchemaIfNeeded() {
         var db: OpaquePointer?
         guard sqlite3_open(databaseController.baseURL.path, &db) == SQLITE_OK, let db else {
@@ -489,6 +598,13 @@ public class UsersController: TableController, SocketPasswordDelegate {
     }
 
     // MARK: - Identity backfill
+
+    /// Assigns a stable identity token to every user that does not already have one.
+    ///
+    /// The token is derived from the user's full name or username, lowercased and
+    /// reduced to alphanumeric segments joined by hyphens. Duplicate candidates are
+    /// disambiguated with a numeric suffix. This method is a no-op if every user
+    /// already has a non-empty identity.
     public func backfillStableIdentitiesIfNeeded() {
         do {
             let loadedUsers = try databaseController.dbQueue.read { db in

@@ -2,6 +2,10 @@ import Foundation
 import GRDB
 import WiredSwift
 
+/// Persists and queries server event log entries in the GRDB database.
+///
+/// Events are written via `addEvent` and can be retrieved with `listEvents`.
+/// The `deleteEvents` method supports range-based pruning of old entries.
 public final class EventsController {
     private let databaseController: DatabaseController
 

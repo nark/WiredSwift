@@ -169,6 +169,11 @@ enum BanPattern {
     }
 }
 
+/// Manages IP and subnet ban entries and evaluates incoming connection addresses against them.
+///
+/// Supports exact IP matches, IPv4 wildcard patterns (e.g. `192.168.*`), CIDR notation,
+/// and IPv4 netmask notation. Expired bans are cleaned up lazily on every read or write
+/// operation.
 public final class BanListController {
     private let databaseController: DatabaseController
 

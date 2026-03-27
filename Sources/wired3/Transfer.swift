@@ -8,14 +8,24 @@
 import Foundation
 import WiredSwift
 
+/// Represents an in-progress or queued file transfer (upload or download).
+///
+/// A `Transfer` is created when a client issues a file transfer request and
+/// is attached to the owning `Client` for the duration of the transfer.
 public class Transfer: Equatable {
+    /// Whether this transfer sends a file to the client or receives one from it.
     public enum TransferType: UInt32 {
+        /// The server is sending a file to the client.
         case download = 0
+        /// The client is sending a file to the server.
         case upload
     }
 
+    /// Current execution state of the transfer.
     public enum TransferState: UInt32 {
+        /// Transfer is waiting in the server queue.
         case queued = 0
+        /// Transfer is actively transferring data.
         case running
     }
 
@@ -51,6 +61,13 @@ public class Transfer: Equatable {
 //    var speed
 //    var finderinfo
 
+    /// Creates a new `Transfer` in the queued state.
+    ///
+    /// - Parameters:
+    ///   - path: Virtual server-side path of the file being transferred.
+    ///   - client: The `Client` that initiated the transfer.
+    ///   - message: The originating P7 protocol message carrying transfer parameters.
+    ///   - type: Whether this is a `.download` or `.upload`.
     public init(path: String, client: Client, message: P7Message, type: TransferType) {
         self.path   = path
         self.client = client
@@ -58,6 +75,9 @@ public class Transfer: Equatable {
         self.state  = .queued
     }
 
+    /// Two `Transfer` instances are equal when they are the same object reference.
+    ///
+    /// - Returns: `true` if `lhs` and `rhs` are identical objects.
     public static func == (lhs: Transfer, rhs: Transfer) -> Bool {
         lhs === rhs
     }

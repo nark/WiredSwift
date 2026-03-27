@@ -15,6 +15,10 @@ private let defaultWelcomeThreadBody = "You are running Wired Server version 3.x
 private let welcomeBoardSeed = "boards.welcome.v1"
 private let defaultFilesSeed = "files.defaults.v1"
 
+/// Entry point for the wired3 server process.
+///
+/// `AppController` owns every subsystem (database, clients, chats, files, …),
+/// bootstraps them in the correct order, and starts the TCP listener.
 public class AppController {
     var workingDirectoryPath: String
     var rootPath: String
@@ -44,6 +48,16 @@ public class AppController {
     public var debugMode: Bool = false
 
     // MARK: - Public
+
+    /// Creates a new `AppController`, loading the P7 spec and server config from disk.
+    ///
+    /// - Parameters:
+    ///   - specPath: Path to `wired.xml` (the P7 protocol specification).
+    ///   - dbPath: Path to the SQLite database file.
+    ///   - rootPath: Root directory for the file-sharing tree.
+    ///   - configPath: Path to the server configuration file.
+    ///   - workingDirectoryPath: Working directory used for persistent state (keys, bootstrap store).
+    ///   - debugMode: When `true`, pins log level to DEBUG and ignores SIGHUP level changes.
     public init(specPath: String, dbPath: String, rootPath: String, configPath: String, workingDirectoryPath: String, debugMode: Bool = false) {
         let specUrl = URL(fileURLWithPath: specPath)
 
@@ -67,6 +81,10 @@ public class AppController {
         }
     }
 
+    /// Initialise all subsystems and start the TCP listener.
+    ///
+    /// Subsystems are started in dependency order: logging → database → controllers
+    /// → seeding → indexing → TCP server.
     public func start() {
         // Install LogsController as Logger.delegate first so that every log
         // emitted during startup is captured in the buffer and can be
@@ -140,6 +158,7 @@ public class AppController {
         self.serverController.listen()
     }
 
+    /// Stop the TCP listener and disable the periodic file reindex timer.
     public func stop() {
         self.serverController?.stop()
         self.indexController?.configure(reindexInterval: 0)
@@ -162,6 +181,11 @@ public class AppController {
         return DEFAULT_PORT
     }
 
+    /// Reload the server configuration from disk (triggered by SIGHUP).
+    ///
+    /// Re-reads the config file, applies the updated log level (unless `debugMode` is active),
+    /// updates `rootPath` / `filesController` if `server.files` changed, and re-arms the
+    /// periodic file reindex timer if its interval changed.
     public func reloadConfig() {
         Logger.info("Reloading configuration from \(self.configPath)...")
         guard self.config.load() else {

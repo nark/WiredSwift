@@ -230,6 +230,11 @@ extension ChatsController {
     }
 }
 
+/// Manages active public and private chat rooms and their member lists.
+///
+/// Persists public chats to the database; private chats exist only in memory.
+/// Enforces rate limits on chat messages and typing-indicator pulses, and runs a
+/// background timer that expires stale typing states.
 public class ChatsController: TableController {
     var chats: [UInt32: Chat] = [:]
     var publicChats: [Chat] = []
@@ -252,6 +257,9 @@ public class ChatsController: TableController {
     private let typingCleanupQueue = DispatchQueue(label: "wired3.chats.typing-cleanup")
     private var typingCleanupTimer: DispatchSourceTimer?
 
+    /// Creates a new `ChatsController` and starts the typing-state cleanup timer.
+    ///
+    /// - Parameter databaseController: The shared database controller.
     public override init(databaseController: DatabaseController) {
         super.init(databaseController: databaseController)
         startTypingCleanupTimer()
@@ -262,6 +270,11 @@ public class ChatsController: TableController {
         typingCleanupTimer = nil
     }
 
+    /// Handles `wired.chat.get_chats` — replies with the list of all public chats.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message.
+    ///   - client: The requesting client.
     public func getChats(message: P7Message, client: Client) {
         self.chatsLock.concurrentlyRead {
             for (chat) in self.publicChats {
@@ -277,6 +290,13 @@ public class ChatsController: TableController {
         App.serverController.reply(client: client, reply: response, message: message)
     }
 
+    /// Handles `wired.chat.create_public_chat` — creates and broadcasts a new named public chat.
+    ///
+    /// Requires the `wired.account.chat.create_public_chats` privilege.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.name`).
+    ///   - client: The requesting client.
     public func createPublicChat(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
@@ -318,6 +338,14 @@ public class ChatsController: TableController {
         }
     }
 
+    /// Handles `wired.chat.delete_public_chat` — removes a public chat and broadcasts deletion.
+    ///
+    /// Requires the `wired.account.chat.delete_public_chats` privilege.
+    /// The Public Chat (ID 1) cannot be deleted.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.id`).
+    ///   - client: The requesting client.
     public func deletePublicChat(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
@@ -366,6 +394,14 @@ public class ChatsController: TableController {
     // SECURITY (FINDING_C_008): Maximum private chats per user
     private static let maxPrivateChatsPerUser: Int = 50
 
+    /// Handles `wired.chat.create_private_chat` — allocates a new in-memory private chat.
+    ///
+    /// Requires the `wired.account.chat.create_chats` privilege.
+    /// Enforces a per-user limit of 50 concurrent private chats.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message.
+    ///   - client: The requesting client (automatically invited to the new chat).
     public func createPrivateChat(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
@@ -398,6 +434,11 @@ public class ChatsController: TableController {
         App.serverController.reply(client: client, reply: reply, message: message)
     }
 
+    /// Handles `wired.chat.invite_user` — sends a chat invitation to another connected user.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.id` and `wired.user.id`).
+    ///   - client: The inviting client (must already be a member of the chat).
     public func inviteUser(message: P7Message, client: Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -439,6 +480,11 @@ public class ChatsController: TableController {
         App.serverController.replyOK(client: client, message: message)
     }
 
+    /// Handles `wired.chat.decline_invitation` — notifies chat members that an invitation was declined.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.id` and `wired.user.id`).
+    ///   - client: The client declining the invitation.
     public func declineInvitation(message: P7Message, client: Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -473,6 +519,11 @@ public class ChatsController: TableController {
         App.serverController.replyOK(client: client, message: message)
     }
 
+    /// Handles `wired.chat.join_chat` — adds the client to a chat and replies with the member list and topic.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.id`).
+    ///   - client: The joining client.
     public func userJoin(message: P7Message, client: Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -548,10 +599,20 @@ public class ChatsController: TableController {
         }
     }
 
+    /// Removes `client` from all chats they are currently a member of and broadcasts leave events.
+    ///
+    /// Called when a client disconnects.
+    ///
+    /// - Parameter client: The disconnecting client.
     public func userLeave(client: Client) {
         removeUserFromAllChats(client: client, broadcastLeaves: true)
     }
 
+    /// Removes `client` from every chat they have joined, optionally broadcasting leave events.
+    ///
+    /// - Parameters:
+    ///   - client: The client to remove.
+    ///   - broadcastLeaves: When `true`, sends `wired.chat.user_leave` to remaining members.
     public func removeUserFromAllChats(client: Client, broadcastLeaves: Bool) {
         let snapshot = self.chatsLock.concurrentlyRead { self.chats }
         for (chatID, chat) in snapshot {
@@ -561,6 +622,11 @@ public class ChatsController: TableController {
         }
     }
 
+    /// Handles `wired.chat.leave_chat` — removes the client from a specific chat.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.id`).
+    ///   - client: The leaving client.
     public func userLeave(message: P7Message, client: Client) {
         guard let chatID = message.uint32(forField: "wired.chat.id") else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -597,6 +663,11 @@ public class ChatsController: TableController {
         }
     }
 
+    /// Handles `wired.chat.send_say` — delivers a chat message to all members of the target chat.
+    ///
+    /// - Parameters:
+    ///   - client: The sender.
+    ///   - message: The incoming P7 message (must contain `wired.chat.say` and `wired.chat.id`).
     public func receiveChatSay(_ client: Client, _ message: P7Message) {
         guard let say = message.string(forField: "wired.chat.say"),
               // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
@@ -608,6 +679,11 @@ public class ChatsController: TableController {
         self.receiveChat(string: say, client, message, isSay: true)
     }
 
+    /// Handles `wired.chat.send_me` — delivers an emote action to all members of the target chat.
+    ///
+    /// - Parameters:
+    ///   - client: The sender.
+    ///   - message: The incoming P7 message (must contain `wired.chat.me` and `wired.chat.id`).
     public func receiveChatMe(_ client: Client, _ message: P7Message) {
         guard let say = message.string(forField: "wired.chat.me"),
               // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
@@ -619,6 +695,14 @@ public class ChatsController: TableController {
         self.receiveChat(string: say, client, message, isSay: false)
     }
 
+    /// Handles `wired.chat.send_typing` — propagates typing-indicator state to other chat members.
+    ///
+    /// Typing pulses are rate-limited (4 per second per user per chat). Stale typing states
+    /// are automatically cleared by the background cleanup timer after 6 seconds of inactivity.
+    ///
+    /// - Parameters:
+    ///   - client: The client whose typing state changed.
+    ///   - message: The incoming P7 message (must contain `wired.chat.id` and `wired.chat.typing`).
     public func receiveChatTyping(client: Client, message: P7Message) {
         guard let chatID = message.uint32(forField: "wired.chat.id"),
               let isTyping = message.bool(forField: "wired.chat.typing") else {
@@ -652,6 +736,13 @@ public class ChatsController: TableController {
         }
     }
 
+    /// Handles `wired.chat.set_topic` — updates the chat topic and broadcasts the change.
+    ///
+    /// Requires the `wired.account.chat.set_topic` privilege.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.id` and `wired.chat.topic.topic`).
+    ///   - client: The client setting the topic (must be a member of the chat).
     public func setTopic(message: P7Message, client: Client) {
         guard let user = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
@@ -713,12 +804,24 @@ public class ChatsController: TableController {
         }
     }
 
+    /// Returns all chats (public and private) that contain the given user.
+    ///
+    /// - Parameter userID: The session user ID to search for.
+    /// - Returns: All `Chat` instances the user is currently a member of.
     public func chats(containingUserID userID: UInt32) -> [Chat] {
         self.chatsLock.concurrentlyRead {
             self.chats.values.filter { $0.client(withID: userID) != nil }
         }
     }
 
+    /// Handles `wired.chat.kick_user` — forcibly removes a user from a chat room.
+    ///
+    /// Kicking from the Public Chat (ID 1) requires the `wired.account.chat.kick_users` privilege.
+    ///
+    /// - Parameters:
+    ///   - message: The incoming P7 message (must contain `wired.chat.id`, `wired.user.id`,
+    ///     and `wired.user.disconnect_message`).
+    ///   - client: The acting moderator (must be a member of the chat).
     public func kickUser(message: P7Message, client: Client) {
         guard let actor = client.user else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
@@ -768,7 +871,9 @@ public class ChatsController: TableController {
         App.serverController.replyOK(client: client, message: message)
     }
 
-    /// Seed le chat public si la table est vide (remplace createTables)
+    /// Seeds the default Public Chat (ID 1) if no chats exist in the database.
+    ///
+    /// This is a no-op after the first server run.
     public func seedDefaultDataIfNeeded() {
         do {
             let count = try databaseController.dbQueue.read { db in try Chat.fetchCount(db) }
@@ -783,6 +888,10 @@ public class ChatsController: TableController {
         }
     }
 
+    /// Loads all persisted public chats from the database into memory.
+    ///
+    /// Duplicate chat IDs (data corruption) are detected and repaired by assigning
+    /// a new unique ID and updating the database row.
     public func loadChats() {
         self.chatsLock.exclusivelyWrite {
             self.chats.removeAll()

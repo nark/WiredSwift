@@ -16,14 +16,30 @@ import SQLite3
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+/// Owns the GRDB `DatabaseQueue` and runs all registered schema migrations.
+///
+/// Every controller that needs database access receives a reference to the single
+/// shared `DatabaseController` instance that `AppController` creates at startup.
 public class DatabaseController {
     let baseURL: URL
     private(set) var dbQueue: DatabaseQueue!
 
+    /// Creates a new `DatabaseController` for the database at `baseURL`.
+    ///
+    /// - Parameters:
+    ///   - baseURL: File URL of the SQLite database file.
+    ///   - spec: The P7 protocol specification (reserved for future use).
     public init(baseURL: URL, spec: P7Spec) {
         self.baseURL = baseURL
     }
 
+    /// Open the SQLite database and run all pending GRDB migrations.
+    ///
+    /// Enables WAL journal mode, foreign-key enforcement, and NORMAL synchronous
+    /// writes for a good balance of durability and performance.
+    ///
+    /// - Returns: `true` if the database was opened and migrated successfully,
+    ///   `false` otherwise (error is logged).
     @discardableResult
     public func initDatabase() -> Bool {
         do {

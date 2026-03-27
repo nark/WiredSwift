@@ -7,6 +7,10 @@ import Foundation
 import GRDB
 import WiredSwift
 
+/// Maintains the SQLite-backed file search index and handles `wired.file.search_files` requests.
+///
+/// Runs full filesystem traversals on a serial `indexQueue` and supports periodic reindexing,
+/// cooperative cancellation, and FTS5-accelerated search with a LIKE-based fallback.
 public class IndexController: TableController {
 
     let filesController: FilesController
@@ -44,6 +48,12 @@ public class IndexController: TableController {
     private var reindexInterval: TimeInterval = 0
 
     // ── Init ─────────────────────────────────────────────────────────────────
+
+    /// Creates a new `IndexController` and probes for FTS5 availability.
+    ///
+    /// - Parameters:
+    ///   - databaseController: The shared database controller.
+    ///   - filesController: The files controller providing the root path and virtual-path mapping.
     public init(databaseController: DatabaseController, filesController: FilesController) {
         self.filesController = filesController
         super.init(databaseController: databaseController)
