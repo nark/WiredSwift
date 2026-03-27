@@ -204,7 +204,10 @@ jobs:
           set -euo pipefail
           apt-get update
           apt-get install -y --no-install-recommends \
-            libsqlite3-dev
+            liblz4-dev \
+            libsqlite3-dev \
+            libssl-dev \
+            zlib1g-dev
 
       - name: Resolve Dependencies
         run: swift package resolve
