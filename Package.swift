@@ -18,7 +18,6 @@ dependencies.append(.package(name: "DataCompression", url: "https://github.com/m
 dependencies.append(.package(url: "https://github.com/apple/swift-argument-parser", from: "0.4.0"))
 dependencies.append(.package(url: "https://github.com/groue/GRDB.swift.git", from: "6.0.0"))
 dependencies.append(.package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"))
-dependencies.append(.package(url: "https://github.com/Kitura/Configuration.git", from: "3.0.200"))
 
 targetDependencies.append(.byName(name: "AEXML"))
 targetDependencies.append(.byName(name: "CryptoSwift"))
@@ -57,7 +56,6 @@ targets.append(
         name: "wired3Lib",
         dependencies: [
             .byName(name: "WiredSwift"),
-            .byName(name: "Configuration"),
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
             .product(name: "GRDB", package: "GRDB.swift"),
         ],

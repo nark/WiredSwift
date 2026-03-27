@@ -11,15 +11,6 @@
         }
       },
       {
-        "package": "Configuration",
-        "repositoryURL": "https://github.com/Kitura/Configuration.git",
-        "state": {
-          "branch": null,
-          "revision": "26c60e7a0574cb70611877f092c6fbf0a9345d04",
-          "version": "3.0.200"
-        }
-      },
-      {
         "package": "CryptoSwift",
         "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
         "state": {
@@ -38,30 +29,12 @@
         }
       },
       {
-        "package": "FileKit",
-        "repositoryURL": "https://github.com/Kitura/FileKit.git",
-        "state": {
-          "branch": null,
-          "revision": "58fdf8ab291c800dc57528c997192eb3437ab607",
-          "version": "0.0.200"
-        }
-      },
-      {
         "package": "GRDB",
         "repositoryURL": "https://github.com/groue/GRDB.swift.git",
         "state": {
           "branch": null,
           "revision": "2cf6c756e1e5ef6901ebae16576a7e4e4b834622",
           "version": "6.29.3"
-        }
-      },
-      {
-        "package": "LoggerAPI",
-        "repositoryURL": "https://github.com/Kitura/LoggerAPI.git",
-        "state": {
-          "branch": null,
-          "revision": "e82d34eab3f0b05391082b11ea07d3b70d2f65bb",
-          "version": "1.9.200"
         }
       },
       {
@@ -98,15 +71,6 @@
           "branch": null,
           "revision": "95ba0316a9b733e92bb6b071255ff46263bbe7dc",
           "version": "3.15.1"
-        }
-      },
-      {
-        "package": "swift-log",
-        "repositoryURL": "https://github.com/apple/swift-log.git",
-        "state": {
-          "branch": null,
-          "revision": "bc386b95f2a16ccd0150a8235e7c69eab2b866ca",
-          "version": "1.8.0"
         }
       }
     ]

@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Configuration
 import WiredSwift
 
 
