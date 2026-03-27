@@ -77,16 +77,7 @@ public class Digest {
             throw DigestError.digestNotProperlyInitialized(message: "HMAC-256 not properly initialized")
         }
         
-        var bytes: Array<UInt8> = []
-        
-        do {
-            bytes = try hmac.authenticate(Array(data))
-            
-        } catch let error {
-            Logger.error("HMAC-256 authenticate error: \(error)")
-            throw DigestError.digestFailed(error: error)
-        }
-        
+        let bytes = try hmac.authenticate(Array(data))
         return Data(bytes)
     }
     
@@ -102,16 +93,7 @@ public class Digest {
             throw DigestError.digestNotProperlyInitialized(message: "HMAC-384 not properly initialized")
         }
         
-        var bytes: Array<UInt8> = []
-        
-        do {
-            bytes = try hmac.authenticate(Array(data))
-            
-        } catch let error {
-            Logger.error("HMAC-384 authenticate error: \(error)")
-            throw DigestError.digestFailed(error: error)
-        }
-        
+        let bytes = try hmac.authenticate(Array(data))
         return Data(bytes)
     }
 }

@@ -9,7 +9,7 @@ import Foundation
 import Crypto
 
 public class ECDSA {
-    public var privateKey:P256.Signing.PrivateKey!
+    public var privateKey:P256.Signing.PrivateKey?
     public var publicKey:P256.Signing.PublicKey!
     
     public init?(privateKey: Data) {
@@ -35,12 +35,16 @@ public class ECDSA {
     
     
     public func sign(data: Data) -> Data? {
-        return try? self.privateKey.signature(for: data).rawRepresentation
+        guard let privateKey else {
+            Logger.error("Cannot sign without a private key")
+            return nil
+        }
+        return try? privateKey.signature(for: data).rawRepresentation
     }
     
     
     public func verify(data: Data, withSignature signature:Data) -> Bool {
-        if self.publicKey == nil {
+        guard let publicKey = self.publicKey else {
             Logger.error("Cannot verify without a public key")
             return false
         }
@@ -49,6 +53,6 @@ public class ECDSA {
             Logger.error("Fail to read ECDSA Signature")
             return false
         }
-        return self.publicKey.isValidSignature(s, for: data)
+        return publicKey.isValidSignature(s, for: data)
     }
 }

@@ -41,8 +41,8 @@ public class ServerIdentity: ServerIdentityProvider {
     }
 
     public func signWithIdentity(data: Data) -> Data? {
-        guard let sig = try? privateKey.signature(for: data) else { return nil }
-        return sig.rawRepresentation
+        let signature = try! privateKey.signature(for: data)
+        return signature.rawRepresentation
     }
 
     // MARK: - Init

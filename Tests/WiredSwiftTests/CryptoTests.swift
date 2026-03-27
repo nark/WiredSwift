@@ -123,6 +123,27 @@ final class CryptoTests: XCTestCase {
         XCTAssertEqual(reconstructed.publicKeyData(), pubKeyData)
     }
 
+    func testECDHComputeSecretWithInvalidPeerKeyReturnsNil() {
+        let ecdh = ECDH()
+        XCTAssertNil(ecdh.computeSecret(withPublicKey: Data(repeating: 0x55, count: 3)))
+    }
+
+    func testECDHPublicKeyInitWithInvalidDataIsSafe() {
+        let reconstructed = ECDH(withPublicKey: Data(repeating: 0xAA, count: 7))
+        XCTAssertNil(reconstructed.publicKeyData())
+        XCTAssertNil(reconstructed.secret)
+        XCTAssertNil(reconstructed.derivedSymmetricKey(withSalt: Data("salt".utf8)))
+        XCTAssertNil(reconstructed.derivedKey(withSalt: Data("salt".utf8), andIVofLength: 16))
+        XCTAssertNil(reconstructed.computeSecret(withPublicKey: Data(repeating: 0x33, count: 7)))
+    }
+
+    func testECDHDerivedValuesRequireSharedSecret() {
+        let ecdh = ECDH()
+        XCTAssertNil(ecdh.secret)
+        XCTAssertNil(ecdh.derivedSymmetricKey(withSalt: Data("salt".utf8)))
+        XCTAssertNil(ecdh.derivedKey(withSalt: Data("salt".utf8), andIVofLength: 8))
+    }
+
     // MARK: - ECDSA sign / verify
 
     func testECDSASignAndVerify() {
@@ -172,6 +193,16 @@ final class CryptoTests: XCTestCase {
         XCTAssertFalse(signer.verify(data: data, withSignature: bogusSignature))
     }
 
+    func testECDSAVerifyRejectsMalformedSignatureEncoding() {
+        let privateKeyData = P256.Signing.PrivateKey().rawRepresentation
+        guard let signer = ECDSA(privateKey: privateKeyData) else {
+            XCTFail()
+            return
+        }
+
+        XCTAssertFalse(signer.verify(data: Data("message".utf8), withSignature: Data([0x01])))
+    }
+
     func testECDSAVerifyWithDifferentKeyFails() {
         let key1 = P256.Signing.PrivateKey().rawRepresentation
         let key2 = P256.Signing.PrivateKey().rawRepresentation
@@ -207,7 +238,8 @@ final class CryptoTests: XCTestCase {
         }
 
         // Init verifier with public key only
-        guard let verifier = ECDSA(publicKey: signer.publicKey.rawRepresentation) else {
+        guard let signerPublicKey = signer.publicKey?.rawRepresentation,
+              let verifier = ECDSA(publicKey: signerPublicKey) else {
             XCTFail("ECDSA init from public key failed")
             return
         }
@@ -219,6 +251,36 @@ final class CryptoTests: XCTestCase {
         let badKey = Data(repeating: 0x00, count: 32)
         XCTAssertNil(ECDSA(privateKey: badKey))
     }
+
+    func testECDSAInvalidPublicKeyReturnsNil() {
+        let badKey = Data(repeating: 0x11, count: 31)
+        XCTAssertNil(ECDSA(publicKey: badKey))
+    }
+
+    func testECDSAPublicOnlyCannotSign() {
+        let privateKeyData = P256.Signing.PrivateKey().rawRepresentation
+        guard let signer = ECDSA(privateKey: privateKeyData),
+              let publicKey = signer.publicKey?.rawRepresentation,
+              let verifier = ECDSA(publicKey: publicKey) else {
+            XCTFail("Could not initialize public-only verifier")
+            return
+        }
+
+        XCTAssertNil(verifier.sign(data: Data("sign".utf8)))
+    }
+
+    func testECDSAVerifyReturnsFalseWithoutPublicKey() {
+        let privateKeyData = P256.Signing.PrivateKey().rawRepresentation
+        guard let signer = ECDSA(privateKey: privateKeyData),
+              let signature = signer.sign(data: Data("message".utf8)) else {
+            XCTFail()
+            return
+        }
+
+        signer.publicKey = nil
+        XCTAssertFalse(signer.verify(data: Data("message".utf8), withSignature: signature))
+    }
+
 }
 
 // MARK: - Crypto import for test helpers

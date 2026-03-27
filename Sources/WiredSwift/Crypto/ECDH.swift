@@ -9,13 +9,14 @@ import Foundation
 import Crypto
 
 open class ECDH {
-    private var publicKey:P521.KeyAgreement.PublicKey!
-    private var privateKey:P521.KeyAgreement.PrivateKey!
-    private var sharedSecret:SharedSecret!
+    private var publicKey:P521.KeyAgreement.PublicKey?
+    private var privateKey:P521.KeyAgreement.PrivateKey?
+    private var sharedSecret:SharedSecret?
     
     public init() {
-        self.privateKey = P521.KeyAgreement.PrivateKey()
-        self.publicKey  = self.privateKey.publicKey
+        let privateKey = P521.KeyAgreement.PrivateKey()
+        self.privateKey = privateKey
+        self.publicKey  = privateKey.publicKey
     }
     
     
@@ -30,22 +31,28 @@ open class ECDH {
 
     
     public func publicKeyData() -> Data? {
-        self.publicKey.rawRepresentation
+        self.publicKey?.rawRepresentation
     }
     
     
     public var secret:String? {
-        if  let key = self.sharedSecret.description.split(separator: ":").last {
-            return key.trimmingCharacters(in: CharacterSet.whitespaces)
-        }
-        return nil
+        guard let sharedSecret else { return nil }
+        return sharedSecret.description
+            .split(separator: ":")
+            .last
+            .map { $0.trimmingCharacters(in: CharacterSet.whitespaces) }
     }
     
     
     public func computeSecret(withPublicKey data:Data) -> String? {
+        guard let privateKey else {
+            Logger.error("Cannot compute secret without a private key")
+            return nil
+        }
+
         do {
             let publicKey = try P521.KeyAgreement.PublicKey(rawRepresentation: data)
-            self.sharedSecret = try self.privateKey.sharedSecretFromKeyAgreement(with: publicKey)
+            self.sharedSecret = try privateKey.sharedSecretFromKeyAgreement(with: publicKey)
             
             return self.secret
         } catch let error {
@@ -57,11 +64,12 @@ open class ECDH {
     
     
     public func derivedSymmetricKey(withSalt salt:Data) -> String? {
-        let deviredKey = self.sharedSecret.hkdfDerivedSymmetricKey(
-                            using: SHA512.self,
-                            salt: salt,
-                            sharedInfo: Data(),
-                            outputByteCount: 32)
+        guard let sharedSecret else { return nil }
+        let deviredKey = sharedSecret.hkdfDerivedSymmetricKey(
+            using: SHA512.self,
+            salt: salt,
+            sharedInfo: Data(),
+            outputByteCount: 32)
         
         return deviredKey.withUnsafeBytes { body in
             Data(body).hexEncodedString()
@@ -69,20 +77,16 @@ open class ECDH {
     }
     
     public func derivedKey(withSalt salt:Data, andIVofLength ivLength:Int) -> (Data, Data)? {
-        let deviredKey = self.sharedSecret.hkdfDerivedSymmetricKey(
-                            using: SHA512.self,
-                            salt: salt,
-                            sharedInfo: Data(),
-                            outputByteCount: 32 + ivLength)
+        guard let sharedSecret else { return nil }
+        let deviredKey = sharedSecret.hkdfDerivedSymmetricKey(
+            using: SHA512.self,
+            salt: salt,
+            sharedInfo: Data(),
+            outputByteCount: 32 + ivLength)
         
         let combined = deviredKey.withUnsafeBytes { body in
             Data(body)
         }
-        
-        if combined.count == 0 {
-            return nil
-        }
-        
         return (combined.dropLast(ivLength), combined.dropFirst(32))
     }
 }

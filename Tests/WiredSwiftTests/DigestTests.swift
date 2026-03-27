@@ -127,6 +127,11 @@ final class DigestTests: XCTestCase {
         XCTAssertThrowsError(try digest.authenticate(data: Data("test".utf8)))
     }
 
+    func testUnsupportedDigestThrows() {
+        let digest = Digest(type: .NONE)
+        XCTAssertThrowsError(try digest.authenticate(data: Data("test".utf8)))
+    }
+
     // MARK: - Determinism
 
     func testSHA2_256IsDeterministic() throws {
