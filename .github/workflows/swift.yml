@@ -198,14 +198,21 @@ jobs:
       - name: Swift Version
         run: swift --version
 
+      - name: Install Linux dependencies
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            libsqlite3-dev
+
       - name: Resolve Dependencies
         run: swift package resolve
 
       - name: Build wired3
-        run: swift build --product wired3
+        run: swift build --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
 
       - name: Build WiredChatBot
-        run: swift build --product WiredChatBot
+        run: swift build --product WiredChatBot -Xswiftc -DGRDBCUSTOMSQLITE
 
       - name: Test
-        run: swift test
+        run: swift test -Xswiftc -DGRDBCUSTOMSQLITE
