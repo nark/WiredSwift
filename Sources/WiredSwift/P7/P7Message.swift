@@ -29,14 +29,10 @@ public class P7Message: NSObject {
     private var parameters: [String: Any] = [String: Any](minimumCapacity: 50)
 
     public var numberOfParameters: Int {
-        get {
-            return self.parameters.count
-        }
+        self.parameters.count
     }
     public var parameterKeys: [String] {
-        get {
-            return Array(self.parameters.keys)
-        }
+        Array(self.parameters.keys)
     }
 
     public override var description: String { self.xml() }
@@ -95,7 +91,7 @@ public class P7Message: NSObject {
                 return String(val)
             }
         } else if spec.fieldsByName[field]?.type == .enum32 {
-            if let _ = value as? UInt32 {
+            if value is UInt32 {
                 // print("field")
             }
         } else if spec.fieldsByName[field]?.type == .data {

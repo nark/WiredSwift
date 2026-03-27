@@ -271,11 +271,9 @@ public class BoardsController {
                 "CREATE INDEX IF NOT EXISTS idx_board_reactions_target ON board_reactions(target_uuid, target_type)",
                 "COMMIT"
             ]
-            for sql in steps {
-                if sqlite3_exec(db, sql, nil, nil, nil) != SQLITE_OK {
-                    _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
-                    return false
-                }
+            for sql in steps where sqlite3_exec(db, sql, nil, nil, nil) != SQLITE_OK {
+                _ = sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                return false
             }
             return true
         }
@@ -380,12 +378,10 @@ public class BoardsController {
             """
         ]
 
-        for statement in statements {
-            if sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
-                let errorMessage = sqlite3_errmsg(db).map { String(cString: $0) } ?? "unknown"
-                WiredSwift.Logger.warning("BoardsController: board search will use LIKE queries (\(errorMessage))")
-                return false
-            }
+        for statement in statements where sqlite3_exec(db, statement, nil, nil, nil) != SQLITE_OK {
+            let errorMessage = sqlite3_errmsg(db).map { String(cString: $0) } ?? "unknown"
+            WiredSwift.Logger.warning("BoardsController: board search will use LIKE queries (\(errorMessage))")
+            return false
         }
 
         return true

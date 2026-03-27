@@ -1171,7 +1171,7 @@ public class P7Socket: NSObject {
             throw P7SocketError.keyExchangeFailed(message)
         }
 
-        if self.password == nil || self.password == "" {
+        if self.password == nil || self.password?.isEmpty == true {
             self.password = "".sha256()
         } else {
             self.password = self.password.sha256()

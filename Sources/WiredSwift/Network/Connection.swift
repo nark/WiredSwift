@@ -99,9 +99,7 @@ open class Connection: NSObject {
     private var listener: DispatchWorkItem!
 
     public var URI: String {
-        get {
-            return "\(self.url.login)@\(self.url.hostname):\(self.url.port)"
-        }
+        "\(self.url.login)@\(self.url.hostname):\(self.url.port)"
     }
 
     public init(withSpec spec: P7Spec, delegate: ConnectionDelegate? = nil) {
@@ -115,7 +113,7 @@ open class Connection: NSObject {
     }
 
     public func addDelegate(_ delegate: ConnectionDelegate) {
-        if delegates.firstIndex(where: { $0 === delegate }) == nil {
+        if !delegates.contains(where: { $0 === delegate }) {
             self.delegates.append(delegate)
         }
         Logger.debug("Connection \(self) addDelegate : \(delegate) \(delegates.count)")
@@ -310,7 +308,7 @@ open class Connection: NSObject {
     }
 
     public func hasPrivilege(key: String) -> Bool {
-        return self.privileges.firstIndex(of: key) != nil ? true : false
+        return self.privileges.contains(key)
     }
 
     public func hasAdministrationPrivileges() -> Bool {
@@ -466,7 +464,7 @@ open class Connection: NSObject {
 
         var password = "".sha256()
 
-        if self.url?.password != nil && self.url?.password != "" {
+        if self.url?.password != nil && self.url?.password?.isEmpty == false {
             password = self.url!.password.sha256()
         }
 

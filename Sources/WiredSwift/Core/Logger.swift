@@ -95,12 +95,10 @@ public class Logger {
     /**/
 
     public var targetName: String {
-        get {
-            if let bundleName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String {
-                return bundleName
-            }
-            return "Wired3"
+        if let bundleName = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String {
+            return bundleName
         }
+        return "Wired3"
     }
 
     private static var shared = Logger()

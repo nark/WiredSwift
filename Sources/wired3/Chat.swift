@@ -115,12 +115,7 @@ public class PrivateChat: Chat {
 
     public func isInvited(client: Client) -> Bool {
         invitedClientsLock.concurrentlyRead {
-            for c in self.invitedClients {
-                if c.userID == client.userID {
-                    return true
-                }
-            }
-            return false
+            return self.invitedClients.contains(where: { $0.userID == client.userID })
         }
     }
 }

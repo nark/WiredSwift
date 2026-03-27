@@ -106,7 +106,7 @@ public class User: Codable, FetchableRecord, PersistableRecord {
         if self.group == string { return true }
         if let arr = self.groups?.split(separator: ",")
                         .map({ String($0.replacingOccurrences(of: " ", with: "")) }),
-           arr.firstIndex(of: string) != nil {
+           arr.contains(string) {
             return true
         }
         return false

@@ -125,10 +125,8 @@ enum BanPattern {
                 return false
             }
 
-            for index in 0..<4 {
-                if (candidate.bytes[index] & mask[index]) != (base[index] & mask[index]) {
-                    return false
-                }
+            for index in 0..<4 where (candidate.bytes[index] & mask[index]) != (base[index] & mask[index]) {
+                return false
             }
 
             return true

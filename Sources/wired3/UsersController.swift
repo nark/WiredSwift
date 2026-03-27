@@ -102,7 +102,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
             let f = ($0.fullName ?? "").lowercased()
             let i = ($0.identity ?? "").lowercased()
             return u.contains(normalized) || f.contains(normalized) || i.contains(normalized)
-        }.prefix(limit).map { $0 }
+        }.prefix(limit)
     }
 
     public func isIdentityAvailable(_ identity: String) -> Bool {
@@ -360,14 +360,12 @@ public class UsersController: TableController, SocketPasswordDelegate {
             "COMMIT;"
         ]
 
-        for statement in statements {
-            if sqliteExec(db: db, statement) != SQLITE_OK {
-                _ = sqliteExec(db: db, "ROLLBACK;")
-                if let message = sqlite3_errmsg(db) {
-                    WiredSwift.Logger.error("Could not migrate \(table): \(String(cString: message))")
-                }
-                return
+        for statement in statements where sqliteExec(db: db, statement) != SQLITE_OK {
+            _ = sqliteExec(db: db, "ROLLBACK;")
+            if let message = sqlite3_errmsg(db) {
+                WiredSwift.Logger.error("Could not migrate \(table): \(String(cString: message))")
             }
+            return
         }
         WiredSwift.Logger.info("Migrated \(table) to per-account unique privileges")
     }
@@ -436,11 +434,9 @@ public class UsersController: TableController, SocketPasswordDelegate {
         for idx in [
             "CREATE INDEX IF NOT EXISTS \"offline_messages_recipient_index\" ON \"offline_messages\"(\"recipient_identity\");",
             "CREATE INDEX IF NOT EXISTS \"offline_messages_expires_index\" ON \"offline_messages\"(\"expires_at\");"
-        ] {
-            if sqliteExec(db: db, idx) != SQLITE_OK {
-                if let message = sqlite3_errmsg(db) {
-                    WiredSwift.Logger.error("Could not create offline_messages index: \(String(cString: message))")
-                }
+        ] where sqliteExec(db: db, idx) != SQLITE_OK {
+            if let message = sqlite3_errmsg(db) {
+                WiredSwift.Logger.error("Could not create offline_messages index: \(String(cString: message))")
             }
         }
 

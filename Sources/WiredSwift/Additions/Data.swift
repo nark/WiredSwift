@@ -58,76 +58,60 @@ extension Data {
     }
 
     var uint8: UInt8 {
-        get {
-            var number: UInt8 = 0
-            self.copyBytes(to: &number, count: MemoryLayout<UInt8>.size)
-            return number
-        }
+        var number: UInt8 = 0
+        self.copyBytes(to: &number, count: MemoryLayout<UInt8>.size)
+        return number
     }
 
     public var uint16: UInt16? {
-        get {
-            guard self.count >= MemoryLayout<UInt16>.size else { return nil }
-            var value: UInt16 = 0
-            _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
-                self.prefix(MemoryLayout<UInt16>.size).copyBytes(to: destination)
-            }
-            return CFSwapInt16HostToBig(value)
+        guard self.count >= MemoryLayout<UInt16>.size else { return nil }
+        var value: UInt16 = 0
+        _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
+            self.prefix(MemoryLayout<UInt16>.size).copyBytes(to: destination)
         }
+        return CFSwapInt16HostToBig(value)
     }
 
     public var uint32: UInt32? {
-        get {
-            guard self.count >= MemoryLayout<UInt32>.size else { return nil }
-            var value: UInt32 = 0
-            _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
-                self.prefix(MemoryLayout<UInt32>.size).copyBytes(to: destination)
-            }
-            return CFSwapInt32HostToBig(value)
+        guard self.count >= MemoryLayout<UInt32>.size else { return nil }
+        var value: UInt32 = 0
+        _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
+            self.prefix(MemoryLayout<UInt32>.size).copyBytes(to: destination)
         }
+        return CFSwapInt32HostToBig(value)
     }
 
     public var uint64: UInt64? {
-        get {
-            guard self.count >= MemoryLayout<UInt64>.size else { return nil }
-            var value: UInt64 = 0
-            _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
-                self.prefix(MemoryLayout<UInt64>.size).copyBytes(to: destination)
-            }
-            return CFSwapInt64HostToBig(value)
+        guard self.count >= MemoryLayout<UInt64>.size else { return nil }
+        var value: UInt64 = 0
+        _ = Swift.withUnsafeMutableBytes(of: &value) { (destination: UnsafeMutableRawBufferPointer) in
+            self.prefix(MemoryLayout<UInt64>.size).copyBytes(to: destination)
         }
+        return CFSwapInt64HostToBig(value)
     }
 
     public var double: Double? {
-        get {
-            guard self.count >= MemoryLayout<UInt64>.size else { return nil }
-            var bitPattern: UInt64 = 0
-            _ = Swift.withUnsafeMutableBytes(of: &bitPattern) { (destination: UnsafeMutableRawBufferPointer) in
-                self.prefix(MemoryLayout<UInt64>.size).copyBytes(to: destination)
-            }
-            return CFConvertDoubleSwappedToHost(CFSwappedFloat64(v: bitPattern))
+        guard self.count >= MemoryLayout<UInt64>.size else { return nil }
+        var bitPattern: UInt64 = 0
+        _ = Swift.withUnsafeMutableBytes(of: &bitPattern) { (destination: UnsafeMutableRawBufferPointer) in
+            self.prefix(MemoryLayout<UInt64>.size).copyBytes(to: destination)
         }
+        return CFConvertDoubleSwappedToHost(CFSwappedFloat64(v: bitPattern))
     }
 
     public var uuid: NSUUID? {
-        get {
-            guard self.count >= 16 else { return nil }
-            var bytes = [UInt8](repeating: 0, count: 16)
-            self.copyBytes(to: &bytes, count: 16)
-            return NSUUID(uuidBytes: bytes)
-        }
+        guard self.count >= 16 else { return nil }
+        var bytes = [UInt8](repeating: 0, count: 16)
+        self.copyBytes(to: &bytes, count: 16)
+        return NSUUID(uuidBytes: bytes)
     }
 
     public var stringASCII: String? {
-        get {
-            return NSString(data: self, encoding: String.Encoding.ascii.rawValue) as String?
-        }
+        NSString(data: self, encoding: String.Encoding.ascii.rawValue) as String?
     }
 
     public var stringUTF8: String? {
-        get {
-            return NSString(data: self, encoding: String.Encoding.utf8.rawValue) as String?
-        }
+        NSString(data: self, encoding: String.Encoding.utf8.rawValue) as String?
     }
 
     struct HexEncodingOptions: OptionSet {

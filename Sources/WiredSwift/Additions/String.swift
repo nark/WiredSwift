@@ -66,38 +66,19 @@ extension String {
 extension String {
 
     public var lastPathComponent: String {
-
-        get {
-            return (self as NSString).lastPathComponent
-        }
+        (self as NSString).lastPathComponent
     }
     public var pathExtension: String {
-
-        get {
-
-            return (self as NSString).pathExtension
-        }
+        (self as NSString).pathExtension
     }
     public var stringByDeletingLastPathComponent: String {
-
-        get {
-
-            return (self as NSString).deletingLastPathComponent
-        }
+        (self as NSString).deletingLastPathComponent
     }
     public var stringByDeletingPathExtension: String {
-
-        get {
-
-            return (self as NSString).deletingPathExtension
-        }
+        (self as NSString).deletingPathExtension
     }
     public var pathComponents: [String] {
-
-        get {
-
-            return (self as NSString).pathComponents
-        }
+        (self as NSString).pathComponents
     }
 
     public func stringByAppendingPathComponent(path: String) -> String {
