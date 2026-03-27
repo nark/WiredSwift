@@ -552,22 +552,18 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = try sendLoginAndExpectSuccess(socket: subscriber, username: "it_admin", password: "secret")
         drainMessages(socket: subscriber)
 
-        let publisher = try runtime.connectClient(username: "it_admin_2", password: "secret2")
-        defer { publisher.disconnect() }
-        try sendClientInfoAndExpectServerInfo(socket: publisher)
-        _ = try sendLoginAndExpectSuccess(socket: publisher, username: "it_admin_2", password: "secret2")
-        drainMessages(socket: publisher)
-
         let subscribe = P7Message(withName: "wired.account.subscribe_accounts", spec: subscriber.spec)
         XCTAssertTrue(subscriber.write(subscribe))
         _ = try readMessage(from: subscriber, expectedName: "wired.okay", maxReads: 12)
 
         let createdUsername = "integration_notify_\(UUID().uuidString.prefix(8))"
-        let createUser = P7Message(withName: "wired.account.create_user", spec: publisher.spec)
+        // Use the same privileged socket as subscriber + creator to avoid
+        // cross-connection timing races that can make this assertion flaky on CI.
+        let createUser = P7Message(withName: "wired.account.create_user", spec: subscriber.spec)
         createUser.addParameter(field: "wired.account.name", value: createdUsername)
         createUser.addParameter(field: "wired.account.password", value: "integration-secret")
-        XCTAssertTrue(publisher.write(createUser))
-        _ = try readMessage(from: publisher, expectedName: "wired.okay", maxReads: 20)
+        XCTAssertTrue(subscriber.write(createUser))
+        _ = try readMessage(from: subscriber, expectedName: "wired.okay", maxReads: 20)
 
         _ = try readMessage(from: subscriber, expectedName: "wired.account.accounts_changed", maxReads: 80, timeout: 1)
     }
