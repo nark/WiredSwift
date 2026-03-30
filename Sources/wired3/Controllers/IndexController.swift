@@ -426,7 +426,7 @@ public class IndexController: TableController {
             reply.addParameter(field: "wired.file.rsrc_size", value: UInt64(0))
         case .directory, .uploads:
             reply.addParameter(field: "wired.file.directory_count", value: WiredSwift.File.count(path: realPath))
-        case .dropbox:
+        case .dropbox, .sync:
             reply.addParameter(field: "wired.file.directory_count",
                                value: WiredSwift.File.count(path: realPath))
             if let priv = App.filesController.dropBoxPrivileges(forVirtualPath: entry.virtual_path) {

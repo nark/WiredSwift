@@ -23,6 +23,8 @@ public class File {
     public static let wiredFileMetaPermissions: String   = "/.wired/permissions"
     /// Relative path of the per-directory labels metadata file.
     public static let wiredFileMetaLabels: String        = "/.wired/labels"
+    /// Relative path of the per-directory sync policy metadata file.
+    public static let wiredFileMetaSyncPolicy: String    = "/.wired/sync_policy.json"
 
     /// Unicode field-separator (U+001C) used to delimit owner, group and mode
     /// within the permissions metadata file.
@@ -67,6 +69,7 @@ public class File {
         case directory  = 1
         case uploads    = 2
         case dropbox    = 3
+        case sync       = 4
 
         /// Persists `type` to the `.wired/type` metadata file inside `path`.
         ///
@@ -370,5 +373,58 @@ public class FilePrivilege {
         }
 
         return true
+    }
+}
+
+/// Quota and retention policy attached to a `wired.file.type.sync` directory.
+public struct SyncPolicy: Codable, Equatable {
+    public var maxFileSizeBytes: UInt64
+    public var maxTreeSizeBytes: UInt64
+    public var maxItems: UInt64
+    public var retentionDays: UInt32
+
+    public init(
+        maxFileSizeBytes: UInt64 = 0,
+        maxTreeSizeBytes: UInt64 = 0,
+        maxItems: UInt64 = 0,
+        retentionDays: UInt32 = 0
+    ) {
+        self.maxFileSizeBytes = maxFileSizeBytes
+        self.maxTreeSizeBytes = maxTreeSizeBytes
+        self.maxItems = maxItems
+        self.retentionDays = retentionDays
+    }
+
+    public static func load(path: String) -> SyncPolicy? {
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else {
+            return nil
+        }
+
+        let policyPath = path.stringByAppendingPathComponent(path: File.wiredFileMetaSyncPolicy)
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: policyPath)) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(SyncPolicy.self, from: data)
+    }
+
+    @discardableResult
+    public static func save(_ policy: SyncPolicy, path: String) -> Bool {
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else {
+            return false
+        }
+
+        let policyPath = path.stringByAppendingPathComponent(path: File.wiredFileMetaSyncPolicy)
+        let wiredPath = policyPath.stringByDeletingLastPathComponent
+
+        do {
+            try FileManager.default.createDirectory(atPath: wiredPath, withIntermediateDirectories: true, attributes: nil)
+            let data = try JSONEncoder().encode(policy)
+            try data.write(to: URL(fileURLWithPath: policyPath), options: .atomic)
+            return true
+        } catch {
+            return false
+        }
     }
 }

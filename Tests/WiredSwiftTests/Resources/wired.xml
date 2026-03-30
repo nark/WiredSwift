@@ -494,16 +494,17 @@
         <p7:field name="wired.file.type" type="enum" id="7001" version="2.0">
             <p7:documentation>
                 File type. [enum:wired.file.type.file] indicates a normal file, and
-                [enum:wired.file.type.directory] indicates a normal directory. The other two are specific
-                to Wired, and are differentiated mostly by permissions. [enum:wired.file.type.uploads]
+                [enum:wired.file.type.directory] indicates a normal directory. The other three are specific to Wired, and are differentiated mostly by permissions. [enum:wired.file.type.uploads]
                 are directories that may be uploaded into, and listed, while [enum:wired.file.type.dropbox]
-                may be uploaded into, but not listed. Drop boxes can also have extended permissions, like
+                may be uploaded into, but not listed. [enum:wired.file.type.sync] identifies a synchronized
+                directory observed by a background daemon for uni- or bi-directional synchronization. Drop boxes can also have extended permissions, like
                 [field:wired.file.owner], etc.
             </p7:documentation>
             <p7:enum name="wired.file.type.file" value="0" version="2.0" />
             <p7:enum name="wired.file.type.directory" value="1" version="2.0" />
             <p7:enum name="wired.file.type.uploads" value="2" version="2.0" />
             <p7:enum name="wired.file.type.dropbox" value="3" version="2.0" />
+            <p7:enum name="wired.file.type.sync" value="4" version="2.0" />
         </p7:field>
         <p7:field name="wired.file.data_size" type="uint64" id="7002" version="2.0">
             <p7:documentation>
@@ -2513,7 +2514,7 @@
             <p7:documentation>
                 File list item for a directory. [field:wired.file.path] may not be the empty string.
 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.readable]
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.readable]
                 and [field:wired.file.writable] should be set.
                 
                 rsrc TBD
@@ -2531,7 +2532,7 @@
             <p7:documentation>
                 File list completion message.
                 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.readable]
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.readable]
                 and [field:wired.file.writable] should be set.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
@@ -2554,7 +2555,7 @@
                 Info message for a file or a directory. [field:wired.file.path] may not be the empty string,
                 but [field:wired.file.comment] may be.
                 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.owner],
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.owner],
                 [field:wired.file.owner.read], [field:wired.file.owner.write], [field:wired.file.group],
                 [field:wired.file.group.read], [field:wired.file.group.read], [field:wired.file.everyone.read],
                 [field:wired.file.everyone.write], [field:wired.file.readable] and [field:wired.file.writable]
@@ -2625,6 +2626,9 @@
                 Change directory type message. [field:wired.file.path] may not be the empty string.
                 
                 [field:wired.file.type] may not be [enum:wired.file.type.file].
+
+                Within a synchronized directory subtree, conversions to [enum:wired.file.type.uploads],
+                [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync] should be rejected.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.file.path" use="required" version="2.0" />
@@ -2653,7 +2657,7 @@
         
         <p7:message name="wired.file.set_permissions" id="7011" version="2.0">
             <p7:documentation>
-                Change executable flag message for a drop box directory. [field:wired.file.path] may not
+                Change executable flag message for a drop box or sync directory. [field:wired.file.path] may not
                 be the empty string, but [field:wired.file.owner] and [field:wired.file.group] may be.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
@@ -2687,7 +2691,7 @@
                 If [field:wired.file.type] is set, this should be the directory type, otherwise it
                 should be [enum:wired.file.type.directory].
                 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.owner],
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.owner],
                 [field:wired.file.owner.read], [field:wired.file.owner.write], [field:wired.file.group],
                 [field:wired.file.group.read], [field:wired.file.group.write], [field:wired.file.everyone.read]
                 and [field:wired.file.everyone.write] should be set.

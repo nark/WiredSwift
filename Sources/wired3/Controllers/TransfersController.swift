@@ -62,6 +62,8 @@ public class TransfersController {
     private var activeUploads: Int = 0
     private var userActiveDownloads: [String: Int] = [:]
     private var userActiveUploads: [String: Int] = [:]
+    private let uploadPathStateLock = NSLock()
+    private var activeUploadTargets: Set<String> = []
 
     private enum MessageReadTimeout: Error {
         case timeout
@@ -80,6 +82,34 @@ public class TransfersController {
         DispatchQueue.global(qos: .default).async { [weak self] in
             self?.queueRecomputeLoop()
         }
+    }
+
+    private func reserveUploadTarget(_ path: String) -> Bool {
+        uploadPathStateLock.lock()
+        defer { uploadPathStateLock.unlock() }
+        if activeUploadTargets.contains(path) {
+            return false
+        }
+        activeUploadTargets.insert(path)
+        return true
+    }
+
+    private func releaseUploadTarget(_ path: String) {
+        uploadPathStateLock.lock()
+        activeUploadTargets.remove(path)
+        uploadPathStateLock.unlock()
+    }
+
+    private func conflictVirtualPath(for path: String, username: String) -> String {
+        let base = path.stringByDeletingPathExtension
+        let ext = path.pathExtension
+        let stamp = Int(Date().timeIntervalSince1970)
+        let safeUser = username.replacingOccurrences(of: " ", with: "_")
+        var candidate = "\(base).conflict.\(safeUser).\(stamp)"
+        if !ext.isEmpty {
+            candidate += ".\(ext)"
+        }
+        return candidate
     }
 
     // MARK: -
@@ -393,13 +423,27 @@ public class TransfersController {
 
     public func upload(path: String, dataSize: UInt64, rsrcSize: UInt64, executable: Bool, client: Client, message: P7Message) -> Transfer? {
         let transfer = Transfer(path: path, client: client, message: message, type: .upload)
-        var realPath = filesController.real(path: path)
+        var virtualPath = path
+        var targetRealPath = filesController.real(path: virtualPath)
+        let isSyncUpload = filesController.isWithinSyncTree(virtualPath: virtualPath)
 
-        if FileManager.default.fileExists(atPath: realPath) {
-            App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
+        if FileManager.default.fileExists(atPath: targetRealPath) || !reserveUploadTarget(targetRealPath) {
+            if !isSyncUpload {
+                App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
+                return nil
+            }
 
-            return nil
+            virtualPath = conflictVirtualPath(for: path, username: client.user?.username ?? "unknown")
+            targetRealPath = filesController.real(path: virtualPath)
+
+            if FileManager.default.fileExists(atPath: targetRealPath) || !reserveUploadTarget(targetRealPath) {
+                App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
+                return nil
+            }
         }
+
+        transfer.path = virtualPath
+        var realPath = targetRealPath
 
         if !realPath.hasSuffix(WiredTransferPartialExtension) {
             if let p = realPath.stringByAppendingPathExtension(ext: WiredTransferPartialExtension) {
@@ -414,12 +458,14 @@ public class TransfersController {
         if fd < 0 {
             Logger.error("Could not open upload \(realPath)")
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            releaseUploadTarget(targetRealPath)
             return nil
         }
 
         if lseek(fd, off_t(dataOffset), SEEK_SET) < 0 {
             Logger.error("Could not seek to \(dataOffset) in upload \(realPath)")
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            releaseUploadTarget(targetRealPath)
             return nil
         }
 
@@ -543,6 +589,11 @@ public class TransfersController {
     }
 
     private func runUpload(transfer: Transfer, client: Client, message: P7Message) -> Bool {
+        let finalTargetPath = transfer.realDataPath.stringByDeletingPathExtension
+        defer {
+            releaseUploadTarget(finalTargetPath)
+        }
+
         let reply = P7Message(withName: "wired.transfer.upload_ready", spec: message.spec)
         reply.addParameter(field: "wired.file.path", value: transfer.path)
         reply.addParameter(field: "wired.transfer.data_offset", value: transfer.dataOffset)

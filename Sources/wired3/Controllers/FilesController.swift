@@ -21,6 +21,16 @@ public class FilesController {
         self.initFilesSystem()
     }
 
+    private func isManagedDirectoryType(_ type: File.FileType?) -> Bool {
+        guard let type else { return false }
+        return type == .dropbox || type == .sync
+    }
+
+    private func isDirectoryType(_ type: File.FileType?) -> Bool {
+        guard let type else { return false }
+        return type == .directory || type == .uploads || type == .dropbox || type == .sync
+    }
+
     // MARK: -
     public func real(path: String) -> String {
         // Keep path joins stable across platforms (Linux Foundation can keep
@@ -153,7 +163,7 @@ public class FilesController {
             reply.addParameter(field: "wired.file.directory_count", value: File.count(path: realPath))
         }
 
-        if type == .dropbox, let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+        if isManagedDirectoryType(type), let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
             let mode = privilege.mode ?? []
             reply.addParameter(field: "wired.file.owner", value: privilege.owner ?? "")
             reply.addParameter(field: "wired.file.group", value: privilege.group ?? "")
@@ -217,6 +227,11 @@ public class FilesController {
             return fileType
         }()
 
+        if !isValidTypePlacementForCreate(targetPath: normalizedPath, targetType: fileType) {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
         if FileManager.default.fileExists(atPath: realPath) {
             App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
             return
@@ -275,6 +290,11 @@ public class FilesController {
               let fileType = File.FileType(rawValue: typeValue),
               fileType != .file else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if !isValidTypePlacementForSetType(path: normalizedPath, targetType: fileType) {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
@@ -395,7 +415,12 @@ public class FilesController {
 
         // file privileges
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toRead: privilege) || !user.hasPermission(toWrite: privilege) {
+            let canWrite = user.hasPermission(toWrite: privilege)
+            let canRead = user.hasPermission(toRead: privilege)
+            let writeOnlyAllowed = syncRealPath(inVirtualPath: normalizedPath) != nil
+            let allowed = writeOnlyAllowed ? canWrite : (canRead && canWrite)
+
+            if !allowed {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -450,6 +475,11 @@ public class FilesController {
             }
         } else if !user.hasPrivilege(name: "wired.account.file.move_files") &&
                     (!user.hasPrivilege(name: "wired.account.file.rename_files") || !isRenameOnly) {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if !isValidMovePlacement(from: normalizedFromPath, to: normalizedToPath) {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
@@ -631,7 +661,7 @@ public class FilesController {
             var readable = false
             var writable = false
 
-            if type == .dropbox, let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
+            if isManagedDirectoryType(type), let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
                 readable = user.hasPermission(toRead: privileges)
                 writable = user.hasPermission(toWrite: privileges)
             }
@@ -654,6 +684,10 @@ public class FilesController {
                 datasize = 0
                 rsrcsize = 0
                 directorycount = File.count(path: childRealPath)
+            case .sync:
+                datasize = 0
+                rsrcsize = 0
+                directorycount = readable ? File.count(path: childRealPath) : 0
             case .none:
                 datasize = 0
                 rsrcsize = 0
@@ -669,7 +703,7 @@ public class FilesController {
                 if type == .file {
                     reply.addParameter(field: "wired.file.data_size", value: datasize)
                     reply.addParameter(field: "wired.file.rsrc_size", value: rsrcsize)
-                } else if type == .directory || type == .uploads || type == .dropbox {
+                } else if isDirectoryType(type) {
                     reply.addParameter(field: "wired.file.directory_count", value: directorycount)
                 }
 
@@ -681,7 +715,7 @@ public class FilesController {
             reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
             reply.addParameter(field: "wired.file.volume", value: UInt32(0))
 
-            if type == .dropbox {
+            if isManagedDirectoryType(type) {
                 reply.addParameter(field: "wired.file.readable", value: readable)
                 reply.addParameter(field: "wired.file.writable", value: writable)
             }
@@ -695,7 +729,7 @@ public class FilesController {
                 return true
             }
 
-            if recursive && (type == .directory || type == .uploads || type == .dropbox) {
+            if recursive && isDirectoryType(type) {
                 if !self.replyListRecursive(
                     realPath: childRealPath,
                     virtualPath: childVirtualPath,
@@ -798,8 +832,73 @@ public class FilesController {
         return true
     }
 
+    private func containsDisallowedDescendantForSync(inRealPath path: String) -> Bool {
+        guard let enumerator = FileManager.default.enumerator(atPath: path) else {
+            return false
+        }
+
+        while let entry = enumerator.nextObject() as? String {
+            if entry.hasPrefix(".wired") {
+                continue
+            }
+
+            let fullPath = path.stringByAppendingPathComponent(path: entry)
+            switch File.FileType.type(path: fullPath) {
+            case .uploads, .dropbox, .sync:
+                return true
+            default:
+                break
+            }
+        }
+
+        return false
+    }
+
+    private func isSyncPath(_ path: String) -> Bool {
+        return syncRealPath(inVirtualPath: path) != nil
+    }
+
+    private func isValidTypePlacementForCreate(targetPath: String, targetType: File.FileType) -> Bool {
+        if isSyncPath(targetPath) && (targetType == .uploads || targetType == .dropbox || targetType == .sync) {
+            return false
+        }
+        return true
+    }
+
+    private func isValidTypePlacementForSetType(path: String, targetType: File.FileType) -> Bool {
+        if targetType == .uploads || targetType == .dropbox || targetType == .sync {
+            let parent = path.stringByDeletingLastPathComponent
+            if isSyncPath(parent) {
+                return false
+            }
+        }
+
+        if targetType == .sync {
+            let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+            if containsDisallowedDescendantForSync(inRealPath: realPath) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private func isValidMovePlacement(from sourcePath: String, to destinationPath: String) -> Bool {
+        let sourceRealPath = URL(fileURLWithPath: self.real(path: sourcePath)).resolvingSymlinksInPath().path
+        let sourceType = File.FileType.type(path: sourceRealPath)
+        let targetParentVirtual = destinationPath.stringByDeletingLastPathComponent
+
+        if isSyncPath(targetParentVirtual) {
+            if sourceType == .uploads || sourceType == .dropbox || sourceType == .sync {
+                return false
+            }
+        }
+
+        return true
+    }
+
     func dropBoxPrivileges(forVirtualPath path: String) -> FilePrivilege? {
-        guard let dropBoxPath = dropBoxRealPath(inVirtualPath: path) else {
+        guard let dropBoxPath = managedRealPath(inVirtualPath: path) else {
             return nil
         }
 
@@ -811,7 +910,7 @@ public class FilesController {
         return FilePrivilege(owner: "", group: "", mode: .everyoneWrite)
     }
 
-    private func dropBoxRealPath(inVirtualPath path: String) -> String? {
+    private func managedRealPath(inVirtualPath path: String) -> String? {
         let normalized = NSString(string: path).standardizingPath
         let components = normalized.split(separator: "/").map(String.init)
 
@@ -823,12 +922,89 @@ public class FilesController {
             }
 
             current = current.stringByAppendingPathComponent(path: component)
-            if File.FileType.type(path: current) == .dropbox {
+            if isManagedDirectoryType(File.FileType.type(path: current)) {
                 return current
             }
         }
 
         return nil
+    }
+
+    private func syncRealPath(inVirtualPath path: String) -> String? {
+        let normalized = NSString(string: path).standardizingPath
+        let components = normalized.split(separator: "/").map(String.init)
+
+        var current = URL(fileURLWithPath: self.real(path: "/")).resolvingSymlinksInPath().path
+
+        for component in components {
+            if component.isEmpty {
+                continue
+            }
+
+            current = current.stringByAppendingPathComponent(path: component)
+            if File.FileType.type(path: current) == .sync {
+                return current
+            }
+        }
+
+        return nil
+    }
+
+    func syncPolicy(forVirtualPath path: String) -> SyncPolicy? {
+        guard let syncPath = syncRealPath(inVirtualPath: path) else {
+            return nil
+        }
+        return SyncPolicy.load(path: syncPath)
+    }
+
+    func isWithinSyncTree(virtualPath path: String) -> Bool {
+        return syncRealPath(inVirtualPath: path) != nil
+    }
+
+    func validateSyncQuotaForUpload(path virtualPath: String, incomingDataSize: UInt64) -> Bool {
+        guard let syncPath = syncRealPath(inVirtualPath: virtualPath),
+              let policy = SyncPolicy.load(path: syncPath) else {
+            return true
+        }
+
+        if policy.maxFileSizeBytes > 0 && incomingDataSize > policy.maxFileSizeBytes {
+            return false
+        }
+
+        if policy.maxTreeSizeBytes > 0 {
+            var currentSize: UInt64 = 0
+            if let enumerator = FileManager.default.enumerator(atPath: syncPath) {
+                while let entry = enumerator.nextObject() as? String {
+                    if entry.hasPrefix(".wired") {
+                        continue
+                    }
+                    let fullPath = syncPath.stringByAppendingPathComponent(path: entry)
+                    currentSize += File.size(path: fullPath)
+                }
+            }
+
+            if currentSize + incomingDataSize > policy.maxTreeSizeBytes {
+                return false
+            }
+        }
+
+        if policy.maxItems > 0 {
+            var itemCount: UInt64 = 0
+            if let enumerator = FileManager.default.enumerator(atPath: syncPath) {
+                while let entry = enumerator.nextObject() as? String {
+                    if entry.hasPrefix(".wired") {
+                        continue
+                    }
+                    itemCount += 1
+                }
+            }
+
+            if itemCount + 1 > policy.maxItems {
+                return false
+            }
+        }
+
+        return true
     }
 
     // MARK: - Directory subscriptions
