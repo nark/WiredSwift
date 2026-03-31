@@ -38,7 +38,7 @@ extension ServerController {
         let normalizedPath = NSString(string: path).standardizingPath
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toRead: privilege) {
+            if !App.filesController.managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).readable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -102,7 +102,7 @@ extension ServerController {
         let parentPath = realPath.stringByDeletingLastPathComponent
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toWrite: privilege) {
+            if !App.filesController.managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -199,7 +199,7 @@ extension ServerController {
         let realPath = App.filesController.real(path: normalizedPath)
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toWrite: privilege) {
+            if !App.filesController.managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }

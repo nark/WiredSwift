@@ -174,8 +174,8 @@ public class User: Codable, FetchableRecord, PersistableRecord {
     ///
     /// - Parameter privilege: The `FilePrivilege` record describing the file's ownership and mode bits.
     /// - Returns: `true` if the user may read the file.
-    public func hasPermission(toRead privilege: FilePrivilege) -> Bool {
-        if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
+    public func hasPermission(toRead privilege: FilePrivilege, allowBypass: Bool = true) -> Bool {
+        if allowBypass && self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
         if let mode = privilege.mode {
             if mode.contains(File.FilePermissions.everyoneRead) { return true }
             if let g = privilege.group, !g.isEmpty,
@@ -198,8 +198,8 @@ public class User: Codable, FetchableRecord, PersistableRecord {
     ///
     /// - Parameter privilege: The `FilePrivilege` record describing the file's ownership and mode bits.
     /// - Returns: `true` if the user may write to the file.
-    public func hasPermission(toWrite privilege: FilePrivilege) -> Bool {
-        if self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
+    public func hasPermission(toWrite privilege: FilePrivilege, allowBypass: Bool = true) -> Bool {
+        if allowBypass && self.hasPrivilege(name: "wired.account.file.access_all_dropboxes") { return true }
         if let mode = privilege.mode {
             if mode.contains(File.FilePermissions.everyoneWrite) { return true }
             if let g = privilege.group, !g.isEmpty,

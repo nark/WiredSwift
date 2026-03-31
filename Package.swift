@@ -95,7 +95,7 @@ targets.append(
 
 #if !os(Linux)
 targets.append(
-    .target(
+    .executableTarget(
         name: "WiredServerApp",
         dependencies: [
             .byName(name: "WiredSwift"),

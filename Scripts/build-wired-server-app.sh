@@ -20,7 +20,7 @@ APP_ZIP_PATH="$ROOT_DIR/dist/Wired-Server.app.zip"
 SERVER_ZIP_PATH="$ROOT_DIR/dist/$SERVER_BINARY_NAME.zip"
 NOTARIZE="${NOTARIZE:-}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
-VERSION_SWIFT="$ROOT_DIR/Sources/wired3/Version.swift"
+VERSION_SWIFT="$ROOT_DIR/Sources/wired3/Core/Version.swift"
 VERSION_SWIFT_BACKUP=""
 
 if [[ "$BUILD_CONFIG" != "debug" && "$BUILD_CONFIG" != "release" ]]; then

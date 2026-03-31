@@ -26,6 +26,14 @@ public class FilesController {
         return type == .dropbox || type == .sync
     }
 
+    func managedAccess(forVirtualPath path: String, user: User, privilege: FilePrivilege) -> (readable: Bool, writable: Bool) {
+        let allowBypass = syncRealPath(inVirtualPath: path) == nil
+        return (
+            readable: user.hasPermission(toRead: privilege, allowBypass: allowBypass),
+            writable: user.hasPermission(toWrite: privilege, allowBypass: allowBypass)
+        )
+    }
+
     private func isDirectoryType(_ type: File.FileType?) -> Bool {
         guard let type else { return false }
         return type == .directory || type == .uploads || type == .dropbox || type == .sync
@@ -71,7 +79,7 @@ public class FilesController {
 
         // file privileges (dropbox inherited in path)
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toRead: privilege) {
+            if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).readable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -117,24 +125,26 @@ public class FilesController {
             return
         }
 
+        guard let type = File.FileType.type(path: realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
         guard user.hasPrivilege(name: "wired.account.file.get_info") else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toRead: privilege) {
+            let access = managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege)
+            let mayInspectManagedMetadata = type == .sync && user.hasPrivilege(name: "wired.account.file.set_permissions")
+            if !access.readable && !mayInspectManagedMetadata {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
         }
 
-        guard let type = File.FileType.type(path: realPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return
-        }
-
-            let reply = P7Message(withName: "wired.file.info", spec: message.spec)
+        let reply = P7Message(withName: "wired.file.info", spec: message.spec)
         reply.addParameter(field: "wired.file.path", value: normalizedPath)
         reply.addParameter(field: "wired.file.type", value: type.rawValue)
 
@@ -164,6 +174,7 @@ public class FilesController {
         }
 
         if isManagedDirectoryType(type), let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            let access = managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege)
             let mode = privilege.mode ?? []
             reply.addParameter(field: "wired.file.owner", value: privilege.owner ?? "")
             reply.addParameter(field: "wired.file.group", value: privilege.group ?? "")
@@ -173,8 +184,8 @@ public class FilesController {
             reply.addParameter(field: "wired.file.group.write", value: mode.contains(File.FilePermissions.groupWrite))
             reply.addParameter(field: "wired.file.everyone.read", value: mode.contains(File.FilePermissions.everyoneRead))
             reply.addParameter(field: "wired.file.everyone.write", value: mode.contains(File.FilePermissions.everyoneWrite))
-            reply.addParameter(field: "wired.file.readable", value: user.hasPermission(toRead: privilege))
-            reply.addParameter(field: "wired.file.writable", value: user.hasPermission(toWrite: privilege))
+            reply.addParameter(field: "wired.file.readable", value: access.readable)
+            reply.addParameter(field: "wired.file.writable", value: access.writable)
         }
 
         App.serverController.reply(client: client, reply: reply, message: message)
@@ -207,7 +218,7 @@ public class FilesController {
         }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toWrite: privilege) {
+            if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -277,7 +288,7 @@ public class FilesController {
         let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath)
 
         if let privileges {
-            if !user.hasPermission(toWrite: privileges) {
+            if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privileges).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -336,7 +347,10 @@ public class FilesController {
         }
 
         if let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toWrite: privileges) {
+            let access = managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privileges)
+            let type = File.FileType.type(path: realPath)
+            let mayManageSyncPermissions = type == .sync && user.hasPrivilege(name: "wired.account.file.set_permissions")
+            if !access.writable && !mayManageSyncPermissions {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -415,8 +429,9 @@ public class FilesController {
 
         // file privileges
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            let canWrite = user.hasPermission(toWrite: privilege)
-            let canRead = user.hasPermission(toRead: privilege)
+            let access = managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege)
+            let canWrite = access.writable
+            let canRead = access.readable
             let writeOnlyAllowed = syncRealPath(inVirtualPath: normalizedPath) != nil
             let allowed = writeOnlyAllowed ? canWrite : (canRead && canWrite)
 
@@ -458,7 +473,7 @@ public class FilesController {
         let isRenameOnly = fromDirectory == toDirectory
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedFromPath) {
-            if !user.hasPermission(toWrite: privilege) {
+            if !managedAccess(forVirtualPath: normalizedFromPath, user: user, privilege: privilege).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -469,7 +484,7 @@ public class FilesController {
         }
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedToPath) {
-            if !user.hasPermission(toWrite: privilege) {
+            if !managedAccess(forVirtualPath: normalizedToPath, user: user, privilege: privilege).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -662,8 +677,9 @@ public class FilesController {
             var writable = false
 
             if isManagedDirectoryType(type), let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
-                readable = user.hasPermission(toRead: privileges)
-                writable = user.hasPermission(toWrite: privileges)
+                let access = managedAccess(forVirtualPath: childVirtualPath, user: user, privilege: privileges)
+                readable = access.readable
+                writable = access.writable
             }
 
             // TODO: read comment
