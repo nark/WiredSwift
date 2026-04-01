@@ -65,6 +65,7 @@ public final class BotController: NSObject {
     // Tracks the last time the bot itself posted in each channel.
     // Used by respondAfterBotPost to keep the conversation open.
     private var lastBotPostByChannel: [UInt32: Date] = [:]
+    private let applicationInfo = WiredApplicationInfo.current().overriding(name: "WiredChatBot")
 
     // MARK: - Init
 
@@ -552,7 +553,7 @@ public final class BotController: NSObject {
 // MARK: - ClientInfoDelegate
 
 extension BotController: ClientInfoDelegate {
-    public func clientInfoApplicationName(for connection: Connection) -> String? { "WiredChatBot" }
-    public func clientInfoApplicationVersion(for connection: Connection) -> String? { "1.0" }
-    public func clientInfoApplicationBuild(for connection: Connection) -> String? { "1" }
+    public func clientInfoApplicationName(for connection: Connection) -> String? { applicationInfo.name }
+    public func clientInfoApplicationVersion(for connection: Connection) -> String? { applicationInfo.version }
+    public func clientInfoApplicationBuild(for connection: Connection) -> String? { applicationInfo.build }
 }

@@ -102,8 +102,8 @@ extension ServerController {
         }
 
         response.addParameter(field: "wired.info.application.name", value: client.applicationName)
-        response.addParameter(field: "wired.info.application.version", value: client.applicationBuild)
-        response.addParameter(field: "wired.info.application.build", value: client.applicationVersion)
+        response.addParameter(field: "wired.info.application.version", value: client.applicationVersion)
+        response.addParameter(field: "wired.info.application.build", value: client.applicationBuild)
         response.addParameter(field: "wired.info.os.name", value: client.osName)
         response.addParameter(field: "wired.info.os.version", value: client.osVersion)
         response.addParameter(field: "wired.info.arch", value: client.arch)

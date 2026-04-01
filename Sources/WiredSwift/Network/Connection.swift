@@ -568,19 +568,21 @@ open class Connection: NSObject {
 
     private func clientInfo() throws {
         let message = P7Message(withName: "wired.client_info", spec: self.spec)
-        message.addParameter(field: "wired.info.application.name", value: "Wired Client")
+        let applicationInfo = WiredApplicationInfo.current().overriding(
+            name: self.clientInfoDelegate?.clientInfoApplicationName(for: self),
+            version: self.clientInfoDelegate?.clientInfoApplicationVersion(for: self),
+            build: self.clientInfoDelegate?.clientInfoApplicationBuild(for: self)
+        )
 
-        if let value = self.clientInfoDelegate?.clientInfoApplicationName(for: self) {
+        if let value = applicationInfo.name {
             message.addParameter(field: "wired.info.application.name", value: value)
         }
 
-        message.addParameter(field: "wired.info.application.version", value: "3.0")
-        if let value = self.clientInfoDelegate?.clientInfoApplicationVersion(for: self) {
+        if let value = applicationInfo.version {
             message.addParameter(field: "wired.info.application.version", value: value)
         }
 
-        message.addParameter(field: "wired.info.application.build", value: "alpha")
-        if let value = self.clientInfoDelegate?.clientInfoApplicationBuild(for: self) {
+        if let value = applicationInfo.build {
             message.addParameter(field: "wired.info.application.build", value: value)
         }
 
