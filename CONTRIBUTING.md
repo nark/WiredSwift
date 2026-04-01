@@ -153,5 +153,5 @@ Sources/WiredSwift/
 └── Core/      Logger, Config, errors, server events
 ```
 
-The binary protocol format is defined in `Sources/wired3/wired.xml`
+The binary protocol format is defined in `Sources/WiredSwift/Resources/wired.xml`
 (P7 spec — do not modify this file).

@@ -2,6 +2,7 @@
 // Loads, validates and saves JSON configuration files.
 
 import Foundation
+import WiredSwift
 
 public enum ConfigError: Error, LocalizedError {
     case fileNotFound(String)
@@ -52,6 +53,10 @@ public class ConfigLoader {
         var candidates: [String] = []
 
         if let hint = hint { candidates.append(hint) }
+
+        if let bundledPath = WiredProtocolSpec.bundledSpecURL()?.path {
+            candidates.append(bundledPath)
+        }
 
         // Relative to executable
         if let execPath = Bundle.main.executablePath {

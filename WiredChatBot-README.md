@@ -68,7 +68,7 @@ Copy the binary and the protocol spec file:
 ```bash
 sudo cp .build/release/WiredChatBot /usr/local/bin/wiredbot
 sudo mkdir -p /usr/share/wiredbot
-sudo cp Sources/WiredSwift/wired.xml /usr/share/wiredbot/
+sudo cp Sources/WiredSwift/Resources/wired.xml /usr/share/wiredbot/
 ```
 
 ---
@@ -635,7 +635,7 @@ sudo chown wiredbot:wiredbot /var/log/wiredbot /var/run/wiredbot
 
 # Copy files
 sudo cp .build/release/WiredChatBot /usr/local/bin/wiredbot
-sudo cp Sources/WiredSwift/wired.xml /usr/share/wiredbot/
+sudo cp Sources/WiredSwift/Resources/wired.xml /usr/share/wiredbot/
 sudo cp Examples/wiredbot-example.json /etc/wiredbot/wiredbot.json
 sudo cp Examples/wiredbot.service /etc/systemd/system/
 

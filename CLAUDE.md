@@ -5,7 +5,7 @@
 Protocole Wired 3 (P7) — client/serveur Swift, macOS + Linux.
 Format binaire : `msg_id (4B BE) | length (4B BE) | champs TLV...`
 Chaque champ TLV : `field_id (4B) | field_length (4B) | value`
-Spec complète : `Sources/wired3/wired.xml`
+Spec complète : `Sources/WiredSwift/Resources/wired.xml`
 
 ## Règles absolues (ne jamais déroger)
 

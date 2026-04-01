@@ -1125,12 +1125,9 @@ final class WiredServerViewModel: ObservableObject {
     /// Unlike banner.png, the spec is not user-editable — it is a protocol definition
     /// shipped with the binary. Always overwrite when the bundled version differs.
     private func syncBundledSpec(named fileName: String, to destinationPath: String) {
-        let sourceCandidates = [
-            Bundle.main.path(forResource: fileName, ofType: nil),
-            Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/\(fileName)").path
-        ].compactMap { $0 }
-
-        guard let source = sourceCandidates.first(where: { fileManager.fileExists(atPath: $0) }) else {
+        guard fileName == "wired.xml",
+              let source = WiredProtocolSpec.bundledSpecURL()?.path,
+              fileManager.fileExists(atPath: source) else {
             return
         }
 

@@ -444,19 +444,14 @@ level = info
         let executableURL = URL(fileURLWithPath: CommandLine.arguments.first ?? fileManager.currentDirectoryPath)
             .resolvingSymlinksInPath()
         let executableDir = executableURL.deletingLastPathComponent().path
-        let sourceDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-
-        return [
-            sourceDir
-                .appendingPathComponent("wired.xml").path,
-            sourceDir
-                .deletingLastPathComponent()
-                .appendingPathComponent("WiredSwift")
-                .appendingPathComponent("wired.xml").path,
+        var candidates = WiredProtocolSpec.bundledSpecURL().map { [$0.path] } ?? []
+        candidates += [
             executableDir.stringByAppendingPathComponent(path: "wired.xml"),
             executableDir
                 .stringByAppendingPathComponent(path: "../share/wired3/wired.xml")
-        ].map { standardizedAbsolutePath($0, base: nil) }
+        ]
+
+        return candidates.map { standardizedAbsolutePath($0, base: nil) }
     }
 
     private func createDefaultBanner(at path: String) {

@@ -43,14 +43,14 @@ targets.append(
 targets.append(
     .target(
         name: "WiredSwift",
-        dependencies: targetDependencies
+        dependencies: targetDependencies,
+        resources: [.copy("Resources/wired.xml")]
     )
 )
 targets.append(
     .testTarget(
         name: "WiredSwiftTests",
-        dependencies: ["WiredSwift"],
-        resources: [.copy("Resources/wired.xml")]
+        dependencies: ["WiredSwift"]
     )
 )
 targets.append(

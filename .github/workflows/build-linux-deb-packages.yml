@@ -116,7 +116,7 @@ jobs:
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
           OUT_RPM="$OUT_DIR/$RPM_NAME"
-          DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/wired.xml"
+          DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/WiredSwift/Resources/wired.xml"
           DEFAULT_BANNER_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/banner.png"
           DEFAULT_CONFIG_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/config.ini"
 
@@ -356,7 +356,7 @@ jobs:
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
           OUT_RPM="$OUT_DIR/$RPM_NAME"
-          DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/wired.xml"
+          DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/WiredSwift/Resources/wired.xml"
           DEFAULT_BANNER_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/banner.png"
           DEFAULT_CONFIG_SOURCE="$GITHUB_WORKSPACE/Sources/wired3/config.ini"
 

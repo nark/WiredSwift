@@ -6,14 +6,7 @@ final class P7MessageTests: XCTestCase {
     var spec: P7Spec!
 
     override func setUpWithError() throws {
-        let xmlURL = try XCTUnwrap(
-            Bundle.module.url(forResource: "wired", withExtension: "xml"),
-            "wired.xml not found in test bundle"
-        )
-        spec = try XCTUnwrap(
-            P7Spec(withUrl: xmlURL),
-            "Failed to load P7Spec from wired.xml"
-        )
+        spec = try XCTUnwrap(WiredProtocolSpec.bundledSpec(), "Failed to load bundled wired.xml")
     }
 
     // MARK: - init(withName:spec:)
