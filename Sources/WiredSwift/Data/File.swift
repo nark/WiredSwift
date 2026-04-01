@@ -390,8 +390,8 @@ public struct SyncPolicy: Codable, Equatable {
     public var everyoneMode: Mode
     public var maxFileSizeBytes: UInt64
     public var maxTreeSizeBytes: UInt64
-    public var maxItems: UInt64
-    public var retentionDays: UInt32
+    /// Newline-separated glob patterns for files to exclude from synchronisation.
+    public var excludePatterns: String
 
     enum CodingKeys: String, CodingKey {
         case userMode
@@ -399,8 +399,7 @@ public struct SyncPolicy: Codable, Equatable {
         case everyoneMode
         case maxFileSizeBytes
         case maxTreeSizeBytes
-        case maxItems
-        case retentionDays
+        case excludePatterns
     }
 
     public init(
@@ -409,16 +408,14 @@ public struct SyncPolicy: Codable, Equatable {
         everyoneMode: Mode = .disabled,
         maxFileSizeBytes: UInt64 = 0,
         maxTreeSizeBytes: UInt64 = 0,
-        maxItems: UInt64 = 0,
-        retentionDays: UInt32 = 0
+        excludePatterns: String = ""
     ) {
         self.userMode = userMode
         self.groupMode = groupMode
         self.everyoneMode = everyoneMode
         self.maxFileSizeBytes = maxFileSizeBytes
         self.maxTreeSizeBytes = maxTreeSizeBytes
-        self.maxItems = maxItems
-        self.retentionDays = retentionDays
+        self.excludePatterns = excludePatterns
     }
 
     public init(from decoder: Decoder) throws {
@@ -428,8 +425,7 @@ public struct SyncPolicy: Codable, Equatable {
         everyoneMode = try c.decodeIfPresent(Mode.self, forKey: .everyoneMode) ?? .disabled
         maxFileSizeBytes = try c.decodeIfPresent(UInt64.self, forKey: .maxFileSizeBytes) ?? 0
         maxTreeSizeBytes = try c.decodeIfPresent(UInt64.self, forKey: .maxTreeSizeBytes) ?? 0
-        maxItems = try c.decodeIfPresent(UInt64.self, forKey: .maxItems) ?? 0
-        retentionDays = try c.decodeIfPresent(UInt32.self, forKey: .retentionDays) ?? 0
+        excludePatterns = try c.decodeIfPresent(String.self, forKey: .excludePatterns) ?? ""
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -439,8 +435,7 @@ public struct SyncPolicy: Codable, Equatable {
         try c.encode(everyoneMode, forKey: .everyoneMode)
         try c.encode(maxFileSizeBytes, forKey: .maxFileSizeBytes)
         try c.encode(maxTreeSizeBytes, forKey: .maxTreeSizeBytes)
-        try c.encode(maxItems, forKey: .maxItems)
-        try c.encode(retentionDays, forKey: .retentionDays)
+        try c.encode(excludePatterns, forKey: .excludePatterns)
     }
 
     public static func load(path: String) -> SyncPolicy? {

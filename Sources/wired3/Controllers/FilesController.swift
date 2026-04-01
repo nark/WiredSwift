@@ -112,6 +112,11 @@ public class FilesController {
             field: "wired.file.sync.mode_effective",
             value: effectiveSyncMode(forVirtualPath: virtualPath, user: user, privilege: privilege, policy: policy)?.rawValue ?? SyncPolicy.Mode.disabled.rawValue
         )
+        reply.addParameter(field: "wired.file.sync.max_file_size_bytes", value: policy.maxFileSizeBytes)
+        reply.addParameter(field: "wired.file.sync.max_tree_size_bytes", value: policy.maxTreeSizeBytes)
+        if !policy.excludePatterns.isEmpty {
+            reply.addParameter(field: "wired.file.sync.exclude_patterns", value: policy.excludePatterns)
+        }
     }
 
     private func isDirectoryType(_ type: File.FileType?) -> Bool {
@@ -542,6 +547,9 @@ public class FilesController {
         policy.userMode = userMode
         policy.groupMode = groupMode
         policy.everyoneMode = everyoneMode
+        if let v = message.uint64(forField: "wired.file.sync.max_file_size_bytes") { policy.maxFileSizeBytes = v }
+        if let v = message.uint64(forField: "wired.file.sync.max_tree_size_bytes") { policy.maxTreeSizeBytes = v }
+        if let v = message.string(forField: "wired.file.sync.exclude_patterns") { policy.excludePatterns = v }
 
         guard SyncPolicy.save(policy, path: realPath) else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
@@ -1171,31 +1179,12 @@ public class FilesController {
             var currentSize: UInt64 = 0
             if let enumerator = FileManager.default.enumerator(atPath: syncPath) {
                 while let entry = enumerator.nextObject() as? String {
-                    if entry.hasPrefix(".wired") {
-                        continue
-                    }
+                    if entry.hasPrefix(".wired") { continue }
                     let fullPath = syncPath.stringByAppendingPathComponent(path: entry)
                     currentSize += File.size(path: fullPath)
                 }
             }
-
             if currentSize + incomingDataSize > policy.maxTreeSizeBytes {
-                return false
-            }
-        }
-
-        if policy.maxItems > 0 {
-            var itemCount: UInt64 = 0
-            if let enumerator = FileManager.default.enumerator(atPath: syncPath) {
-                while let entry = enumerator.nextObject() as? String {
-                    if entry.hasPrefix(".wired") {
-                        continue
-                    }
-                    itemCount += 1
-                }
-            }
-
-            if itemCount + 1 > policy.maxItems {
                 return false
             }
         }

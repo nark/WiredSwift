@@ -664,6 +664,21 @@
                 Effective sync policy resolved by the server for the currently logged in account.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.file.sync.max_file_size_bytes" type="uint64" id="7031" version="2.0">
+            <p7:documentation>
+                Maximum size in bytes of a single file that may be uploaded into this synchronized directory. Zero means unlimited.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.max_tree_size_bytes" type="uint64" id="7032" version="2.0">
+            <p7:documentation>
+                Maximum total size in bytes of all files in the synchronized directory tree. Zero means unlimited.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.exclude_patterns" type="string" id="7033" version="2.0">
+            <p7:documentation>
+                Newline-separated list of glob patterns for files to exclude from synchronisation (e.g. ".DS_Store" or "*.tmp").
+            </p7:documentation>
+        </p7:field>
 
         <p7:field name="wired.account.name" type="string" id="8000" version="2.0">
             <p7:documentation>
@@ -2560,6 +2575,9 @@
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
             <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.file_list.done" id="7002" version="2.0">
@@ -2620,6 +2638,9 @@
             <p7:parameter field="wired.file.sync.group_mode" version="2.0" />
             <p7:parameter field="wired.file.sync.everyone_mode" version="2.0" />
             <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.move" id="7005" version="2.0">
@@ -2724,6 +2745,9 @@
             <p7:parameter field="wired.file.sync.user_mode" use="required" version="2.0" />
             <p7:parameter field="wired.file.sync.group_mode" use="required" version="2.0" />
             <p7:parameter field="wired.file.sync.everyone_mode" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.set_label" id="7012" version="2.0">
@@ -2790,6 +2814,9 @@
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
             <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.search_list.done" id="7016" version="2.0">
