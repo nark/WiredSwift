@@ -153,15 +153,52 @@ public class User: Codable, FetchableRecord, PersistableRecord {
     public func hasPrivilege(name: String) -> Bool {
         // Vérification en mémoire si les privileges sont déjà chargés
         if !privileges.isEmpty {
-            return privileges.first(where: { $0.name == name })?.value == true
+            if privileges.first(where: { $0.name == name })?.value == true {
+                return true
+            }
+            return inheritedGroupPrivilege(name: name)
         }
         // Sinon requête GRDB
         guard let userId = id else { return false }
-        return (try? App.databaseController.dbQueue.read { db in
+        if (try? App.databaseController.dbQueue.read({ db in
             try UserPrivilege
                 .filter(Column("user_id") == userId && Column("name") == name)
                 .fetchOne(db)
-        })?.value == true
+        }))?.value == true {
+            return true
+        }
+        return inheritedGroupPrivilege(name: name)
+    }
+
+    private func inheritedGroupPrivilege(name: String) -> Bool {
+        let groupNames = effectiveGroupNames()
+        guard !groupNames.isEmpty else { return false }
+
+        return (try? App.databaseController.dbQueue.read { db in
+            let groups = try Group
+                .filter(groupNames.contains(Column("name")))
+                .fetchAll(db)
+            let groupIDs = groups.compactMap(\.id)
+            guard !groupIDs.isEmpty else { return false }
+            return try GroupPrivilege
+                .filter(groupIDs.contains(Column("group_id")) && Column("name") == name && Column("value") == true)
+                .fetchOne(db) != nil
+        }) ?? false
+    }
+
+    private func effectiveGroupNames() -> [String] {
+        var names: [String] = []
+        if let primaryGroup = group?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !primaryGroup.isEmpty {
+            names.append(primaryGroup)
+        }
+        if let secondaryGroups = groups?
+            .split(separator: ",")
+            .map({ $0.trimmingCharacters(in: .whitespacesAndNewlines) })
+            .filter({ !$0.isEmpty }) {
+            names.append(contentsOf: secondaryGroups)
+        }
+        return Array(Set(names))
     }
 
     /// Returns whether this user has read access to a file governed by the given privilege.

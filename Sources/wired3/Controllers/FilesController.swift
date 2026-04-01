@@ -26,11 +26,91 @@ public class FilesController {
         return type == .dropbox || type == .sync
     }
 
+    private func defaultSyncPolicy() -> SyncPolicy {
+        SyncPolicy()
+    }
+
     func managedAccess(forVirtualPath path: String, user: User, privilege: FilePrivilege) -> (readable: Bool, writable: Bool) {
         let allowBypass = syncRealPath(inVirtualPath: path) == nil
         return (
             readable: user.hasPermission(toRead: privilege, allowBypass: allowBypass),
             writable: user.hasPermission(toWrite: privilege, allowBypass: allowBypass)
+        )
+    }
+
+    func effectiveSyncMode(
+        forVirtualPath path: String,
+        user: User,
+        privilege: FilePrivilege? = nil,
+        policy: SyncPolicy? = nil
+    ) -> SyncPolicy.Mode? {
+        guard let resolvedPolicy = policy ?? syncPolicy(forVirtualPath: path) else {
+            return nil
+        }
+
+        let resolvedPrivilege = privilege ?? dropBoxPrivileges(forVirtualPath: path)
+
+        if let owner = resolvedPrivilege?.owner,
+           !owner.isEmpty,
+           user.username == owner {
+            return resolvedPolicy.userMode
+        }
+
+        if let group = resolvedPrivilege?.group,
+           !group.isEmpty,
+           user.hasGroup(string: group) {
+            return resolvedPolicy.groupMode
+        }
+
+        return resolvedPolicy.everyoneMode
+    }
+
+    func mayInspectSyncRemoteMetadata(
+        forVirtualPath path: String,
+        user: User,
+        privilege: FilePrivilege? = nil,
+        policy: SyncPolicy? = nil
+    ) -> Bool {
+        guard user.hasPrivilege(name: "wired.account.file.sync.delete_remote") else {
+            return false
+        }
+
+        guard let mode = effectiveSyncMode(forVirtualPath: path, user: user, privilege: privilege, policy: policy) else {
+            return false
+        }
+
+        return mode == .clientToServer || mode == .bidirectional
+    }
+
+    private func canBrowseManagedDirectory(
+        atVirtualPath path: String,
+        user: User,
+        privilege: FilePrivilege,
+        type: File.FileType?
+    ) -> Bool {
+        let access = managedAccess(forVirtualPath: path, user: user, privilege: privilege)
+        if access.readable {
+            return true
+        }
+        if type == .sync {
+            return mayInspectSyncRemoteMetadata(forVirtualPath: path, user: user, privilege: privilege)
+        }
+        return false
+    }
+
+    private func appendSyncPolicyInfo(
+        to reply: P7Message,
+        virtualPath: String,
+        user: User,
+        privilege: FilePrivilege
+    ) {
+        let policy = syncPolicy(forVirtualPath: virtualPath) ?? defaultSyncPolicy()
+        reply.addParameter(field: "wired.file.sync.user_mode", value: policy.userMode.rawValue)
+        reply.addParameter(field: "wired.file.sync.group_mode", value: policy.groupMode.rawValue)
+        reply.addParameter(field: "wired.file.sync.everyone_mode", value: policy.everyoneMode.rawValue)
+        reply.addParameter(
+            field: "wired.file.sync.mode_effective",
+            value: effectiveSyncMode(forVirtualPath: virtualPath, user: user, privilege: privilege, policy: policy)?.rawValue ?? SyncPolicy.Mode.disabled.rawValue
         )
     }
 
@@ -79,7 +159,8 @@ public class FilesController {
 
         // file privileges (dropbox inherited in path)
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).readable {
+            let managedType = File.FileType.type(path: real(path: normalizedPath))
+            if !canBrowseManagedDirectory(atVirtualPath: normalizedPath, user: user, privilege: privilege, type: managedType) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -138,7 +219,8 @@ public class FilesController {
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
             let access = managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege)
             let mayInspectManagedMetadata = type == .sync && user.hasPrivilege(name: "wired.account.file.set_permissions")
-            if !access.readable && !mayInspectManagedMetadata {
+            let mayInspectSyncMetadata = type == .sync && mayInspectSyncRemoteMetadata(forVirtualPath: normalizedPath, user: user, privilege: privilege)
+            if !access.readable && !mayInspectManagedMetadata && !mayInspectSyncMetadata {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -186,6 +268,9 @@ public class FilesController {
             reply.addParameter(field: "wired.file.everyone.write", value: mode.contains(File.FilePermissions.everyoneWrite))
             reply.addParameter(field: "wired.file.readable", value: access.readable)
             reply.addParameter(field: "wired.file.writable", value: access.writable)
+            if type == .sync {
+                appendSyncPolicyInfo(to: reply, virtualPath: normalizedPath, user: user, privilege: privilege)
+            }
         }
 
         App.serverController.reply(client: client, reply: reply, message: message)
@@ -257,6 +342,11 @@ public class FilesController {
                     App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
                     return
                 }
+            }
+
+            if fileType == .sync {
+                let policy = syncPolicyFromMessage(message) ?? defaultSyncPolicy()
+                _ = SyncPolicy.save(policy, path: realPath)
             }
 
             App.indexController.addIndex(forPath: realPath)
@@ -403,6 +493,63 @@ public class FilesController {
 
         App.serverController.replyOK(client: client, message: message)
         App.serverController.recordEvent(.fileSetPermissions, client: client, parameters: [normalizedPath])
+    }
+
+    public func setSyncPolicy(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedPath = NSString(string: path).standardizingPath
+        let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
+
+        guard isWithinJail(realPath),
+              File.FileType.type(path: realPath) == .sync else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            let access = managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privileges)
+            if !access.writable && !user.hasPrivilege(name: "wired.account.file.set_permissions") {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !user.hasPrivilege(name: "wired.account.file.set_permissions") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let userModeRaw = message.string(forField: "wired.file.sync.user_mode"),
+              let groupModeRaw = message.string(forField: "wired.file.sync.group_mode"),
+              let everyoneModeRaw = message.string(forField: "wired.file.sync.everyone_mode"),
+              let userMode = SyncPolicy.Mode(rawValue: userModeRaw),
+              let groupMode = SyncPolicy.Mode(rawValue: groupModeRaw),
+              let everyoneMode = SyncPolicy.Mode(rawValue: everyoneModeRaw) else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        var policy = SyncPolicy.load(path: realPath) ?? defaultSyncPolicy()
+        policy.userMode = userMode
+        policy.groupMode = groupMode
+        policy.everyoneMode = everyoneMode
+
+        guard SyncPolicy.save(policy, path: realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+        App.serverController.recordEvent(.fileSetPermissions, client: client, parameters: [normalizedPath, "sync_policy"])
     }
 
     public func delete(client: Client, message: P7Message) {
@@ -675,11 +822,20 @@ public class FilesController {
 
             var readable = false
             var writable = false
+            var mayBrowseManagedMetadata = false
+            var managedPrivileges: FilePrivilege?
 
             if isManagedDirectoryType(type), let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
                 let access = managedAccess(forVirtualPath: childVirtualPath, user: user, privilege: privileges)
                 readable = access.readable
                 writable = access.writable
+                mayBrowseManagedMetadata = canBrowseManagedDirectory(
+                    atVirtualPath: childVirtualPath,
+                    user: user,
+                    privilege: privileges,
+                    type: type
+                )
+                managedPrivileges = privileges
             }
 
             // TODO: read comment
@@ -703,7 +859,7 @@ public class FilesController {
             case .sync:
                 datasize = 0
                 rsrcsize = 0
-                directorycount = readable ? File.count(path: childRealPath) : 0
+                directorycount = mayBrowseManagedMetadata ? File.count(path: childRealPath) : 0
             case .none:
                 datasize = 0
                 rsrcsize = 0
@@ -734,6 +890,9 @@ public class FilesController {
             if isManagedDirectoryType(type) {
                 reply.addParameter(field: "wired.file.readable", value: readable)
                 reply.addParameter(field: "wired.file.writable", value: writable)
+                if type == .sync, let managedPrivileges {
+                    appendSyncPolicyInfo(to: reply, virtualPath: childVirtualPath, user: user, privilege: managedPrivileges)
+                }
             }
 
             App.serverController.reply(client: client, reply: reply, message: message)
@@ -825,6 +984,23 @@ public class FilesController {
         return FilePrivilege(owner: owner, group: group, mode: mode)
     }
 
+    private func syncPolicyFromMessage(_ message: P7Message) -> SyncPolicy? {
+        guard let userModeRaw = message.string(forField: "wired.file.sync.user_mode"),
+              let groupModeRaw = message.string(forField: "wired.file.sync.group_mode"),
+              let everyoneModeRaw = message.string(forField: "wired.file.sync.everyone_mode"),
+              let userMode = SyncPolicy.Mode(rawValue: userModeRaw),
+              let groupMode = SyncPolicy.Mode(rawValue: groupModeRaw),
+              let everyoneMode = SyncPolicy.Mode(rawValue: everyoneModeRaw) else {
+            return nil
+        }
+
+        return SyncPolicy(
+            userMode: userMode,
+            groupMode: groupMode,
+            everyoneMode: everyoneMode
+        )
+    }
+
     private func setType(path: String, type: File.FileType, client: Client, message: P7Message) -> Bool {
         let canonicalPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
 
@@ -843,6 +1019,10 @@ public class FilesController {
         if !File.FileType.set(type: type, path: canonicalPath) {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return false
+        }
+
+        if type == .sync {
+            _ = SyncPolicy.save(SyncPolicy.load(path: canonicalPath) ?? defaultSyncPolicy(), path: canonicalPath)
         }
 
         return true
@@ -970,7 +1150,7 @@ public class FilesController {
         guard let syncPath = syncRealPath(inVirtualPath: path) else {
             return nil
         }
-        return SyncPolicy.load(path: syncPath)
+        return SyncPolicy.load(path: syncPath) ?? defaultSyncPolicy()
     }
 
     func isWithinSyncTree(virtualPath path: String) -> Bool {
@@ -979,7 +1159,7 @@ public class FilesController {
 
     func validateSyncQuotaForUpload(path virtualPath: String, incomingDataSize: UInt64) -> Bool {
         guard let syncPath = syncRealPath(inVirtualPath: virtualPath),
-              let policy = SyncPolicy.load(path: syncPath) else {
+              let policy = syncPolicy(forVirtualPath: virtualPath) else {
             return true
         }
 

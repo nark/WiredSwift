@@ -644,6 +644,26 @@
                 TBD
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.file.sync.user_mode" type="string" id="7027" version="2.0">
+            <p7:documentation>
+                Explicit sync policy for the directory owner of a synchronized directory.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.group_mode" type="string" id="7028" version="2.0">
+            <p7:documentation>
+                Explicit sync policy for the directory group of a synchronized directory.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.everyone_mode" type="string" id="7029" version="2.0">
+            <p7:documentation>
+                Explicit sync policy for everyone on a synchronized directory.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.mode_effective" type="string" id="7030" version="2.0">
+            <p7:documentation>
+                Effective sync policy resolved by the server for the currently logged in account.
+            </p7:documentation>
+        </p7:field>
 
         <p7:field name="wired.account.name" type="string" id="8000" version="2.0">
             <p7:documentation>
@@ -1019,6 +1039,16 @@
             <p7:documentation>
                 Indicates the combined limit in speed in bytes/second for all upload transfers
                 the account gives. 0 means no limit.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.account.file.sync.sync_files" type="bool" id="8099" version="2.0">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of activating and running sync pairs.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.account.file.sync.delete_remote" type="bool" id="8100" version="2.0">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of deleting remote files from a sync pair.
             </p7:documentation>
         </p7:field>
         <p7:field name="wired.account.account.change_password" type="bool" id="8066" version="2.0">
@@ -1463,6 +1493,8 @@
             <p7:member field="wired.account.transfer.upload_limit" />
             <p7:member field="wired.account.transfer.download_speed_limit" />
             <p7:member field="wired.account.transfer.upload_speed_limit" />
+            <p7:member field="wired.account.file.sync.sync_files" />
+            <p7:member field="wired.account.file.sync.delete_remote" />
             <p7:member field="wired.account.account.change_password" />
             <p7:member field="wired.account.account.list_accounts" />
             <p7:member field="wired.account.account.read_accounts" />
@@ -2515,7 +2547,8 @@
                 File list item for a directory. [field:wired.file.path] may not be the empty string.
 
                 If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.readable]
-                and [field:wired.file.writable] should be set.
+                and [field:wired.file.writable] should be set. If [field:wired.file.type] is
+                [enum:wired.file.type.sync], [field:wired.file.sync.mode_effective] should also be set.
                 
                 rsrc TBD
             </p7:documentation>
@@ -2526,6 +2559,7 @@
             <p7:parameter field="wired.file.directory_count" version="2.0" />
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
+            <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.file_list.done" id="7002" version="2.0">
@@ -2559,7 +2593,10 @@
                 [field:wired.file.owner.read], [field:wired.file.owner.write], [field:wired.file.group],
                 [field:wired.file.group.read], [field:wired.file.group.read], [field:wired.file.everyone.read],
                 [field:wired.file.everyone.write], [field:wired.file.readable] and [field:wired.file.writable]
-                should be set.
+                should be set. If [field:wired.file.type] is [enum:wired.file.type.sync],
+                [field:wired.file.sync.user_mode], [field:wired.file.sync.group_mode],
+                [field:wired.file.sync.everyone_mode] and [field:wired.file.sync.mode_effective]
+                should also be set.
                 
                 rsrc TBD
             </p7:documentation>
@@ -2579,6 +2616,10 @@
             <p7:parameter field="wired.file.everyone.write" version="2.0" />
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
+            <p7:parameter field="wired.file.sync.user_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.group_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.everyone_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.move" id="7005" version="2.0">
@@ -2657,8 +2698,9 @@
         
         <p7:message name="wired.file.set_permissions" id="7011" version="2.0">
             <p7:documentation>
-                Change executable flag message for a drop box or sync directory. [field:wired.file.path] may not
-                be the empty string, but [field:wired.file.owner] and [field:wired.file.group] may be.
+                Change managed access permissions for a drop box or sync directory. [field:wired.file.path]
+                may not be the empty string, but [field:wired.file.owner] and [field:wired.file.group]
+                may be.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.file.path" use="required" version="2.0" />
@@ -2670,6 +2712,18 @@
             <p7:parameter field="wired.file.group.write" use="required" version="2.0" />
             <p7:parameter field="wired.file.everyone.read" use="required" version="2.0" />
             <p7:parameter field="wired.file.everyone.write" use="required" version="2.0" />
+        </p7:message>
+
+        <p7:message name="wired.file.set_sync_policy" id="7023" version="2.0">
+            <p7:documentation>
+                Change sync policy for a synchronized directory. [field:wired.file.path] may not be the
+                empty string.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+            <p7:parameter field="wired.file.path" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.user_mode" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.group_mode" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.everyone_mode" use="required" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.set_label" id="7012" version="2.0">
@@ -2695,6 +2749,10 @@
                 [field:wired.file.owner.read], [field:wired.file.owner.write], [field:wired.file.group],
                 [field:wired.file.group.read], [field:wired.file.group.write], [field:wired.file.everyone.read]
                 and [field:wired.file.everyone.write] should be set.
+
+                If [field:wired.file.type] is [enum:wired.file.type.sync], [field:wired.file.sync.user_mode],
+                [field:wired.file.sync.group_mode] and [field:wired.file.sync.everyone_mode] may also
+                be set to create the directory with an explicit sync policy.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.file.path" use="required" version="2.0" />
@@ -2707,6 +2765,9 @@
             <p7:parameter field="wired.file.group.write" version="2.0" />
             <p7:parameter field="wired.file.everyone.read" version="2.0" />
             <p7:parameter field="wired.file.everyone.write" version="2.0" />
+            <p7:parameter field="wired.file.sync.user_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.group_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.everyone_mode" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.search" id="7014" version="2.0">
@@ -2728,6 +2789,7 @@
             <p7:parameter field="wired.file.directory_count" version="2.0" />
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
+            <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.search_list.done" id="7016" version="2.0">
@@ -4473,6 +4535,32 @@
                 Should cause [message:wired.file.directory_changed] to be sent out to subscribed
                 users.
                 </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.okay" count="1" use="required" version="2.0" />
+                <p7:reply message="wired.error" count="1" use="required" version="2.0" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.file.set_sync_policy" originator="client" version="2.0">
+            <p7:documentation>
+                [message:wired.error] should be replied with [enum:wired.error.permission_denied]
+                if [field:wired.account.file.set_permissions] is not set for the user's account, or if the user
+                does not have applicable permissions for the directory.
+
+                [message:wired.error] should be replied with [enum:wired.error.file_not_found]
+                if the synchronized directory does not exist.
+
+                [message:wired.error] should be replied with [enum:wired.error.message_out_of_sequence]
+                if sent before [message:wired.client_info].
+
+                [message:wired.error] should be replied with [enum:wired.error.invalid_message] if the
+                message does not contain all the required parameters.
+
+                [message:wired.error] may be replied with [enum:wired.error.internal_error]
+                if an unknown error occurs.
+
+                Otherwise, [message:wired.okay] should be replied.
+            </p7:documentation>
             <p7:or>
                 <p7:reply message="wired.okay" count="1" use="required" version="2.0" />
                 <p7:reply message="wired.error" count="1" use="required" version="2.0" />

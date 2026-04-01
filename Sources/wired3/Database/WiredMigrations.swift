@@ -29,6 +29,9 @@ enum WiredMigrations {
         migrator.registerMigration("v7_events") { db in
             try WiredMigrations.v7(db)
         }
+        migrator.registerMigration("v8_add_sync_privileges") { db in
+            try WiredMigrations.v8(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -162,6 +165,40 @@ enum WiredMigrations {
         try db.create(index: "events_nick", on: "events", columns: ["nick"], ifNotExists: true)
         try db.create(index: "events_login", on: "events", columns: ["login"], ifNotExists: true)
         try db.create(index: "events_ip", on: "events", columns: ["ip"], ifNotExists: true)
+    }
+
+    static func v8(_ db: Database) throws {
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO user_privileges (name, value, user_id)
+            SELECT 'wired.account.file.sync.sync_files', COALESCE(ref.value, 0), u.id
+            FROM users u
+            LEFT JOIN user_privileges ref
+                ON ref.user_id = u.id AND ref.name = 'wired.account.file.get_info'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO group_privileges (name, value, group_id)
+            SELECT 'wired.account.file.sync.sync_files', COALESCE(ref.value, 0), g.id
+            FROM groups g
+            LEFT JOIN group_privileges ref
+                ON ref.group_id = g.id AND ref.name = 'wired.account.file.get_info'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO user_privileges (name, value, user_id)
+            SELECT 'wired.account.file.sync.delete_remote', COALESCE(ref.value, 0), u.id
+            FROM users u
+            LEFT JOIN user_privileges ref
+                ON ref.user_id = u.id AND ref.name = 'wired.account.file.delete_files'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO group_privileges (name, value, group_id)
+            SELECT 'wired.account.file.sync.delete_remote', COALESCE(ref.value, 0), g.id
+            FROM groups g
+            LEFT JOIN group_privileges ref
+                ON ref.group_id = g.id AND ref.name = 'wired.account.file.delete_files'
+        """)
     }
 
     // swiftlint:disable:next function_body_length

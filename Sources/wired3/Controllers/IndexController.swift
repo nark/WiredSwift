@@ -433,6 +433,19 @@ public class IndexController: TableController {
                 let access = App.filesController.managedAccess(forVirtualPath: entry.virtual_path, user: user, privilege: priv)
                 reply.addParameter(field: "wired.file.readable", value: access.readable)
                 reply.addParameter(field: "wired.file.writable", value: access.writable)
+                if type == .sync {
+                    let policy = App.filesController.syncPolicy(forVirtualPath: entry.virtual_path) ?? SyncPolicy()
+                    let effectiveMode = App.filesController.effectiveSyncMode(
+                        forVirtualPath: entry.virtual_path,
+                        user: user,
+                        privilege: priv,
+                        policy: policy
+                    ) ?? .disabled
+                    reply.addParameter(field: "wired.file.sync.user_mode", value: policy.userMode.rawValue)
+                    reply.addParameter(field: "wired.file.sync.group_mode", value: policy.groupMode.rawValue)
+                    reply.addParameter(field: "wired.file.sync.everyone_mode", value: policy.everyoneMode.rawValue)
+                    reply.addParameter(field: "wired.file.sync.mode_effective", value: effectiveMode.rawValue)
+                }
             }
         }
 

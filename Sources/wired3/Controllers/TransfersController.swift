@@ -426,8 +426,20 @@ public class TransfersController {
         var virtualPath = path
         var targetRealPath = filesController.real(path: virtualPath)
         let isSyncUpload = filesController.isWithinSyncTree(virtualPath: virtualPath)
+        var isDirectory: ObjCBool = false
+        let targetExists = FileManager.default.fileExists(atPath: targetRealPath, isDirectory: &isDirectory)
 
-        if FileManager.default.fileExists(atPath: targetRealPath) || !reserveUploadTarget(targetRealPath) {
+        if !isSyncUpload && targetExists {
+            App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
+            return nil
+        }
+
+        if isSyncUpload && targetExists && isDirectory.boolValue {
+            App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
+            return nil
+        }
+
+        if !reserveUploadTarget(targetRealPath) {
             if !isSyncUpload {
                 App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
                 return nil
@@ -436,7 +448,10 @@ public class TransfersController {
             virtualPath = conflictVirtualPath(for: path, username: client.user?.username ?? "unknown")
             targetRealPath = filesController.real(path: virtualPath)
 
-            if FileManager.default.fileExists(atPath: targetRealPath) || !reserveUploadTarget(targetRealPath) {
+            var conflictIsDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: targetRealPath, isDirectory: &conflictIsDirectory) ||
+                conflictIsDirectory.boolValue ||
+                !reserveUploadTarget(targetRealPath) {
                 App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
                 return nil
             }
@@ -669,6 +684,11 @@ public class TransfersController {
             let url = URL(fileURLWithPath: transfer.realDataPath.stringByDeletingPathExtension)
 
             do {
+                if filesController.isWithinSyncTree(virtualPath: transfer.path) &&
+                    FileManager.default.fileExists(atPath: url.path) {
+                    try FileManager.default.removeItem(at: url)
+                }
+
                 try FileManager.default.moveItem(at: URL(fileURLWithPath: transfer.realDataPath), to: url)
 
                 if transfer.executable {

@@ -378,21 +378,69 @@ public class FilePrivilege {
 
 /// Quota and retention policy attached to a `wired.file.type.sync` directory.
 public struct SyncPolicy: Codable, Equatable {
+    public enum Mode: String, Codable, CaseIterable {
+        case disabled = "disabled"
+        case serverToClient = "server_to_client"
+        case clientToServer = "client_to_server"
+        case bidirectional = "bidirectional"
+    }
+
+    public var userMode: Mode
+    public var groupMode: Mode
+    public var everyoneMode: Mode
     public var maxFileSizeBytes: UInt64
     public var maxTreeSizeBytes: UInt64
     public var maxItems: UInt64
     public var retentionDays: UInt32
 
+    enum CodingKeys: String, CodingKey {
+        case userMode
+        case groupMode
+        case everyoneMode
+        case maxFileSizeBytes
+        case maxTreeSizeBytes
+        case maxItems
+        case retentionDays
+    }
+
     public init(
+        userMode: Mode = .disabled,
+        groupMode: Mode = .disabled,
+        everyoneMode: Mode = .disabled,
         maxFileSizeBytes: UInt64 = 0,
         maxTreeSizeBytes: UInt64 = 0,
         maxItems: UInt64 = 0,
         retentionDays: UInt32 = 0
     ) {
+        self.userMode = userMode
+        self.groupMode = groupMode
+        self.everyoneMode = everyoneMode
         self.maxFileSizeBytes = maxFileSizeBytes
         self.maxTreeSizeBytes = maxTreeSizeBytes
         self.maxItems = maxItems
         self.retentionDays = retentionDays
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        userMode = try c.decodeIfPresent(Mode.self, forKey: .userMode) ?? .disabled
+        groupMode = try c.decodeIfPresent(Mode.self, forKey: .groupMode) ?? .disabled
+        everyoneMode = try c.decodeIfPresent(Mode.self, forKey: .everyoneMode) ?? .disabled
+        maxFileSizeBytes = try c.decodeIfPresent(UInt64.self, forKey: .maxFileSizeBytes) ?? 0
+        maxTreeSizeBytes = try c.decodeIfPresent(UInt64.self, forKey: .maxTreeSizeBytes) ?? 0
+        maxItems = try c.decodeIfPresent(UInt64.self, forKey: .maxItems) ?? 0
+        retentionDays = try c.decodeIfPresent(UInt32.self, forKey: .retentionDays) ?? 0
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(userMode, forKey: .userMode)
+        try c.encode(groupMode, forKey: .groupMode)
+        try c.encode(everyoneMode, forKey: .everyoneMode)
+        try c.encode(maxFileSizeBytes, forKey: .maxFileSizeBytes)
+        try c.encode(maxTreeSizeBytes, forKey: .maxTreeSizeBytes)
+        try c.encode(maxItems, forKey: .maxItems)
+        try c.encode(retentionDays, forKey: .retentionDays)
     }
 
     public static func load(path: String) -> SyncPolicy? {
