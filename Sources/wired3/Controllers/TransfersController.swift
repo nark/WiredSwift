@@ -84,34 +84,6 @@ public class TransfersController {
         }
     }
 
-    private func reserveUploadTarget(_ path: String) -> Bool {
-        uploadPathStateLock.lock()
-        defer { uploadPathStateLock.unlock() }
-        if activeUploadTargets.contains(path) {
-            return false
-        }
-        activeUploadTargets.insert(path)
-        return true
-    }
-
-    private func releaseUploadTarget(_ path: String) {
-        uploadPathStateLock.lock()
-        activeUploadTargets.remove(path)
-        uploadPathStateLock.unlock()
-    }
-
-    private func conflictVirtualPath(for path: String, username: String) -> String {
-        let base = path.stringByDeletingPathExtension
-        let ext = path.pathExtension
-        let stamp = Int(Date().timeIntervalSince1970)
-        let safeUser = username.replacingOccurrences(of: " ", with: "_")
-        var candidate = "\(base).conflict.\(safeUser).\(stamp)"
-        if !ext.isEmpty {
-            candidate += ".\(ext)"
-        }
-        return candidate
-    }
-
     // MARK: -
     private func add(transfer: Transfer, user: User) {
         self.transfersLock.exclusivelyWrite {
@@ -840,5 +812,35 @@ public class TransfersController {
         }
 
         return result
+    }
+}
+
+private extension TransfersController {
+    func reserveUploadTarget(_ path: String) -> Bool {
+        uploadPathStateLock.lock()
+        defer { uploadPathStateLock.unlock() }
+        if activeUploadTargets.contains(path) {
+            return false
+        }
+        activeUploadTargets.insert(path)
+        return true
+    }
+
+    func releaseUploadTarget(_ path: String) {
+        uploadPathStateLock.lock()
+        activeUploadTargets.remove(path)
+        uploadPathStateLock.unlock()
+    }
+
+    func conflictVirtualPath(for path: String, username: String) -> String {
+        let base = path.stringByDeletingPathExtension
+        let ext = path.pathExtension
+        let stamp = Int(Date().timeIntervalSince1970)
+        let safeUser = username.replacingOccurrences(of: " ", with: "_")
+        var candidate = "\(base).conflict.\(safeUser).\(stamp)"
+        if !ext.isEmpty {
+            candidate += ".\(ext)"
+        }
+        return candidate
     }
 }
