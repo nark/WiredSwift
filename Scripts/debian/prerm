@@ -1,8 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SERVICE_STATE_MARKER="/run/wired3.service.was-active"
+
 if command -v systemctl >/dev/null 2>&1; then
-  systemctl stop wired3.service >/dev/null 2>&1 || true
-  systemctl disable wired3.service >/dev/null 2>&1 || true
+  case "${1:-}" in
+    upgrade|deconfigure)
+      if systemctl is-active --quiet wired3.service; then
+        install -D -m 0644 /dev/null "$SERVICE_STATE_MARKER"
+      else
+        rm -f "$SERVICE_STATE_MARKER"
+      fi
+      systemctl stop wired3.service >/dev/null 2>&1 || true
+      ;;
+    remove)
+      rm -f "$SERVICE_STATE_MARKER"
+      systemctl stop wired3.service >/dev/null 2>&1 || true
+      systemctl disable wired3.service >/dev/null 2>&1 || true
+      ;;
+    *)
+      ;;
+  esac
   systemctl daemon-reload || true
 fi

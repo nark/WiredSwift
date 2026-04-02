@@ -215,6 +215,10 @@ jobs:
               'fi' \
               'if command -v systemctl >/dev/null 2>&1; then' \
               '  systemctl daemon-reload || true' \
+              '  if [[ -f /run/wired3.service.was-active ]]; then' \
+              '    systemctl start wired3.service || true' \
+              '    rm -f /run/wired3.service.was-active' \
+              '  fi' \
               'fi' \
               > "$RPM_SOURCES_DIR/post.sh"
             chmod 0755 "$RPM_SOURCES_DIR/post.sh"
@@ -223,8 +227,18 @@ jobs:
               '#!/usr/bin/env bash' \
               'set -euo pipefail' \
               'if command -v systemctl >/dev/null 2>&1; then' \
-              '  systemctl stop wired3.service >/dev/null 2>&1 || true' \
-              '  systemctl disable wired3.service >/dev/null 2>&1 || true' \
+              '  if [[ "${1:-0}" -ge 1 ]]; then' \
+              '    if systemctl is-active --quiet wired3.service; then' \
+              '      install -D -m 0644 /dev/null /run/wired3.service.was-active' \
+              '    else' \
+              '      rm -f /run/wired3.service.was-active' \
+              '    fi' \
+              '    systemctl stop wired3.service >/dev/null 2>&1 || true' \
+              '  else' \
+              '    rm -f /run/wired3.service.was-active' \
+              '    systemctl stop wired3.service >/dev/null 2>&1 || true' \
+              '    systemctl disable wired3.service >/dev/null 2>&1 || true' \
+              '  fi' \
               'fi' \
               > "$RPM_SOURCES_DIR/preun.sh"
             chmod 0755 "$RPM_SOURCES_DIR/preun.sh"
@@ -449,6 +463,10 @@ jobs:
               '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
               'if command -v systemctl >/dev/null 2>&1; then' \
               '  systemctl daemon-reload || true' \
+              '  if [[ -f /run/wired3.service.was-active ]]; then' \
+              '    systemctl start wired3.service || true' \
+              '    rm -f /run/wired3.service.was-active' \
+              '  fi' \
               'fi' \
               > "$RPM_SOURCES_DIR/post.sh"
             chmod 0755 "$RPM_SOURCES_DIR/post.sh"
@@ -457,8 +475,18 @@ jobs:
               '#!/usr/bin/env bash' \
               'set -euo pipefail' \
               'if command -v systemctl >/dev/null 2>&1; then' \
-              '  systemctl stop wired3.service >/dev/null 2>&1 || true' \
-              '  systemctl disable wired3.service >/dev/null 2>&1 || true' \
+              '  if [[ "${1:-0}" -ge 1 ]]; then' \
+              '    if systemctl is-active --quiet wired3.service; then' \
+              '      install -D -m 0644 /dev/null /run/wired3.service.was-active' \
+              '    else' \
+              '      rm -f /run/wired3.service.was-active' \
+              '    fi' \
+              '    systemctl stop wired3.service >/dev/null 2>&1 || true' \
+              '  else' \
+              '    rm -f /run/wired3.service.was-active' \
+              '    systemctl stop wired3.service >/dev/null 2>&1 || true' \
+              '    systemctl disable wired3.service >/dev/null 2>&1 || true' \
+              '  fi' \
               'fi' \
               > "$RPM_SOURCES_DIR/preun.sh"
             chmod 0755 "$RPM_SOURCES_DIR/preun.sh"

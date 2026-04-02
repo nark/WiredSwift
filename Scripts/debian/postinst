@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SERVICE_STATE_MARKER="/run/wired3.service.was-active"
+
 if ! getent group wired3 >/dev/null 2>&1; then
   groupadd --system wired3
 fi
@@ -101,4 +103,15 @@ fi
 
 if command -v systemctl >/dev/null 2>&1; then
   systemctl daemon-reload || true
+
+  case "${1:-}" in
+    configure)
+      if [[ -f "$SERVICE_STATE_MARKER" ]]; then
+        systemctl start wired3.service || true
+        rm -f "$SERVICE_STATE_MARKER"
+      fi
+      ;;
+    *)
+      ;;
+  esac
 fi
