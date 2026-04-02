@@ -2,15 +2,49 @@
 
 All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-## [Unreleased]
+## [3.0-beta.17+33] — 2026-04-02
 
 ### Bug Fixes
+- Align server version path with Core layout ([`afee8c1`](https://github.com/nark/WiredSwift/commit/afee8c16a678a9a50acb4cd5252150a876badaf9))
+
+- Preserve wired3 service state across upgrades ([`2f68374`](https://github.com/nark/WiredSwift/commit/2f6837416c68f7e360429777465feb723f0405c3))
+
+- Stabilize accounts-changed integration broadcast assertion ([`f101f87`](https://github.com/nark/WiredSwift/commit/f101f87a4da2be7850a6fc2099bb2b2d9745ffae))
+
+- Cast shutdown mode to Int32 in server stop ([`27356b1`](https://github.com/nark/WiredSwift/commit/27356b11a4daa17981fa57405482fa4f73d06230))
+
+- Stabilize paths, index file size, and server shutdown ([`9480546`](https://github.com/nark/WiredSwift/commit/94805460610a9fc2f68d98261aa3d393cd05cd2c))
+
+- Remove legacy LinuxMain test entrypoint ([`13d6bf0`](https://github.com/nark/WiredSwift/commit/13d6bf09788acc63cc83bca43a7b4e03ddd88cac))
+
+- Use platform-safe SOCK_STREAM type on Linux ([`987a2fe`](https://github.com/nark/WiredSwift/commit/987a2fe4d4945659d9835c3c588c3e943851ad58))
+
+- Exclude WiredServerApp target and product on Linux ([`2ead167`](https://github.com/nark/WiredSwift/commit/2ead167e6afa2c1156e2a2ff073c213e3ff27a82))
+
+- Install full linux native deps for wired3 build ([`cfc8f66`](https://github.com/nark/WiredSwift/commit/cfc8f66ec481c06911dfe5fdb0e156f66e1917bc))
+
+- Run linux dependency install step with bash ([`2454ee1`](https://github.com/nark/WiredSwift/commit/2454ee10f59ba370a4fd8e390b0fc335f6d2ff0e))
+
+- Install sqlite dev and enable GRDBCUSTOMSQLITE on linux ([`3700b1f`](https://github.com/nark/WiredSwift/commit/3700b1fbf0c44e4cd751864784302097119af88a))
+
 - Resolve SwiftLint CI errors after ServerController split ([`bdd0b51`](https://github.com/nark/WiredSwift/commit/bdd0b51274225b2fc827208b90f323926ced71e9))
 
 - Fix two regressions introduced during warning cleanup ([`3cd6f07`](https://github.com/nark/WiredSwift/commit/3cd6f073fd12dae250ef81e00a4fa8b48c377c84))
 
 
 ### Documentation
+- Simplify feature matrix wording ([`25b7040`](https://github.com/nark/WiredSwift/commit/25b7040a0e7914f7744bb94ef4a38d070d4782df))
+
+- Improve feature matrix with visual status markers ([`9ffe82e`](https://github.com/nark/WiredSwift/commit/9ffe82ee83aa573d21f36d2c0a04ae4de0ab43ea))
+
+- Fix symbol heading rendering in connection patterns ([`00ca8d5`](https://github.com/nark/WiredSwift/commit/00ca8d5b96750bfed2f1cf93fe6fd45ab1339736))
+
+- Consolidate integration guides into a compact structure ([`77bbaa0`](https://github.com/nark/WiredSwift/commit/77bbaa0fc69bd790fa82cce7e710c75b19d578b1))
+
+- Add catalog, CI generation, and pages publishing ([`4329c24`](https://github.com/nark/WiredSwift/commit/4329c242bd146b3592ec658ec23d3ffcc442296e))
+
+- Add CODE_OF_CONDUCT.md and cliff.toml ([`b19dc08`](https://github.com/nark/WiredSwift/commit/b19dc08951dd9314ddb35d8648f76234bac87888))
+
 - Add SECURITY.md with vulnerability reporting policy ([`ffdb991`](https://github.com/nark/WiredSwift/commit/ffdb9919feb6960fef4b6d061c80f5f5a8f4657d))
 
 - Add /// documentation to all public API ([`e79afd0`](https://github.com/nark/WiredSwift/commit/e79afd00a84fffd48265dfc66dc1013ff5bee1db))
@@ -19,16 +53,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
 ### Features
+- Implement quota fields — max_file_size_bytes, max_tree_size_bytes, exclude_patterns ([`361a214`](https://github.com/nark/WiredSwift/commit/361a214b1421c083b65adacf8048ffd5fcf8e047))
+
 - Add SwiftLint 0.63 with zero-error baseline ([`ccd160d`](https://github.com/nark/WiredSwift/commit/ccd160daa46415079025007240e97392dc70f476))
 
 
 ### Refactoring
+- Unify wired protocol spec ([`9e95dfb`](https://github.com/nark/WiredSwift/commit/9e95dfb967ce813dc8551a4041200c803720369a))
+
 - Split ServerController into domain-specific extensions ([`c2e84f5`](https://github.com/nark/WiredSwift/commit/c2e84f5ea9ecdb7ca766a3382eeee1b9d7ed09c7))
 
 - Reorganize sources into Core/, Models/, Controllers/, Database/ ([`914ddb9`](https://github.com/nark/WiredSwift/commit/914ddb9a90f39fee492fe4dc90885acefe503e75))
 
 
 ### Testing
+- Harden macOS pipeline against flaky integration timing ([`1e3caa1`](https://github.com/nark/WiredSwift/commit/1e3caa1cd34a6524d588b6b77b68393f800649c8))
+
 - Fix race condition in sendAndWaitMany tests ([`c2cea3b`](https://github.com/nark/WiredSwift/commit/c2cea3b5b5460c0632552d2b47798fee61f74e1f))
 
 - Expand wired3 controller coverage for bootstrap clients logs ([`86cc30e`](https://github.com/nark/WiredSwift/commit/86cc30e5e0d29bfc99da9b66931711ea4a07ebf6))
