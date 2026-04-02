@@ -587,7 +587,7 @@ public class ChatsController: TableController {
             if chatClient.userID != client.userID {
                 let reply = P7Message(withName: "wired.chat.user_join", spec: client.socket.spec)
                 reply.addParameter(field: "wired.chat.id", value: chatID)
-                reply.addParameter(field: "wired.user.idle", value: chatClient.idle)
+                reply.addParameter(field: "wired.user.idle", value: client.idle)
                 reply.addParameter(field: "wired.user.id", value: client.userID)
                 reply.addParameter(field: "wired.user.nick", value: client.nick)
                 reply.addParameter(field: "wired.user.status", value: client.status)
