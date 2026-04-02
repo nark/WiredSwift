@@ -24,15 +24,15 @@ COPY Vendor ./Vendor
 # Copy full sources once dependency resolution is cached.
 COPY . .
 
-RUN cat > /src/Sources/wired3/Version.swift <<SWIFT
+RUN cat > /src/Sources/wired3/Core/Version.swift <<SWIFT
 import Foundation
 
-enum WiredServerVersion {
-    static let marketingVersion = "${WIRED_MARKETING_VERSION}"
-    static let buildNumber = "${WIRED_BUILD_NUMBER}"
-    static let commit = "${WIRED_GIT_COMMIT}"
-    static let number = marketingVersion
-    static let display = "wired3 \\(marketingVersion) (\\(buildNumber)+\\(commit))"
+public enum WiredServerVersion {
+    public static let marketingVersion = "${WIRED_MARKETING_VERSION}"
+    public static let buildNumber = "${WIRED_BUILD_NUMBER}"
+    public static let commit = "${WIRED_GIT_COMMIT}"
+    public static let number = marketingVersion
+    public static let display = "wired3 \\(marketingVersion) (\\(buildNumber)+\\(commit))"
 }
 SWIFT
 
