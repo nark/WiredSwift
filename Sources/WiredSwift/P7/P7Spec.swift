@@ -274,9 +274,11 @@ public class P7Spec: NSObject, XMLParserDelegate {
         if let p = path {
             self.loadFile(path: p)
         } else {
+            if let url = WiredProtocolSpec.bundledSpecURL() {
+                self.loadFile(at: url)
             // SECURITY (FINDING_P_010): safe unwrap — Bundle(identifier:) returns nil on Linux
-            if let bundle = Bundle(identifier: "fr.read-write.WiredSwift"),
-               let p = bundle.path(forResource: "wired", ofType: "xml") {
+            } else if let bundle = Bundle(identifier: "fr.read-write.WiredSwift"),
+                      let p = bundle.path(forResource: "wired", ofType: "xml") {
                 self.loadFile(path: p)
             }
         }

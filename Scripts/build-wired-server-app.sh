@@ -20,7 +20,7 @@ APP_ZIP_PATH="$ROOT_DIR/dist/Wired-Server.app.zip"
 SERVER_ZIP_PATH="$ROOT_DIR/dist/$SERVER_BINARY_NAME.zip"
 NOTARIZE="${NOTARIZE:-}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
-VERSION_SWIFT="$ROOT_DIR/Sources/wired3/Version.swift"
+VERSION_SWIFT="$ROOT_DIR/Sources/wired3/Core/Version.swift"
 VERSION_SWIFT_BACKUP=""
 
 if [[ "$BUILD_CONFIG" != "debug" && "$BUILD_CONFIG" != "release" ]]; then
@@ -145,7 +145,7 @@ cp "$SERVER_BINARY_PATH" "$RESOURCES_DIR/$SERVER_BINARY_NAME"
 chmod 755 "$RESOURCES_DIR/$SERVER_BINARY_NAME"
 
 # Embed default runtime assets used by wired3 bootstrap.
-cp "$ROOT_DIR/Sources/wired3/wired.xml" "$RESOURCES_DIR/wired.xml"
+cp "$ROOT_DIR/Sources/WiredSwift/Resources/wired.xml" "$RESOURCES_DIR/wired.xml"
 cp "$ROOT_DIR/Sources/wired3/banner.png" "$RESOURCES_DIR/banner.png"
 
 echo "==> Copying SwiftPM resource bundles"

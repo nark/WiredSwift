@@ -109,4 +109,24 @@ final class FilesControllerTests: XCTestCase {
         XCTAssertEqual(loaded.group, "engineering")
         XCTAssertEqual(loaded.mode, mode)
     }
+
+    func testDropBoxPrivilegesAlsoResolvesSyncDirectoryPrivileges() throws {
+        let root = try makeTemporaryDirectory()
+        let syncDir = root.appendingPathComponent("sync")
+        try FileManager.default.createDirectory(at: syncDir, withIntermediateDirectories: true)
+        XCTAssertTrue(File.FileType.set(type: .sync, path: syncDir.path))
+
+        var mode: File.FilePermissions = []
+        mode.insert(.ownerRead)
+        mode.insert(.ownerWrite)
+        let privilege = FilePrivilege(owner: "eve", group: "ops", mode: mode)
+        XCTAssertTrue(FilePrivilege.set(privileges: privilege, path: syncDir.path))
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let controller = FilesController(rootPath: root.path)
+        let loaded = try XCTUnwrap(controller.dropBoxPrivileges(forVirtualPath: "/sync/sub/file.txt"))
+        XCTAssertEqual(loaded.owner, "eve")
+        XCTAssertEqual(loaded.group, "ops")
+        XCTAssertEqual(loaded.mode, mode)
+    }
 }

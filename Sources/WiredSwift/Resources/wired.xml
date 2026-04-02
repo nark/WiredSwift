@@ -444,6 +444,47 @@
             </p7:documentation>
         </p7:field>
 
+        <p7:field name="wired.board.reaction.emoji" type="string" id="6025" version="3.1">
+            <p7:documentation>
+                Unicode emoji character(s) identifying a reaction. Any valid Unicode scalar sequence
+                is accepted, including multi-codepoint emoji (e.g. 👨‍👩‍👧, 🇫🇷). Typical standard values
+                are 👍, 👎, ❤️, 😂, and 😮.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.count" type="uint32" id="6026" version="3.1">
+            <p7:documentation>
+                Total number of distinct accounts that have reacted with a given emoji on the target
+                thread or post.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.is_own" type="bool" id="6027" version="3.1">
+            <p7:documentation>
+                Indicates whether the currently authenticated account has already reacted with this
+                emoji on the target content. Used by the client to render the toggle state.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.nick" type="string" id="6028" version="3.1">
+            <p7:documentation>
+                Public display nick of a user who reacted, captured as a snapshot at the time the
+                reaction was submitted. The underlying account login is never disclosed to other clients.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.nicks" type="string" id="6030" version="3.1">
+            <p7:documentation>
+                Pipe-separated list of display nicks that reacted with a specific emoji on a target,
+                e.g. "Alice|Bob|Charlie". Sent as an optional field in wired.board.reaction_list.
+                Only public display nicks are disclosed — account logins are never transmitted.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.board.reaction.emojis" type="string" id="6029" version="3.1">
+            <p7:documentation>
+                Pipe-separated list of distinct emoji characters that have at least one reaction on the
+                thread body (e.g. "👍|❤️|😂"). Sent as an optional field in wired.board.thread_list so
+                clients can render a compact reaction preview in the thread list without an additional
+                round-trip. Only includes thread-level reactions, not reply-post reactions.
+            </p7:documentation>
+        </p7:field>
+
         <p7:field name="wired.file.path" type="string" id="7000" version="2.0">
             <p7:documentation>
                 Path to a file, separated by slashes, i.e. "/". The root directory is a single slash,
@@ -453,16 +494,17 @@
         <p7:field name="wired.file.type" type="enum" id="7001" version="2.0">
             <p7:documentation>
                 File type. [enum:wired.file.type.file] indicates a normal file, and
-                [enum:wired.file.type.directory] indicates a normal directory. The other two are specific
-                to Wired, and are differentiated mostly by permissions. [enum:wired.file.type.uploads]
+                [enum:wired.file.type.directory] indicates a normal directory. The other three are specific to Wired, and are differentiated mostly by permissions. [enum:wired.file.type.uploads]
                 are directories that may be uploaded into, and listed, while [enum:wired.file.type.dropbox]
-                may be uploaded into, but not listed. Drop boxes can also have extended permissions, like
+                may be uploaded into, but not listed. [enum:wired.file.type.sync] identifies a synchronized
+                directory observed by a background daemon for uni- or bi-directional synchronization. Drop boxes can also have extended permissions, like
                 [field:wired.file.owner], etc.
             </p7:documentation>
             <p7:enum name="wired.file.type.file" value="0" version="2.0" />
             <p7:enum name="wired.file.type.directory" value="1" version="2.0" />
             <p7:enum name="wired.file.type.uploads" value="2" version="2.0" />
             <p7:enum name="wired.file.type.dropbox" value="3" version="2.0" />
+            <p7:enum name="wired.file.type.sync" value="4" version="2.0" />
         </p7:field>
         <p7:field name="wired.file.data_size" type="uint64" id="7002" version="2.0">
             <p7:documentation>
@@ -600,6 +642,41 @@
         <p7:field name="wired.file.preview" type="data" id="7026" version="2.0">
             <p7:documentation>
                 TBD
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.user_mode" type="string" id="7027" version="2.0">
+            <p7:documentation>
+                Explicit sync policy for the directory owner of a synchronized directory.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.group_mode" type="string" id="7028" version="2.0">
+            <p7:documentation>
+                Explicit sync policy for the directory group of a synchronized directory.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.everyone_mode" type="string" id="7029" version="2.0">
+            <p7:documentation>
+                Explicit sync policy for everyone on a synchronized directory.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.mode_effective" type="string" id="7030" version="2.0">
+            <p7:documentation>
+                Effective sync policy resolved by the server for the currently logged in account.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.max_file_size_bytes" type="uint64" id="7031" version="2.0">
+            <p7:documentation>
+                Maximum size in bytes of a single file that may be uploaded into this synchronized directory. Zero means unlimited.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.max_tree_size_bytes" type="uint64" id="7032" version="2.0">
+            <p7:documentation>
+                Maximum total size in bytes of all files in the synchronized directory tree. Zero means unlimited.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.file.sync.exclude_patterns" type="string" id="7033" version="2.0">
+            <p7:documentation>
+                Newline-separated list of glob patterns for files to exclude from synchronisation (e.g. ".DS_Store" or "*.tmp").
             </p7:documentation>
         </p7:field>
 
@@ -850,6 +927,12 @@
                 Indicates whether the account gives the privilege of searching boards.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.account.board.add_reactions" type="bool" id="8095" version="3.1">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of adding or removing emoji reactions
+                on board threads and posts.
+            </p7:documentation>
+        </p7:field>
         <p7:field name="wired.account.file.list_files" type="bool" id="8043" version="2.0">
             <p7:documentation>
                 Indicates whether the account gives the privilege of listing files.
@@ -971,6 +1054,16 @@
             <p7:documentation>
                 Indicates the combined limit in speed in bytes/second for all upload transfers
                 the account gives. 0 means no limit.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.account.file.sync.sync_files" type="bool" id="8099" version="2.0">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of activating and running sync pairs.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.account.file.sync.delete_remote" type="bool" id="8100" version="2.0">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of deleting remote files from a sync pair.
             </p7:documentation>
         </p7:field>
         <p7:field name="wired.account.account.change_password" type="bool" id="8066" version="2.0">
@@ -1392,8 +1485,10 @@
             <p7:member field="wired.account.board.edit_all_threads_and_posts" />
             <p7:member field="wired.account.board.delete_own_threads_and_posts" />
             <p7:member field="wired.account.board.delete_all_threads_and_posts" />
+            <p7:member field="wired.account.board.add_reactions" />
             <p7:member field="wired.account.file.list_files" />
             <p7:member field="wired.account.file.get_info" />
+            <p7:member field="wired.account.file.search_files" />
             <p7:member field="wired.account.file.create_directories" />
             <p7:member field="wired.account.file.create_links" />
             <p7:member field="wired.account.file.move_files" />
@@ -1413,6 +1508,8 @@
             <p7:member field="wired.account.transfer.upload_limit" />
             <p7:member field="wired.account.transfer.download_speed_limit" />
             <p7:member field="wired.account.transfer.upload_speed_limit" />
+            <p7:member field="wired.account.file.sync.sync_files" />
+            <p7:member field="wired.account.file.sync.delete_remote" />
             <p7:member field="wired.account.account.change_password" />
             <p7:member field="wired.account.account.list_accounts" />
             <p7:member field="wired.account.account.read_accounts" />
@@ -2020,6 +2117,7 @@
             <p7:parameter field="wired.board.latest_reply_date" version="2.0" />
             <p7:parameter field="wired.board.subject" use="required" version="2.0" />
             <p7:parameter field="wired.user.nick" use="required" version="2.0" />
+            <p7:parameter field="wired.board.reaction.emojis" version="3.1" />
         </p7:message>
 
         <p7:message name="wired.board.thread_list.done" id="6005" version="2.0">
@@ -2355,6 +2453,100 @@
             <p7:parameter field="wired.transaction" version="2.0" />
         </p7:message>
 
+        <p7:message name="wired.board.get_reactions" id="6038" version="3.1">
+            <p7:documentation>
+                Request the reaction summary for a thread or a post. The server replies with zero or
+                more [message:wired.board.reaction_list] messages — one per distinct emoji — followed
+                by [message:wired.ok].
+
+                [field:wired.board.thread] identifies the parent thread. When [field:wired.board.post]
+                is also present, reactions are fetched for that specific reply post; otherwise reactions
+                are fetched for the thread body itself.
+
+                Requires [field:wired.account.board.read_boards].
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.reaction_list" id="6039" version="3.1">
+            <p7:documentation>
+                One reaction summary item sent in response to [message:wired.board.get_reactions].
+                Each message represents a single emoji and its aggregate count for the requested
+                target. [field:wired.board.reaction.is_own] tells the client whether the currently
+                authenticated account contributed to this reaction count.
+
+                The server sends one such message per distinct emoji, then sends [message:wired.ok]
+                to signal the end of the list.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji"   use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.count"   use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.is_own"  use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.nicks"   version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.add_reaction" id="6040" version="3.1">
+            <p7:documentation>
+                Add or toggle an emoji reaction on a thread body or a reply post.
+
+                Toggle semantics: if the authenticated account has already reacted with the given
+                [field:wired.board.reaction.emoji] on the target, the reaction is removed; otherwise
+                it is added. The server broadcasts either [message:wired.board.reaction_added] or
+                [message:wired.board.reaction_removed] to all clients subscribed to the parent board.
+
+                [field:wired.board.thread] identifies the parent thread. When [field:wired.board.post]
+                is also present, the reaction targets that specific reply post; otherwise it targets
+                the thread body.
+
+                Requires [field:wired.account.board.add_reactions] and
+                [field:wired.account.board.read_boards] on the parent board.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.reaction_added" id="6041" version="3.1">
+            <p7:documentation>
+                Broadcast to all clients subscribed to the parent board when an emoji reaction is
+                added to a thread body or a reply post.
+
+                [field:wired.board.reaction.nick] contains the public display nick of the reacting
+                user as captured at the moment of the reaction. The underlying account login is
+                never included in this message to preserve user privacy.
+
+                [field:wired.board.reaction.count] reflects the updated total count for this emoji
+                on the target after the addition.
+            </p7:documentation>
+            <p7:parameter field="wired.board.board" use="required" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.count" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.nick" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.board.reaction_removed" id="6042" version="3.1">
+            <p7:documentation>
+                Broadcast to all clients subscribed to the parent board when an emoji reaction is
+                removed from a thread body or a reply post.
+
+                [field:wired.board.reaction.count] reflects the updated total count for this emoji
+                on the target after the removal. When the count reaches zero, clients should remove
+                the reaction indicator entirely from their UI.
+            </p7:documentation>
+            <p7:parameter field="wired.board.board" use="required" version="3.1" />
+            <p7:parameter field="wired.board.thread" use="required" version="3.1" />
+            <p7:parameter field="wired.board.post" version="3.1" />
+            <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
+            <p7:parameter field="wired.board.reaction.count" use="required" version="3.1" />
+        </p7:message>
+
         <p7:message name="wired.file.list_directory" id="7000" version="2.0">
             <p7:documentation>
                 List a directory. [field:wired.file.path] may not be the empty string. If
@@ -2369,8 +2561,9 @@
             <p7:documentation>
                 File list item for a directory. [field:wired.file.path] may not be the empty string.
 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.readable]
-                and [field:wired.file.writable] should be set.
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.readable]
+                and [field:wired.file.writable] should be set. If [field:wired.file.type] is
+                [enum:wired.file.type.sync], [field:wired.file.sync.mode_effective] should also be set.
                 
                 rsrc TBD
             </p7:documentation>
@@ -2381,13 +2574,17 @@
             <p7:parameter field="wired.file.directory_count" version="2.0" />
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
+            <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.file_list.done" id="7002" version="2.0">
             <p7:documentation>
                 File list completion message.
                 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.readable]
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.readable]
                 and [field:wired.file.writable] should be set.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
@@ -2410,11 +2607,14 @@
                 Info message for a file or a directory. [field:wired.file.path] may not be the empty string,
                 but [field:wired.file.comment] may be.
                 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.owner],
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.owner],
                 [field:wired.file.owner.read], [field:wired.file.owner.write], [field:wired.file.group],
                 [field:wired.file.group.read], [field:wired.file.group.read], [field:wired.file.everyone.read],
                 [field:wired.file.everyone.write], [field:wired.file.readable] and [field:wired.file.writable]
-                should be set.
+                should be set. If [field:wired.file.type] is [enum:wired.file.type.sync],
+                [field:wired.file.sync.user_mode], [field:wired.file.sync.group_mode],
+                [field:wired.file.sync.everyone_mode] and [field:wired.file.sync.mode_effective]
+                should also be set.
                 
                 rsrc TBD
             </p7:documentation>
@@ -2434,6 +2634,13 @@
             <p7:parameter field="wired.file.everyone.write" version="2.0" />
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
+            <p7:parameter field="wired.file.sync.user_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.group_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.everyone_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.move" id="7005" version="2.0">
@@ -2481,6 +2688,9 @@
                 Change directory type message. [field:wired.file.path] may not be the empty string.
                 
                 [field:wired.file.type] may not be [enum:wired.file.type.file].
+
+                Within a synchronized directory subtree, conversions to [enum:wired.file.type.uploads],
+                [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync] should be rejected.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.file.path" use="required" version="2.0" />
@@ -2509,8 +2719,9 @@
         
         <p7:message name="wired.file.set_permissions" id="7011" version="2.0">
             <p7:documentation>
-                Change executable flag message for a drop box directory. [field:wired.file.path] may not
-                be the empty string, but [field:wired.file.owner] and [field:wired.file.group] may be.
+                Change managed access permissions for a drop box or sync directory. [field:wired.file.path]
+                may not be the empty string, but [field:wired.file.owner] and [field:wired.file.group]
+                may be.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.file.path" use="required" version="2.0" />
@@ -2522,6 +2733,21 @@
             <p7:parameter field="wired.file.group.write" use="required" version="2.0" />
             <p7:parameter field="wired.file.everyone.read" use="required" version="2.0" />
             <p7:parameter field="wired.file.everyone.write" use="required" version="2.0" />
+        </p7:message>
+
+        <p7:message name="wired.file.set_sync_policy" id="7023" version="2.0">
+            <p7:documentation>
+                Change sync policy for a synchronized directory. [field:wired.file.path] may not be the
+                empty string.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="2.0" />
+            <p7:parameter field="wired.file.path" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.user_mode" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.group_mode" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.everyone_mode" use="required" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.set_label" id="7012" version="2.0">
@@ -2543,10 +2769,14 @@
                 If [field:wired.file.type] is set, this should be the directory type, otherwise it
                 should be [enum:wired.file.type.directory].
                 
-                If [field:wired.file.type] is [enum:wired.file.type.dropbox], [field:wired.file.owner],
+                If [field:wired.file.type] is [enum:wired.file.type.dropbox] or [enum:wired.file.type.sync], [field:wired.file.owner],
                 [field:wired.file.owner.read], [field:wired.file.owner.write], [field:wired.file.group],
                 [field:wired.file.group.read], [field:wired.file.group.write], [field:wired.file.everyone.read]
                 and [field:wired.file.everyone.write] should be set.
+
+                If [field:wired.file.type] is [enum:wired.file.type.sync], [field:wired.file.sync.user_mode],
+                [field:wired.file.sync.group_mode] and [field:wired.file.sync.everyone_mode] may also
+                be set to create the directory with an explicit sync policy.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.file.path" use="required" version="2.0" />
@@ -2559,6 +2789,9 @@
             <p7:parameter field="wired.file.group.write" version="2.0" />
             <p7:parameter field="wired.file.everyone.read" version="2.0" />
             <p7:parameter field="wired.file.everyone.write" version="2.0" />
+            <p7:parameter field="wired.file.sync.user_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.group_mode" version="2.0" />
+            <p7:parameter field="wired.file.sync.everyone_mode" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.search" id="7014" version="2.0">
@@ -2580,6 +2813,10 @@
             <p7:parameter field="wired.file.directory_count" version="2.0" />
             <p7:parameter field="wired.file.readable" version="2.0" />
             <p7:parameter field="wired.file.writable" version="2.0" />
+            <p7:parameter field="wired.file.sync.mode_effective" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_file_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.max_tree_size_bytes" version="2.0" />
+            <p7:parameter field="wired.file.sync.exclude_patterns" version="2.0" />
         </p7:message>
 
         <p7:message name="wired.file.search_list.done" id="7016" version="2.0">
@@ -4325,6 +4562,32 @@
                 Should cause [message:wired.file.directory_changed] to be sent out to subscribed
                 users.
                 </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.okay" count="1" use="required" version="2.0" />
+                <p7:reply message="wired.error" count="1" use="required" version="2.0" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.file.set_sync_policy" originator="client" version="2.0">
+            <p7:documentation>
+                [message:wired.error] should be replied with [enum:wired.error.permission_denied]
+                if [field:wired.account.file.set_permissions] is not set for the user's account, or if the user
+                does not have applicable permissions for the directory.
+
+                [message:wired.error] should be replied with [enum:wired.error.file_not_found]
+                if the synchronized directory does not exist.
+
+                [message:wired.error] should be replied with [enum:wired.error.message_out_of_sequence]
+                if sent before [message:wired.client_info].
+
+                [message:wired.error] should be replied with [enum:wired.error.invalid_message] if the
+                message does not contain all the required parameters.
+
+                [message:wired.error] may be replied with [enum:wired.error.internal_error]
+                if an unknown error occurs.
+
+                Otherwise, [message:wired.okay] should be replied.
+            </p7:documentation>
             <p7:or>
                 <p7:reply message="wired.okay" count="1" use="required" version="2.0" />
                 <p7:reply message="wired.error" count="1" use="required" version="2.0" />

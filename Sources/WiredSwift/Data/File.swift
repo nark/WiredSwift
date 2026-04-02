@@ -23,6 +23,8 @@ public class File {
     public static let wiredFileMetaPermissions: String   = "/.wired/permissions"
     /// Relative path of the per-directory labels metadata file.
     public static let wiredFileMetaLabels: String        = "/.wired/labels"
+    /// Relative path of the per-directory sync policy metadata file.
+    public static let wiredFileMetaSyncPolicy: String    = "/.wired/sync_policy.json"
 
     /// Unicode field-separator (U+001C) used to delimit owner, group and mode
     /// within the permissions metadata file.
@@ -67,6 +69,7 @@ public class File {
         case directory  = 1
         case uploads    = 2
         case dropbox    = 3
+        case sync       = 4
 
         /// Persists `type` to the `.wired/type` metadata file inside `path`.
         ///
@@ -370,5 +373,101 @@ public class FilePrivilege {
         }
 
         return true
+    }
+}
+
+/// Quota and retention policy attached to a `wired.file.type.sync` directory.
+public struct SyncPolicy: Codable, Equatable {
+    public enum Mode: String, Codable, CaseIterable {
+        case disabled = "disabled"
+        case serverToClient = "server_to_client"
+        case clientToServer = "client_to_server"
+        case bidirectional = "bidirectional"
+    }
+
+    public var userMode: Mode
+    public var groupMode: Mode
+    public var everyoneMode: Mode
+    public var maxFileSizeBytes: UInt64
+    public var maxTreeSizeBytes: UInt64
+    /// Newline-separated glob patterns for files to exclude from synchronisation.
+    public var excludePatterns: String
+
+    enum CodingKeys: String, CodingKey {
+        case userMode
+        case groupMode
+        case everyoneMode
+        case maxFileSizeBytes
+        case maxTreeSizeBytes
+        case excludePatterns
+    }
+
+    public init(
+        userMode: Mode = .disabled,
+        groupMode: Mode = .disabled,
+        everyoneMode: Mode = .disabled,
+        maxFileSizeBytes: UInt64 = 0,
+        maxTreeSizeBytes: UInt64 = 0,
+        excludePatterns: String = ""
+    ) {
+        self.userMode = userMode
+        self.groupMode = groupMode
+        self.everyoneMode = everyoneMode
+        self.maxFileSizeBytes = maxFileSizeBytes
+        self.maxTreeSizeBytes = maxTreeSizeBytes
+        self.excludePatterns = excludePatterns
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        userMode = try c.decodeIfPresent(Mode.self, forKey: .userMode) ?? .disabled
+        groupMode = try c.decodeIfPresent(Mode.self, forKey: .groupMode) ?? .disabled
+        everyoneMode = try c.decodeIfPresent(Mode.self, forKey: .everyoneMode) ?? .disabled
+        maxFileSizeBytes = try c.decodeIfPresent(UInt64.self, forKey: .maxFileSizeBytes) ?? 0
+        maxTreeSizeBytes = try c.decodeIfPresent(UInt64.self, forKey: .maxTreeSizeBytes) ?? 0
+        excludePatterns = try c.decodeIfPresent(String.self, forKey: .excludePatterns) ?? ""
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(userMode, forKey: .userMode)
+        try c.encode(groupMode, forKey: .groupMode)
+        try c.encode(everyoneMode, forKey: .everyoneMode)
+        try c.encode(maxFileSizeBytes, forKey: .maxFileSizeBytes)
+        try c.encode(maxTreeSizeBytes, forKey: .maxTreeSizeBytes)
+        try c.encode(excludePatterns, forKey: .excludePatterns)
+    }
+
+    public static func load(path: String) -> SyncPolicy? {
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else {
+            return nil
+        }
+
+        let policyPath = path.stringByAppendingPathComponent(path: File.wiredFileMetaSyncPolicy)
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: policyPath)) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(SyncPolicy.self, from: data)
+    }
+
+    @discardableResult
+    public static func save(_ policy: SyncPolicy, path: String) -> Bool {
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else {
+            return false
+        }
+
+        let policyPath = path.stringByAppendingPathComponent(path: File.wiredFileMetaSyncPolicy)
+        let wiredPath = policyPath.stringByDeletingLastPathComponent
+
+        do {
+            try FileManager.default.createDirectory(atPath: wiredPath, withIntermediateDirectories: true, attributes: nil)
+            let data = try JSONEncoder().encode(policy)
+            try data.write(to: URL(fileURLWithPath: policyPath), options: .atomic)
+            return true
+        } catch {
+            return false
+        }
     }
 }

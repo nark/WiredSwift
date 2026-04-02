@@ -162,7 +162,7 @@ public class IndexController: TableController {
                 for entry in results {
                     // F_015: skip files inside dropboxes the user cannot read
                     if let priv = App.filesController.dropBoxPrivileges(forVirtualPath: entry.virtual_path),
-                       !user.hasPermission(toRead: priv) {
+                       !App.filesController.managedAccess(forVirtualPath: entry.virtual_path, user: user, privilege: priv).readable {
                         continue
                     }
                     self.sendSearchListEntry(entry: entry, user: user, client: client, message: message)
@@ -426,12 +426,26 @@ public class IndexController: TableController {
             reply.addParameter(field: "wired.file.rsrc_size", value: UInt64(0))
         case .directory, .uploads:
             reply.addParameter(field: "wired.file.directory_count", value: WiredSwift.File.count(path: realPath))
-        case .dropbox:
+        case .dropbox, .sync:
             reply.addParameter(field: "wired.file.directory_count",
                                value: WiredSwift.File.count(path: realPath))
             if let priv = App.filesController.dropBoxPrivileges(forVirtualPath: entry.virtual_path) {
-                reply.addParameter(field: "wired.file.readable", value: user.hasPermission(toRead: priv))
-                reply.addParameter(field: "wired.file.writable", value: user.hasPermission(toWrite: priv))
+                let access = App.filesController.managedAccess(forVirtualPath: entry.virtual_path, user: user, privilege: priv)
+                reply.addParameter(field: "wired.file.readable", value: access.readable)
+                reply.addParameter(field: "wired.file.writable", value: access.writable)
+                if type == .sync {
+                    let policy = App.filesController.syncPolicy(forVirtualPath: entry.virtual_path) ?? SyncPolicy()
+                    let effectiveMode = App.filesController.effectiveSyncMode(
+                        forVirtualPath: entry.virtual_path,
+                        user: user,
+                        privilege: priv,
+                        policy: policy
+                    ) ?? .disabled
+                    reply.addParameter(field: "wired.file.sync.user_mode", value: policy.userMode.rawValue)
+                    reply.addParameter(field: "wired.file.sync.group_mode", value: policy.groupMode.rawValue)
+                    reply.addParameter(field: "wired.file.sync.everyone_mode", value: policy.everyoneMode.rawValue)
+                    reply.addParameter(field: "wired.file.sync.mode_effective", value: effectiveMode.rawValue)
+                }
             }
         }
 

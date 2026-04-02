@@ -134,7 +134,7 @@ final class IntegrationServerRuntime {
         self.filesURL = resolvedRoot.appendingPathComponent("files", isDirectory: true)
         self.dbPath = resolvedRoot.appendingPathComponent("wired3.sqlite").path
         self.configPath = resolvedRoot.appendingPathComponent("config.ini").path
-        self.specPath = integrationPackageRoot().appendingPathComponent("Sources/wired3/wired.xml").path
+        self.specPath = try XCTUnwrap(WiredProtocolSpec.bundledSpecURL()).path
         self.port = resolvedPort
 
         try FileManager.default.createDirectory(at: filesURL, withIntermediateDirectories: true)
@@ -373,4 +373,219 @@ func drainMessages(socket: P7Socket, count: Int = 12) {
             break
         }
     }
+}
+
+struct SyncUserClient {
+    let username: String
+    let userID: UInt32
+    let socket: P7Socket
+}
+
+struct SyncTreeEntry {
+    let relativePath: String
+    let isDirectory: Bool
+    let size: UInt64
+}
+
+final class ConcurrentStartBarrier {
+    private let participantCount: Int
+    private let condition = NSCondition()
+    private var arrived = 0
+    private var generation = 0
+
+    init(participantCount: Int) {
+        precondition(participantCount > 0)
+        self.participantCount = participantCount
+    }
+
+    func wait() {
+        condition.lock()
+        let currentGeneration = generation
+        arrived += 1
+        if arrived == participantCount {
+            arrived = 0
+            generation += 1
+            condition.broadcast()
+            condition.unlock()
+            return
+        }
+
+        while generation == currentGeneration {
+            condition.wait()
+        }
+        condition.unlock()
+    }
+}
+
+func connectAndAuthenticate(
+    runtime: IntegrationServerRuntime,
+    username: String,
+    password: String
+) throws -> SyncUserClient {
+    let socket = try runtime.connectClient(username: username, password: password)
+    try sendClientInfoAndExpectServerInfo(socket: socket)
+    let login = try sendLoginAndExpectSuccess(socket: socket, username: username, password: password)
+    drainMessages(socket: socket)
+    let userID = try XCTUnwrap(login.uint32(forField: "wired.user.id"))
+    return SyncUserClient(username: username, userID: userID, socket: socket)
+}
+
+func createDirectory(socket: P7Socket, path: String) throws {
+    let create = P7Message(withName: "wired.file.create_directory", spec: socket.spec)
+    create.addParameter(field: "wired.file.path", value: path)
+    XCTAssertTrue(socket.write(create))
+    let reply = try readMessage(from: socket, expectedNames: ["wired.okay", "wired.error"], maxReads: 20)
+    if reply.name == "wired.error" {
+        let errorString = reply.string(forField: "wired.error.string") ?? "wired.error.unknown"
+        throw NSError(domain: "IntegrationCreateDirectory", code: 1, userInfo: [NSLocalizedDescriptionKey: "create_directory failed for \(path): \(errorString)"])
+    }
+}
+
+func movePath(socket: P7Socket, from oldPath: String, to newPath: String) throws {
+    let move = P7Message(withName: "wired.file.move", spec: socket.spec)
+    move.addParameter(field: "wired.file.path", value: oldPath)
+    move.addParameter(field: "wired.file.new_path", value: newPath)
+    XCTAssertTrue(socket.write(move))
+    let reply = try readMessage(from: socket, expectedNames: ["wired.okay", "wired.error"], maxReads: 20)
+    if reply.name == "wired.error" {
+        let errorString = reply.string(forField: "wired.error.string") ?? "wired.error.unknown"
+        throw NSError(domain: "IntegrationMovePath", code: 1, userInfo: [NSLocalizedDescriptionKey: "move failed from \(oldPath) to \(newPath): \(errorString)"])
+    }
+}
+
+func deletePath(socket: P7Socket, path: String) throws {
+    let delete = P7Message(withName: "wired.file.delete", spec: socket.spec)
+    delete.addParameter(field: "wired.file.path", value: path)
+    XCTAssertTrue(socket.write(delete))
+    let reply = try readMessage(from: socket, expectedNames: ["wired.okay", "wired.error"], maxReads: 20)
+    if reply.name == "wired.error" {
+        let errorString = reply.string(forField: "wired.error.string") ?? "wired.error.unknown"
+        throw NSError(domain: "IntegrationDeletePath", code: 1, userInfo: [NSLocalizedDescriptionKey: "delete failed for \(path): \(errorString)"])
+    }
+}
+
+func createSyncDirectory(
+    socket: P7Socket,
+    path: String,
+    owner: String = "admin",
+    group: String = "admin",
+    userMode: String = "bidirectional",
+    groupMode: String = "bidirectional",
+    everyoneMode: String = "bidirectional",
+    maxFileSizeBytes: UInt64 = 0,
+    maxTreeSizeBytes: UInt64 = 0,
+    excludePatterns: String = ""
+) throws {
+    try createDirectory(socket: socket, path: path)
+
+    let setType = P7Message(withName: "wired.file.set_type", spec: socket.spec)
+    setType.addParameter(field: "wired.file.path", value: path)
+    setType.addParameter(field: "wired.file.type", value: UInt32(File.FileType.sync.rawValue))
+    XCTAssertTrue(socket.write(setType))
+    _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+    let setPermissions = P7Message(withName: "wired.file.set_permissions", spec: socket.spec)
+    setPermissions.addParameter(field: "wired.file.path", value: path)
+    setPermissions.addParameter(field: "wired.file.owner", value: owner)
+    setPermissions.addParameter(field: "wired.file.group", value: group)
+    setPermissions.addParameter(field: "wired.file.owner.read", value: true)
+    setPermissions.addParameter(field: "wired.file.owner.write", value: true)
+    setPermissions.addParameter(field: "wired.file.group.read", value: true)
+    setPermissions.addParameter(field: "wired.file.group.write", value: true)
+    setPermissions.addParameter(field: "wired.file.everyone.read", value: true)
+    setPermissions.addParameter(field: "wired.file.everyone.write", value: true)
+    XCTAssertTrue(socket.write(setPermissions))
+    _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+    let setPolicy = P7Message(withName: "wired.file.set_sync_policy", spec: socket.spec)
+    setPolicy.addParameter(field: "wired.file.path", value: path)
+    setPolicy.addParameter(field: "wired.file.sync.user_mode", value: userMode)
+    setPolicy.addParameter(field: "wired.file.sync.group_mode", value: groupMode)
+    setPolicy.addParameter(field: "wired.file.sync.everyone_mode", value: everyoneMode)
+    setPolicy.addParameter(field: "wired.file.sync.max_file_size_bytes", value: maxFileSizeBytes)
+    setPolicy.addParameter(field: "wired.file.sync.max_tree_size_bytes", value: maxTreeSizeBytes)
+    if !excludePatterns.isEmpty {
+        setPolicy.addParameter(field: "wired.file.sync.exclude_patterns", value: excludePatterns)
+    }
+    XCTAssertTrue(socket.write(setPolicy))
+    _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+}
+
+@discardableResult
+func uploadFile(socket: P7Socket, path: String, data: Data) throws -> String {
+    let uploadFile = P7Message(withName: "wired.transfer.upload_file", spec: socket.spec)
+    uploadFile.addParameter(field: "wired.file.path", value: path)
+    uploadFile.addParameter(field: "wired.transfer.data_size", value: UInt64(data.count))
+    uploadFile.addParameter(field: "wired.transfer.rsrc_size", value: UInt64(0))
+    XCTAssertTrue(socket.write(uploadFile))
+
+    let uploadReady = try readMessage(from: socket, expectedNames: ["wired.transfer.upload_ready", "wired.error"], maxReads: 40)
+    if uploadReady.name == "wired.error" {
+        let errorString = uploadReady.string(forField: "wired.error.string") ?? "wired.error.unknown"
+        throw NSError(domain: "IntegrationUpload", code: 1, userInfo: [NSLocalizedDescriptionKey: "upload_file failed for \(path): \(errorString)"])
+    }
+    let resolvedPath = uploadReady.string(forField: "wired.file.path") ?? path
+    let offset = uploadReady.uint64(forField: "wired.transfer.data_offset") ?? 0
+    XCTAssertLessThanOrEqual(offset, UInt64(data.count))
+
+    let uploadGo = P7Message(withName: "wired.transfer.upload", spec: socket.spec)
+    uploadGo.addParameter(field: "wired.transfer.data", value: UInt64(data.count) - offset)
+    uploadGo.addParameter(field: "wired.transfer.rsrc", value: UInt64(0))
+    XCTAssertTrue(socket.write(uploadGo))
+    let payload = data.subdata(in: Int(offset)..<data.count)
+    try socket.writeOOB(data: payload, timeout: 5)
+    usleep(100_000)
+    return resolvedPath
+}
+
+func waitForExistingPath(_ candidates: [String], timeout: TimeInterval) -> String? {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        for path in candidates where FileManager.default.fileExists(atPath: path) {
+            return path
+        }
+        usleep(50_000)
+    }
+    return nil
+}
+
+func snapshotTree(rootURL: URL) throws -> [String: SyncTreeEntry] {
+    var result: [String: SyncTreeEntry] = [:]
+    let fm = FileManager.default
+    guard let enumerator = fm.enumerator(at: rootURL, includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey], options: [.skipsHiddenFiles]) else {
+        return result
+    }
+
+    for case let url as URL in enumerator {
+        let relativePath = url.path.replacingOccurrences(of: rootURL.path + "/", with: "")
+        if relativePath.contains("/.wired") || relativePath.hasPrefix(".wired") {
+            continue
+        }
+        let values = try url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
+        result["/" + relativePath] = SyncTreeEntry(
+            relativePath: "/" + relativePath,
+            isDirectory: values.isDirectory ?? false,
+            size: UInt64(values.fileSize ?? 0)
+        )
+    }
+    return result
+}
+
+func waitForNoPartialTransferFiles(rootURL: URL, timeout: TimeInterval) -> Bool {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        let enumerator = FileManager.default.enumerator(at: rootURL, includingPropertiesForKeys: nil)
+        var foundPartial = false
+        while let item = enumerator?.nextObject() as? URL {
+            if item.lastPathComponent.hasSuffix(".WiredTransfer") {
+                foundPartial = true
+                break
+            }
+        }
+        if !foundPartial {
+            return true
+        }
+        usleep(50_000)
+    }
+    return false
 }

@@ -195,12 +195,7 @@ final class LogsControllerTests: XCTestCase {
     }
 
     private func wiredSpecPath() -> String {
-        URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("Sources/wired3/wired.xml")
-            .path
+        WiredProtocolSpec.bundledSpecURL()!.path
     }
 
     private func configPath() -> String {

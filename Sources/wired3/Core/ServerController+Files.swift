@@ -38,7 +38,7 @@ extension ServerController {
         let normalizedPath = NSString(string: path).standardizingPath
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toRead: privilege) {
+            if !App.filesController.managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).readable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -102,7 +102,7 @@ extension ServerController {
         let parentPath = realPath.stringByDeletingLastPathComponent
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toWrite: privilege) {
+            if !App.filesController.managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -110,7 +110,7 @@ extension ServerController {
 
         if let type = File.FileType.type(path: parentPath) {
             switch type {
-            case .uploads, .dropbox:
+            case .uploads, .dropbox, .sync:
                 if !user.hasPrivilege(name: "wired.account.transfer.upload_files") {
                     App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                     return
@@ -128,6 +128,11 @@ extension ServerController {
 
         let dataSize = message.uint64(forField: "wired.transfer.data_size") ?? UInt64(0)
         let rsrcSize = message.uint64(forField: "wired.transfer.rsrc_size") ?? UInt64(0)
+
+        if !App.filesController.validateSyncQuotaForUpload(path: normalizedPath, incomingDataSize: dataSize) {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
 
         if let transfer = App.transfersController.upload(path: normalizedPath,
                                                          dataSize: dataSize,
@@ -194,7 +199,7 @@ extension ServerController {
         let realPath = App.filesController.real(path: normalizedPath)
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            if !user.hasPermission(toWrite: privilege) {
+            if !App.filesController.managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
             }
@@ -221,7 +226,9 @@ extension ServerController {
             return
         }
 
-        if parentType != .directory {
+        if parentType == .sync {
+            // Keep sync children as regular directories; nested sync/dropbox/uploads are disallowed.
+        } else if parentType != .directory {
             _ = File.FileType.set(type: parentType, path: realPath)
         }
 

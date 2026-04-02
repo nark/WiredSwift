@@ -583,6 +583,16 @@ public class ServerController: ServerDelegate {
         self.reply(client: client, reply: reply, message: message)
     }
 
+    public func replyPing(client: Client, message: P7Message) {
+        let reply = P7Message(withName: "wired.ping", spec: client.socket.spec)
+
+        self.reply(client: client, reply: reply, message: message)
+    }
+
+    public func receivePing(client: Client, message: P7Message) {
+        // wired.ping is a keepalive acknowledgement with no server-side side effects.
+    }
+
     // MARK: - Message routing
 
     private func handleMessage(client: Client, message: P7Message) {
@@ -595,6 +605,10 @@ public class ServerController: ServerDelegate {
 
         if message.name == "wired.client_info" {
             self.receiveClientInfo(client, message)
+        } else if message.name == "wired.send_ping" {
+            self.replyPing(client: client, message: message)
+        } else if message.name == "wired.ping" {
+            self.receivePing(client: client, message: message)
         } else if message.name == "wired.user.set_nick" {
             self.receiveUserSetNick(client, message)
         } else if message.name == "wired.user.set_status" {
@@ -704,6 +718,8 @@ public class ServerController: ServerDelegate {
             App.filesController.setType(client: client, message: message)
         } else if message.name == "wired.file.set_permissions" {
             App.filesController.setPermissions(client: client, message: message)
+        } else if message.name == "wired.file.set_sync_policy" {
+            App.filesController.setSyncPolicy(client: client, message: message)
         } else if message.name == "wired.file.subscribe_directory" {
             App.filesController.subscribeDirectory(client: client, message: message)
         } else if message.name == "wired.file.unsubscribe_directory" {

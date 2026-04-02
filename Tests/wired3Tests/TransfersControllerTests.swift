@@ -232,11 +232,6 @@ final class TransfersControllerTests: XCTestCase {
     }
 
     private func wiredSpecPath() -> String {
-        URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // wired3Tests
-            .deletingLastPathComponent() // Tests
-            .deletingLastPathComponent() // package root
-            .appendingPathComponent("Sources/wired3/wired.xml")
-            .path
+        WiredProtocolSpec.bundledSpecURL()!.path
     }
 }

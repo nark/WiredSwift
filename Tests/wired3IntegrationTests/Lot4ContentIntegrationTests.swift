@@ -228,6 +228,24 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
         let info = try readMessage(from: socket, expectedName: "wired.file.info", maxReads: 20)
         XCTAssertEqual(info.string(forField: "wired.file.path"), directoryPath)
         XCTAssertEqual(info.enumeration(forField: "wired.file.type"), UInt32(File.FileType.dropbox.rawValue))
+
+        let syncPath = "/sync-\(UUID().uuidString.prefix(8))"
+        let createSync = P7Message(withName: "wired.file.create_directory", spec: socket.spec)
+        createSync.addParameter(field: "wired.file.path", value: syncPath)
+        XCTAssertTrue(socket.write(createSync))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let setSyncType = P7Message(withName: "wired.file.set_type", spec: socket.spec)
+        setSyncType.addParameter(field: "wired.file.path", value: syncPath)
+        setSyncType.addParameter(field: "wired.file.type", value: UInt32(File.FileType.sync.rawValue))
+        XCTAssertTrue(socket.write(setSyncType))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let syncInfo = P7Message(withName: "wired.file.get_info", spec: socket.spec)
+        syncInfo.addParameter(field: "wired.file.path", value: syncPath)
+        XCTAssertTrue(socket.write(syncInfo))
+        let syncReply = try readMessage(from: socket, expectedName: "wired.file.info", maxReads: 20)
+        XCTAssertEqual(syncReply.enumeration(forField: "wired.file.type"), UInt32(File.FileType.sync.rawValue))
     }
 
     func testTransfersUploadDirectoryAndErrorPaths() throws {

@@ -113,6 +113,7 @@ open class AsyncConnection: Connection {
                 )
 
                 if message.name == "wired.okay"
+                    || message.name == "wired.ping"
                     || message.name.hasSuffix(".done") {
 
                     await transactions.finish(transaction: transaction)

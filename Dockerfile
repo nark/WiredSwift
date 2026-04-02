@@ -51,7 +51,7 @@ RUN set -euo pipefail; \
     exit 1; \
   fi; \
   cp "${SWIFT_DEPS[@]}" /out/usr/lib/wired3/; \
-  cp /src/Sources/wired3/wired.xml /out/usr/share/wired3/wired.xml; \
+  cp /src/Sources/WiredSwift/Resources/wired.xml /out/usr/share/wired3/wired.xml; \
   cp /src/Sources/wired3/banner.png /out/usr/share/wired3/banner.png; \
   cp /src/Sources/wired3/config.ini /out/usr/share/wired3/config.ini.example
 

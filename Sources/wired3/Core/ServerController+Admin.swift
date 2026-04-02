@@ -600,11 +600,15 @@ extension ServerController {
         }
 
         var privilegesSaved = true
+        var deniedPrivilegeGrant = false
         for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             guard field.type == .bool else { continue }
             if let value = message.bool(forField: privilege) {
-                if value && !requestingUser.hasPrivilege(name: privilege) {
+                if value
+                    && !requestingUser.hasPrivilege(name: privilege)
+                    && !requestingUser.hasPrivilege(name: "wired.account.account.raise_account_privileges") {
+                    deniedPrivilegeGrant = true
                     privilegesSaved = false
                     continue
                 }
@@ -616,7 +620,7 @@ extension ServerController {
 
         if !privilegesSaved {
             _ = App.usersController.delete(user: account)
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            App.serverController.replyError(client: client, error: deniedPrivilegeGrant ? "wired.error.permission_denied" : "wired.error.internal_error", message: message)
             return
         }
 
@@ -656,11 +660,15 @@ extension ServerController {
         }
 
         var privilegesSaved = true
+        var deniedPrivilegeGrant = false
         for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             guard field.type == .bool else { continue }
             if let value = message.bool(forField: privilege) {
-                if value && !requestingUser.hasPrivilege(name: privilege) {
+                if value
+                    && !requestingUser.hasPrivilege(name: privilege)
+                    && !requestingUser.hasPrivilege(name: "wired.account.account.raise_account_privileges") {
+                    deniedPrivilegeGrant = true
                     privilegesSaved = false
                     continue
                 }
@@ -672,7 +680,7 @@ extension ServerController {
 
         if !privilegesSaved {
             _ = App.usersController.delete(group: account)
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            App.serverController.replyError(client: client, error: deniedPrivilegeGrant ? "wired.error.permission_denied" : "wired.error.internal_error", message: message)
             return
         }
 
@@ -819,6 +827,7 @@ extension ServerController {
         account.modificationTime = Date()
 
         var privilegesSaved = true
+        var deniedPrivilegeGrant = false
 
         for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
@@ -826,7 +835,10 @@ extension ServerController {
             case .bool:
                 if let value = message.bool(forField: privilege) {
                     // SECURITY (FINDING_F_006): Cannot grant a privilege the editing user does not possess
-                    if value == true && !requestingUser.hasPrivilege(name: privilege) {
+                    if value == true
+                        && !requestingUser.hasPrivilege(name: privilege)
+                        && !requestingUser.hasPrivilege(name: "wired.account.account.raise_account_privileges") {
+                        deniedPrivilegeGrant = true
                         continue
                     }
                     if !App.usersController.setUserPrivilege(privilege, value: value, for: account) {
@@ -849,6 +861,11 @@ extension ServerController {
 
         if !privilegesSaved {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        if deniedPrivilegeGrant {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
@@ -909,12 +926,19 @@ extension ServerController {
         }
 
         var privilegesSaved = true
+        var deniedPrivilegeGrant = false
 
         for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             switch field.type {
             case .bool:
                 if let value = message.bool(forField: privilege) {
+                    if value == true
+                        && !requestingUser.hasPrivilege(name: privilege)
+                        && !requestingUser.hasPrivilege(name: "wired.account.account.raise_account_privileges") {
+                        deniedPrivilegeGrant = true
+                        continue
+                    }
                     if !App.usersController.setGroupPrivilege(privilege, value: value, for: account) {
                         privilegesSaved = false
                     }
@@ -935,6 +959,11 @@ extension ServerController {
 
         if !privilegesSaved {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        if deniedPrivilegeGrant {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 
@@ -1094,14 +1123,11 @@ extension ServerController {
         reply.addParameter(field: "wired.account.upload_transferred",
                            value: UInt64(clamping: Int(account.uploadTransferred ?? 0)))
 
-        let privilegesByName = Dictionary(uniqueKeysWithValues:
-            account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
-
         for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             switch field.type {
             case .bool:
-                reply.addParameter(field: privilege, value: privilegesByName[privilege] ?? false)
+                reply.addParameter(field: privilege, value: account.hasPrivilege(name: privilege))
             case .enum32, .uint32:
                 if privilege == "wired.account.color" {
                     reply.addParameter(field: privilege, value: UInt32(account.color ?? "") ?? 0)

@@ -37,6 +37,14 @@ final class FileDataTests: XCTestCase {
         XCTAssertEqual(File.FileType.type(path: root.path), .dropbox)
     }
 
+    func testFileTypeSetSyncThenReadBack() throws {
+        let root = try makeTempDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        XCTAssertTrue(File.FileType.set(type: .sync, path: root.path))
+        XCTAssertEqual(File.FileType.type(path: root.path), .sync)
+    }
+
     func testFileTypeSetDirectoryRemovesMetadataMarker() throws {
         let root = try makeTempDirectory()
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
