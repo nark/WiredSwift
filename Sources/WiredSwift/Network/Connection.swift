@@ -456,6 +456,8 @@ open class Connection: NSObject {
     }
 
     internal func handleMessage(_ message: P7Message) {
+        self.lastPingDate = Date()
+
         switch message.name {
         case "wired.send_ping":
             self.pingReply()
