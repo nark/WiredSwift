@@ -126,6 +126,7 @@ extension ServerController {
         App.serverController.reply(client: client, reply: response, message: message)
 
         client.loginTime = Date()
+        client.idleTime = client.loginTime
 
         let clientInfo = [client.applicationName, client.applicationVersion]
             .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")

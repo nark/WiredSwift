@@ -26,6 +26,9 @@ public protocol ServerDelegate: class {
 }
 
 public class ServerController: ServerDelegate {
+    private static let idleTimeout: TimeInterval = 600
+    private static let idleCheckInterval: TimeInterval = 60
+
     public var port: Int = DEFAULT_PORT
     public var spec: P7Spec!
     public var isRunning: Bool = false
@@ -57,6 +60,7 @@ public class ServerController: ServerDelegate {
     private let maxConcurrentConnections = 100
     private var pendingConnectionCount: Int = 0
     private let pendingConnectionLock = NSLock()
+    private var idleUpdateTask: Task<Void, Never>?
 
     var startTime: Date?
 
@@ -366,6 +370,7 @@ public class ServerController: ServerDelegate {
 
     public func listen() {
         self.startTime = Date()
+        self.startIdleUpdates()
 
         group.enter()
 
@@ -397,6 +402,7 @@ public class ServerController: ServerDelegate {
         guard self.isRunning else { return }
 
         self.isRunning = false
+        self.stopIdleUpdates()
 
         for client in App.clientsController.connectedClientsSnapshot() {
             client.socket.disconnect()
@@ -593,14 +599,56 @@ public class ServerController: ServerDelegate {
         // wired.ping is a keepalive acknowledgement with no server-side side effects.
     }
 
+    private func startIdleUpdates() {
+        stopIdleUpdates()
+
+        idleUpdateTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Self.idleCheckInterval))
+                guard !Task.isCancelled else { return }
+                self.updateIdleClients()
+            }
+        }
+    }
+
+    private func stopIdleUpdates() {
+        idleUpdateTask?.cancel()
+        idleUpdateTask = nil
+    }
+
+    private func updateIdleClients() {
+        let now = Date()
+
+        for client in App.clientsController.connectedClientsSnapshot() {
+            guard client.state == .LOGGED_IN else { continue }
+            guard !client.idle else { continue }
+            guard let idleTime = client.idleTime else { continue }
+            guard now.timeIntervalSince(idleTime) >= Self.idleTimeout else { continue }
+
+            client.idle = true
+            self.sendUserStatus(forClient: client)
+        }
+    }
+
+    private func shouldTreatMessageAsActivity(_ name: String?) -> Bool {
+        switch name {
+        case "wired.send_ping", "wired.ping", "wired.user.set_idle", "wired.user.get_users":
+            return false
+        default:
+            return true
+        }
+    }
+
     // MARK: - Message routing
 
     private func handleMessage(client: Client, message: P7Message) {
-        // make sure to broadcast idle status if needed
-        if client.idle && message.name != "wired.user.set_nick" && message.name != "wired.user.set_status" && message.name != "wired.user.set_icon" && message.name != "wired.user.set_idle" {
-            client.idle = false
+        if shouldTreatMessageAsActivity(message.name) {
+            client.idleTime = Date()
 
-            self.sendUserStatus(forClient: client)
+            if client.idle {
+                client.idle = false
+                self.sendUserStatus(forClient: client)
+            }
         }
 
         if message.name == "wired.client_info" {

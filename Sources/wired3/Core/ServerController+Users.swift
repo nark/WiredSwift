@@ -56,8 +56,11 @@ extension ServerController {
     }
 
     func receiveUserSetIdle(_ client: Client, _ message: P7Message) {
-        client.idle = true
-        client.idleTime = Date()
+        if let idle = message.bool(forField: "wired.user.idle") {
+            client.idle = idle
+        } else {
+            client.idle = true
+        }
 
         let response = P7Message(withName: "wired.okay", spec: self.spec)
         _ = self.send(message: response, client: client)
@@ -233,6 +236,9 @@ extension ServerController {
             broadcast.addParameter(field: "wired.user.status", value: client.status)
             broadcast.addParameter(field: "wired.user.icon", value: client.icon)
             broadcast.addParameter(field: "wired.account.color", value: client.accountColor)
+            if let idleTime = client.idleTime {
+                broadcast.addParameter(field: "wired.user.idle_time", value: idleTime)
+            }
 
             App.clientsController.broadcast(message: broadcast)
         }
