@@ -13,6 +13,16 @@ import WiredSwift
 /// A `Transfer` is created when a client issues a file transfer request and
 /// is attached to the owning `Client` for the duration of the transfer.
 public class Transfer: Equatable {
+    struct StatusSnapshot {
+        let type: TransferType
+        let path: String
+        let dataSize: UInt64
+        let rsrcSize: UInt64
+        let transferred: UInt64
+        let speed: UInt32
+        let queuePosition: Int
+    }
+
     /// Whether this transfer sends a file to the client or receives one from it.
     public enum TransferType: UInt32 {
         /// The server is sending a file to the client.
@@ -44,7 +54,7 @@ public class Transfer: Equatable {
     var executable: Bool = false
 
     let queueLock = DispatchSemaphore(value: 1)
-    let queuePosition: Int = 0
+    var queuePosition: Int = 0
 //    var queue_lock
 //    var queue
 //    var queue_time
@@ -57,6 +67,11 @@ public class Transfer: Equatable {
     var remainingRsrcSize: UInt64!
     var transferred: UInt64!
     var actualTransferred: UInt64!
+    var speed: UInt32 = 0
+    private let metricsLock = NSLock()
+    private let speedCalculator = SpeedCalculator()
+    private var speedSampleBytes: Int = 0
+    private var speedSampleStart: TimeInterval = Date.timeIntervalSinceReferenceDate
 
 //    var speed
 //    var finderinfo
@@ -80,5 +95,55 @@ public class Transfer: Equatable {
     /// - Returns: `true` if `lhs` and `rhs` are identical objects.
     public static func == (lhs: Transfer, rhs: Transfer) -> Bool {
         lhs === rhs
+    }
+
+    func beginSpeedMeasurement(at now: TimeInterval = Date.timeIntervalSinceReferenceDate) {
+        metricsLock.lock()
+        speed = 0
+        speedSampleBytes = 0
+        speedSampleStart = now
+        metricsLock.unlock()
+    }
+
+    func noteTransferredBytes(_ bytes: UInt64, at now: TimeInterval = Date.timeIntervalSinceReferenceDate) {
+        metricsLock.lock()
+        transferred += bytes
+        actualTransferred += bytes
+        speedSampleBytes += Int(bytes)
+
+        let elapsed = now - speedSampleStart
+        if elapsed >= 0.25 {
+            speedCalculator.add(bytes: speedSampleBytes, time: max(0.001, elapsed))
+            speed = UInt32(clamping: Int(speedCalculator.speed().rounded()))
+            speedSampleBytes = 0
+            speedSampleStart = now
+        }
+        metricsLock.unlock()
+    }
+
+    func finishSpeedMeasurement(at now: TimeInterval = Date.timeIntervalSinceReferenceDate) {
+        metricsLock.lock()
+        let elapsed = now - speedSampleStart
+        if speedSampleBytes > 0 && elapsed > 0 {
+            speedCalculator.add(bytes: speedSampleBytes, time: max(0.001, elapsed))
+            speed = UInt32(clamping: Int(speedCalculator.speed().rounded()))
+            speedSampleBytes = 0
+        }
+        metricsLock.unlock()
+    }
+
+    func statusSnapshot() -> StatusSnapshot {
+        metricsLock.lock()
+        let snapshot = StatusSnapshot(
+            type: type,
+            path: path,
+            dataSize: dataSize ?? 0,
+            rsrcSize: rsrcSize ?? 0,
+            transferred: transferred ?? 0,
+            speed: speed,
+            queuePosition: queuePosition
+        )
+        metricsLock.unlock()
+        return snapshot
     }
 }

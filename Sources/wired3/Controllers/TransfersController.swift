@@ -311,6 +311,9 @@ public class TransfersController {
 
                 // Store updated entry.
                 entries[id] = updated
+                if let transfer = self.transfers.first(where: { ObjectIdentifier($0) == id }) {
+                    transfer.queuePosition = updated.position
+                }
 
                 // Notify waiters if position changed.
                 if updated.position != oldEntry.position {
@@ -692,6 +695,7 @@ public class TransfersController {
         var result = true
         var sendbytes: UInt64 = 0
         // let transfers = self.transfers[transfer.user.username!]
+        transfer.beginSpeedMeasurement()
 
         while transfer.client.state == .LOGGED_IN {
             if data && transfer.remainingDataSize == 0 {
@@ -740,9 +744,10 @@ public class TransfersController {
                 transfer.remainingRsrcSize -= sendbytes
             }
 
-            transfer.transferred        += sendbytes
-            transfer.actualTransferred  += sendbytes
+            transfer.noteTransferredBytes(sendbytes)
         }
+
+        transfer.finishSpeedMeasurement()
 
         return result
     }
@@ -750,6 +755,7 @@ public class TransfersController {
     private func upload(transfer: Transfer) -> Bool {
         var data = true
         var result = true
+        transfer.beginSpeedMeasurement()
 
         while transfer.client.state == .LOGGED_IN {
             if transfer.remainingDataSize == 0 {
@@ -807,9 +813,10 @@ public class TransfersController {
                 transfer.remainingRsrcSize -= readBytes
             }
 
-            transfer.transferred        += readBytes
-            transfer.actualTransferred  += readBytes
+            transfer.noteTransferredBytes(readBytes)
         }
+
+        transfer.finishSpeedMeasurement()
 
         return result
     }

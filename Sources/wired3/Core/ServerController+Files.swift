@@ -55,6 +55,7 @@ extension ServerController {
                                                            rsrcOffset: rsrcOffset,
                                                            client: client, message: message) {
             client.transfer = transfer
+            self.broadcastUserStatusForRelatedSessions(of: client)
 
             self.recordEvent(.transferStartedFileDownload, client: client, parameters: [normalizedPath])
 
@@ -74,6 +75,9 @@ extension ServerController {
             }
 
             client.transfer = nil
+            if client.state == .LOGGED_IN {
+                self.broadcastUserStatusForRelatedSessions(of: client)
+            }
         } else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }
@@ -140,6 +144,7 @@ extension ServerController {
                                                          executable: false,
                                                          client: client, message: message) {
             client.transfer = transfer
+            self.broadcastUserStatusForRelatedSessions(of: client)
 
             self.recordEvent(.transferStartedFileUpload, client: client, parameters: [normalizedPath])
 
@@ -149,6 +154,9 @@ extension ServerController {
                 App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
                 client.state = .DISCONNECTED
                 client.transfer = nil
+                if client.state == .LOGGED_IN {
+                    self.broadcastUserStatusForRelatedSessions(of: client)
+                }
                 return
             }
 
@@ -169,6 +177,9 @@ extension ServerController {
             }
 
             client.transfer = nil
+            if client.state == .LOGGED_IN {
+                self.broadcastUserStatusForRelatedSessions(of: client)
+            }
         } else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
         }

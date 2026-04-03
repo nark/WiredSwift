@@ -6,6 +6,57 @@ import Foundation
 import WiredSwift
 
 extension ServerController {
+    private enum WiredUserState: UInt32 {
+        case loggedIn = 2
+        case transferring = 3
+    }
+
+    private func activeTransfer(for client: Client) -> Transfer? {
+        if let transfer = client.transfer {
+            return transfer
+        }
+
+        guard let username = client.user?.username else {
+            return nil
+        }
+
+        return App.clientsController.connectedClientsSnapshot().first {
+            $0.user?.username == username && $0.transfer != nil
+        }?.transfer
+    }
+
+    func broadcastUserStatusForRelatedSessions(of client: Client) {
+        guard let username = client.user?.username else {
+            if client.state == .LOGGED_IN {
+                sendUserStatus(forClient: client)
+            }
+            return
+        }
+
+        let relatedClients = App.clientsController.connectedClientsSnapshot().filter {
+            $0.state == .LOGGED_IN && $0.user?.username == username
+        }
+
+        for relatedClient in relatedClients {
+            sendUserStatus(forClient: relatedClient)
+        }
+    }
+
+    private func addTransferStatus(to message: P7Message, for client: Client) {
+        if let transfer = activeTransfer(for: client) {
+            let snapshot = transfer.statusSnapshot()
+            message.addParameter(field: "wired.user.state", value: WiredUserState.transferring.rawValue)
+            message.addParameter(field: "wired.transfer.type", value: snapshot.type.rawValue)
+            message.addParameter(field: "wired.file.path", value: snapshot.path)
+            message.addParameter(field: "wired.transfer.data_size", value: snapshot.dataSize)
+            message.addParameter(field: "wired.transfer.rsrc_size", value: snapshot.rsrcSize)
+            message.addParameter(field: "wired.transfer.transferred", value: snapshot.transferred)
+            message.addParameter(field: "wired.transfer.speed", value: snapshot.speed)
+            message.addParameter(field: "wired.transfer.queue_position", value: UInt32(max(0, snapshot.queuePosition)))
+        } else {
+            message.addParameter(field: "wired.user.state", value: WiredUserState.loggedIn.rawValue)
+        }
+    }
 
     func receiveUserSetNick(_ client: Client, _ message: P7Message) {
         let previousNick = client.nick ?? ""
@@ -89,6 +140,7 @@ extension ServerController {
         response.addParameter(field: "wired.user.status", value: client.status ?? "")
         response.addParameter(field: "wired.user.idle", value: client.idle)
         response.addParameter(field: "wired.user.icon", value: client.icon ?? "")
+        addTransferStatus(to: response, for: client)
 
         response.addParameter(field: "wired.user.login", value: client.user?.username ?? "")
         response.addParameter(field: "wired.user.ip", value: client.socket.getClientIP() ?? "")
@@ -236,6 +288,7 @@ extension ServerController {
             broadcast.addParameter(field: "wired.user.status", value: client.status)
             broadcast.addParameter(field: "wired.user.icon", value: client.icon)
             broadcast.addParameter(field: "wired.account.color", value: client.accountColor)
+            addTransferStatus(to: broadcast, for: client)
             if let idleTime = client.idleTime {
                 broadcast.addParameter(field: "wired.user.idle_time", value: idleTime)
             }
