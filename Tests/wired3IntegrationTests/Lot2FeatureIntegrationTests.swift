@@ -199,6 +199,89 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         _ = try readMessage(from: admin, expectedName: "wired.account.user", maxReads: 20)
     }
 
+    func testMonitorGetUsersListsLoggedInUsersAndChecksPermissions() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_admin_2", password: "secret2")
+        defer { try? runtime.stop() }
+
+        let guest = try runtime.connectClient(username: "guest", password: "")
+        defer { guest.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: guest)
+        _ = try sendLoginAndExpectSuccess(socket: guest, username: "guest", password: "")
+        drainMessages(socket: guest)
+
+        let deniedRequest = P7Message(withName: "wired.user.get_users", spec: guest.spec)
+        XCTAssertTrue(guest.write(deniedRequest))
+        let denied = try readMessage(from: guest, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(denied.string(forField: "wired.error.string"), "wired.error.permission_denied")
+
+        let admin = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { admin.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: admin)
+        let adminLogin = try sendLoginAndExpectSuccess(socket: admin, username: "it_admin", password: "secret")
+        let adminUserID = try XCTUnwrap(adminLogin.uint32(forField: "wired.user.id"))
+        drainMessages(socket: admin)
+
+        let peer = try runtime.connectClient(username: "it_admin_2", password: "secret2")
+        defer { peer.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: peer)
+        let peerLogin = try sendLoginAndExpectSuccess(socket: peer, username: "it_admin_2", password: "secret2")
+        let peerUserID = try XCTUnwrap(peerLogin.uint32(forField: "wired.user.id"))
+        drainMessages(socket: peer)
+
+        let setStatus = P7Message(withName: "wired.user.set_status", spec: peer.spec)
+        setStatus.addParameter(field: "wired.user.status", value: "Monitoring me")
+        XCTAssertTrue(peer.write(setStatus))
+        _ = try readMessage(from: peer, expectedName: "wired.okay", maxReads: 20)
+
+        let request = P7Message(withName: "wired.user.get_users", spec: admin.spec)
+        XCTAssertTrue(admin.write(request))
+
+        var listedUserIDs = Set<UInt32>()
+        var peerStatus: String?
+        var sawIdleTime = false
+        var sawState = false
+
+        for _ in 0..<80 {
+            let message: P7Message
+            do {
+                message = try admin.readMessage(timeout: 1, enforceDeadline: true)
+            } catch {
+                continue
+            }
+
+            if message.name == "wired.user.user_list" {
+                if let userID = message.uint32(forField: "wired.user.id") {
+                    listedUserIDs.insert(userID)
+                    if userID == peerUserID {
+                        peerStatus = message.string(forField: "wired.user.status")
+                    }
+                }
+
+                if message.date(forField: "wired.user.idle_time") != nil {
+                    sawIdleTime = true
+                }
+
+                if message.uint32(forField: "wired.user.state") != nil
+                    || message.enumeration(forField: "wired.user.state") != nil {
+                    sawState = true
+                }
+            }
+
+            if message.name == "wired.user.user_list.done" {
+                break
+            }
+        }
+
+        XCTAssertTrue(listedUserIDs.contains(adminUserID))
+        XCTAssertTrue(listedUserIDs.contains(peerUserID))
+        XCTAssertEqual(peerStatus, "Monitoring me")
+        XCTAssertTrue(sawIdleTime)
+        XCTAssertTrue(sawState)
+    }
+
     func testBanlistBlocksLoginUntilRemoved() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()

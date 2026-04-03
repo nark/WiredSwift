@@ -12,17 +12,7 @@ extension ServerController {
     }
 
     private func activeTransfer(for client: Client) -> Transfer? {
-        if let transfer = client.transfer {
-            return transfer
-        }
-
-        guard let username = client.user?.username else {
-            return nil
-        }
-
-        return App.clientsController.connectedClientsSnapshot().first {
-            $0.user?.username == username && $0.transfer != nil
-        }?.transfer
+        client.transfer
     }
 
     func broadcastUserStatusForRelatedSessions(of client: Client) {
@@ -168,6 +158,36 @@ extension ServerController {
                                    reply: response,
                                    message: message)
         self.recordEvent(.userGotInfo, client: fromClient, parameters: [client.nick ?? client.user?.username ?? ""])
+    }
+
+    func receiveUserGetUsers(_ client: Client, _ message: P7Message) {
+        guard let user = client.user else {
+            self.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.user.get_users") else {
+            self.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        for listedClient in App.clientsController.connectedClientsSnapshot() where listedClient.state == .LOGGED_IN {
+            let response = P7Message(withName: "wired.user.user_list", spec: self.spec)
+
+            response.addParameter(field: "wired.user.id", value: listedClient.userID ?? 0)
+            response.addParameter(field: "wired.user.nick", value: listedClient.nick ?? "")
+            response.addParameter(field: "wired.user.status", value: listedClient.status ?? "")
+            response.addParameter(field: "wired.user.idle", value: listedClient.idle)
+            response.addParameter(field: "wired.user.icon", value: listedClient.icon ?? Data())
+            response.addParameter(field: "wired.user.idle_time", value: listedClient.idleTime ?? listedClient.loginTime ?? Date())
+            response.addParameter(field: "wired.account.color", value: listedClient.accountColor)
+            addTransferStatus(to: response, for: listedClient)
+
+            self.reply(client: client, reply: response, message: message)
+        }
+
+        let done = P7Message(withName: "wired.user.user_list.done", spec: self.spec)
+        self.reply(client: client, reply: done, message: message)
     }
 
     func receiveUserDisconnectUser(client: Client, message: P7Message) {

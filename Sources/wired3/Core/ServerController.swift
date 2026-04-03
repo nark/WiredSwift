@@ -674,6 +674,8 @@ public class ServerController: ServerDelegate {
             if !self.receiveSendLogin(client, message) {
                 self.disconnectClient(client: client)
             }
+        } else if message.name == "wired.user.get_users" {
+            self.receiveUserGetUsers(client, message)
         } else if message.name == "wired.user.get_info" {
             self.receiveUserGetInfo(client, message)
         } else if message.name == "wired.user.disconnect_user" {
