@@ -40,6 +40,7 @@ public class AppController {
     public var indexController: IndexController!
     var transfersController: TransfersController!
     var trackerController: TrackerController!
+    var outgoingTrackersController: OutgoingTrackersController!
     var bootstrapStateStore: BootstrapStateStore!
     var logsController: LogsController!
 
@@ -115,6 +116,7 @@ public class AppController {
 
         self.transfersController = TransfersController(filesController: filesController)
         self.trackerController = TrackerController()
+        self.outgoingTrackersController = OutgoingTrackersController()
 
         // Seed initial data (only on first run — no-op if data already exists)
         self.usersController.seedDefaultDataIfNeeded()
@@ -157,11 +159,13 @@ public class AppController {
             Logger.warning("Could not load server identity key — TOFU will be disabled for this session")
         }
 
+        self.outgoingTrackersController.start()
         self.serverController.listen()
     }
 
     /// Stop the TCP listener and disable the periodic file reindex timer.
     public func stop() {
+        self.outgoingTrackersController?.stop()
         self.serverController?.stop()
         self.trackerController?.stop()
         self.indexController?.configure(reindexInterval: 0)
@@ -211,6 +215,7 @@ public class AppController {
         self.indexController.configure(reindexInterval: resolvedReindexInterval())
 
         self.serverController.reloadConfig()
+        self.outgoingTrackersController.refreshConfiguration(resetRegistrations: true)
     }
 
     /// Apply `[log] level` from config, unless `--debug` is active (debug mode pins to DEBUG).

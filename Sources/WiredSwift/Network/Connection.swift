@@ -329,6 +329,10 @@ open class Connection: NSObject {
     public func disconnect() {
         NotificationCenter.default.post(name: .linkConnectionWillDisconnect, object: self)
 
+        self.pingCheckTimer?.invalidate()
+        self.pingCheckTimer = nil
+        self.lastPingDate = nil
+
         self.stopListening()
 
         // `socket` is an IUO and may legitimately be nil in some teardown / restore scenarios

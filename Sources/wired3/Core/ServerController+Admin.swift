@@ -449,6 +449,7 @@ extension ServerController {
 
         if changed {
             App.clientsController.broadcast(message: self.serverInfoMessage())
+            App.outgoingTrackersController.refreshConfiguration(resetRegistrations: true)
         }
 
         App.serverController.replyOK(client: client, message: message)
