@@ -1,5 +1,6 @@
 import XCTest
 import WiredSwift
+@testable import wired3Lib
 
 final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
     func testChatCreateJoinSayLeaveWithTwoClients() throws {
@@ -559,6 +560,350 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertTrue(socket.write(set))
         let denied = try readMessage(from: socket, expectedName: "wired.error", maxReads: 12)
         XCTAssertEqual(denied.string(forField: "wired.error.string"), "wired.error.permission_denied")
+    }
+
+    func testTrackerGetCategoriesReturnsTrackerNotEnabledWhenDisabled() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: false, categories: ["Chat", "Movies"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let get = P7Message(withName: "wired.tracker.get_categories", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let error = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(error.string(forField: "wired.error.string"), "wired.error.tracker_not_enabled")
+    }
+
+    func testTrackerGetCategoriesDeniedForGuestWithoutTrackerPrivilege() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.configureTracker(enabled: true, categories: ["Chat", "Movies"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "guest", password: "")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "guest", password: "")
+        drainMessages(socket: socket)
+
+        let get = P7Message(withName: "wired.tracker.get_categories", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let error = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(error.string(forField: "wired.error.string"), "wired.error.permission_denied")
+    }
+
+    func testTrackerGetCategoriesReturnsConfiguredCategoriesForPrivilegedUser() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat", "Regional/Europe"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let get = P7Message(withName: "wired.tracker.get_categories", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let response = try readMessage(from: socket, expectedName: "wired.tracker.categories", maxReads: 20)
+        XCTAssertEqual(response.stringList(forField: "wired.tracker.categories"), ["Chat", "Regional/Europe"])
+    }
+
+    func testTrackerGetServersReturnsOnlyDoneWhenNoServersRegistered() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let get = P7Message(withName: "wired.tracker.get_servers", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let done = try readMessage(from: socket, expectedName: "wired.tracker.server_list.done", maxReads: 20)
+        XCTAssertEqual(done.name, "wired.tracker.server_list.done")
+    }
+
+    func testTrackerSendRegisterDeniedForGuestWithoutTrackerPrivilege() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.configureTracker(enabled: true, categories: ["Chat"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "guest", password: "")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "guest", password: "")
+        drainMessages(socket: socket)
+
+        let register = trackerRegisterMessage(
+            spec: socket.spec,
+            category: "Chat",
+            name: "Guest Tracker Server",
+            description: "guest cannot register"
+        )
+        XCTAssertTrue(socket.write(register))
+        let error = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(error.string(forField: "wired.error.string"), "wired.error.permission_denied")
+    }
+
+    func testTrackerRegisterThenListReturnsRegisteredServer() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat", "Movies"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let register = trackerRegisterMessage(
+            spec: socket.spec,
+            category: "Chat",
+            name: "Integration Tracker Server",
+            description: "registered from integration test",
+            users: 12,
+            filesCount: 34,
+            filesSize: 56,
+            port: UInt32(runtime.port)
+        )
+        XCTAssertTrue(socket.write(register))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let get = P7Message(withName: "wired.tracker.get_servers", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+
+        let listed = try readMessage(from: socket, expectedName: "wired.tracker.server_list", maxReads: 20)
+        XCTAssertEqual(listed.string(forField: "wired.info.name"), "Integration Tracker Server")
+        XCTAssertEqual(listed.string(forField: "wired.info.description"), "registered from integration test")
+        XCTAssertEqual(listed.string(forField: "wired.tracker.category"), "Chat")
+        XCTAssertEqual(listed.bool(forField: "wired.tracker.tracker"), true)
+        XCTAssertEqual(listed.uint32(forField: "wired.tracker.users"), 12)
+        XCTAssertEqual(listed.uint64(forField: "wired.info.files.count"), 34)
+        XCTAssertEqual(listed.uint64(forField: "wired.info.files.size"), 56)
+
+        let url = try XCTUnwrap(listed.string(forField: "wired.tracker.url"))
+        XCTAssertTrue(url.contains("127.0.0.1"))
+        XCTAssertTrue(url.hasSuffix("/Chat"))
+
+        _ = try readMessage(from: socket, expectedName: "wired.tracker.server_list.done", maxReads: 20)
+    }
+
+    func testTrackerSendUpdateUpdatesRegisteredServerStats() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let register = trackerRegisterMessage(
+            spec: socket.spec,
+            category: "Chat",
+            name: "Update Test Server",
+            description: "before update",
+            users: 1,
+            filesCount: 2,
+            filesSize: 3
+        )
+        XCTAssertTrue(socket.write(register))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let update = trackerUpdateMessage(spec: socket.spec, users: 99, filesCount: 1234, filesSize: 5678)
+        XCTAssertTrue(socket.write(update))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let get = P7Message(withName: "wired.tracker.get_servers", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let listed = try readMessage(from: socket, expectedName: "wired.tracker.server_list", maxReads: 20)
+        XCTAssertEqual(listed.uint32(forField: "wired.tracker.users"), 99)
+        XCTAssertEqual(listed.uint64(forField: "wired.info.files.count"), 1234)
+        XCTAssertEqual(listed.uint64(forField: "wired.info.files.size"), 5678)
+        _ = try readMessage(from: socket, expectedName: "wired.tracker.server_list.done", maxReads: 20)
+    }
+
+    func testTrackerSendUpdateReturnsNotRegisteredWithoutPriorRegister() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let update = trackerUpdateMessage(spec: socket.spec, users: 7, filesCount: 8, filesSize: 9)
+        XCTAssertTrue(socket.write(update))
+        let error = try readMessage(from: socket, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(error.string(forField: "wired.error.string"), "wired.error.not_registered")
+    }
+
+    func testTrackerRegisterNormalizesUnknownCategoryToEmptyString() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let register = trackerRegisterMessage(
+            spec: socket.spec,
+            category: "Software",
+            name: "Unknown Category Server",
+            description: "category should be normalized"
+        )
+        XCTAssertTrue(socket.write(register))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let get = P7Message(withName: "wired.tracker.get_servers", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let listed = try readMessage(from: socket, expectedName: "wired.tracker.server_list", maxReads: 20)
+        XCTAssertEqual(listed.string(forField: "wired.tracker.category"), "")
+        let url = try XCTUnwrap(listed.string(forField: "wired.tracker.url"))
+        XCTAssertTrue(url.hasSuffix("/"))
+        _ = try readMessage(from: socket, expectedName: "wired.tracker.server_list.done", maxReads: 20)
+    }
+
+    func testTrackerRegisterReplacesExistingServerForSameSourceIP() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat", "Movies"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let first = trackerRegisterMessage(
+            spec: socket.spec,
+            category: "Chat",
+            name: "First Server",
+            description: "first"
+        )
+        XCTAssertTrue(socket.write(first))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let second = trackerRegisterMessage(
+            spec: socket.spec,
+            category: "Movies",
+            name: "Second Server",
+            description: "second",
+            users: 88,
+            filesCount: 99,
+            filesSize: 111,
+            port: 9999
+        )
+        XCTAssertTrue(socket.write(second))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        let get = P7Message(withName: "wired.tracker.get_servers", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let listed = try readMessage(from: socket, expectedName: "wired.tracker.server_list", maxReads: 20)
+        XCTAssertEqual(listed.string(forField: "wired.info.name"), "Second Server")
+        XCTAssertEqual(listed.string(forField: "wired.tracker.category"), "Movies")
+        XCTAssertEqual(listed.uint32(forField: "wired.tracker.users"), 88)
+        let url = try XCTUnwrap(listed.string(forField: "wired.tracker.url"))
+        XCTAssertTrue(url.contains(":9999/Movies"))
+        _ = try readMessage(from: socket, expectedName: "wired.tracker.server_list.done", maxReads: 20)
+
+        do {
+            let unexpected = try socket.readMessage(timeout: 0.3, enforceDeadline: true)
+            XCTFail("Expected no extra tracker server_list messages, got \(unexpected.name ?? "unknown")")
+        } catch {
+            // No extra messages is the expected outcome.
+        }
+    }
+
+    func testTrackerGetServersOmitsExpiredEntries() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.configureTracker(enabled: true, categories: ["Chat"])
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let register = trackerRegisterMessage(
+            spec: socket.spec,
+            category: "Chat",
+            name: "Ephemeral Server",
+            description: "should expire"
+        )
+        XCTAssertTrue(socket.write(register))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+        runtime.expireTrackedServersForTesting()
+
+        let get = P7Message(withName: "wired.tracker.get_servers", spec: socket.spec)
+        XCTAssertTrue(socket.write(get))
+        let done = try readMessage(from: socket, expectedName: "wired.tracker.server_list.done", maxReads: 20)
+        XCTAssertEqual(done.name, "wired.tracker.server_list.done")
+    }
+
+    private func trackerRegisterMessage(
+        spec: P7Spec,
+        category: String,
+        name: String,
+        description: String,
+        users: UInt32 = 5,
+        filesCount: UInt64 = 10,
+        filesSize: UInt64 = 20,
+        port: UInt32 = 4871
+    ) -> P7Message {
+        let register = P7Message(withName: "wired.tracker.send_register", spec: spec)
+        register.addParameter(field: "wired.tracker.tracker", value: true)
+        register.addParameter(field: "wired.tracker.category", value: category)
+        register.addParameter(field: "wired.tracker.port", value: port)
+        register.addParameter(field: "wired.tracker.users", value: users)
+        register.addParameter(field: "wired.info.name", value: name)
+        register.addParameter(field: "wired.info.description", value: description)
+        register.addParameter(field: "wired.info.files.count", value: filesCount)
+        register.addParameter(field: "wired.info.files.size", value: filesSize)
+        return register
+    }
+
+    private func trackerUpdateMessage(spec: P7Spec, users: UInt32, filesCount: UInt64, filesSize: UInt64) -> P7Message {
+        let update = P7Message(withName: "wired.tracker.send_update", spec: spec)
+        update.addParameter(field: "wired.tracker.users", value: users)
+        update.addParameter(field: "wired.info.files.count", value: filesCount)
+        update.addParameter(field: "wired.info.files.size", value: filesSize)
+        return update
     }
 
     func testBoardSubscribeUnsubscribeLifecycleReturnsExpectedErrors() throws {

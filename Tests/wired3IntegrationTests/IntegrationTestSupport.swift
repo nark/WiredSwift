@@ -246,6 +246,17 @@ final class IntegrationServerRuntime {
         }
     }
 
+    func configureTracker(enabled: Bool, categories: [String]) {
+        app.serverController.trackerEnabled = enabled
+        app.serverController.trackerCategories = categories
+    }
+
+    func expireTrackedServersForTesting() {
+        app.trackerController.purgeExpiredServers(
+            now: Date().addingTimeInterval(TrackerController.entryExpirationInterval + 1)
+        )
+    }
+
     func connectClient(username: String, password plainPassword: String) throws -> P7Socket {
         let spec = P7Spec(withPath: specPath)
         let socket = P7Socket(hostname: "127.0.0.1", port: port, spec: spec)

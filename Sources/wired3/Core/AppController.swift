@@ -39,6 +39,7 @@ public class AppController {
     var filesController: FilesController!
     public var indexController: IndexController!
     var transfersController: TransfersController!
+    var trackerController: TrackerController!
     var bootstrapStateStore: BootstrapStateStore!
     var logsController: LogsController!
 
@@ -113,6 +114,7 @@ public class AppController {
                                                filesController: self.filesController)
 
         self.transfersController = TransfersController(filesController: filesController)
+        self.trackerController = TrackerController()
 
         // Seed initial data (only on first run — no-op if data already exists)
         self.usersController.seedDefaultDataIfNeeded()
@@ -161,6 +163,7 @@ public class AppController {
     /// Stop the TCP listener and disable the periodic file reindex timer.
     public func stop() {
         self.serverController?.stop()
+        self.trackerController?.stop()
         self.indexController?.configure(reindexInterval: 0)
     }
 

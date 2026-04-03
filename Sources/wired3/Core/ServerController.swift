@@ -790,6 +790,14 @@ public class ServerController: ServerDelegate {
             self.receiveGetSettings(client: client, message: message)
         } else if message.name == "wired.settings.set_settings" {
             self.receiveSetSettings(client: client, message: message)
+        } else if message.name == "wired.tracker.get_categories" {
+            self.receiveTrackerGetCategories(client: client, message: message)
+        } else if message.name == "wired.tracker.get_servers" {
+            self.receiveTrackerGetServers(client: client, message: message)
+        } else if message.name == "wired.tracker.send_register" {
+            self.receiveTrackerSendRegister(client: client, message: message)
+        } else if message.name == "wired.tracker.send_update" {
+            self.receiveTrackerSendUpdate(client: client, message: message)
         } else if message.name == "wired.banlist.get_bans" {
             self.receiveBanListGetBans(client: client, message: message)
         } else if message.name == "wired.banlist.add_ban" {
