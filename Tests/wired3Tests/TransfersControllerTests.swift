@@ -163,6 +163,29 @@ final class TransfersControllerTests: XCTestCase {
         XCTAssertNil(transfer)
     }
 
+    func testDownloadResolvesSymlinkTargetOutsideRoot() throws {
+        let root = try makeTemporaryDirectory()
+        let external = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        addTeardownBlock { try? FileManager.default.removeItem(at: external) }
+
+        let target = external.appendingPathComponent("payload.bin")
+        FileManager.default.createFile(atPath: target.path, contents: Data(repeating: 0x5A, count: 12))
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("linked.bin"), withDestinationURL: target)
+
+        let transfers = makeTransfersController(root: root)
+        let client = makeClientWithWiredSpec(userID: 9)
+        let message = P7Message(withName: "wired.transfer.download_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.download(path: "/linked.bin", dataOffset: 0, rsrcOffset: 0, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        XCTAssertEqual(transfer.realDataPath, target.path)
+        XCTAssertEqual(transfer.dataSize, 12)
+    }
+
     func testUploadCreatesPartialFileAndSetsInitialState() throws {
         let root = try makeTemporaryDirectory()
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
@@ -205,6 +228,29 @@ final class TransfersControllerTests: XCTestCase {
         XCTAssertEqual(transfer.dataOffset, 16)
         XCTAssertEqual(transfer.transferred, 16)
         XCTAssertEqual(transfer.remainingDataSize, 16)
+    }
+
+    func testUploadResolvesSymlinkParentOutsideRoot() throws {
+        let root = try makeTemporaryDirectory()
+        let external = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        addTeardownBlock { try? FileManager.default.removeItem(at: external) }
+
+        let targetDirectory = external.appendingPathComponent("incoming", isDirectory: true)
+        try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("drop"), withDestinationURL: targetDirectory)
+
+        let transfers = makeTransfersController(root: root)
+        let client = makeClientWithWiredSpec(userID: 10)
+        let message = P7Message(withName: "wired.transfer.upload_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.upload(path: "/drop/upload.dat", dataSize: 20, rsrcSize: 0, executable: false, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        XCTAssertTrue(transfer.realDataPath.hasPrefix(targetDirectory.path))
+        XCTAssertTrue(transfer.realDataPath.hasSuffix("upload.dat.\(WiredTransferPartialExtension)"))
     }
 
     private func makeTransfersController(root: URL) -> TransfersController {

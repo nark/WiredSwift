@@ -13,7 +13,7 @@ public class FilesController {
     public var rootPath: String
     private let subscriptionsQueue = DispatchQueue(label: "wired3.files.subscriptions")
     private var subscribedRealPathsByClient: [UInt32: Set<String>] = [:]
-    private var subscribedVirtualPathsByClient: [UInt32: [String: String]] = [:]
+    private var subscribedVirtualPathsByClient: [UInt32: [String: Set<String>]] = [:]
 
     public init(rootPath: String) {
         self.rootPath = rootPath
@@ -135,14 +135,12 @@ public class FilesController {
     }
 
     public func virtual(path: String) -> String {
-        return "/" + path.deletingPrefix(self.rootPath)
-    }
+        if path == self.rootPath {
+            return "/"
+        }
 
-    /// Returns true if the resolved path is safely within the root jail.
-    func isWithinJail(_ resolvedPath: String) -> Bool {
-        let canonicalRoot = URL(fileURLWithPath: rootPath).resolvingSymlinksInPath().path
-        let suffixed = canonicalRoot.hasSuffix("/") ? canonicalRoot : canonicalRoot + "/"
-        return resolvedPath == canonicalRoot || resolvedPath.hasPrefix(suffixed)
+        let virtualPath = path.deletingPrefix(self.rootPath)
+        return virtualPath.hasPrefix("/") ? virtualPath : "/" + virtualPath
     }
 
     public func listDirectory(client: Client, message: P7Message) {
@@ -160,11 +158,11 @@ public class FilesController {
             return
         }
 
-        let normalizedPath = NSString(string: path).standardizingPath
+        let normalizedPath = normalizeVirtualPath(path)
 
         // file privileges (dropbox inherited in path)
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
-            let managedType = File.FileType.type(path: real(path: normalizedPath))
+            let managedType = File.FileType.type(path: resolvedVirtualPath(for: normalizedPath).resolvedRealPath)
             if !canBrowseManagedDirectory(atVirtualPath: normalizedPath, user: user, privilege: privilege, type: managedType) {
                 App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
                 return
@@ -197,13 +195,9 @@ public class FilesController {
             return
         }
 
-        let normalizedPath = NSString(string: path).standardizingPath
-        let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
-
-        guard isWithinJail(realPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return
-        }
+        let resolvedPath = resolvedVirtualPath(for: path)
+        let normalizedPath = resolvedPath.normalizedVirtualPath
+        let realPath = resolvedPath.resolvedRealPath
 
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) else {
@@ -247,7 +241,7 @@ public class FilesController {
             reply.addParameter(field: "wired.file.modification_time", value: Date(timeIntervalSince1970: 0))
         }
 
-        reply.addParameter(field: "wired.file.link", value: false)
+        reply.addParameter(field: "wired.file.link", value: resolvedPath.linkKind != .none)
         reply.addParameter(field: "wired.file.executable", value: false)
         reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
         reply.addParameter(field: "wired.file.volume", value: UInt32(0))
@@ -296,16 +290,9 @@ public class FilesController {
             return
         }
 
-        let normalizedPath = NSString(string: path).standardizingPath
-        // Resolve parent symlinks for jail check (target dir does not exist yet)
-        let rawRealPath = self.real(path: normalizedPath)
-        let parentResolved = URL(fileURLWithPath: rawRealPath).deletingLastPathComponent().resolvingSymlinksInPath().path
-        let realPath = parentResolved.stringByAppendingPathComponent(path: URL(fileURLWithPath: rawRealPath).lastPathComponent)
-
-        guard isWithinJail(parentResolved) else {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return
-        }
+        let resolvedPath = resolvedVirtualPathByResolvingParent(for: path)
+        let normalizedPath = resolvedPath.normalizedVirtualPath
+        let realPath = resolvedPath.resolvedRealPath
 
         if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
             if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
@@ -426,13 +413,9 @@ public class FilesController {
             return
         }
 
-        let normalizedPath = NSString(string: path).standardizingPath
-        let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
-
-        guard isWithinJail(realPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return
-        }
+        let resolvedPath = resolvedVirtualPath(for: path)
+        let normalizedPath = resolvedPath.normalizedVirtualPath
+        let realPath = resolvedPath.resolvedRealPath
 
         var isDirectory: ObjCBool = false
 
@@ -474,13 +457,7 @@ public class FilesController {
         if everyoneRead { mode.insert(.everyoneRead) }
         if everyoneWrite { mode.insert(.everyoneWrite) }
 
-        // SECURITY (F_016): Re-resolve immediately before writing to the filesystem to
-        // close the TOCTOU window between the jail check above and the write operations.
-        let finalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().path
-        guard isWithinJail(finalPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            return
-        }
+        let finalPath = resolveAliasesAndSymlinks(in: realPath)
 
         let wiredMetaPath = finalPath.stringByAppendingPathComponent(path: ".wired")
         do {
@@ -513,11 +490,11 @@ public class FilesController {
             return
         }
 
-        let normalizedPath = NSString(string: path).standardizingPath
-        let realPath = URL(fileURLWithPath: self.real(path: normalizedPath)).resolvingSymlinksInPath().path
+        let resolvedPath = resolvedVirtualPath(for: path)
+        let normalizedPath = resolvedPath.normalizedVirtualPath
+        let realPath = resolvedPath.resolvedRealPath
 
-        guard isWithinJail(realPath),
-              File.FileType.type(path: realPath) == .sync else {
+        guard File.FileType.type(path: realPath) == .sync else {
             App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
             return
         }
@@ -661,23 +638,10 @@ public class FilesController {
     }
 
     private func delete(path: String, client: Client, message: P7Message) -> Bool {
-        let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+        let realPath = resolvedVirtualPathByResolvingParent(for: path).resolvedRealPath
         let parentPath = path.stringByDeletingLastPathComponent
-
-        guard isWithinJail(realPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return false
-        }
         let isDirectory = File.FileType.type(path: realPath) != .file
-
-        // SECURITY (F_016): Re-resolve immediately before the destructive syscall to close
-        // the TOCTOU window. A symlink swap between the jail check above and removeItem
-        // could otherwise redirect the deletion outside the jail.
-        let finalPath = URL(fileURLWithPath: realPath).resolvingSymlinksInPath().path
-        guard isWithinJail(finalPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            return false
-        }
+        let finalPath = resolvedVirtualPathByResolvingParent(for: path).resolvedRealPath
 
         do {
             try FileManager.default.removeItem(atPath: finalPath)
@@ -701,25 +665,10 @@ public class FilesController {
     }
 
     private func move(from sourcePath: String, to destinationPath: String, client: Client, message: P7Message) -> Bool {
-        let sourceRealPath = URL(fileURLWithPath: self.real(path: sourcePath)).resolvingSymlinksInPath().path
-        let destinationRealPath = URL(fileURLWithPath: self.real(path: destinationPath)).resolvingSymlinksInPath().path
         let sourceParentPath = sourcePath.stringByDeletingLastPathComponent
         let destinationParentPath = destinationPath.stringByDeletingLastPathComponent
-
-        guard isWithinJail(sourceRealPath), isWithinJail(destinationRealPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return false
-        }
-
-        // SECURITY (F_016): Re-resolve both paths immediately before moveItem to close the
-        // TOCTOU window. A symlink swap between the jail check above and the syscall could
-        // redirect the move source or destination outside the jail.
-        let finalSource = URL(fileURLWithPath: sourceRealPath).resolvingSymlinksInPath().path
-        let finalDestination = URL(fileURLWithPath: destinationRealPath).resolvingSymlinksInPath().path
-        guard isWithinJail(finalSource), isWithinJail(finalDestination) else {
-            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            return false
-        }
+        let finalSource = resolvedVirtualPathByResolvingParent(for: sourcePath).resolvedRealPath
+        let finalDestination = resolvedVirtualPathByResolvingParent(for: destinationPath).resolvedRealPath
 
         do {
             try FileManager.default.moveItem(atPath: finalSource, toPath: finalDestination)
@@ -740,13 +689,7 @@ public class FilesController {
 
     private func replyList(_ path: String, _ recursive: Bool, _ client: Client, _ message: P7Message) {
         DispatchQueue.global(qos: .default).async {
-            let rawRealPath: String = (path == "/") ? self.rootPath : self.real(path: path)
-            let realPath = URL(fileURLWithPath: rawRealPath).resolvingSymlinksInPath().path
-
-            guard self.isWithinJail(realPath) else {
-                App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-                return
-            }
+            let realPath = self.resolvedVirtualPath(for: path).resolvedRealPath
 
             var isDir: ObjCBool = false
 
@@ -820,8 +763,9 @@ public class FilesController {
             }
 
             let childVirtualPath = virtualPath.stringByAppendingPathComponent(path: file)
-            let childRealPath = realPath.stringByAppendingPathComponent(path: file)
-
+            let childJoinedPath = realPath.stringByAppendingPathComponent(path: file)
+            let childRealPath = self.resolveAliasesAndSymlinks(in: childJoinedPath)
+            let linkKind = self.exactLinkKind(atPath: childJoinedPath)
             let type = WiredSwift.File.FileType.type(path: childRealPath)
 
             var datasize: UInt64 = 0
@@ -874,8 +818,6 @@ public class FilesController {
                 directorycount = 0
             }
 
-            // TODO: read label
-            // TODO: resolve alias or link if needed
             let reply = P7Message(withName: "wired.file.file_list", spec: message.spec)
             reply.addParameter(field: "wired.file.path", value: childVirtualPath)
 
@@ -890,7 +832,7 @@ public class FilesController {
                 reply.addParameter(field: "wired.file.type", value: type.rawValue)
             }
 
-            reply.addParameter(field: "wired.file.link", value: false)
+            reply.addParameter(field: "wired.file.link", value: linkKind != .none)
             reply.addParameter(field: "wired.file.executable", value: false)
             reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
             reply.addParameter(field: "wired.file.volume", value: UInt32(0))
@@ -954,15 +896,7 @@ public class FilesController {
     }
 
     private func createPath(_ path: String, type: File.FileType, user: User, message: P7Message) -> Bool {
-        // Resolve the parent directory's symlinks to check jail containment,
-        // since the target directory does not exist yet.
-        let rawRealPath = self.real(path: path)
-        let parentDir = URL(fileURLWithPath: rawRealPath).deletingLastPathComponent().resolvingSymlinksInPath().path
-        let realPath = parentDir.stringByAppendingPathComponent(path: URL(fileURLWithPath: rawRealPath).lastPathComponent)
-
-        guard isWithinJail(parentDir) else {
-            return false
-        }
+        let realPath = resolvedVirtualPathByResolvingParent(for: path).resolvedRealPath
 
         do {
             try FileManager.default.createDirectory(atPath: realPath, withIntermediateDirectories: false, attributes: [FileAttributeKey.posixPermissions: 0o755])
@@ -1010,12 +944,7 @@ public class FilesController {
     }
 
     private func setType(path: String, type: File.FileType, client: Client, message: P7Message) -> Bool {
-        let canonicalPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
-
-        guard isWithinJail(canonicalPath) else {
-            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
-            return false
-        }
+        let canonicalPath = resolvedVirtualPath(for: path).resolvedRealPath
 
         var isDirectory: ObjCBool = false
 
@@ -1078,7 +1007,7 @@ public class FilesController {
         }
 
         if targetType == .sync {
-            let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+            let realPath = resolvedVirtualPath(for: path).resolvedRealPath
             if containsDisallowedDescendantForSync(inRealPath: realPath) {
                 return false
             }
@@ -1088,7 +1017,7 @@ public class FilesController {
     }
 
     private func isValidMovePlacement(from sourcePath: String, to destinationPath: String) -> Bool {
-        let sourceRealPath = URL(fileURLWithPath: self.real(path: sourcePath)).resolvingSymlinksInPath().path
+        let sourceRealPath = resolvedVirtualPath(for: sourcePath).resolvedRealPath
         let sourceType = File.FileType.type(path: sourceRealPath)
         let targetParentVirtual = destinationPath.stringByDeletingLastPathComponent
 
@@ -1115,17 +1044,17 @@ public class FilesController {
     }
 
     private func managedRealPath(inVirtualPath path: String) -> String? {
-        let normalized = NSString(string: path).standardizingPath
+        let normalized = normalizeVirtualPath(path)
         let components = normalized.split(separator: "/").map(String.init)
 
-        var current = URL(fileURLWithPath: self.real(path: "/")).resolvingSymlinksInPath().path
+        var current = resolvedVirtualPath(for: "/").resolvedRealPath
 
         for component in components {
             if component.isEmpty {
                 continue
             }
 
-            current = current.stringByAppendingPathComponent(path: component)
+            current = resolveAliasesAndSymlinks(in: current.stringByAppendingPathComponent(path: component))
             if isManagedDirectoryType(File.FileType.type(path: current)) {
                 return current
             }
@@ -1135,17 +1064,17 @@ public class FilesController {
     }
 
     private func syncRealPath(inVirtualPath path: String) -> String? {
-        let normalized = NSString(string: path).standardizingPath
+        let normalized = normalizeVirtualPath(path)
         let components = normalized.split(separator: "/").map(String.init)
 
-        var current = URL(fileURLWithPath: self.real(path: "/")).resolvingSymlinksInPath().path
+        var current = resolvedVirtualPath(for: "/").resolvedRealPath
 
         for component in components {
             if component.isEmpty {
                 continue
             }
 
-            current = current.stringByAppendingPathComponent(path: component)
+            current = resolveAliasesAndSymlinks(in: current.stringByAppendingPathComponent(path: component))
             if File.FileType.type(path: current) == .sync {
                 return current
             }
@@ -1210,8 +1139,8 @@ public class FilesController {
             return
         }
 
-        let normalizedVirtualPath = NSString(string: virtualPath).standardizingPath
-        let realPath = URL(fileURLWithPath: self.real(path: normalizedVirtualPath)).resolvingSymlinksInPath().path
+        let normalizedVirtualPath = normalizeVirtualPath(virtualPath)
+        let realPath = resolvedVirtualPath(for: normalizedVirtualPath).resolvedRealPath
         var isDirectory: ObjCBool = false
 
         if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) {
@@ -1229,7 +1158,9 @@ public class FilesController {
             subscribedRealPathsByClient[client.userID] = realPaths
 
             var virtualPaths = subscribedVirtualPathsByClient[client.userID] ?? [:]
-            virtualPaths[realPath] = normalizedVirtualPath
+            var aliases = virtualPaths[realPath] ?? []
+            aliases.insert(normalizedVirtualPath)
+            virtualPaths[realPath] = aliases
             subscribedVirtualPathsByClient[client.userID] = virtualPaths
             return true
         }
@@ -1259,8 +1190,8 @@ public class FilesController {
             return
         }
 
-        let normalizedVirtualPath = NSString(string: virtualPath).standardizingPath
-        let realPath = URL(fileURLWithPath: self.real(path: normalizedVirtualPath)).resolvingSymlinksInPath().path
+        let normalizedVirtualPath = normalizeVirtualPath(virtualPath)
+        let realPath = resolvedVirtualPath(for: normalizedVirtualPath).resolvedRealPath
         var isDirectory: ObjCBool = false
 
         if !FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) {
@@ -1269,10 +1200,13 @@ public class FilesController {
         }
 
         let isSubscribed = subscriptionsQueue.sync { () -> Bool in
-            let subscribed = subscribedRealPathsByClient[client.userID]?.contains(realPath) ?? false
+            let subscribed = subscribedVirtualPathsByClient[client.userID]?[realPath]?.contains(normalizedVirtualPath) ?? false
             if subscribed {
-                subscribedRealPathsByClient[client.userID]?.remove(realPath)
-                subscribedVirtualPathsByClient[client.userID]?[realPath] = nil
+                subscribedVirtualPathsByClient[client.userID]?[realPath]?.remove(normalizedVirtualPath)
+                if subscribedVirtualPathsByClient[client.userID]?[realPath]?.isEmpty == true {
+                    subscribedVirtualPathsByClient[client.userID]?[realPath] = nil
+                    subscribedRealPathsByClient[client.userID]?.remove(realPath)
+                }
             }
             return subscribed
         }
@@ -1301,12 +1235,12 @@ public class FilesController {
     }
 
     private func notify(path: String, messageName: String, removeSubscriptionAfterNotify: Bool) {
-        let realPath = URL(fileURLWithPath: self.real(path: path)).resolvingSymlinksInPath().path
+        let realPath = resolvedVirtualPath(for: path).resolvedRealPath
         let targets: [(UInt32, String)] = subscriptionsQueue.sync {
             var snapshot: [(UInt32, String)] = []
             for (userID, paths) in subscribedRealPathsByClient where paths.contains(realPath) {
-                if let virtualPath = subscribedVirtualPathsByClient[userID]?[realPath] {
-                    snapshot.append((userID, virtualPath))
+                if let virtualPaths = subscribedVirtualPathsByClient[userID]?[realPath] {
+                    snapshot.append(contentsOf: virtualPaths.map { (userID, $0) })
                 }
             }
 

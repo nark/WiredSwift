@@ -55,8 +55,10 @@ public class TransfersController {
     private let queueStateLock = NSLock()
     private var queueEntries: [ObjectIdentifier: QueueEntry] = [:]
 
-    private let queueRecalcLock = NSCondition()
+    private let queueRecalcDispatchQueue = DispatchQueue(label: "wired3.transfers.queue-recalc")
+    private let queueRecalcStateLock = NSLock()
     private var queueNeedsRecalc: Bool = false
+    private var queueRecalcScheduled: Bool = false
 
     private var activeDownloads: Int = 0
     private var activeUploads: Int = 0
@@ -77,11 +79,6 @@ public class TransfersController {
 
     public init(filesController: FilesController) {
         self.filesController = filesController
-
-        // Start the queue recomputation loop.
-        DispatchQueue.global(qos: .default).async { [weak self] in
-            self?.queueRecomputeLoop()
-        }
     }
 
     // MARK: -
@@ -183,22 +180,37 @@ public class TransfersController {
     }
 
     private func signalQueueRecalc() {
-        queueRecalcLock.lock()
+        queueRecalcStateLock.lock()
         queueNeedsRecalc = true
-        queueRecalcLock.signal()
-        queueRecalcLock.unlock()
+        let shouldSchedule = !queueRecalcScheduled
+        if shouldSchedule {
+            queueRecalcScheduled = true
+        }
+        queueRecalcStateLock.unlock()
+
+        guard shouldSchedule else { return }
+
+        queueRecalcDispatchQueue.async { [weak self] in
+            self?.drainQueueRecomputes()
+        }
     }
 
     private func readMessageWithTimeout(socket: P7Socket, timeout: TimeInterval) throws -> P7Message {
         let semaphore = DispatchSemaphore(value: 0)
+        let resultLock = NSLock()
         var result: Result<P7Message, Error>?
 
         DispatchQueue.global(qos: .userInitiated).async {
+            let localResult: Result<P7Message, Error>
             do {
-                result = .success(try socket.readMessage())
+                localResult = .success(try socket.readMessage())
             } catch {
-                result = .failure(error)
+                localResult = .failure(error)
             }
+
+            resultLock.lock()
+            result = localResult
+            resultLock.unlock()
             semaphore.signal()
         }
 
@@ -206,11 +218,15 @@ public class TransfersController {
             throw MessageReadTimeout.timeout
         }
 
-        guard let result else {
+        resultLock.lock()
+        let resolvedResult = result
+        resultLock.unlock()
+
+        guard let resolvedResult else {
             throw MessageReadTimeout.timeout
         }
 
-        switch result {
+        switch resolvedResult {
         case .success(let message):
             return message
         case .failure(let error):
@@ -218,14 +234,19 @@ public class TransfersController {
         }
     }
 
-    private func queueRecomputeLoop() {
+    private func drainQueueRecomputes() {
         while true {
-            queueRecalcLock.lock()
-            while !queueNeedsRecalc {
-                queueRecalcLock.wait()
-            }
+            queueRecalcStateLock.lock()
+            let shouldRecompute = queueNeedsRecalc
             queueNeedsRecalc = false
-            queueRecalcLock.unlock()
+
+            if !shouldRecompute {
+                queueRecalcScheduled = false
+                queueRecalcStateLock.unlock()
+                return
+            }
+
+            queueRecalcStateLock.unlock()
 
             recomputeQueuePositions()
         }
@@ -368,7 +389,7 @@ public class TransfersController {
 
         transfer.dataOffset = dataOffset
         transfer.rsrcOffset = rsrcOffset
-        transfer.realDataPath = filesController.real(path: path)
+        transfer.realDataPath = filesController.resolvedVirtualPath(for: path).resolvedRealPath
 
         do {
             transfer.dataFd = try FileHandle(forReadingFrom: URL(fileURLWithPath: transfer.realDataPath))
@@ -399,7 +420,7 @@ public class TransfersController {
     public func upload(path: String, dataSize: UInt64, rsrcSize: UInt64, executable: Bool, client: Client, message: P7Message) -> Transfer? {
         let transfer = Transfer(path: path, client: client, message: message, type: .upload)
         var virtualPath = path
-        var targetRealPath = filesController.real(path: virtualPath)
+        var targetRealPath = filesController.resolvedVirtualPathByResolvingParent(for: virtualPath).resolvedRealPath
         let isSyncUpload = filesController.isWithinSyncTree(virtualPath: virtualPath)
         var isDirectory: ObjCBool = false
         let targetExists = FileManager.default.fileExists(atPath: targetRealPath, isDirectory: &isDirectory)
@@ -421,7 +442,7 @@ public class TransfersController {
             }
 
             virtualPath = conflictVirtualPath(for: path, username: client.user?.username ?? "unknown")
-            targetRealPath = filesController.real(path: virtualPath)
+            targetRealPath = filesController.resolvedVirtualPathByResolvingParent(for: virtualPath).resolvedRealPath
 
             var conflictIsDirectory: ObjCBool = false
             if FileManager.default.fileExists(atPath: targetRealPath, isDirectory: &conflictIsDirectory) ||

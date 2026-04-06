@@ -101,8 +101,8 @@ extension ServerController {
             return
         }
 
-        let normalizedPath = NSString(string: path).standardizingPath
-        let realPath = App.filesController.real(path: normalizedPath)
+        let normalizedPath = App.filesController.normalizeVirtualPath(path)
+        let realPath = App.filesController.resolvedVirtualPathByResolvingParent(for: normalizedPath).resolvedRealPath
         let parentPath = realPath.stringByDeletingLastPathComponent
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
@@ -206,8 +206,8 @@ extension ServerController {
             return
         }
 
-        let normalizedPath = NSString(string: path).standardizingPath
-        let realPath = App.filesController.real(path: normalizedPath)
+        let normalizedPath = App.filesController.normalizeVirtualPath(path)
+        let realPath = App.filesController.resolvedVirtualPathByResolvingParent(for: normalizedPath).resolvedRealPath
 
         if let privilege = App.filesController.dropBoxPrivileges(forVirtualPath: normalizedPath) {
             if !App.filesController.managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {

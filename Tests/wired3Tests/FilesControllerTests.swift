@@ -3,20 +3,24 @@ import WiredSwift
 @testable import wired3Lib
 
 final class FilesControllerTests: XCTestCase {
-    func testIsWithinJailAcceptsRootAndChildrenOnly() throws {
+    func testResolvedVirtualPathFollowsSymlinkOutsideRoot() throws {
         let root = try makeTemporaryDirectory()
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }
 
-        let inside = root.appendingPathComponent("sub/child", isDirectory: true)
-        try FileManager.default.createDirectory(at: inside, withIntermediateDirectories: true)
+        let external = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: external) }
 
-        let outside = root.deletingLastPathComponent().appendingPathComponent("outside", isDirectory: true)
-        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        let target = external.appendingPathComponent("shared", isDirectory: true)
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("linked"), withDestinationURL: target)
 
         let controller = FilesController(rootPath: root.path)
-        XCTAssertTrue(controller.isWithinJail(root.path))
-        XCTAssertTrue(controller.isWithinJail(inside.path))
-        XCTAssertFalse(controller.isWithinJail(outside.path))
+        let resolved = controller.resolvedVirtualPath(for: "/linked")
+
+        XCTAssertEqual(resolved.normalizedVirtualPath, "/linked")
+        XCTAssertEqual(resolved.joinedRealPath, root.appendingPathComponent("linked").path)
+        XCTAssertEqual(resolved.resolvedRealPath, target.path)
+        XCTAssertEqual(resolved.linkKind, .symlink)
     }
 
     func testRealAndVirtualMapping() throws {
@@ -26,8 +30,38 @@ final class FilesControllerTests: XCTestCase {
         let controller = FilesController(rootPath: root.path)
         let real = controller.real(path: "/docs/readme.txt")
         XCTAssertEqual(real, root.path + "/docs/readme.txt")
-        XCTAssertEqual(controller.virtual(path: real), "//docs/readme.txt")
+        XCTAssertEqual(controller.virtual(path: real), "/docs/readme.txt")
         XCTAssertEqual(controller.virtual(path: root.path), "/")
+    }
+
+    func testResolvedVirtualPathByResolvingParentPreservesFinalComponent() throws {
+        let root = try makeTemporaryDirectory()
+        let external = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+        addTeardownBlock { try? FileManager.default.removeItem(at: external) }
+
+        let target = external.appendingPathComponent("uploads", isDirectory: true)
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("drop"), withDestinationURL: target)
+
+        let controller = FilesController(rootPath: root.path)
+        let resolved = controller.resolvedVirtualPathByResolvingParent(for: "/drop/new-folder")
+
+        XCTAssertEqual(resolved.normalizedVirtualPath, "/drop/new-folder")
+        XCTAssertEqual(resolved.resolvedRealPath, target.appendingPathComponent("new-folder").path)
+    }
+
+    func testExactLinkKindDetectsSymlink() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let target = root.appendingPathComponent("target", isDirectory: true)
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+        let symlink = root.appendingPathComponent("alias")
+        try FileManager.default.createSymbolicLink(at: symlink, withDestinationURL: target)
+
+        let controller = FilesController(rootPath: root.path)
+        XCTAssertEqual(controller.exactLinkKind(atPath: symlink.path), .symlink)
     }
 
     func testCreateDefaultDirectoryIfMissingCreatesDropboxAndPrivileges() throws {
