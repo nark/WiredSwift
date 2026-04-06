@@ -4,6 +4,7 @@
 //
 //  Created by Rafael Warnault on 26/03/2021.
 //
+// swiftlint:disable type_body_length
 
 import Foundation
 import WiredSwift
