@@ -641,6 +641,7 @@ public class ServerController: ServerDelegate {
 
     // MARK: - Message routing
 
+    // swiftlint:disable function_body_length
     private func handleMessage(client: Client, message: P7Message) {
         if shouldTreatMessageAsActivity(message.name) {
             client.idleTime = Date()
@@ -850,6 +851,7 @@ public class ServerController: ServerDelegate {
             WiredSwift.Logger.warning("Message \(message.name ?? "unknow message") not implemented")
         }
     }
+    // swiftlint:enable function_body_length
 
     // MARK: - Server info message
 

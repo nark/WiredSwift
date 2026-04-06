@@ -32,6 +32,16 @@ final class OutgoingTrackersController {
         }
     }
 
+    private struct TrackerPayload {
+        let isTracker: Bool
+        let port: UInt32
+        let users: UInt32
+        let name: String
+        let description: String
+        let filesCount: UInt64
+        let filesSize: UInt64
+    }
+
     private let stateLock = Lock()
     private var syncTask: Task<Void, Never>?
     private var hasRegisteredTracker: Set<String> = []
@@ -199,20 +209,12 @@ final class OutgoingTrackersController {
         return errorString == "wired.error.not_registered" || errorString == "not_registered"
     }
 
-    private func currentPayload() -> (
-        isTracker: Bool,
-        port: UInt32,
-        users: UInt32,
-        name: String,
-        description: String,
-        filesCount: UInt64,
-        filesSize: UInt64
-    ) {
+    private func currentPayload() -> TrackerPayload {
         let users = UInt32(clamping: App.clientsController.connectedClientsSnapshot().filter {
             $0.state == .LOGGED_IN
         }.count)
 
-        return (
+        return TrackerPayload(
             isTracker: App.serverController.trackerEnabled,
             port: UInt32(clamping: App.serverController.port),
             users: users,
