@@ -82,8 +82,8 @@ Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader 
 | Events (admin/audit) | ✅ Available | ✅ Available (including subscription and cleanup) |
 | Accounts (admin) | ✅ Available | ✅ Available (list/read/create/edit/delete users/groups, subscribe changes) |
 | Banlist (admin) | ✅ Available | ✅ Available |
-| Tracker (admin/discovery) | ✅ Available | ⚠️ Planned in spec, not yet implemented in wired3 server |
-| Monitor (admin) | ✅ Available | ❌ Not yet implemented in Wired 3.0 |
+| Tracker (admin/discovery) | ✅ Available | ✅ Available |
+| Monitor (admin) | ✅ Available | ✅ Available |
 
 ### Security
 
