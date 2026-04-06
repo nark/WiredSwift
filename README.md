@@ -310,7 +310,6 @@ sudo -u wired3 wired3 \
   --working-directory /var/lib/wired3 \
   --config /var/lib/wired3/etc/config.ini \
   --db /var/lib/wired3/wired3.db \
-  --root /var/lib/wired3/files \
   --spec /var/lib/wired3/wired.xml
 ```
 
@@ -328,7 +327,7 @@ Type=simple
 User=wired3
 Group=wired3
 WorkingDirectory=/var/lib/wired3
-ExecStart=/usr/local/bin/wired3 --working-directory /var/lib/wired3 --config /var/lib/wired3/etc/config.ini --db /var/lib/wired3/wired3.db --root /var/lib/wired3/files --spec /var/lib/wired3/wired.xml
+ExecStart=/usr/local/bin/wired3 --working-directory /var/lib/wired3 --config /var/lib/wired3/etc/config.ini --db /var/lib/wired3/wired3.db --spec /var/lib/wired3/wired.xml
 Restart=on-failure
 RestartSec=5
 
