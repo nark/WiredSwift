@@ -86,7 +86,9 @@ public class Config {
         }
 
         do {
-            try string.write(to: URL(fileURLWithPath: self.path), atomically: true, encoding: .utf8)
+            // Write in place so service-managed configs under /etc remain editable by
+            // the daemon when the file itself is writable but the directory is not.
+            try string.write(to: URL(fileURLWithPath: self.path), atomically: false, encoding: .utf8)
         } catch let error {
             Logger.error("Cannot save config file \(path) \(error)")
             return false

@@ -114,6 +114,7 @@ jobs:
           STAGE_DIR="$GITHUB_WORKSPACE/.tmp/deb-stage-$TARGET_ARCH"
           OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
+          VERIFY_CONTROL_DIR="$GITHUB_WORKSPACE/.tmp/verify-control-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
           OUT_RPM="$OUT_DIR/$RPM_NAME"
           DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/WiredSwift/Resources/wired.xml"
@@ -132,8 +133,8 @@ jobs:
           test -f "$DEFAULT_BANNER_SOURCE"
           test -f "$DEFAULT_CONFIG_SOURCE"
 
-          rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
-          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$STAGE_DIR/usr/share/wired3" "$OUT_DIR" "$VERIFY_DIR"
+          rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR" "$VERIFY_CONTROL_DIR"
+          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$STAGE_DIR/usr/share/wired3" "$OUT_DIR" "$VERIFY_DIR" "$VERIFY_CONTROL_DIR"
 
           cp "$BIN_PATH" "$STAGE_DIR/usr/lib/wired3/wired3-bin"
           chmod 0755 "$STAGE_DIR/usr/lib/wired3/wired3-bin"
@@ -169,8 +170,11 @@ jobs:
 
           dpkg-deb --build --root-owner-group "$STAGE_DIR" "$OUT_DEB"
           dpkg-deb -x "$OUT_DEB" "$VERIFY_DIR"
+          dpkg-deb -e "$OUT_DEB" "$VERIFY_CONTROL_DIR"
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin"
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin" | grep -q "$FILE_ARCH_TOKEN"
+          grep -q 'chmod 0660 /etc/wired3/config.ini' "$VERIFY_CONTROL_DIR/postinst"
+          grep -q 'install -m 0660 -o root -g wired3' "$VERIFY_CONTROL_DIR/postinst"
 
           if [[ "${{ inputs.rpm_enable }}" == "1" ]]; then
             RPM_ROOT="$GITHUB_WORKSPACE/.tmp/rpm-root-$TARGET_ARCH"
@@ -206,11 +210,13 @@ jobs:
               'install -d -m 0755 /etc/wired3' \
               'if [[ ! -f /var/lib/wired3/wired.xml ]] || ([[ "${{ inputs.wired_xml_update_if_different }}" == "1" ]] && ! cmp -s /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml); then install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml; fi' \
               '[[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png' \
-              '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
+              '[[ -f /etc/wired3/config.ini ]] || install -m 0660 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
+              'chgrp wired3 /etc/wired3/config.ini' \
+              'chmod 0660 /etc/wired3/config.ini' \
               'if ! awk '"'"'BEGIN { in_security = 0; found = 0 } /^[[:space:]]*\\[/ { in_security = ($0 ~ /^[[:space:]]*\\[security\\][[:space:]]*$/) } in_security && $0 ~ /^[[:space:]]*strict_identity[[:space:]]*=/ { found = 1 } END { exit(found ? 0 : 1) }'"'"' /etc/wired3/config.ini; then' \
               '  tmp="$(mktemp)"' \
               '  awk '"'"'BEGIN { in_security = 0; inserted = 0 } /^[[:space:]]*\\[/ { if (in_security && !inserted && $0 !~ /^[[:space:]]*\\[security\\][[:space:]]*$/) { print "strict_identity = yes"; inserted = 1 } in_security = ($0 ~ /^[[:space:]]*\\[security\\][[:space:]]*$/); print; next } { print } END { if (in_security && !inserted) { print "strict_identity = yes"; inserted = 1 } if (!inserted) { if (NR > 0) print ""; print "[security]"; print "strict_identity = yes" } }'"'"' /etc/wired3/config.ini > "$tmp"' \
-              '  install -m 0640 -o root -g wired3 "$tmp" /etc/wired3/config.ini' \
+              '  install -m 0660 -o root -g wired3 "$tmp" /etc/wired3/config.ini' \
               '  rm -f "$tmp"' \
               'fi' \
               'if command -v systemctl >/dev/null 2>&1; then' \
@@ -368,6 +374,7 @@ jobs:
           STAGE_DIR="$GITHUB_WORKSPACE/.tmp/deb-stage-$TARGET_ARCH"
           OUT_DIR="$GITHUB_WORKSPACE/out-$TARGET_ARCH"
           VERIFY_DIR="$GITHUB_WORKSPACE/.tmp/verify-$TARGET_ARCH"
+          VERIFY_CONTROL_DIR="$GITHUB_WORKSPACE/.tmp/verify-control-$TARGET_ARCH"
           OUT_DEB="$OUT_DIR/$DEB_NAME"
           OUT_RPM="$OUT_DIR/$RPM_NAME"
           DEFAULT_SPEC_SOURCE="$GITHUB_WORKSPACE/Sources/WiredSwift/Resources/wired.xml"
@@ -386,8 +393,8 @@ jobs:
           test -f "$DEFAULT_BANNER_SOURCE"
           test -f "$DEFAULT_CONFIG_SOURCE"
 
-          rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR"
-          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$STAGE_DIR/usr/share/wired3" "$OUT_DIR" "$VERIFY_DIR"
+          rm -rf "$STAGE_DIR" "$OUT_DIR" "$VERIFY_DIR" "$VERIFY_CONTROL_DIR"
+          mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/usr/local/bin" "$STAGE_DIR/usr/lib/wired3" "$STAGE_DIR/usr/share/wired3" "$OUT_DIR" "$VERIFY_DIR" "$VERIFY_CONTROL_DIR"
 
           cp "$BIN_PATH" "$STAGE_DIR/usr/lib/wired3/wired3-bin"
           chmod 0755 "$STAGE_DIR/usr/lib/wired3/wired3-bin"
@@ -423,8 +430,11 @@ jobs:
 
           dpkg-deb --build --root-owner-group "$STAGE_DIR" "$OUT_DEB"
           dpkg-deb -x "$OUT_DEB" "$VERIFY_DIR"
+          dpkg-deb -e "$OUT_DEB" "$VERIFY_CONTROL_DIR"
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin"
           file "$VERIFY_DIR/usr/lib/wired3/wired3-bin" | grep -q "$FILE_ARCH_TOKEN"
+          grep -q 'chmod 0660 /etc/wired3/config.ini' "$VERIFY_CONTROL_DIR/postinst"
+          grep -q 'install -m 0660 -o root -g wired3' "$VERIFY_CONTROL_DIR/postinst"
 
           if [[ "${{ inputs.rpm_enable }}" == "1" ]]; then
             RPM_ROOT="$GITHUB_WORKSPACE/.tmp/rpm-root-$TARGET_ARCH"
@@ -460,7 +470,9 @@ jobs:
               'install -d -m 0755 /etc/wired3' \
               'if [[ ! -f /var/lib/wired3/wired.xml ]] || ([[ "${{ inputs.wired_xml_update_if_different }}" == "1" ]] && ! cmp -s /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml); then install -m 0640 -o wired3 -g wired3 /usr/share/wired3/wired.xml /var/lib/wired3/wired.xml; fi' \
               '[[ -f /var/lib/wired3/banner.png ]] || install -m 0644 -o wired3 -g wired3 /usr/share/wired3/banner.png /var/lib/wired3/banner.png' \
-              '[[ -f /etc/wired3/config.ini ]] || install -m 0640 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
+              '[[ -f /etc/wired3/config.ini ]] || install -m 0660 -o root -g wired3 /usr/share/wired3/config.ini.example /etc/wired3/config.ini' \
+              'chgrp wired3 /etc/wired3/config.ini' \
+              'chmod 0660 /etc/wired3/config.ini' \
               'if command -v systemctl >/dev/null 2>&1; then' \
               '  systemctl daemon-reload || true' \
               '  if [[ -f /run/wired3.service.was-active ]]; then' \

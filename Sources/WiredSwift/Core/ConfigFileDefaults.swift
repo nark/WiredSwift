@@ -79,7 +79,8 @@ public enum ConfigFileDefaults {
 
         let updatedContents = lines.joined(separator: newline)
         do {
-            try updatedContents.write(toFile: path, atomically: true, encoding: .utf8)
+            // Update in place so packaged configs under /etc do not require directory write access.
+            try updatedContents.write(toFile: path, atomically: false, encoding: .utf8)
             return true
         } catch {
             return false
