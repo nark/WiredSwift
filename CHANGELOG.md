@@ -2,6 +2,13 @@
 
 All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [3.0-beta.19+36] — 2026-04-08
+
+### Documentation
+- Update README ([`8220900`](https://github.com/nark/WiredSwift/commit/8220900c7d287b7863cd1971b38942837395e133))
+
+- Update README ([`debb760`](https://github.com/nark/WiredSwift/commit/debb7609babaff3c441cafa4af92438e43fcd3c5))
+
 ## [3.0-beta.17+33] — 2026-04-02
 
 ### Bug Fixes
