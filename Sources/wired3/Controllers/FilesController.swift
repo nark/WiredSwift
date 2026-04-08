@@ -10,6 +10,8 @@ import Foundation
 import WiredSwift
 
 public class FilesController {
+    static let maxPreviewSizeBytes: UInt64 = 10 * 1_024 * 1_024
+
     public var rootPath: String
     private let subscriptionsQueue = DispatchQueue(label: "wired3.files.subscriptions")
     private var subscribedRealPathsByClient: [UInt32: Set<String>] = [:]
@@ -274,6 +276,70 @@ public class FilesController {
 
         App.serverController.reply(client: client, reply: reply, message: message)
         App.serverController.recordEvent(.fileGotInfo, client: client, parameters: [normalizedPath])
+    }
+
+    public func previewFile(client: Client, message: P7Message) {
+        guard let user = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard let path = message.string(forField: "wired.file.path") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard user.hasPrivilege(name: "wired.account.transfer.download_files") else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let resolvedPath = resolvedVirtualPath(for: path)
+        let normalizedPath = resolvedPath.normalizedVirtualPath
+        let realPath = resolvedPath.resolvedRealPath
+
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: realPath, isDirectory: &isDirectory) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        guard !isDirectory.boolValue else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath),
+           !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).readable {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let previewData: Data
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: realPath)
+            let fileSize = (attributes[.size] as? NSNumber)?.uint64Value ?? 0
+            guard fileSize <= Self.maxPreviewSizeBytes else {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+
+            previewData = try Data(contentsOf: URL(fileURLWithPath: realPath), options: .mappedIfSafe)
+        } catch {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let reply = P7Message(withName: "wired.file.preview", spec: message.spec)
+        reply.addParameter(field: "wired.file.path", value: normalizedPath)
+        reply.addParameter(field: "wired.file.preview", value: previewData)
+        App.serverController.reply(client: client, reply: reply, message: message)
+        App.serverController.recordEvent(.filePreviewedFile, client: client, parameters: [normalizedPath])
     }
 
     public func createDirectory(client: Client, message: P7Message) {

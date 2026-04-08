@@ -759,6 +759,8 @@ public class ServerController: ServerDelegate {
             App.filesController.listDirectory(client: client, message: message)
         } else if message.name == "wired.file.get_info" {
             App.filesController.getInfo(client: client, message: message)
+        } else if message.name == "wired.file.preview_file" {
+            App.filesController.previewFile(client: client, message: message)
         } else if message.name == "wired.file.create_directory" {
             App.filesController.createDirectory(client: client, message: message)
         } else if message.name == "wired.file.delete" {

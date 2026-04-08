@@ -1,4 +1,5 @@
 import XCTest
+import SocketSwift
 import WiredSwift
 @testable import wired3Lib
 
@@ -162,5 +163,185 @@ final class FilesControllerTests: XCTestCase {
         XCTAssertEqual(loaded.owner, "eve")
         XCTAssertEqual(loaded.group, "ops")
         XCTAssertEqual(loaded.mode, mode)
+    }
+
+    func testPreviewFileRepliesWithPreviewDataForReadableFile() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let payload = Data("QuickLook".utf8)
+        FileManager.default.createFile(
+            atPath: context.rootDir.appendingPathComponent("preview.txt").path,
+            contents: payload
+        )
+
+        let client = makePreviewClient(socket: sockets.server, username: "alice", canDownload: true)
+        let request = P7Message(withName: "wired.file.preview_file", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/preview.txt")
+        request.addParameter(field: "wired.transaction", value: UInt32(7))
+
+        context.app.filesController.previewFile(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.file.preview")
+        XCTAssertEqual(reply.string(forField: "wired.file.path"), "/preview.txt")
+        XCTAssertEqual(reply.data(forField: "wired.file.preview"), payload)
+        XCTAssertEqual(reply.uint32(forField: "wired.transaction"), 7)
+    }
+
+    func testPreviewFileRejectsDirectories() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        try FileManager.default.createDirectory(
+            at: context.rootDir.appendingPathComponent("folder", isDirectory: true),
+            withIntermediateDirectories: true
+        )
+
+        let client = makePreviewClient(socket: sockets.server, username: "alice", canDownload: true)
+        let request = P7Message(withName: "wired.file.preview_file", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/folder")
+
+        context.app.filesController.previewFile(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.error")
+        XCTAssertEqual(reply.enumeration(forField: "wired.error"), 14)
+    }
+
+    func testPreviewFileRejectsOversizedFiles() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let largeData = Data(repeating: 0xAA, count: Int(FilesController.maxPreviewSizeBytes + 1))
+        FileManager.default.createFile(
+            atPath: context.rootDir.appendingPathComponent("too-big.bin").path,
+            contents: largeData
+        )
+
+        let client = makePreviewClient(socket: sockets.server, username: "alice", canDownload: true)
+        let request = P7Message(withName: "wired.file.preview_file", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/too-big.bin")
+
+        context.app.filesController.previewFile(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.error")
+        XCTAssertEqual(reply.enumeration(forField: "wired.error"), 5)
+    }
+
+    func testPreviewFileRequiresDownloadPrivilege() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        FileManager.default.createFile(
+            atPath: context.rootDir.appendingPathComponent("preview.txt").path,
+            contents: Data("QuickLook".utf8)
+        )
+
+        let client = makePreviewClient(socket: sockets.server, username: "alice", canDownload: false)
+        let request = P7Message(withName: "wired.file.preview_file", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/preview.txt")
+
+        context.app.filesController.previewFile(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.error")
+        XCTAssertEqual(reply.enumeration(forField: "wired.error"), 5)
+    }
+
+    private typealias P7Pair = (server: P7Socket, peer: P7Socket, listener: Socket)
+
+    private func makeAppContext() throws -> (app: AppController, workingDir: URL, rootDir: URL, previous: AppController?) {
+        let previous = App
+        let workingDir = try makeTemporaryDirectory()
+        let rootDir = workingDir.appendingPathComponent("files", isDirectory: true)
+        try FileManager.default.createDirectory(at: rootDir, withIntermediateDirectories: true)
+
+        let app = AppController(
+            specPath: wiredSpecPath(),
+            dbPath: workingDir.appendingPathComponent("wired3.sqlite").path,
+            rootPath: rootDir.path,
+            configPath: configPath(),
+            workingDirectoryPath: workingDir.path
+        )
+
+        App = app
+        app.clientsController = ClientsController()
+        app.filesController = FilesController(rootPath: rootDir.path)
+        app.serverController = ServerController(port: 0, spec: app.spec)
+        return (app, workingDir, rootDir, previous)
+    }
+
+    private func makeConnectedP7Pair(spec: P7Spec) throws -> P7Pair {
+        let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
+        let port = Int(try listener.port())
+
+        var acceptedSocket: Socket?
+        let accepted = expectation(description: "accepted")
+        DispatchQueue.global().async {
+            acceptedSocket = try? listener.accept()
+            accepted.fulfill()
+        }
+
+        let peer = P7Socket(hostname: "127.0.0.1", port: port, spec: spec)
+        try peer.connect(withHandshake: false)
+
+        wait(for: [accepted], timeout: 2.0)
+        let native = try XCTUnwrap(acceptedSocket)
+        let server = P7Socket(socket: native, spec: spec)
+        return (server, peer, listener)
+    }
+
+    private func closeSockets(_ pair: P7Pair) {
+        pair.server.disconnect()
+        pair.peer.disconnect()
+        pair.listener.close()
+    }
+
+    private func makePreviewClient(socket: P7Socket, username: String, canDownload: Bool) -> Client {
+        let client = Client(userID: 1, socket: socket)
+        client.state = .LOGGED_IN
+
+        let user = User(username: username, password: "password")
+        user.id = 1
+        user.privileges = [
+            UserPrivilege(name: "wired.account.transfer.download_files", value: canDownload, userId: 1)
+        ]
+        client.user = user
+        return client
+    }
+
+    private func wiredSpecPath() -> String {
+        WiredProtocolSpec.bundledSpecURL()!.path
+    }
+
+    private func configPath() -> String {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/wired3/config.ini")
+            .path
     }
 }
