@@ -18,6 +18,8 @@ This repository contains the **Wired 3.0** implementation in Swift:
 - **wired3** — server daemon (macOS and Linux)
 - **WiredServerApp** — macOS GUI for local server administration
 
+The project is currently in beta. It is already usable, but it is still evolving quickly. If you want the latest version, always download the newest beta build from the project's GitHub Releases.
+
 Releases: https://github.com/nark/WiredSwift/releases
 
 ---
