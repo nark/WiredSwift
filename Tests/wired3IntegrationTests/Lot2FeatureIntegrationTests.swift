@@ -134,6 +134,8 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertTrue(socket.write(list))
 
         var sawDir = false
+        var sawCreationTime = false
+        var sawModificationTime = false
         for _ in 0..<32 {
             let message: P7Message
             do {
@@ -144,12 +146,16 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
             if message.name == "wired.file.file_list",
                message.string(forField: "wired.file.path") == "/it_dir" {
                 sawDir = true
+                sawCreationTime = message.date(forField: "wired.file.creation_time") != nil
+                sawModificationTime = message.date(forField: "wired.file.modification_time") != nil
             }
             if message.name == "wired.file.file_list.done" {
                 break
             }
         }
         XCTAssertTrue(sawDir)
+        XCTAssertTrue(sawCreationTime)
+        XCTAssertTrue(sawModificationTime)
 
         let move = P7Message(withName: "wired.file.move", spec: socket.spec)
         move.addParameter(field: "wired.file.path", value: "/it_dir")

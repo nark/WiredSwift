@@ -427,10 +427,12 @@ public class IndexController: TableController {
         case .directory, .uploads:
             reply.addParameter(field: "wired.file.directory_count", value: WiredSwift.File.count(path: realPath))
         case .dropbox, .sync:
-            reply.addParameter(field: "wired.file.directory_count",
-                               value: WiredSwift.File.count(path: realPath))
             if let priv = App.filesController.dropBoxPrivileges(forVirtualPath: entry.virtual_path) {
                 let access = App.filesController.managedAccess(forVirtualPath: entry.virtual_path, user: user, privilege: priv)
+                reply.addParameter(
+                    field: "wired.file.directory_count",
+                    value: access.readable ? WiredSwift.File.count(path: realPath) : 0
+                )
                 reply.addParameter(field: "wired.file.readable", value: access.readable)
                 reply.addParameter(field: "wired.file.writable", value: access.writable)
                 if type == .sync {
@@ -446,6 +448,8 @@ public class IndexController: TableController {
                     reply.addParameter(field: "wired.file.sync.everyone_mode", value: policy.everyoneMode.rawValue)
                     reply.addParameter(field: "wired.file.sync.mode_effective", value: effectiveMode.rawValue)
                 }
+            } else {
+                reply.addParameter(field: "wired.file.directory_count", value: UInt32(0))
             }
         }
 

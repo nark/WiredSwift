@@ -252,6 +252,13 @@ public class FilesController {
         if type == .file {
             reply.addParameter(field: "wired.file.data_size", value: File.size(path: realPath))
             reply.addParameter(field: "wired.file.rsrc_size", value: UInt64(0))
+        } else if isManagedDirectoryType(type),
+                  let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            let access = managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege)
+            reply.addParameter(
+                field: "wired.file.directory_count",
+                value: access.readable ? File.count(path: realPath) : 0
+            )
         } else {
             reply.addParameter(field: "wired.file.directory_count", value: File.count(path: realPath))
         }
@@ -840,19 +847,12 @@ public class FilesController {
 
             var readable = false
             var writable = false
-            var mayBrowseManagedMetadata = false
             var managedPrivileges: FilePrivilege?
 
             if isManagedDirectoryType(type), let privileges = dropBoxPrivileges(forVirtualPath: childVirtualPath) {
                 let access = managedAccess(forVirtualPath: childVirtualPath, user: user, privilege: privileges)
                 readable = access.readable
                 writable = access.writable
-                mayBrowseManagedMetadata = canBrowseManagedDirectory(
-                    atVirtualPath: childVirtualPath,
-                    user: user,
-                    privilege: privileges,
-                    type: type
-                )
                 managedPrivileges = privileges
             }
 
@@ -877,7 +877,7 @@ public class FilesController {
             case .sync:
                 datasize = 0
                 rsrcsize = 0
-                directorycount = mayBrowseManagedMetadata ? File.count(path: childRealPath) : 0
+                directorycount = readable ? File.count(path: childRealPath) : 0
             case .none:
                 datasize = 0
                 rsrcsize = 0
@@ -886,6 +886,19 @@ public class FilesController {
 
             let reply = P7Message(withName: "wired.file.file_list", spec: message.spec)
             reply.addParameter(field: "wired.file.path", value: childVirtualPath)
+            let attributes = try? FileManager.default.attributesOfItem(atPath: childRealPath)
+
+            if let creationDate = attributes?[.creationDate] as? Date {
+                reply.addParameter(field: "wired.file.creation_time", value: creationDate)
+            } else {
+                reply.addParameter(field: "wired.file.creation_time", value: Date(timeIntervalSince1970: 0))
+            }
+
+            if let modificationDate = attributes?[.modificationDate] as? Date {
+                reply.addParameter(field: "wired.file.modification_time", value: modificationDate)
+            } else {
+                reply.addParameter(field: "wired.file.modification_time", value: Date(timeIntervalSince1970: 0))
+            }
 
             if let type = File.FileType.type(path: childRealPath) {
                 if type == .file {

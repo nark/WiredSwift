@@ -248,6 +248,72 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertEqual(syncReply.enumeration(forField: "wired.file.type"), UInt32(File.FileType.sync.rawValue))
     }
 
+    func testSyncDirectoryCountIsHiddenWhenDirectoryIsNotReadable() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_bob", password: "secret2")
+        defer { try? runtime.stop() }
+
+        let (admin, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { admin.disconnect() }
+        let (bob, _) = try connectAndAuthenticate(runtime: runtime, username: "it_bob", password: "secret2")
+        defer { bob.disconnect() }
+
+        let syncPath = "/sync-private-\(UUID().uuidString.prefix(8))"
+        try createSyncDirectory(
+            socket: admin,
+            path: syncPath,
+            owner: "it_admin",
+            group: "admin",
+            userMode: "bidirectional",
+            groupMode: "disabled",
+            everyoneMode: "client_to_server"
+        )
+        try createDirectory(socket: admin, path: "\(syncPath)/child")
+
+        let setPermissions = P7Message(withName: "wired.file.set_permissions", spec: admin.spec)
+        setPermissions.addParameter(field: "wired.file.path", value: syncPath)
+        setPermissions.addParameter(field: "wired.file.owner", value: "it_admin")
+        setPermissions.addParameter(field: "wired.file.group", value: "admin")
+        setPermissions.addParameter(field: "wired.file.owner.read", value: true)
+        setPermissions.addParameter(field: "wired.file.owner.write", value: true)
+        setPermissions.addParameter(field: "wired.file.group.read", value: false)
+        setPermissions.addParameter(field: "wired.file.group.write", value: false)
+        setPermissions.addParameter(field: "wired.file.everyone.read", value: false)
+        setPermissions.addParameter(field: "wired.file.everyone.write", value: false)
+        XCTAssertTrue(admin.write(setPermissions))
+        _ = try readMessage(from: admin, expectedName: "wired.okay", maxReads: 20)
+
+        let listRoot = P7Message(withName: "wired.file.list_directory", spec: bob.spec)
+        listRoot.addParameter(field: "wired.file.path", value: "/")
+        XCTAssertTrue(bob.write(listRoot))
+
+        var listedSyncCount: UInt32?
+        for _ in 0..<40 {
+            let message = try readMessage(
+                from: bob,
+                expectedNames: ["wired.file.file_list", "wired.file.file_list.done"],
+                maxReads: 20
+            )
+            if message.name == "wired.file.file_list",
+               message.string(forField: "wired.file.path") == syncPath {
+                listedSyncCount = message.uint32(forField: "wired.file.directory_count")
+            }
+            if message.name == "wired.file.file_list.done" {
+                break
+            }
+        }
+        XCTAssertEqual(listedSyncCount, 0)
+
+        let info = P7Message(withName: "wired.file.get_info", spec: bob.spec)
+        info.addParameter(field: "wired.file.path", value: syncPath)
+        XCTAssertTrue(bob.write(info))
+        let reply = try readMessage(from: bob, expectedName: "wired.file.info", maxReads: 20)
+        XCTAssertEqual(reply.uint32(forField: "wired.file.directory_count"), 0)
+        XCTAssertEqual(reply.bool(forField: "wired.file.readable"), false)
+    }
+
     func testTransfersUploadDirectoryAndErrorPaths() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()
