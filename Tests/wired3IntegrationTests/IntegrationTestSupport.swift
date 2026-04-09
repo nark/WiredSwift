@@ -2,6 +2,9 @@ import Foundation
 import XCTest
 import WiredSwift
 @testable import wired3Lib
+#if canImport(CryptoSwift)
+import CryptoSwift
+#endif
 #if canImport(Darwin)
 import Darwin
 #else
@@ -599,4 +602,45 @@ func waitForNoPartialTransferFiles(rootURL: URL, timeout: TimeInterval) -> Bool 
         usleep(50_000)
     }
     return false
+}
+
+func uploadAttachment(
+    socket: P7Socket,
+    name: String,
+    mediaType: String,
+    data: Data,
+    target: (P7Message) -> Void
+) throws -> String {
+    let create = P7Message(withName: "wired.attachment.create", spec: socket.spec)
+    create.addParameter(field: "wired.attachment.name", value: name)
+    create.addParameter(field: "wired.attachment.media_type", value: mediaType)
+    create.addParameter(field: "wired.attachment.size", value: UInt64(data.count))
+    create.addParameter(field: "wired.attachment.sha256", value: data.sha256().toHexString())
+    target(create)
+    XCTAssertTrue(socket.write(create))
+
+    let created = try readMessage(from: socket, expectedName: "wired.attachment.created", maxReads: 20)
+    let attachmentID = try XCTUnwrap(created.uuid(forField: "wired.attachment.id"))
+
+    let upload = P7Message(withName: "wired.attachment.upload", spec: socket.spec)
+    upload.addParameter(field: "wired.attachment.id", value: attachmentID)
+    upload.addParameter(field: "wired.attachment.offset", value: UInt64(0))
+    upload.addParameter(field: "wired.attachment.data", value: data)
+    XCTAssertTrue(socket.write(upload))
+    _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
+
+    let complete = P7Message(withName: "wired.attachment.complete", spec: socket.spec)
+    complete.addParameter(field: "wired.attachment.id", value: attachmentID)
+    XCTAssertTrue(socket.write(complete))
+    _ = try readMessage(from: socket, expectedName: "wired.attachment.completed", maxReads: 20)
+
+    return attachmentID
+}
+
+func decodeAttachmentDescriptors(from message: P7Message) throws -> [AttachmentDescriptor] {
+    let raw = message.stringList(forField: "wired.attachment.descriptors") ?? []
+    let decoder = JSONDecoder()
+    return try raw.map { entry in
+        try decoder.decode(AttachmentDescriptor.self, from: XCTUnwrap(entry.data(using: .utf8)))
+    }
 }

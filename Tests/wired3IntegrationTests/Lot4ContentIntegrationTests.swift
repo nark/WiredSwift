@@ -3,6 +3,64 @@ import XCTest
 import WiredSwift
 
 final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
+    func testDirectMessageAttachmentDeliveryAndFetch() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_admin_2", password: "secret2")
+        defer { try? runtime.stop() }
+
+        let (sender, senderID) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { sender.disconnect() }
+        let (recipient, recipientID) = try connectAndAuthenticate(runtime: runtime, username: "it_admin_2", password: "secret2")
+        defer { recipient.disconnect() }
+
+        let imageData = try XCTUnwrap(Data(base64Encoded: Self.inlinePNGBase64))
+        let attachmentID = try uploadAttachment(
+            socket: sender,
+            name: "pixel.png",
+            mediaType: "image/png",
+            data: imageData
+        ) { message in
+            message.addParameter(field: "wired.user.id", value: recipientID)
+        }
+
+        let body = "direct-with-attachment-\(UUID().uuidString.prefix(8))"
+        let direct = P7Message(withName: "wired.message.send_message", spec: sender.spec)
+        direct.addParameter(field: "wired.user.id", value: recipientID)
+        direct.addParameter(field: "wired.message.message", value: body)
+        direct.addParameter(field: "wired.attachment.ids", value: [attachmentID])
+        XCTAssertTrue(sender.write(direct))
+        _ = try readMessage(from: sender, expectedName: "wired.okay", maxReads: 20)
+
+        let directReceived = try readMessage(from: recipient, expectedName: "wired.message.message", maxReads: 40)
+        XCTAssertEqual(directReceived.uint32(forField: "wired.user.id"), senderID)
+        XCTAssertEqual(directReceived.string(forField: "wired.message.message"), body)
+
+        let descriptors = try decodeAttachmentDescriptors(from: directReceived)
+        XCTAssertEqual(descriptors.count, 1)
+        XCTAssertEqual(descriptors[0].id, attachmentID)
+        XCTAssertEqual(descriptors[0].name, "pixel.png")
+        XCTAssertEqual(descriptors[0].mediaType, "image/png")
+        XCTAssertEqual(descriptors[0].size, UInt64(imageData.count))
+        XCTAssertTrue(descriptors[0].inlinePreview)
+
+        let getPreview = P7Message(withName: "wired.attachment.get_preview", spec: recipient.spec)
+        getPreview.addParameter(field: "wired.attachment.id", value: attachmentID)
+        XCTAssertTrue(recipient.write(getPreview))
+        let preview = try readMessage(from: recipient, expectedName: "wired.attachment.preview", maxReads: 20)
+        XCTAssertEqual(preview.data(forField: "wired.attachment.data"), imageData)
+
+        let getData = P7Message(withName: "wired.attachment.get_data", spec: recipient.spec)
+        getData.addParameter(field: "wired.attachment.id", value: attachmentID)
+        getData.addParameter(field: "wired.attachment.offset", value: UInt64(0))
+        getData.addParameter(field: "wired.attachment.length", value: UInt32(imageData.count))
+        XCTAssertTrue(recipient.write(getData))
+        let dataReply = try readMessage(from: recipient, expectedName: "wired.attachment.data", maxReads: 20)
+        XCTAssertEqual(dataReply.data(forField: "wired.attachment.data"), imageData)
+        XCTAssertEqual(dataReply.bool(forField: "wired.attachment.complete"), true)
+    }
+
     func testBoardsLifecycleAddThreadPostSearchAndDelete() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()
@@ -116,6 +174,29 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
         _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 20)
     }
 
+    func testDirectMessageRejectsUnknownAttachmentReference() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        runtime.ensurePrivilegedUser(username: "it_admin_2", password: "secret2")
+        defer { try? runtime.stop() }
+
+        let (sender, _) = try connectAndAuthenticate(runtime: runtime, username: "it_admin", password: "secret")
+        defer { sender.disconnect() }
+        let (recipient, recipientID) = try connectAndAuthenticate(runtime: runtime, username: "it_admin_2", password: "secret2")
+        defer { recipient.disconnect() }
+
+        let direct = P7Message(withName: "wired.message.send_message", spec: sender.spec)
+        direct.addParameter(field: "wired.user.id", value: recipientID)
+        direct.addParameter(field: "wired.message.message", value: "invalid attachment")
+        direct.addParameter(field: "wired.attachment.ids", value: [UUID().uuidString.uppercased()])
+        XCTAssertTrue(sender.write(direct))
+
+        let error = try readMessage(from: sender, expectedName: "wired.error", maxReads: 20)
+        XCTAssertEqual(error.string(forField: "wired.error.string"), "wired.error.invalid_message")
+        XCTAssertNil(tryReadMessage(from: recipient, expectedNames: ["wired.message.message"], maxReads: 20, timeout: 0.1))
+    }
+
     func testGuestCannotAddBoard() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()
@@ -137,6 +218,109 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertTrue(guest.write(addBoard))
         let denied = try readMessage(from: guest, expectedName: "wired.error", maxReads: 20)
         XCTAssertEqual(denied.string(forField: "wired.error.string"), "wired.error.permission_denied")
+    }
+
+    func testBoardAttachmentPersistsAcrossRestart() throws {
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("wired3-board-attachment-\(UUID().uuidString)", isDirectory: true)
+        let runtime1 = try IntegrationServerRuntime(existingRoot: rootURL)
+        try runtime1.start()
+        runtime1.ensurePrivilegedUser(username: "it_admin", password: "secret")
+
+        let (client1, _) = try connectAndAuthenticate(runtime: runtime1, username: "it_admin", password: "secret")
+        defer { client1.disconnect() }
+
+        let boardPath = "attachment-board-\(UUID().uuidString.prefix(8))"
+        let subject = "Attachment subject \(UUID().uuidString.prefix(6))"
+        let body = "Attachment thread body"
+        let imageData = try XCTUnwrap(Data(base64Encoded: Self.inlinePNGBase64))
+
+        let addBoard = P7Message(withName: "wired.board.add_board", spec: client1.spec)
+        addBoard.addParameter(field: "wired.board.board", value: boardPath)
+        addBoard.addParameter(field: "wired.board.owner", value: "admin")
+        addBoard.addParameter(field: "wired.board.owner.read", value: true)
+        addBoard.addParameter(field: "wired.board.owner.write", value: true)
+        addBoard.addParameter(field: "wired.board.group", value: "admin")
+        addBoard.addParameter(field: "wired.board.group.read", value: true)
+        addBoard.addParameter(field: "wired.board.group.write", value: true)
+        addBoard.addParameter(field: "wired.board.everyone.read", value: true)
+        addBoard.addParameter(field: "wired.board.everyone.write", value: false)
+        XCTAssertTrue(client1.write(addBoard))
+        _ = try readMessage(from: client1, expectedName: "wired.okay", maxReads: 20)
+
+        let attachmentID = try uploadAttachment(
+            socket: client1,
+            name: "persisted.png",
+            mediaType: "image/png",
+            data: imageData
+        ) { message in
+            message.addParameter(field: "wired.board.board", value: boardPath)
+        }
+
+        let addThread = P7Message(withName: "wired.board.add_thread", spec: client1.spec)
+        addThread.addParameter(field: "wired.board.board", value: boardPath)
+        addThread.addParameter(field: "wired.board.subject", value: subject)
+        addThread.addParameter(field: "wired.board.text", value: body)
+        addThread.addParameter(field: "wired.attachment.ids", value: [attachmentID])
+        XCTAssertTrue(client1.write(addThread))
+        _ = try readMessage(from: client1, expectedName: "wired.okay", maxReads: 20)
+
+        let getThreads = P7Message(withName: "wired.board.get_threads", spec: client1.spec)
+        getThreads.addParameter(field: "wired.board.board", value: boardPath)
+        XCTAssertTrue(client1.write(getThreads))
+
+        var threadID: String?
+        for _ in 0..<60 {
+            let message = try client1.readMessage(timeout: 1, enforceDeadline: true)
+            if message.name == "wired.board.thread_list",
+               message.string(forField: "wired.board.subject") == subject {
+                threadID = message.uuid(forField: "wired.board.thread")
+            }
+            if message.name == "wired.board.thread_list.done" {
+                break
+            }
+        }
+        let createdThreadID = try XCTUnwrap(threadID)
+
+        try runtime1.stop(cleanup: false)
+
+        let runtime2 = try IntegrationServerRuntime(existingRoot: rootURL)
+        try runtime2.start()
+        defer { try? runtime2.stop(cleanup: true) }
+
+        let (client2, _) = try connectAndAuthenticate(runtime: runtime2, username: "it_admin", password: "secret")
+        defer { client2.disconnect() }
+
+        let getThread = P7Message(withName: "wired.board.get_thread", spec: client2.spec)
+        getThread.addParameter(field: "wired.board.thread", value: createdThreadID)
+        XCTAssertTrue(client2.write(getThread))
+
+        var threadMessage: P7Message?
+        for _ in 0..<80 {
+            let message = try client2.readMessage(timeout: 1, enforceDeadline: true)
+            if message.name == "wired.board.thread",
+               message.uuid(forField: "wired.board.thread") == createdThreadID {
+                threadMessage = message
+            }
+            if message.name == "wired.board.post_list.done" {
+                break
+            }
+        }
+
+        let persistedThread = try XCTUnwrap(threadMessage)
+        let descriptors = try decodeAttachmentDescriptors(from: persistedThread)
+        XCTAssertEqual(descriptors.count, 1)
+        XCTAssertEqual(descriptors[0].id, attachmentID)
+        XCTAssertEqual(descriptors[0].name, "persisted.png")
+
+        let getData = P7Message(withName: "wired.attachment.get_data", spec: client2.spec)
+        getData.addParameter(field: "wired.attachment.id", value: attachmentID)
+        getData.addParameter(field: "wired.attachment.offset", value: UInt64(0))
+        getData.addParameter(field: "wired.attachment.length", value: UInt32(imageData.count))
+        XCTAssertTrue(client2.write(getData))
+        let dataReply = try readMessage(from: client2, expectedName: "wired.attachment.data", maxReads: 20)
+        XCTAssertEqual(dataReply.data(forField: "wired.attachment.data"), imageData)
+        XCTAssertEqual(dataReply.bool(forField: "wired.attachment.complete"), true)
     }
 
     func testDirectMessageAndBroadcastDelivery() throws {
@@ -699,4 +883,8 @@ final class Lot4ContentIntegrationTests: SerializedIntegrationTestCase {
         let userID = try XCTUnwrap(login.uint32(forField: "wired.user.id"))
         return (socket, userID)
     }
+}
+
+private extension Lot4ContentIntegrationTests {
+    static let inlinePNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0X8AAAAASUVORK5CYII="
 }

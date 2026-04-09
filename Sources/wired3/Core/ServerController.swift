@@ -713,6 +713,18 @@ public class ServerController: ServerDelegate {
             self.receiveMessageSendMessage(client: client, message: message)
         } else if message.name == "wired.message.send_broadcast" {
             self.receiveMessageSendBroadcast(client: client, message: message)
+        } else if message.name == "wired.attachment.create" {
+            App.attachmentsController.createAttachment(client: client, message: message)
+        } else if message.name == "wired.attachment.upload" {
+            App.attachmentsController.uploadAttachment(client: client, message: message)
+        } else if message.name == "wired.attachment.complete" {
+            App.attachmentsController.completeAttachment(client: client, message: message)
+        } else if message.name == "wired.attachment.abort" {
+            App.attachmentsController.abortAttachment(client: client, message: message)
+        } else if message.name == "wired.attachment.get_preview" {
+            App.attachmentsController.getPreview(client: client, message: message)
+        } else if message.name == "wired.attachment.get_data" {
+            App.attachmentsController.getData(client: client, message: message)
         } else if message.name == "wired.board.get_boards" {
             self.receiveBoardGetBoards(client: client, message: message)
         } else if message.name == "wired.board.get_threads" {
