@@ -11,6 +11,16 @@
 import Foundation
 import WiredSwift
 
+private struct BoardReactionBroadcastPayload {
+    let board: String
+    let threadUUID: String
+    let postUUID: String?
+    let emoji: String
+    let count: Int
+    let nick: String
+    let added: Bool
+}
+
 extension ServerController {
 
     // MARK: - Board listing
@@ -553,7 +563,13 @@ extension ServerController {
         let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
             attachmentIDs,
             client: client,
-            boardPath: boardPath
+            context: AttachmentMessageContext(
+                chatID: nil,
+                recipientID: nil,
+                boardPath: boardPath,
+                threadUUID: nil,
+                postUUID: nil
+            )
         )
         guard attachmentIDs.isEmpty || descriptors != nil else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -622,7 +638,13 @@ extension ServerController {
             let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
                 attachmentIDs,
                 client: client,
-                threadUUID: uuid
+                context: AttachmentMessageContext(
+                    chatID: nil,
+                    recipientID: nil,
+                    boardPath: nil,
+                    threadUUID: uuid,
+                    postUUID: nil
+                )
             )
             guard descriptors != nil else {
                 App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -775,7 +797,13 @@ extension ServerController {
         let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
             attachmentIDs,
             client: client,
-            threadUUID: threadUUID
+            context: AttachmentMessageContext(
+                chatID: nil,
+                recipientID: nil,
+                boardPath: nil,
+                threadUUID: threadUUID,
+                postUUID: nil
+            )
         )
         guard attachmentIDs.isEmpty || descriptors != nil else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -845,7 +873,13 @@ extension ServerController {
             let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
                 attachmentIDs,
                 client: client,
-                postUUID: uuid
+                context: AttachmentMessageContext(
+                    chatID: nil,
+                    recipientID: nil,
+                    boardPath: nil,
+                    threadUUID: nil,
+                    postUUID: uuid
+                )
             )
             guard descriptors != nil else {
                 App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
@@ -1044,34 +1078,51 @@ extension ServerController {
         App.serverController.replyOK(client: client, message: message)
 
         if let oldEmoji = result.replacedEmoji {
-            broadcastReactionChanged(board: board.path, threadUUID: threadUUID, postUUID: postUUID,
-                                     emoji: oldEmoji, count: result.replacedCount, nick: nick, added: false)
+            broadcastReactionChanged(
+                BoardReactionBroadcastPayload(
+                    board: board.path,
+                    threadUUID: threadUUID,
+                    postUUID: postUUID,
+                    emoji: oldEmoji,
+                    count: result.replacedCount,
+                    nick: nick,
+                    added: false
+                )
+            )
         }
-        broadcastReactionChanged(board: board.path, threadUUID: threadUUID, postUUID: postUUID,
-                                 emoji: emoji, count: result.count, nick: nick, added: result.added)
+        broadcastReactionChanged(
+            BoardReactionBroadcastPayload(
+                board: board.path,
+                threadUUID: threadUUID,
+                postUUID: postUUID,
+                emoji: emoji,
+                count: result.count,
+                nick: nick,
+                added: result.added
+            )
+        )
     }
 
     // MARK: - Broadcast helpers
 
-    private func broadcastReactionChanged(board: String, threadUUID: String, postUUID: String?,
-                                          emoji: String, count: Int, nick: String, added: Bool) {
-        let messageName = added ? "wired.board.reaction_added" : "wired.board.reaction_removed"
+    private func broadcastReactionChanged(_ payload: BoardReactionBroadcastPayload) {
+        let messageName = payload.added ? "wired.board.reaction_added" : "wired.board.reaction_removed"
         forEachBoardSubscriber { connectedClient, connectedUser in
             let username  = connectedUser.username ?? ""
             let groupName = connectedUser.group ?? ""
-            guard let boardInfo = App.boardsController.getBoardInfo(path: board),
+            guard let boardInfo = App.boardsController.getBoardInfo(path: payload.board),
                   boardInfo.canRead(user: username, group: groupName) else { return }
 
             let broadcast = P7Message(withName: messageName, spec: self.spec)
-            broadcast.addParameter(field: "wired.board.board", value: board)
-            broadcast.addParameter(field: "wired.board.thread", value: threadUUID)
-            if let postUUID {
+            broadcast.addParameter(field: "wired.board.board", value: payload.board)
+            broadcast.addParameter(field: "wired.board.thread", value: payload.threadUUID)
+            if let postUUID = payload.postUUID {
                 broadcast.addParameter(field: "wired.board.post", value: postUUID)
             }
-            broadcast.addParameter(field: "wired.board.reaction.emoji", value: emoji)
-            broadcast.addParameter(field: "wired.board.reaction.count", value: UInt32(count))
-            if added {
-                broadcast.addParameter(field: "wired.board.reaction.nick", value: nick)
+            broadcast.addParameter(field: "wired.board.reaction.emoji", value: payload.emoji)
+            broadcast.addParameter(field: "wired.board.reaction.count", value: UInt32(payload.count))
+            if payload.added {
+                broadcast.addParameter(field: "wired.board.reaction.nick", value: payload.nick)
             }
             _ = self.send(message: broadcast, client: connectedClient)
         }

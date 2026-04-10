@@ -51,6 +51,22 @@ struct AttachmentTarget {
     let postUUID: String?
 }
 
+struct AttachmentMessageContext {
+    let chatID: UInt32?
+    let recipientID: UInt32?
+    let boardPath: String?
+    let threadUUID: String?
+    let postUUID: String?
+
+    static let empty = AttachmentMessageContext(
+        chatID: nil,
+        recipientID: nil,
+        boardPath: nil,
+        threadUUID: nil,
+        postUUID: nil
+    )
+}
+
 private enum AttachmentState {
     case staging
     case completed
@@ -85,6 +101,43 @@ private struct EphemeralAttachment {
     var expiresAt: Date
 }
 
+private struct AttachmentImageSize {
+    let width: UInt32
+    let height: UInt32
+}
+
+private struct AttachmentPreviewMetadata {
+    let inlinePreview: Bool
+    let width: UInt32?
+    let height: UInt32?
+}
+
+private struct MessageAttachmentRow {
+    let descriptor: AttachmentDescriptor
+    let ownerUserID: UInt32
+    let recipientID: UInt32
+    let ownerLogin: String
+    let recipientLogin: String
+    let createdAt: Date
+    let expiresAt: Date
+}
+
+private struct BoardAttachmentRow {
+    let id: String
+    let boardPath: String
+    let threadUUID: String
+    let postUUID: String?
+    let name: String
+    let mediaType: String
+    let size: UInt64
+    let sha256: String
+    let inlinePreview: Bool
+    let width: UInt32?
+    let height: UInt32?
+    let ownerLogin: String
+}
+
+// swiftlint:disable type_body_length file_length
 public final class AttachmentsController {
     static let maxAttachmentSizeBytes: UInt64 = 16 * 1_024 * 1_024
     static let maxPreviewSizeBytes: UInt64 = 1 * 1_024 * 1_024
@@ -282,70 +335,9 @@ public final class AttachmentsController {
 
         switch staged.target.kind {
         case .chat, .directMessage:
-            let finalPath = ephemeralDirectory.stringByAppendingPathComponent(path: "\(staged.id).bin")
-            do {
-                if fileManager.fileExists(atPath: finalPath) {
-                    try fileManager.removeItem(atPath: finalPath)
-                }
-                try fileManager.moveItem(atPath: staged.filePath, toPath: finalPath)
-            } catch {
+            guard finalizeCompletedEphemeralAttachment(id: id, staged: staged, derived: derived) else {
                 App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
                 return
-            }
-
-            let descriptor = AttachmentDescriptor(
-                id: staged.id,
-                name: staged.name,
-                mediaType: staged.mediaType,
-                size: staged.expectedSize,
-                sha256: staged.expectedSha256,
-                inlinePreview: derived.inlinePreview,
-                width: staged.width,
-                height: staged.height
-            )
-
-            switch staged.target.kind {
-            case .chat:
-                let ephemeral = EphemeralAttachment(
-                    descriptor: descriptor,
-                    ownerLogin: staged.ownerLogin,
-                    ownerUserID: staged.ownerUserID,
-                    target: staged.target,
-                    filePath: finalPath,
-                    createdAt: staged.createdAt,
-                    expiresAt: Date().addingTimeInterval(Self.ephemeralTTL(for: staged.target))
-                )
-
-                stateLock.lock()
-                stagedAttachments.removeValue(forKey: id)
-                ephemeralAttachments[id] = ephemeral
-                stateLock.unlock()
-
-            case .directMessage:
-                guard let recipientID = staged.target.recipientID,
-                      let recipientLogin = App.clientsController.user(withID: recipientID)?.user?.username,
-                      !recipientLogin.isEmpty,
-                      upsertMessageAttachmentRow(
-                        descriptor: descriptor,
-                        ownerUserID: staged.ownerUserID,
-                        recipientID: recipientID,
-                        ownerLogin: staged.ownerLogin,
-                        recipientLogin: recipientLogin,
-                        createdAt: staged.createdAt,
-                        expiresAt: Date().addingTimeInterval(Self.ephemeralTTL(for: staged.target))
-                      )
-                else {
-                    App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
-                    return
-                }
-
-                stateLock.lock()
-                stagedAttachments.removeValue(forKey: id)
-                ephemeralAttachments.removeValue(forKey: id)
-                stateLock.unlock()
-
-            case .board, .thread, .post:
-                break
             }
 
         case .board, .thread, .post:
@@ -457,13 +449,11 @@ public final class AttachmentsController {
         return (message.stringList(forField: "wired.attachment.ids") ?? []).map { $0.uppercased() }
     }
 
-    public func descriptorsForMessageAttachmentIDs(_ ids: [String],
-                                                  client: Client,
-                                                  chatID: UInt32? = nil,
-                                                  recipientID: UInt32? = nil,
-                                                  boardPath: String? = nil,
-                                                  threadUUID: String? = nil,
-                                                  postUUID: String? = nil) -> [AttachmentDescriptor]? {
+    func descriptorsForMessageAttachmentIDs(
+        _ ids: [String],
+        client: Client,
+        context: AttachmentMessageContext = .empty
+    ) -> [AttachmentDescriptor]? {
         guard ids.count <= Self.maxAttachmentsPerMessage else { return nil }
 
         var descriptors: [AttachmentDescriptor] = []
@@ -476,7 +466,7 @@ public final class AttachmentsController {
             seen.insert(id)
 
             if let ephemeral = lookupOwnedOrReadableEphemeral(id: id, client: client) {
-                guard matches(target: ephemeral.target, chatID: chatID, recipientID: recipientID, boardPath: boardPath, threadUUID: threadUUID, postUUID: postUUID) else {
+                guard matches(target: ephemeral.target, context: context) else {
                     return nil
                 }
                 totalSize += ephemeral.descriptor.size
@@ -485,14 +475,14 @@ public final class AttachmentsController {
             }
 
             if let messageDescriptor = messageAttachmentDescriptor(id: id, client: client) {
-                guard recipientID != nil else { return nil }
+                guard context.recipientID != nil else { return nil }
                 totalSize += messageDescriptor.size
                 descriptors.append(messageDescriptor)
                 continue
             }
 
             if let persistent = boardAttachmentDescriptor(id: id) {
-                guard matchesPersistentBoardAttachment(id: id, boardPath: boardPath, threadUUID: threadUUID, postUUID: postUUID, client: client) else {
+                guard matchesPersistentBoardAttachment(id: id, context: context, client: client) else {
                     return nil
                 }
                 totalSize += persistent.size
@@ -503,7 +493,7 @@ public final class AttachmentsController {
             guard let staged = lookupOwnedStagedAttachment(id: id, client: client), staged.state == .completed else {
                 return nil
             }
-            guard matches(target: staged.target, chatID: chatID, recipientID: recipientID, boardPath: boardPath, threadUUID: threadUUID, postUUID: postUUID) else {
+            guard matches(target: staged.target, context: context) else {
                 return nil
             }
             let derived = deriveInlinePreviewMetadata(path: staged.filePath, mediaType: staged.mediaType)
@@ -535,12 +525,26 @@ public final class AttachmentsController {
 
     public func linkBoardThreadAttachments(ids: [String], boardPath: String, threadUUID: String, ownerLogin: String) -> Bool {
         let existing = boardAttachmentIDsForThread(threadUUID)
-        return replaceBoardAttachments(existingIDs: existing, newIDs: ids, boardPath: boardPath, threadUUID: threadUUID, postUUID: nil, ownerLogin: ownerLogin)
+        return replaceBoardAttachments(
+            existingIDs: existing,
+            newIDs: ids,
+            boardPath: boardPath,
+            threadUUID: threadUUID,
+            postUUID: nil,
+            ownerLogin: ownerLogin
+        )
     }
 
     public func linkBoardPostAttachments(ids: [String], boardPath: String, threadUUID: String, postUUID: String, ownerLogin: String) -> Bool {
         let existing = boardAttachmentIDsForPost(postUUID)
-        return replaceBoardAttachments(existingIDs: existing, newIDs: ids, boardPath: boardPath, threadUUID: threadUUID, postUUID: postUUID, ownerLogin: ownerLogin)
+        return replaceBoardAttachments(
+            existingIDs: existing,
+            newIDs: ids,
+            boardPath: boardPath,
+            threadUUID: threadUUID,
+            postUUID: postUUID,
+            ownerLogin: ownerLogin
+        )
     }
 
     public func descriptorsForBoardThread(_ threadUUID: String) -> [AttachmentDescriptor] {
@@ -759,23 +763,18 @@ public final class AttachmentsController {
         return nil
     }
 
-    private func matches(target: AttachmentTarget,
-                         chatID: UInt32?,
-                         recipientID: UInt32?,
-                         boardPath: String?,
-                         threadUUID: String?,
-                         postUUID: String?) -> Bool {
+    private func matches(target: AttachmentTarget, context: AttachmentMessageContext) -> Bool {
         switch target.kind {
         case .chat:
-            return target.chatID == chatID
+            return target.chatID == context.chatID
         case .directMessage:
-            return target.recipientID == recipientID
+            return target.recipientID == context.recipientID
         case .board:
-            return target.boardPath == boardPath
+            return target.boardPath == context.boardPath
         case .thread:
-            return target.threadUUID == threadUUID
+            return target.threadUUID == context.threadUUID
         case .post:
-            return target.postUUID == postUUID
+            return target.postUUID == context.postUUID
         }
     }
 
@@ -802,18 +801,25 @@ public final class AttachmentsController {
         }
     }
 
-    private func deriveInlinePreviewMetadata(data: Data, mediaType: String) -> (inlinePreview: Bool, width: UInt32?, height: UInt32?) {
+    private func deriveInlinePreviewMetadata(data: Data, mediaType: String) -> AttachmentPreviewMetadata {
         guard mediaType.lowercased().hasPrefix("image/"),
               UInt64(data.count) <= Self.maxPreviewSizeBytes
         else {
-            return (false, nil, nil)
+            return AttachmentPreviewMetadata(inlinePreview: false, width: nil, height: nil)
         }
-        return imageDimensions(data: data).map { (true, $0.width, $0.height) } ?? (true, nil, nil)
+        if let dimensions = imageDimensions(data: data) {
+            return AttachmentPreviewMetadata(
+                inlinePreview: true,
+                width: dimensions.width,
+                height: dimensions.height
+            )
+        }
+        return AttachmentPreviewMetadata(inlinePreview: true, width: nil, height: nil)
     }
 
-    private func deriveInlinePreviewMetadata(path: String, mediaType: String) -> (inlinePreview: Bool, width: UInt32?, height: UInt32?) {
+    private func deriveInlinePreviewMetadata(path: String, mediaType: String) -> AttachmentPreviewMetadata {
         guard let data = fileManager.contents(atPath: path) else {
-            return (false, nil, nil)
+            return AttachmentPreviewMetadata(inlinePreview: false, width: nil, height: nil)
         }
         return deriveInlinePreviewMetadata(data: data, mediaType: mediaType)
     }
@@ -824,14 +830,14 @@ public final class AttachmentsController {
         return data
     }
 
-    private func imageDimensions(data: Data) -> (width: UInt32, height: UInt32)? {
+    private func imageDimensions(data: Data) -> AttachmentImageSize? {
         #if canImport(ImageIO)
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,
               let height = properties[kCGImagePropertyPixelHeight] as? NSNumber
         else { return nil }
-        return (UInt32(width.uint32Value), UInt32(height.uint32Value))
+        return AttachmentImageSize(width: UInt32(width.uint32Value), height: UInt32(height.uint32Value))
         #else
         return nil
         #endif
@@ -853,8 +859,13 @@ public final class AttachmentsController {
         if let descriptor = messageAttachmentDescriptor(id: id.lowercased(), client: client) {
             return descriptor
         }
+        let context = AttachmentMessageContext.empty
         guard let descriptor = boardAttachmentDescriptor(id: id.lowercased()),
-              matchesPersistentBoardAttachment(id: id.lowercased(), boardPath: nil, threadUUID: nil, postUUID: nil, client: client) else {
+              matchesPersistentBoardAttachment(
+                id: id.lowercased(),
+                context: context,
+                client: client
+              ) else {
             return nil
         }
         return descriptor
@@ -998,15 +1009,7 @@ public final class AttachmentsController {
         return result
     }
 
-    private func upsertMessageAttachmentRow(
-        descriptor: AttachmentDescriptor,
-        ownerUserID: UInt32,
-        recipientID: UInt32,
-        ownerLogin: String,
-        recipientLogin: String,
-        createdAt: Date,
-        expiresAt: Date
-    ) -> Bool {
+    private func upsertMessageAttachmentRow(_ row: MessageAttachmentRow) -> Bool {
         var db: OpaquePointer?
         guard sqlite3_open(databasePath, &db) == SQLITE_OK, let db else { return false }
         defer { sqlite3_close(db) }
@@ -1020,28 +1023,28 @@ public final class AttachmentsController {
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { return false }
         defer { sqlite3_finalize(statement) }
 
-        sqlite3_bind_text(statement, 1, descriptor.id, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_int64(statement, 2, sqlite3_int64(ownerUserID))
-        sqlite3_bind_int64(statement, 3, sqlite3_int64(recipientID))
-        sqlite3_bind_text(statement, 4, ownerLogin, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_text(statement, 5, recipientLogin, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_text(statement, 6, descriptor.name, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_text(statement, 7, descriptor.mediaType, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_int64(statement, 8, sqlite3_int64(descriptor.size))
-        sqlite3_bind_text(statement, 9, descriptor.sha256, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_int(statement, 10, descriptor.inlinePreview ? 1 : 0)
-        if let width = descriptor.width {
+        sqlite3_bind_text(statement, 1, row.descriptor.id, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(row.ownerUserID))
+        sqlite3_bind_int64(statement, 3, sqlite3_int64(row.recipientID))
+        sqlite3_bind_text(statement, 4, row.ownerLogin, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 5, row.recipientLogin, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 6, row.descriptor.name, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 7, row.descriptor.mediaType, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int64(statement, 8, sqlite3_int64(row.descriptor.size))
+        sqlite3_bind_text(statement, 9, row.descriptor.sha256, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int(statement, 10, row.descriptor.inlinePreview ? 1 : 0)
+        if let width = row.descriptor.width {
             sqlite3_bind_int64(statement, 11, sqlite3_int64(width))
         } else {
             sqlite3_bind_null(statement, 11)
         }
-        if let height = descriptor.height {
+        if let height = row.descriptor.height {
             sqlite3_bind_int64(statement, 12, sqlite3_int64(height))
         } else {
             sqlite3_bind_null(statement, 12)
         }
-        sqlite3_bind_double(statement, 13, createdAt.timeIntervalSince1970)
-        sqlite3_bind_double(statement, 14, expiresAt.timeIntervalSince1970)
+        sqlite3_bind_double(statement, 13, row.createdAt.timeIntervalSince1970)
+        sqlite3_bind_double(statement, 14, row.expiresAt.timeIntervalSince1970)
 
         return sqlite3_step(statement) == SQLITE_DONE
     }
@@ -1163,18 +1166,21 @@ public final class AttachmentsController {
             }
 
             let metadata = deriveInlinePreviewMetadata(path: path, mediaType: staged.mediaType)
-            if !insertBoardAttachmentRow(id: staged.id,
-                                         boardPath: boardPath,
-                                         threadUUID: threadUUID,
-                                         postUUID: postUUID,
-                                         name: staged.name,
-                                         mediaType: staged.mediaType,
-                                         size: staged.expectedSize,
-                                         sha256: staged.expectedSha256,
-                                         inlinePreview: metadata.inlinePreview,
-                                         width: staged.width ?? metadata.width,
-                                         height: staged.height ?? metadata.height,
-                                         ownerLogin: ownerLogin) {
+            let row = BoardAttachmentRow(
+                id: staged.id,
+                boardPath: boardPath,
+                threadUUID: threadUUID,
+                postUUID: postUUID,
+                name: staged.name,
+                mediaType: staged.mediaType,
+                size: staged.expectedSize,
+                sha256: staged.expectedSha256,
+                inlinePreview: metadata.inlinePreview,
+                width: staged.width ?? metadata.width,
+                height: staged.height ?? metadata.height,
+                ownerLogin: ownerLogin
+            )
+            if !insertBoardAttachmentRow(row) {
                 return false
             }
 
@@ -1192,7 +1198,14 @@ public final class AttachmentsController {
         stateLock.lock()
         defer { stateLock.unlock() }
         guard let staged = stagedAttachments[id], staged.state == .completed else { return nil }
-        guard matches(target: staged.target, chatID: nil, recipientID: nil, boardPath: boardPath, threadUUID: threadUUID, postUUID: postUUID) ||
+        let context = AttachmentMessageContext(
+            chatID: nil,
+            recipientID: nil,
+            boardPath: boardPath,
+            threadUUID: threadUUID,
+            postUUID: postUUID
+        )
+        guard matches(target: staged.target, context: context) ||
                 (staged.target.kind == .board && staged.target.boardPath == boardPath)
         else { return nil }
         return staged
@@ -1214,18 +1227,7 @@ public final class AttachmentsController {
         return UInt64(sqlite3_column_int64(statement, 0))
     }
 
-    private func insertBoardAttachmentRow(id: String,
-                                          boardPath: String,
-                                          threadUUID: String,
-                                          postUUID: String?,
-                                          name: String,
-                                          mediaType: String,
-                                          size: UInt64,
-                                          sha256: String,
-                                          inlinePreview: Bool,
-                                          width: UInt32?,
-                                          height: UInt32?,
-                                          ownerLogin: String) -> Bool {
+    private func insertBoardAttachmentRow(_ row: BoardAttachmentRow) -> Bool {
         var db: OpaquePointer?
         guard sqlite3_open(databasePath, &db) == SQLITE_OK, let db else { return false }
         defer { sqlite3_close(db) }
@@ -1239,30 +1241,30 @@ public final class AttachmentsController {
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { return false }
         defer { sqlite3_finalize(statement) }
 
-        sqlite3_bind_text(statement, 1, id, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_text(statement, 2, boardPath, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_text(statement, 3, threadUUID, -1, SQLITE_TRANSIENT)
-        if let postUUID {
+        sqlite3_bind_text(statement, 1, row.id, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 2, row.boardPath, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 3, row.threadUUID, -1, SQLITE_TRANSIENT)
+        if let postUUID = row.postUUID {
             sqlite3_bind_text(statement, 4, postUUID, -1, SQLITE_TRANSIENT)
         } else {
             sqlite3_bind_null(statement, 4)
         }
-        sqlite3_bind_text(statement, 5, name, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_text(statement, 6, mediaType, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_int64(statement, 7, sqlite3_int64(size))
-        sqlite3_bind_text(statement, 8, sha256, -1, SQLITE_TRANSIENT)
-        sqlite3_bind_int(statement, 9, inlinePreview ? 1 : 0)
-        if let width {
+        sqlite3_bind_text(statement, 5, row.name, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 6, row.mediaType, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int64(statement, 7, sqlite3_int64(row.size))
+        sqlite3_bind_text(statement, 8, row.sha256, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int(statement, 9, row.inlinePreview ? 1 : 0)
+        if let width = row.width {
             sqlite3_bind_int64(statement, 10, sqlite3_int64(width))
         } else {
             sqlite3_bind_null(statement, 10)
         }
-        if let height {
+        if let height = row.height {
             sqlite3_bind_int64(statement, 11, sqlite3_int64(height))
         } else {
             sqlite3_bind_null(statement, 11)
         }
-        sqlite3_bind_text(statement, 12, ownerLogin, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 12, row.ownerLogin, -1, SQLITE_TRANSIENT)
         sqlite3_bind_double(statement, 13, Date().timeIntervalSince1970)
         return sqlite3_step(statement) == SQLITE_DONE
     }
@@ -1310,11 +1312,11 @@ public final class AttachmentsController {
         }
     }
 
-    private func matchesPersistentBoardAttachment(id: String,
-                                                 boardPath: String?,
-                                                 threadUUID: String?,
-                                                 postUUID: String?,
-                                                 client: Client) -> Bool {
+    private func matchesPersistentBoardAttachment(
+        id: String,
+        context: AttachmentMessageContext,
+        client: Client
+    ) -> Bool {
         var db: OpaquePointer?
         guard sqlite3_open(databasePath, &db) == SQLITE_OK, let db else { return false }
         defer { sqlite3_close(db) }
@@ -1335,10 +1337,89 @@ public final class AttachmentsController {
               board.canRead(user: user.username ?? "", group: user.group ?? "")
         else { return false }
 
-        if let boardPath {
-            return recordBoardPath == boardPath && recordThread == threadUUID && recordPost == postUUID
+        if let boardPath = context.boardPath {
+            return recordBoardPath == boardPath &&
+                recordThread == context.threadUUID &&
+                recordPost == context.postUUID
         }
 
         return true
     }
+
+    private func finalizeCompletedEphemeralAttachment(
+        id: String,
+        staged: StagedAttachment,
+        derived: AttachmentPreviewMetadata
+    ) -> Bool {
+        let finalPath = ephemeralDirectory.stringByAppendingPathComponent(path: "\(staged.id).bin")
+        do {
+            if fileManager.fileExists(atPath: finalPath) {
+                try fileManager.removeItem(atPath: finalPath)
+            }
+            try fileManager.moveItem(atPath: staged.filePath, toPath: finalPath)
+        } catch {
+            return false
+        }
+
+        let descriptor = AttachmentDescriptor(
+            id: staged.id,
+            name: staged.name,
+            mediaType: staged.mediaType,
+            size: staged.expectedSize,
+            sha256: staged.expectedSha256,
+            inlinePreview: derived.inlinePreview,
+            width: staged.width,
+            height: staged.height
+        )
+
+        switch staged.target.kind {
+        case .chat:
+            let ephemeral = EphemeralAttachment(
+                descriptor: descriptor,
+                ownerLogin: staged.ownerLogin,
+                ownerUserID: staged.ownerUserID,
+                target: staged.target,
+                filePath: finalPath,
+                createdAt: staged.createdAt,
+                expiresAt: Date().addingTimeInterval(Self.ephemeralTTL(for: staged.target))
+            )
+
+            stateLock.lock()
+            stagedAttachments.removeValue(forKey: id)
+            ephemeralAttachments[id] = ephemeral
+            stateLock.unlock()
+            return true
+
+        case .directMessage:
+            guard let recipientID = staged.target.recipientID,
+                  let recipientLogin = App.clientsController.user(withID: recipientID)?.user?.username,
+                  !recipientLogin.isEmpty
+            else {
+                return false
+            }
+
+            let row = MessageAttachmentRow(
+                descriptor: descriptor,
+                ownerUserID: staged.ownerUserID,
+                recipientID: recipientID,
+                ownerLogin: staged.ownerLogin,
+                recipientLogin: recipientLogin,
+                createdAt: staged.createdAt,
+                expiresAt: Date().addingTimeInterval(Self.ephemeralTTL(for: staged.target))
+            )
+            guard upsertMessageAttachmentRow(row) else {
+                return false
+            }
+
+            stateLock.lock()
+            stagedAttachments.removeValue(forKey: id)
+            ephemeralAttachments.removeValue(forKey: id)
+            stateLock.unlock()
+            return true
+
+        case .board, .thread, .post:
+            return false
+        }
+    }
 }
+// swiftlint:enable type_body_length file_length

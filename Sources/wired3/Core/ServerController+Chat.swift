@@ -46,7 +46,13 @@ extension ServerController {
         let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
             attachmentIDs,
             client: client,
-            recipientID: recipientID
+            context: AttachmentMessageContext(
+                chatID: nil,
+                recipientID: recipientID,
+                boardPath: nil,
+                threadUUID: nil,
+                postUUID: nil
+            )
         )
         guard attachmentIDs.isEmpty || descriptors != nil else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
