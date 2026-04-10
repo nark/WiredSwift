@@ -1583,6 +1583,7 @@
             <p7:member field="wired.account.file.set_comment" />
             <p7:member field="wired.account.file.set_permissions" />
             <p7:member field="wired.account.file.set_executable" />
+            <p7:member field="wired.account.file.set_label" />
             <p7:member field="wired.account.file.delete_files" />
             <p7:member field="wired.account.file.access_all_dropboxes" />
             <p7:member field="wired.account.file.recursive_list_depth_limit" />
