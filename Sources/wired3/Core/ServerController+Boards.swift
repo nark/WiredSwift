@@ -853,7 +853,7 @@ extension ServerController {
             }
         }
 
-        guard App.boardsController.editPost(uuid: uuid, text: text) != nil else {
+        guard let editedPost = App.boardsController.editPost(uuid: uuid, text: text) else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
@@ -873,7 +873,7 @@ extension ServerController {
 
         App.serverController.replyOK(client: client, message: message)
         if let thread = App.boardsController.getThread(uuid: threadUUID) {
-            broadcastThreadChanged(thread: thread)
+            broadcastThreadChanged(thread: thread, appendedPost: editedPost)
             self.recordEvent(.boardEditedPost, client: client, parameters: [thread.subject, thread.board])
         }
     }
