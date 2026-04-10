@@ -414,6 +414,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
         migrateUsersOfflineMessagingColumnsIfNeeded(db: db)
         migrateOfflineMessagesTableIfNeeded(db: db)
         migrateAddReactionsPrivilegeIfNeeded(db: db)
+        migrateFileMetadataPrivilegesIfNeeded(db: db)
     }
 
     /// For existing installations, grant `wired.account.board.add_reactions` (true) to every
@@ -447,6 +448,44 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 }
             } else {
                 WiredSwift.Logger.info("Migrated \(reactionPrivilege) for \(entry.table)")
+            }
+        }
+    }
+
+    /// For existing installations, grant `wired.account.file.set_comment` and
+    /// `wired.account.file.set_label` to every user/group that already has
+    /// `wired.account.file.set_type = true`. This keeps long-lived databases
+    /// usable after restoring the legacy Wired 2.0 file metadata feature.
+    private func migrateFileMetadataPrivilegesIfNeeded(db: OpaquePointer) {
+        let sourcePrivilege = "wired.account.file.set_type"
+        let targetPrivileges = [
+            "wired.account.file.set_comment",
+            "wired.account.file.set_label"
+        ]
+
+        let tables: [(table: String, ownerColumn: String)] = [
+            ("user_privileges", "user_id"),
+            ("group_privileges", "group_id")
+        ]
+
+        for targetPrivilege in targetPrivileges {
+            for entry in tables {
+                let sql = """
+                INSERT OR IGNORE INTO "\(entry.table)" (name, value, \(entry.ownerColumn))
+                SELECT '\(targetPrivilege)', 1, \(entry.ownerColumn)
+                FROM "\(entry.table)"
+                WHERE name = '\(sourcePrivilege)' AND value = 1
+                  AND \(entry.ownerColumn) NOT IN (
+                      SELECT \(entry.ownerColumn) FROM "\(entry.table)" WHERE name = '\(targetPrivilege)'
+                  );
+                """
+                if sqliteExec(db: db, sql) != SQLITE_OK {
+                    if let msg = sqlite3_errmsg(db) {
+                        WiredSwift.Logger.error("migrateFileMetadataPrivileges (\(targetPrivilege), \(entry.table)): \(String(cString: msg))")
+                    }
+                } else {
+                    WiredSwift.Logger.info("Migrated \(targetPrivilege) for \(entry.table)")
+                }
             }
         }
     }

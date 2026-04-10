@@ -1182,6 +1182,14 @@ extension ServerController {
         let privilegesByName = Dictionary(uniqueKeysWithValues:
             account.privileges.map { (($0.name ?? ""), $0.value ?? false) })
 
+        reply.addParameter(field: "wired.account.name", value: account.username ?? "")
+        reply.addParameter(field: "wired.account.group", value: account.group ?? "")
+        reply.addParameter(field: "wired.account.groups",
+                           value: account.groups?
+                            .split(separator: ",")
+                            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                            .filter { !$0.isEmpty } ?? [])
+
         for privilege in self.accountPrivilegesIncludingColor() {
             guard let field = spec?.fieldsByName[privilege] else { continue }
             switch field.type {

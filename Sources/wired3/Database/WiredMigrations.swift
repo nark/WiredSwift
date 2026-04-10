@@ -35,6 +35,9 @@ enum WiredMigrations {
         migrator.registerMigration("v9_add_attachment_upload_privilege") { db in
             try WiredMigrations.v9(db)
         }
+        migrator.registerMigration("v10_add_file_metadata_privileges") { db in
+            try WiredMigrations.v10(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -135,6 +138,40 @@ enum WiredMigrations {
             FROM groups g
             LEFT JOIN group_privileges ref
                 ON ref.group_id = g.id AND ref.name = 'wired.account.transfer.upload_files'
+        """)
+    }
+
+    static func v10(_ db: Database) throws {
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO user_privileges (name, value, user_id)
+            SELECT 'wired.account.file.set_comment', COALESCE(ref.value, 0), u.id
+            FROM users u
+            LEFT JOIN user_privileges ref
+                ON ref.user_id = u.id AND ref.name = 'wired.account.file.set_type'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO group_privileges (name, value, group_id)
+            SELECT 'wired.account.file.set_comment', COALESCE(ref.value, 0), g.id
+            FROM groups g
+            LEFT JOIN group_privileges ref
+                ON ref.group_id = g.id AND ref.name = 'wired.account.file.set_type'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO user_privileges (name, value, user_id)
+            SELECT 'wired.account.file.set_label', COALESCE(ref.value, 0), u.id
+            FROM users u
+            LEFT JOIN user_privileges ref
+                ON ref.user_id = u.id AND ref.name = 'wired.account.file.set_type'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO group_privileges (name, value, group_id)
+            SELECT 'wired.account.file.set_label', COALESCE(ref.value, 0), g.id
+            FROM groups g
+            LEFT JOIN group_privileges ref
+                ON ref.group_id = g.id AND ref.name = 'wired.account.file.set_type'
         """)
     }
 
