@@ -2,8 +2,8 @@
 
 Comparison between:
 
-- legacy C server: `/Users/nark/Development/Me/Wired 2020-2021/wired`
-- new Swift server: `/Users/nark/Development/Me/Swift/Wired3/WiredSwift`
+- legacy C server: `../../Wired 2020-2021/wired`
+- new Swift server: `.`
 
 ## Objective
 
@@ -150,23 +150,23 @@ The most concrete and actionable gaps on the Swift side are:
 
 ### Legacy server
 
-- `/Users/nark/Development/Me/Wired 2020-2021/wired/wired/messages.c`
-- `/Users/nark/Development/Me/Wired 2020-2021/wired/wired/files.c`
-- `/Users/nark/Development/Me/Wired 2020-2021/wired/wired/servers.c`
-- `/Users/nark/Development/Me/Wired 2020-2021/wired/wired/portmap.c`
-- `/Users/nark/Development/Me/Wired 2020-2021/wired/wired/wired.conf.in`
+- `../../Wired 2020-2021/wired/wired/messages.c`
+- `../../Wired 2020-2021/wired/wired/files.c`
+- `../../Wired 2020-2021/wired/wired/servers.c`
+- `../../Wired 2020-2021/wired/wired/portmap.c`
+- `../../Wired 2020-2021/wired/wired/wired.conf.in`
 
 ### New server
 
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Core/ServerController.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Core/ServerController+Boards.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Core/ServerController+Admin.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Controllers/FilesController.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Controllers/EventsController.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Controllers/TrackerController.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Controllers/OutgoingTrackersController.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/Controllers/IndexController.swift`
-- `/Users/nark/Development/Me/Swift/Wired3/WiredSwift/Sources/wired3/config.ini`
+- `Sources/wired3/Core/ServerController.swift`
+- `Sources/wired3/Core/ServerController+Boards.swift`
+- `Sources/wired3/Core/ServerController+Admin.swift`
+- `Sources/wired3/Controllers/FilesController.swift`
+- `Sources/wired3/Controllers/EventsController.swift`
+- `Sources/wired3/Controllers/TrackerController.swift`
+- `Sources/wired3/Controllers/OutgoingTrackersController.swift`
+- `Sources/wired3/Controllers/IndexController.swift`
+- `Sources/wired3/config.ini`
 
 ## Note
 
