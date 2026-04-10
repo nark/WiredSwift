@@ -93,7 +93,8 @@ public final class AttachmentsController {
     static let maxPersistentBoardBytes: UInt64 = 512 * 1_024 * 1_024
     static let chunkSizeLimitBytes = 256 * 1_024
     static let stagingTTL: TimeInterval = 10 * 60
-    static let ephemeralTTL: TimeInterval = 10 * 60
+    static let chatEphemeralTTL: TimeInterval = 10 * 60
+    static let directMessageEphemeralTTL: TimeInterval = 30 * 24 * 60 * 60
 
     private let workingDirectoryPath: String
     private let databasePath: String
@@ -303,20 +304,49 @@ public final class AttachmentsController {
                 height: staged.height
             )
 
-            let ephemeral = EphemeralAttachment(
-                descriptor: descriptor,
-                ownerLogin: staged.ownerLogin,
-                ownerUserID: staged.ownerUserID,
-                target: staged.target,
-                filePath: finalPath,
-                createdAt: staged.createdAt,
-                expiresAt: Date().addingTimeInterval(Self.ephemeralTTL)
-            )
+            switch staged.target.kind {
+            case .chat:
+                let ephemeral = EphemeralAttachment(
+                    descriptor: descriptor,
+                    ownerLogin: staged.ownerLogin,
+                    ownerUserID: staged.ownerUserID,
+                    target: staged.target,
+                    filePath: finalPath,
+                    createdAt: staged.createdAt,
+                    expiresAt: Date().addingTimeInterval(Self.ephemeralTTL(for: staged.target))
+                )
 
-            stateLock.lock()
-            stagedAttachments.removeValue(forKey: id)
-            ephemeralAttachments[id] = ephemeral
-            stateLock.unlock()
+                stateLock.lock()
+                stagedAttachments.removeValue(forKey: id)
+                ephemeralAttachments[id] = ephemeral
+                stateLock.unlock()
+
+            case .directMessage:
+                guard let recipientID = staged.target.recipientID,
+                      let recipientLogin = App.clientsController.user(withID: recipientID)?.user?.username,
+                      !recipientLogin.isEmpty,
+                      upsertMessageAttachmentRow(
+                        descriptor: descriptor,
+                        ownerUserID: staged.ownerUserID,
+                        recipientID: recipientID,
+                        ownerLogin: staged.ownerLogin,
+                        recipientLogin: recipientLogin,
+                        createdAt: staged.createdAt,
+                        expiresAt: Date().addingTimeInterval(Self.ephemeralTTL(for: staged.target))
+                      )
+                else {
+                    App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+                    return
+                }
+
+                stateLock.lock()
+                stagedAttachments.removeValue(forKey: id)
+                ephemeralAttachments.removeValue(forKey: id)
+                stateLock.unlock()
+
+            case .board, .thread, .post:
+                break
+            }
 
         case .board, .thread, .post:
             stateLock.lock()
@@ -454,6 +484,13 @@ public final class AttachmentsController {
                 continue
             }
 
+            if let messageDescriptor = messageAttachmentDescriptor(id: id, client: client) {
+                guard recipientID != nil else { return nil }
+                totalSize += messageDescriptor.size
+                descriptors.append(messageDescriptor)
+                continue
+            }
+
             if let persistent = boardAttachmentDescriptor(id: id) {
                 guard matchesPersistentBoardAttachment(id: id, boardPath: boardPath, threadUUID: threadUUID, postUUID: postUUID, client: client) else {
                     return nil
@@ -527,14 +564,14 @@ public final class AttachmentsController {
     }
 
     public func refreshEphemeralAttachmentLifetime(ids: [String]) {
-        let now = Date().addingTimeInterval(Self.ephemeralTTL)
         stateLock.lock()
         for rawID in ids {
             let id = rawID.lowercased()
             if var ephemeral = ephemeralAttachments[id] {
-                ephemeral.expiresAt = now
+                ephemeral.expiresAt = Date().addingTimeInterval(Self.ephemeralTTL(for: ephemeral.target))
                 ephemeralAttachments[id] = ephemeral
             }
+            _ = refreshMessageAttachmentLifetime(id: id)
         }
         stateLock.unlock()
     }
@@ -582,6 +619,8 @@ public final class AttachmentsController {
         for path in stagedToDelete + ephemeralToDelete {
             try? fileManager.removeItem(atPath: path)
         }
+
+        cleanupExpiredMessageAttachments(now: now)
     }
 
     private func createTablesIfNeeded() {
@@ -612,10 +651,43 @@ public final class AttachmentsController {
             """,
             """
             CREATE INDEX IF NOT EXISTS idx_board_attachments_post ON board_attachments(post_uuid);
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS message_attachments (
+              id TEXT PRIMARY KEY,
+              owner_user_id INTEGER NOT NULL,
+              recipient_id INTEGER NOT NULL,
+              owner_login TEXT,
+              recipient_login TEXT,
+              name TEXT NOT NULL,
+              media_type TEXT NOT NULL,
+              size INTEGER NOT NULL,
+              sha256 TEXT NOT NULL,
+              inline_preview INTEGER NOT NULL,
+              width INTEGER,
+              height INTEGER,
+              created_at REAL NOT NULL,
+              expires_at REAL NOT NULL
+            );
+            """,
+            """
+            CREATE INDEX IF NOT EXISTS idx_message_attachments_recipient ON message_attachments(recipient_id);
+            """,
+            """
+            CREATE INDEX IF NOT EXISTS idx_message_attachments_expires ON message_attachments(expires_at);
             """
         ]
 
         for sql in statements {
+            sqlite3_exec(db, sql, nil, nil, nil)
+        }
+
+        let alterStatements = [
+            "ALTER TABLE message_attachments ADD COLUMN owner_login TEXT;",
+            "ALTER TABLE message_attachments ADD COLUMN recipient_login TEXT;"
+        ]
+
+        for sql in alterStatements {
             sqlite3_exec(db, sql, nil, nil, nil)
         }
     }
@@ -707,6 +779,17 @@ public final class AttachmentsController {
         }
     }
 
+    private static func ephemeralTTL(for target: AttachmentTarget) -> TimeInterval {
+        switch target.kind {
+        case .chat:
+            return Self.chatEphemeralTTL
+        case .directMessage:
+            return Self.directMessageEphemeralTTL
+        case .board, .thread, .post:
+            return Self.chatEphemeralTTL
+        }
+    }
+
     private func append(data: Data, toPath path: String) -> Bool {
         guard let handle = FileHandle(forWritingAtPath: path) else { return false }
         defer { try? handle.close() }
@@ -767,6 +850,9 @@ public final class AttachmentsController {
         if let ephemeral = lookupOwnedOrReadableEphemeral(id: id.lowercased(), client: client) {
             return ephemeral.descriptor
         }
+        if let descriptor = messageAttachmentDescriptor(id: id.lowercased(), client: client) {
+            return descriptor
+        }
         guard let descriptor = boardAttachmentDescriptor(id: id.lowercased()),
               matchesPersistentBoardAttachment(id: id.lowercased(), boardPath: nil, threadUUID: nil, postUUID: nil, client: client) else {
             return nil
@@ -782,6 +868,9 @@ public final class AttachmentsController {
         if let ephemeral {
             return fileManager.contents(atPath: ephemeral.filePath)
         }
+        if let path = messageAttachmentPath(id: normalized) {
+            return fileManager.contents(atPath: path)
+        }
         if let descriptor = boardAttachmentDescriptor(id: normalized) {
             let path = persistentPath(forSHA256: descriptor.sha256)
             return fileManager.contents(atPath: path)
@@ -794,6 +883,56 @@ public final class AttachmentsController {
         let dir = persistentDirectory.stringByAppendingPathComponent(path: prefix)
         try? fileManager.createDirectory(atPath: dir, withIntermediateDirectories: true)
         return dir.stringByAppendingPathComponent(path: sha256.lowercased())
+    }
+
+    private func messageAttachmentFilePath(for id: String) -> String {
+        ephemeralDirectory.stringByAppendingPathComponent(path: "\(id.uppercased()).bin")
+    }
+
+    private func messageAttachmentPath(id: String) -> String? {
+        let path = messageAttachmentFilePath(for: id)
+        return fileManager.fileExists(atPath: path) ? path : nil
+    }
+
+    private func messageAttachmentDescriptor(id: String, client: Client) -> AttachmentDescriptor? {
+        guard let login = client.user?.username, !login.isEmpty else { return nil }
+        var db: OpaquePointer?
+        guard sqlite3_open(databasePath, &db) == SQLITE_OK, let db else { return nil }
+        defer { sqlite3_close(db) }
+
+        let sql = """
+        SELECT id, name, media_type, size, sha256, inline_preview, width, height
+        FROM message_attachments
+        WHERE lower(id) = lower(?)
+          AND expires_at > ?
+          AND (
+            lower(owner_login) = lower(?)
+            OR lower(recipient_login) = lower(?)
+            OR owner_user_id = ?
+            OR recipient_id = ?
+          )
+        LIMIT 1;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { return nil }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, id, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_double(statement, 2, Date().timeIntervalSince1970)
+        sqlite3_bind_text(statement, 3, login, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 4, login, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int64(statement, 5, sqlite3_int64(client.userID))
+        sqlite3_bind_int64(statement, 6, sqlite3_int64(client.userID))
+        guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
+        return AttachmentDescriptor(
+            id: String(cString: sqlite3_column_text(statement, 0)),
+            name: String(cString: sqlite3_column_text(statement, 1)),
+            mediaType: String(cString: sqlite3_column_text(statement, 2)),
+            size: UInt64(sqlite3_column_int64(statement, 3)),
+            sha256: String(cString: sqlite3_column_text(statement, 4)),
+            inlinePreview: sqlite3_column_int(statement, 5) == 1,
+            width: sqlite3_column_type(statement, 6) == SQLITE_NULL ? nil : UInt32(sqlite3_column_int64(statement, 6)),
+            height: sqlite3_column_type(statement, 7) == SQLITE_NULL ? nil : UInt32(sqlite3_column_int64(statement, 7))
+        )
     }
 
     private func boardAttachmentDescriptor(id: String) -> AttachmentDescriptor? {
@@ -857,6 +996,100 @@ public final class AttachmentsController {
             )
         }
         return result
+    }
+
+    private func upsertMessageAttachmentRow(
+        descriptor: AttachmentDescriptor,
+        ownerUserID: UInt32,
+        recipientID: UInt32,
+        ownerLogin: String,
+        recipientLogin: String,
+        createdAt: Date,
+        expiresAt: Date
+    ) -> Bool {
+        var db: OpaquePointer?
+        guard sqlite3_open(databasePath, &db) == SQLITE_OK, let db else { return false }
+        defer { sqlite3_close(db) }
+
+        let sql = """
+        INSERT OR REPLACE INTO message_attachments
+        (id, owner_user_id, recipient_id, owner_login, recipient_login, name, media_type, size, sha256, inline_preview, width, height, created_at, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { return false }
+        defer { sqlite3_finalize(statement) }
+
+        sqlite3_bind_text(statement, 1, descriptor.id, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int64(statement, 2, sqlite3_int64(ownerUserID))
+        sqlite3_bind_int64(statement, 3, sqlite3_int64(recipientID))
+        sqlite3_bind_text(statement, 4, ownerLogin, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 5, recipientLogin, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 6, descriptor.name, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(statement, 7, descriptor.mediaType, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int64(statement, 8, sqlite3_int64(descriptor.size))
+        sqlite3_bind_text(statement, 9, descriptor.sha256, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_int(statement, 10, descriptor.inlinePreview ? 1 : 0)
+        if let width = descriptor.width {
+            sqlite3_bind_int64(statement, 11, sqlite3_int64(width))
+        } else {
+            sqlite3_bind_null(statement, 11)
+        }
+        if let height = descriptor.height {
+            sqlite3_bind_int64(statement, 12, sqlite3_int64(height))
+        } else {
+            sqlite3_bind_null(statement, 12)
+        }
+        sqlite3_bind_double(statement, 13, createdAt.timeIntervalSince1970)
+        sqlite3_bind_double(statement, 14, expiresAt.timeIntervalSince1970)
+
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+
+    private func refreshMessageAttachmentLifetime(id: String) -> Bool {
+        var db: OpaquePointer?
+        guard sqlite3_open(databasePath, &db) == SQLITE_OK, let db else { return false }
+        defer { sqlite3_close(db) }
+
+        let sql = """
+        UPDATE message_attachments
+        SET expires_at = ?
+        WHERE lower(id) = lower(?);
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { return false }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_double(statement, 1, Date().addingTimeInterval(Self.directMessageEphemeralTTL).timeIntervalSince1970)
+        sqlite3_bind_text(statement, 2, id, -1, SQLITE_TRANSIENT)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+
+    private func cleanupExpiredMessageAttachments(now: Date) {
+        var db: OpaquePointer?
+        guard sqlite3_open(databasePath, &db) == SQLITE_OK, let db else { return }
+        defer { sqlite3_close(db) }
+
+        let selectSQL = "SELECT id FROM message_attachments WHERE expires_at <= ?;"
+        var selectStatement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, selectSQL, -1, &selectStatement, nil) == SQLITE_OK, let selectStatement else { return }
+        sqlite3_bind_double(selectStatement, 1, now.timeIntervalSince1970)
+
+        var ids: [String] = []
+        while sqlite3_step(selectStatement) == SQLITE_ROW, let text = sqlite3_column_text(selectStatement, 0) {
+            ids.append(String(cString: text))
+        }
+        sqlite3_finalize(selectStatement)
+
+        for id in ids {
+            try? fileManager.removeItem(atPath: messageAttachmentFilePath(for: id))
+        }
+
+        let deleteSQL = "DELETE FROM message_attachments WHERE expires_at <= ?;"
+        var deleteStatement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, deleteSQL, -1, &deleteStatement, nil) == SQLITE_OK, let deleteStatement else { return }
+        defer { sqlite3_finalize(deleteStatement) }
+        sqlite3_bind_double(deleteStatement, 1, now.timeIntervalSince1970)
+        sqlite3_step(deleteStatement)
     }
 
     private func boardAttachmentIDsForThread(_ threadUUID: String) -> [String] {
