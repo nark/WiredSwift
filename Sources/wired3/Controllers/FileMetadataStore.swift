@@ -279,27 +279,15 @@ final class FileMetadataStore {
         }
     }
 
-    /// Maps Wired FileLabel to macOS Finder labelNumber.
-    /// Finder labelNumber: 0=None, 1=Gray, 2=Green, 3=Purple, 4=Blue, 5=Yellow, 6=Red, 7=Orange
-    private func finderLabelNumber(for label: File.FileLabel) -> Int {
-        switch label {
-        case .LABEL_NONE:   return 0
-        case .LABEL_RED:    return 6
-        case .LABEL_ORANGE: return 7
-        case .LABEL_YELLOW: return 5
-        case .LABEL_GREEN:  return 2
-        case .LABEL_BLUE:   return 4
-        case .LABEL_PURPLE: return 3
-        case .LABEL_GRAY:   return 1
-        }
-    }
-
     private func mirrorFinderLabel(_ label: File.FileLabel, forPath path: String) throws {
         guard FileManager.default.fileExists(atPath: path) else { return }
 
+        // Wired rawValue order: NONE=0 RED=1 ORANGE=2 YELLOW=3 GREEN=4 BLUE=5 PURPLE=6 GRAY=7
+        // Finder labelNumber:   None=0  Red=6  Orange=7 Yellow=5 Green=2 Blue=4 Purple=3 Gray=1
+        let finderNumbers: [UInt16] = [0, 6, 7, 5, 2, 4, 3, 1]
         let xattrName = "com.apple.FinderInfo"
         let labelBitMask: UInt16 = 0x000E  // bits 1-3
-        let labelBits = UInt16(finderLabelNumber(for: label)) << 1
+        let labelBits = finderNumbers[Int(label.rawValue)] << 1
 
         // Read existing FinderInfo (32 bytes) or start from zero
         var finderInfo = [UInt8](repeating: 0, count: 32)
