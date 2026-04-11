@@ -26,24 +26,81 @@ footer = ""
 
 [git]
 conventional_commits = true
-filter_unconventional = true
+filter_unconventional = false
 split_commits = false
 
-# Map commit types to changelog sections
+# Strip multiline commit bodies — keep only the subject line
+commit_preprocessors = [
+  { pattern = "(?s)\n.*", replace = "" },
+]
+
 commit_parsers = [
-  { message = "^feat",              group = "Features"       },
-  { message = "^fix",               group = "Bug Fixes"      },
-  { message = "^perf",              group = "Performance"    },
-  { message = "^refactor",          group = "Refactoring"    },
-  { message = "^test",              group = "Testing"        },
-  { message = "^docs",              group = "Documentation"  },
-  { message = "^build",             skip  = true             },
-  { message = "^chore\\(release\\)", skip  = true             },
-  { message = "^chore\\(lint\\)",    skip  = true             },
-  { message = "^chore\\(dx\\)",      skip  = true             },
-  { message = "^chore",             skip  = true             },
-  { message = "^ci",                skip  = true             },
-  { message = "^style",             skip  = true             },
+  # Conventional commits (lowercase prefix)
+  { message = "^feat",                         group = "Features"       },
+  { message = "^fix",                          group = "Bug Fixes"      },
+  { message = "^perf",                         group = "Performance"    },
+  { message = "^refactor",                     group = "Refactoring"    },
+  { message = "^test",                         group = "Testing"        },
+  { message = "^docs",                         group = "Documentation"  },
+  { message = "^build",                        skip  = true             },
+  { message = "^chore\\(release\\)",           skip  = true             },
+  { message = "^chore\\(lint\\)",              skip  = true             },
+  { message = "^chore\\(dx\\)",               skip  = true             },
+  { message = "^chore",                        skip  = true             },
+  { message = "^ci",                           skip  = true             },
+  { message = "^style",                        skip  = true             },
+
+  # Free-form: skip noise
+  { message = "^Merge ",                       skip  = true             },
+  { message = "^Update CHANGELOG",             skip  = true             },
+  { message = "^Remove CLAUDE",                skip  = true             },
+
+  # Free-form: Features
+  { message = "^Add ",                         group = "Features"       },
+  { message = "^Implement ",                   group = "Features"       },
+  { message = "^Support ",                     group = "Features"       },
+  { message = "^Expose ",                      group = "Features"       },
+  { message = "^Enable ",                      group = "Features"       },
+  { message = "^Align ",                       group = "Features"       },
+  { message = "^Persist ",                     group = "Features"       },
+  { message = "^Broadcast ",                   group = "Features"       },
+
+  # Free-form: Bug Fixes
+  { message = "^Fix ",                         group = "Bug Fixes"      },
+  { message = "^Avoid ",                       group = "Bug Fixes"      },
+  { message = "^Stabilize ",                   group = "Bug Fixes"      },
+  { message = "^Resolve ",                     group = "Bug Fixes"      },
+  { message = "^Correct ",                     group = "Bug Fixes"      },
+  { message = "^Secure ",                      group = "Bug Fixes"      },
+  { message = "^Cast ",                        group = "Bug Fixes"      },
+  { message = "^Preserve ",                    group = "Bug Fixes"      },
+
+  # Free-form: Performance
+  { message = "^Optimize ",                    group = "Performance"    },
+
+  # Free-form: Refactoring
+  { message = "^Refactor ",                    group = "Refactoring"    },
+  { message = "^Reduce ",                      group = "Refactoring"    },
+  { message = "^Inline ",                      group = "Refactoring"    },
+  { message = "^Split ",                       group = "Refactoring"    },
+  { message = "^Improve ",                     group = "Refactoring"    },
+  { message = "^Rewrite ",                     group = "Refactoring"    },
+  { message = "^Simplify ",                    group = "Refactoring"    },
+  { message = "^Replace ",                     group = "Refactoring"    },
+  { message = "^Consolidate ",                 group = "Refactoring"    },
+  { message = "^Move ",                        group = "Refactoring"    },
+  { message = "^Rename ",                      group = "Refactoring"    },
+
+  # Free-form: Testing
+  { message = "^Double ",                      group = "Testing"        },
+  { message = "^Increase ",                    group = "Testing"        },
+
+  # Free-form: Documentation
+  { message = "^Update README",                group = "Documentation"  },
+  { message = "^Update docs",                  group = "Documentation"  },
+
+  # Catch-all — anything unmatched lands in Other rather than being dropped
+  { message = ".*",                            group = "Other"          },
 ]
 
 filter_commits = true
@@ -51,7 +108,6 @@ filter_commits = true
 # Tag pattern matching your versioning: v3.0+3, v3.0-beta.15+28
 tag_pattern = "v[0-9]+\\.[0-9]+.*"
 
-# Ignore the build number suffix in sort (treat v3.0+3 < v3.0+4)
 topo_order = false
 sort_commits = "newest"
 

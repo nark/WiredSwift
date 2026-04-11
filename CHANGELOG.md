@@ -2,6 +2,41 @@
 
 All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [3.0-beta.20+37] — 2026-04-11
+
+### Bug Fixes
+- Fix IndexController build error after wiredFileLabel removal ([`43536de`](https://github.com/nark/WiredSwift/commit/43536def46980f588b7bb83f4c1599c81208c5a0))
+
+- Fix Finder label color mapping and reliable xattr update ([`359c32b`](https://github.com/nark/WiredSwift/commit/359c32b9d76c40e9ec02f95edca46be561ef2c3b))
+
+- Fix attachment controller lint issues ([`827fc09`](https://github.com/nark/WiredSwift/commit/827fc09bcca649d0183b6548e2f27c5256a0fd57))
+
+- Fix board post attachment edit broadcasts ([`2f409cc`](https://github.com/nark/WiredSwift/commit/2f409cc5b1ab36a7f2b5c217bda066581abfa346))
+
+
+### Features
+- Add file comment and label metadata support ([`02ce2fa`](https://github.com/nark/WiredSwift/commit/02ce2fac0352352b3b2bb6081f095cc2bd042f19))
+
+- Add English translation of Wired 2/3 feature comparison document ([`7f2fc16`](https://github.com/nark/WiredSwift/commit/7f2fc16cac94156aceeb7729261738b380e5e46d))
+
+- Persist private message attachments across reconnects ([`69dc1c4`](https://github.com/nark/WiredSwift/commit/69dc1c473053a39af86ae27d79b14324faa485e8))
+
+- Add generic message attachments ([`3d7c046`](https://github.com/nark/WiredSwift/commit/3d7c046464a6b47df5bb18a7ce12efb950b7cc42))
+
+- Align managed directory counts with classic Wired behavior ([`1cc7259`](https://github.com/nark/WiredSwift/commit/1cc72596a97374fc53419868ec489b1d52c4d6f8))
+
+
+### Refactoring
+- Reduce FilesController below 1200-line SwiftLint limit ([`a8cb0c1`](https://github.com/nark/WiredSwift/commit/a8cb0c1a16c3eba255f9d418ebf5f55c9e1ffbf4))
+
+- Inline Finder label mapping to stay under 1200-line SwiftLint limit ([`08547d7`](https://github.com/nark/WiredSwift/commit/08547d77b8839a38af1ad8c674bb893f957aebb9))
+
+- Replace absolute paths with relative paths in feature comparison doc ([`1f71144`](https://github.com/nark/WiredSwift/commit/1f7114497fb6df230b36e019fb25073169a56a99))
+
+
+### Testing
+- Double server startup timeout in integration tests (10s → 20s) ([`79ca7be`](https://github.com/nark/WiredSwift/commit/79ca7be2d8baeaaa83fb72f91e110b139b3e1811))
+
 ## [3.0-beta.19+36] — 2026-04-08
 
 ### Documentation
