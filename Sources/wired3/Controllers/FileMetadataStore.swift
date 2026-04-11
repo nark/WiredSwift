@@ -279,13 +279,45 @@ final class FileMetadataStore {
         }
     }
 
+    /// Maps Wired FileLabel to macOS Finder labelNumber.
+    /// Finder labelNumber: 0=None, 1=Gray, 2=Green, 3=Purple, 4=Blue, 5=Yellow, 6=Red, 7=Orange
+    private func finderLabelNumber(for label: File.FileLabel) -> Int {
+        switch label {
+        case .LABEL_NONE:   return 0
+        case .LABEL_RED:    return 6
+        case .LABEL_ORANGE: return 7
+        case .LABEL_YELLOW: return 5
+        case .LABEL_GREEN:  return 2
+        case .LABEL_BLUE:   return 4
+        case .LABEL_PURPLE: return 3
+        case .LABEL_GRAY:   return 1
+        }
+    }
+
     private func mirrorFinderLabel(_ label: File.FileLabel, forPath path: String) throws {
         guard FileManager.default.fileExists(atPath: path) else { return }
 
-        var values = URLResourceValues()
-        values.labelNumber = Int(label.rawValue)
-        var url = URL(fileURLWithPath: path)
-        try url.setResourceValues(values)
+        let xattrName = "com.apple.FinderInfo"
+        let labelBitMask: UInt16 = 0x000E  // bits 1-3
+        let labelBits = UInt16(finderLabelNumber(for: label)) << 1
+
+        // Read existing FinderInfo (32 bytes) or start from zero
+        var finderInfo = [UInt8](repeating: 0, count: 32)
+        let getResult = getxattr(path, xattrName, &finderInfo, 32, 0, 0)
+        if getResult < 0 && errno != ENOATTR {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
+
+        // Flags are at bytes 8-9, big-endian (same layout for files and directories)
+        let existingFlags = (UInt16(finderInfo[8]) << 8) | UInt16(finderInfo[9])
+        let newFlags = (existingFlags & ~labelBitMask) | (labelBits & labelBitMask)
+        finderInfo[8] = UInt8(newFlags >> 8)
+        finderInfo[9] = UInt8(newFlags & 0xFF)
+
+        let setResult = setxattr(path, xattrName, &finderInfo, 32, 0, 0)
+        if setResult != 0 {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
     }
     #endif
 }
