@@ -246,7 +246,7 @@ public class FilesController {
 
         reply.addParameter(field: "wired.file.link", value: resolvedPath.linkKind != .none)
         reply.addParameter(field: "wired.file.executable", value: false)
-        reply.addParameter(field: "wired.file.label", value: wiredFileLabel(forRealPath: realPath).rawValue)
+        reply.addParameter(field: "wired.file.label", value: metadataStore.label(forPath: realPath).rawValue)
         reply.addParameter(field: "wired.file.volume", value: UInt32(0))
         reply.addParameter(field: "wired.file.comment", value: wiredFileComment(forRealPath: realPath))
 
@@ -830,17 +830,7 @@ public class FilesController {
             return false
         }
 
-        do {
-            try metadataStore.removeComment(forPath: finalPath)
-        } catch {
-            Logger.warning("Could not remove comment metadata for deleted path \(finalPath): \(error)")
-        }
-
-        do {
-            try metadataStore.removeLabel(forPath: finalPath)
-        } catch {
-            Logger.warning("Could not remove label metadata for deleted path \(finalPath): \(error)")
-        }
+        removeMetadata(forPath: finalPath)
 
         self.notifyDirectoryChanged(path: parentPath)
 
@@ -864,17 +854,7 @@ public class FilesController {
             return false
         }
 
-        do {
-            try metadataStore.moveComment(from: finalSource, to: finalDestination)
-        } catch {
-            Logger.warning("Could not move comment metadata \(finalSource) -> \(finalDestination): \(error)")
-        }
-
-        do {
-            try metadataStore.moveLabel(from: finalSource, to: finalDestination)
-        } catch {
-            Logger.warning("Could not move label metadata \(finalSource) -> \(finalDestination): \(error)")
-        }
+        moveMetadata(from: finalSource, to: finalDestination)
 
         App.indexController.removeIndex(forPath: finalSource)
         App.indexController.addIndex(forPath: finalDestination)
@@ -1038,7 +1018,7 @@ public class FilesController {
 
             reply.addParameter(field: "wired.file.link", value: linkKind != .none)
             reply.addParameter(field: "wired.file.executable", value: false)
-            reply.addParameter(field: "wired.file.label", value: wiredFileLabel(forRealPath: childRealPath).rawValue)
+            reply.addParameter(field: "wired.file.label", value: metadataStore.label(forPath: childRealPath).rawValue)
             reply.addParameter(field: "wired.file.volume", value: UInt32(0))
 
             if isManagedDirectoryType(type) {
@@ -1480,7 +1460,13 @@ public class FilesController {
         metadataStore.comment(forPath: path) ?? ""
     }
 
-    func wiredFileLabel(forRealPath path: String) -> File.FileLabel {
-        metadataStore.label(forPath: path)
+    private func removeMetadata(forPath path: String) {
+        do { try metadataStore.removeComment(forPath: path) } catch { Logger.warning("Could not remove comment metadata for \(path): \(error)") }
+        do { try metadataStore.removeLabel(forPath: path) } catch { Logger.warning("Could not remove label metadata for \(path): \(error)") }
+    }
+
+    private func moveMetadata(from source: String, to destination: String) {
+        do { try metadataStore.moveComment(from: source, to: destination) } catch { Logger.warning("Could not move comment metadata \(source) -> \(destination): \(error)") }
+        do { try metadataStore.moveLabel(from: source, to: destination) } catch { Logger.warning("Could not move label metadata \(source) -> \(destination): \(error)") }
     }
 }
