@@ -4,14 +4,6 @@ All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [3.0-beta.19+36] — 2026-04-08
 
-### Features
-
-- Add remote file preview support
-
-### Bug Fixes
-
-- Fix Debian config write permissions
-
 ### Documentation
 - Update README ([`8220900`](https://github.com/nark/WiredSwift/commit/8220900c7d287b7863cd1971b38942837395e133))
 
