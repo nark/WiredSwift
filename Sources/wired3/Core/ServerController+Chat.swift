@@ -31,8 +31,30 @@ extension ServerController {
             return
         }
 
-        guard let body = message.string(forField: "wired.message.message"),
-              !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard let body = message.string(forField: "wired.message.message") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let attachmentIDs = App.attachmentsController.attachmentIDsFromMessage(message) ?? []
+        let hasText = !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard hasText || !attachmentIDs.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
+            attachmentIDs,
+            client: client,
+            context: AttachmentMessageContext(
+                chatID: nil,
+                recipientID: recipientID,
+                boardPath: nil,
+                threadUUID: nil,
+                postUUID: nil
+            )
+        )
+        guard attachmentIDs.isEmpty || descriptors != nil else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
@@ -40,6 +62,10 @@ extension ServerController {
         let reply = P7Message(withName: "wired.message.message", spec: self.spec)
         reply.addParameter(field: "wired.user.id", value: client.userID)
         reply.addParameter(field: "wired.message.message", value: body)
+        if let descriptors, !descriptors.isEmpty {
+            reply.addParameter(field: "wired.attachment.descriptors", value: App.attachmentsController.descriptorStrings(descriptors))
+            App.attachmentsController.refreshEphemeralAttachmentLifetime(ids: attachmentIDs)
+        }
 
         _ = self.send(message: reply, client: recipient)
         App.serverController.replyOK(client: client, message: message)

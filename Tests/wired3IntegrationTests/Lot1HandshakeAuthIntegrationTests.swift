@@ -15,6 +15,24 @@ final class Lot1HandshakeAuthIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertNotNil(login.uint32(forField: "wired.user.id"))
     }
 
+    func testLoginBroadcastsAccountPrivilegesIncludingFileLabelPrivilegeAndIdentityFields() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "guest", password: "")
+        defer { socket.disconnect() }
+
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "guest", password: "")
+
+        let privileges = try readMessage(from: socket, expectedName: "wired.account.privileges", maxReads: 12)
+        XCTAssertEqual(privileges.string(forField: "wired.account.name"), "guest")
+        XCTAssertEqual(privileges.string(forField: "wired.account.group"), "")
+        XCTAssertEqual(privileges.stringList(forField: "wired.account.groups") ?? [], [])
+        XCTAssertNotNil(privileges.bool(forField: "wired.account.file.set_label"))
+    }
+
     func testConnectionWithoutRequiredEncryptionIsRejected() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()

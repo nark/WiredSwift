@@ -249,4 +249,30 @@ final class UsersControllerTests: XCTestCase {
         let transient = Group(name: "noid")
         XCTAssertFalse(usersController.delete(group: transient))
     }
+
+    func testLegacyPrivilegeMigrationBackfillsFileMetadataPrivilegesFromSetType() throws {
+        let tempDir = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: tempDir) }
+        let usersController = UsersController(databaseController: makeDatabaseController(tempDir: tempDir))
+
+        let user = User(username: "alice", password: "x")
+        XCTAssertTrue(usersController.save(user: user))
+        let persistedUser = try XCTUnwrap(usersController.user(withUsername: "alice"))
+        XCTAssertTrue(usersController.setUserPrivilege("wired.account.file.set_type", value: true, for: persistedUser))
+
+        let group = Group(name: "ops")
+        XCTAssertTrue(usersController.save(group: group))
+        let persistedGroup = try XCTUnwrap(usersController.group(withName: "ops"))
+        XCTAssertTrue(usersController.setGroupPrivilege("wired.account.file.set_type", value: true, for: persistedGroup))
+
+        usersController.migrateLegacyPrivilegesSchemaIfNeeded()
+
+        let migratedUser = try XCTUnwrap(usersController.userWithPrivileges(withUsername: "alice"))
+        XCTAssertEqual(migratedUser.privileges.first(where: { $0.name == "wired.account.file.set_comment" })?.value, true)
+        XCTAssertEqual(migratedUser.privileges.first(where: { $0.name == "wired.account.file.set_label" })?.value, true)
+
+        let migratedGroup = try XCTUnwrap(usersController.groupWithPrivileges(withName: "ops"))
+        XCTAssertEqual(migratedGroup.privileges.first(where: { $0.name == "wired.account.file.set_comment" })?.value, true)
+        XCTAssertEqual(migratedGroup.privileges.first(where: { $0.name == "wired.account.file.set_label" })?.value, true)
+    }
 }

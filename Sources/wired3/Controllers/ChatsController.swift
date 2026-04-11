@@ -122,6 +122,23 @@ extension ChatsController {
             return
         }
 
+        let attachmentIDs = App.attachmentsController.attachmentIDsFromMessage(message) ?? []
+        let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
+            attachmentIDs,
+            client: client,
+            context: AttachmentMessageContext(
+                chatID: chatID,
+                recipientID: nil,
+                boardPath: nil,
+                threadUUID: nil,
+                postUUID: nil
+            )
+        )
+        guard attachmentIDs.isEmpty || descriptors != nil else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
         App.serverController.replyOK(client: client, message: message)
 
         chat.withClients { toClient in
@@ -130,7 +147,14 @@ extension ChatsController {
             reply.addParameter(field: "wired.chat.id", value: chatID)
             reply.addParameter(field: "wired.user.id", value: client.userID)
             reply.addParameter(field: messageName, value: string)
+            if let descriptors, !descriptors.isEmpty {
+                reply.addParameter(field: "wired.attachment.descriptors", value: App.attachmentsController.descriptorStrings(descriptors))
+            }
             App.serverController.send(message: reply, client: toClient)
+        }
+
+        if !attachmentIDs.isEmpty {
+            App.attachmentsController.refreshEphemeralAttachmentLifetime(ids: attachmentIDs)
         }
     }
 
@@ -669,9 +693,14 @@ public class ChatsController: TableController {
     ///   - client: The sender.
     ///   - message: The incoming P7 message (must contain `wired.chat.say` and `wired.chat.id`).
     public func receiveChatSay(_ client: Client, _ message: P7Message) {
-        guard let say = message.string(forField: "wired.chat.say"),
-              // SECURITY (FINDING_C_002): Reject empty or whitespace-only chat messages
-              !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard let say = message.string(forField: "wired.chat.say") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        let attachmentIDs = App.attachmentsController.attachmentIDsFromMessage(message) ?? []
+        let hasText = !say.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        guard hasText || !attachmentIDs.isEmpty else {
             App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }

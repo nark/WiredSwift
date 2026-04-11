@@ -270,6 +270,225 @@ final class FilesControllerTests: XCTestCase {
         XCTAssertEqual(reply.enumeration(forField: "wired.error"), 5)
     }
 
+    func testGetInfoIncludesStoredCommentAndLabel() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("info.txt")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("info".utf8))
+        try context.app.filesController.metadataStore.setComment("stored comment", forPath: fileURL.path)
+        try context.app.filesController.metadataStore.setLabel(.LABEL_PURPLE, forPath: fileURL.path)
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.get_info": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.get_info", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/info.txt")
+
+        context.app.filesController.getInfo(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.file.info")
+        XCTAssertEqual(reply.string(forField: "wired.file.comment"), "stored comment")
+        XCTAssertEqual(reply.enumeration(forField: "wired.file.label"), File.FileLabel.LABEL_PURPLE.rawValue)
+    }
+
+    func testListDirectoryIncludesStoredLabelButNotComment() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("listed.txt")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("list".utf8))
+        try context.app.filesController.metadataStore.setComment("hidden in list", forPath: fileURL.path)
+        try context.app.filesController.metadataStore.setLabel(.LABEL_GREEN, forPath: fileURL.path)
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.list_files": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.list_directory", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/")
+
+        context.app.filesController.listDirectory(client: client, message: request)
+
+        let listed = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(listed.name, "wired.file.file_list")
+        XCTAssertEqual(listed.string(forField: "wired.file.path"), "/listed.txt")
+        XCTAssertEqual(listed.enumeration(forField: "wired.file.label"), File.FileLabel.LABEL_GREEN.rawValue)
+        XCTAssertNil(listed.string(forField: "wired.file.comment"))
+
+        let done = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(done.name, "wired.file.file_list.done")
+    }
+
+    func testSetCommentRepliesOkayAndStoresComment() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("comment.txt")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("comment".utf8))
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.set_comment": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.set_comment", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/comment.txt")
+        request.addParameter(field: "wired.file.comment", value: "saved")
+
+        context.app.filesController.setComment(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.okay")
+        XCTAssertEqual(context.app.filesController.metadataStore.comment(forPath: fileURL.path), "saved")
+    }
+
+    func testSetLabelRepliesOkayAndStoresLabel() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("label.txt")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("label".utf8))
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.set_label": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.set_label", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/label.txt")
+        request.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_ORANGE.rawValue)
+
+        context.app.filesController.setLabel(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.okay")
+        XCTAssertEqual(context.app.filesController.metadataStore.label(forPath: fileURL.path), .LABEL_ORANGE)
+    }
+
+    func testSetCommentRequiresPrivilege() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("comment.txt")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("comment".utf8))
+
+        let client = makeFileClient(socket: sockets.server, username: "alice", privileges: [:])
+        let request = P7Message(withName: "wired.file.set_comment", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/comment.txt")
+        request.addParameter(field: "wired.file.comment", value: "saved")
+
+        context.app.filesController.setComment(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.error")
+        XCTAssertEqual(reply.enumeration(forField: "wired.error"), 5)
+    }
+
+    func testMovePreservesCommentAndLabelMetadata() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let sourceURL = context.rootDir.appendingPathComponent("source.txt")
+        let destinationURL = context.rootDir.appendingPathComponent("dest.txt")
+        FileManager.default.createFile(atPath: sourceURL.path, contents: Data("move".utf8))
+        try context.app.filesController.metadataStore.setComment("move me", forPath: sourceURL.path)
+        try context.app.filesController.metadataStore.setLabel(.LABEL_RED, forPath: sourceURL.path)
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.move_files": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.move", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/source.txt")
+        request.addParameter(field: "wired.file.new_path", value: "/dest.txt")
+
+        context.app.filesController.move(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.okay")
+        XCTAssertNil(context.app.filesController.metadataStore.comment(forPath: sourceURL.path))
+        XCTAssertEqual(context.app.filesController.metadataStore.comment(forPath: destinationURL.path), "move me")
+        XCTAssertEqual(context.app.filesController.metadataStore.label(forPath: destinationURL.path), .LABEL_RED)
+    }
+
+    func testDeleteRemovesCommentAndLabelMetadata() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("delete.txt")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("delete".utf8))
+        try context.app.filesController.metadataStore.setComment("remove me", forPath: fileURL.path)
+        try context.app.filesController.metadataStore.setLabel(.LABEL_GRAY, forPath: fileURL.path)
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.delete_files": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.delete", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/delete.txt")
+
+        context.app.filesController.delete(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.okay")
+        XCTAssertNil(context.app.filesController.metadataStore.comment(forPath: fileURL.path))
+        XCTAssertEqual(context.app.filesController.metadataStore.label(forPath: fileURL.path), .LABEL_NONE)
+    }
+
     private typealias P7Pair = (server: P7Socket, peer: P7Socket, listener: Socket)
 
     private func makeAppContext() throws -> (app: AppController, workingDir: URL, rootDir: URL, previous: AppController?) {
@@ -287,8 +506,11 @@ final class FilesControllerTests: XCTestCase {
         )
 
         App = app
+        app.databaseController = DatabaseController(baseURL: workingDir.appendingPathComponent("wired3.sqlite"), spec: app.spec)
+        XCTAssertTrue(app.databaseController.initDatabase())
         app.clientsController = ClientsController()
         app.filesController = FilesController(rootPath: rootDir.path)
+        app.indexController = IndexController(databaseController: app.databaseController, filesController: app.filesController)
         app.serverController = ServerController(port: 0, spec: app.spec)
         return (app, workingDir, rootDir, previous)
     }
@@ -328,6 +550,17 @@ final class FilesControllerTests: XCTestCase {
         user.privileges = [
             UserPrivilege(name: "wired.account.transfer.download_files", value: canDownload, userId: 1)
         ]
+        client.user = user
+        return client
+    }
+
+    private func makeFileClient(socket: P7Socket, username: String, privileges: [String: Bool]) -> Client {
+        let client = Client(userID: 1, socket: socket)
+        client.state = .LOGGED_IN
+
+        let user = User(username: username, password: "password")
+        user.id = 1
+        user.privileges = privileges.map { UserPrivilege(name: $0.key, value: $0.value, userId: 1) }
         client.user = user
         return client
     }

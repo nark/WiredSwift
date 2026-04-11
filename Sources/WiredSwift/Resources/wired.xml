@@ -484,6 +484,76 @@
                 round-trip. Only includes thread-level reactions, not reply-post reactions.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.attachment.id" type="uuid" id="7034" version="3.2">
+            <p7:documentation>
+                Unique identifier for an attachment.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.name" type="string" id="7035" version="3.2">
+            <p7:documentation>
+                Original attachment file name.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.media_type" type="string" id="7036" version="3.2">
+            <p7:documentation>
+                Attachment media type.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.size" type="uint64" id="7037" version="3.2">
+            <p7:documentation>
+                Attachment size in bytes.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.sha256" type="string" id="7038" version="3.2">
+            <p7:documentation>
+                Lowercase SHA-256 hex digest of the attachment payload.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.inline_preview" type="bool" id="7039" version="3.2">
+            <p7:documentation>
+                Indicates whether a lightweight inline preview is available.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.width" type="uint32" id="7040" version="3.2">
+            <p7:documentation>
+                Optional pixel width for visual media attachments.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.height" type="uint32" id="7041" version="3.2">
+            <p7:documentation>
+                Optional pixel height for visual media attachments.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.ids" type="list" listtype="string" id="7042" version="3.2">
+            <p7:documentation>
+                List of attachment IDs referenced by a client message.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.descriptors" type="list" listtype="string" id="7043" version="3.2">
+            <p7:documentation>
+                List of serialized attachment descriptors carried with a routed message.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.data" type="data" id="7044" version="3.2">
+            <p7:documentation>
+                Raw attachment payload bytes.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.offset" type="uint64" id="7045" version="3.2">
+            <p7:documentation>
+                Offset used when uploading or downloading attachment chunks.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.length" type="uint32" id="7046" version="3.2">
+            <p7:documentation>
+                Requested attachment chunk length.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.attachment.complete" type="bool" id="7047" version="3.2">
+            <p7:documentation>
+                Indicates whether the current attachment transfer chunk is the last one.
+            </p7:documentation>
+        </p7:field>
 
         <p7:field name="wired.file.path" type="string" id="7000" version="2.0">
             <p7:documentation>
@@ -1056,6 +1126,11 @@
                 the account gives. 0 means no limit.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.account.attachment.upload" type="bool" id="8098" version="3.2">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of uploading attachments.
+            </p7:documentation>
+        </p7:field>
         <p7:field name="wired.account.file.sync.sync_files" type="bool" id="8099" version="2.0">
             <p7:documentation>
                 Indicates whether the account gives the privilege of activating and running sync pairs.
@@ -1443,6 +1518,17 @@
             <p7:member field="wired.user.status" />
             <p7:member field="wired.user.icon" />
         </p7:collection>
+
+        <p7:collection name="wired.attachment.descriptor">
+            <p7:member field="wired.attachment.id" />
+            <p7:member field="wired.attachment.name" />
+            <p7:member field="wired.attachment.media_type" />
+            <p7:member field="wired.attachment.size" />
+            <p7:member field="wired.attachment.sha256" />
+            <p7:member field="wired.attachment.inline_preview" />
+            <p7:member field="wired.attachment.width" />
+            <p7:member field="wired.attachment.height" />
+        </p7:collection>
         
         <p7:collection name="wired.file.info">
             <p7:member field="wired.file.path" />
@@ -1497,6 +1583,7 @@
             <p7:member field="wired.account.file.set_comment" />
             <p7:member field="wired.account.file.set_permissions" />
             <p7:member field="wired.account.file.set_executable" />
+            <p7:member field="wired.account.file.set_label" />
             <p7:member field="wired.account.file.delete_files" />
             <p7:member field="wired.account.file.access_all_dropboxes" />
             <p7:member field="wired.account.file.recursive_list_depth_limit" />
@@ -1508,6 +1595,7 @@
             <p7:member field="wired.account.transfer.upload_limit" />
             <p7:member field="wired.account.transfer.download_speed_limit" />
             <p7:member field="wired.account.transfer.upload_speed_limit" />
+            <p7:member field="wired.account.attachment.upload" />
             <p7:member field="wired.account.file.sync.sync_files" />
             <p7:member field="wired.account.file.sync.delete_remote" />
             <p7:member field="wired.account.account.change_password" />
@@ -1872,20 +1960,24 @@
 
         <p7:message name="wired.chat.send_say" id="4014" version="2.0">
             <p7:documentation>
-                Send a normal chat message for a chat. [field:wired.chat.say] may not be the empty string.
+                Send a normal chat message for a chat. [field:wired.chat.say] may be the empty string if
+                [field:wired.attachment.ids] contains at least one attachment ID.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.chat.id" use="required" version="2.0" />
             <p7:parameter field="wired.chat.say" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.ids" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.chat.say" id="4015" version="2.0">
             <p7:documentation>
-                Normal chat message for a chat. [field:wired.chat.say] may not be the empty string.
+                Normal chat message for a chat. [field:wired.chat.say] may be the empty string if
+                [field:wired.attachment.ids] contains at least one attachment ID.
             </p7:documentation>
             <p7:parameter field="wired.chat.id" use="required" version="2.0" />
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
             <p7:parameter field="wired.chat.say" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.descriptors" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.chat.send_me" id="4016" version="2.0">
@@ -1895,6 +1987,7 @@
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.chat.id" use="required" version="2.0" />
             <p7:parameter field="wired.chat.me" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.ids" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.chat.me" id="4017" version="2.0">
@@ -1904,6 +1997,7 @@
             <p7:parameter field="wired.chat.id" use="required" version="2.0" />
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
             <p7:parameter field="wired.chat.me" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.descriptors" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.chat.create_chat" id="4018" version="2.0">
@@ -2039,19 +2133,23 @@
 
         <p7:message name="wired.message.send_message" id="5000" version="2.0">
             <p7:documentation>
-                Send private message to a user. [field:wired.message.message] may not be the empty string.
+                Send private message to a user. [field:wired.message.message] may be the empty string if
+                [field:wired.attachment.ids] contains at least one attachment ID.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
             <p7:parameter field="wired.message.message" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.ids" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.message.message" id="5001" version="2.0">
             <p7:documentation>
-                Private message from a user. [field:wired.message.message] may not be the empty string.
+                Private message from a user. [field:wired.message.message] may be the empty string if
+                [field:wired.attachment.ids] contains at least one attachment ID.
             </p7:documentation>
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
             <p7:parameter field="wired.message.message" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.descriptors" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.message.send_broadcast" id="5002" version="2.0">
@@ -2143,6 +2241,7 @@
             <p7:parameter field="wired.board.thread" use="required" version="2.0" />
             <p7:parameter field="wired.board.text" use="required" version="2.0" />
             <p7:parameter field="wired.user.icon" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.descriptors" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.board.post_list" id="6008" version="2.0">
@@ -2158,6 +2257,7 @@
             <p7:parameter field="wired.user.icon" use="required" version="2.0" />
             <p7:parameter field="wired.board.own_post" use="required" version="2.0" />
             <p7:parameter field="wired.board.text" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.descriptors" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.board.post_list.done" id="6009" version="2.0">
@@ -2299,6 +2399,7 @@
             <p7:parameter field="wired.board.board" use="required" version="2.0" />
             <p7:parameter field="wired.board.subject" use="required" version="2.0" />
             <p7:parameter field="wired.board.text" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.ids" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.board.thread_added" id="6023" version="2.0">
@@ -2316,6 +2417,7 @@
             <p7:parameter field="wired.board.latest_reply_date" version="2.0" />
             <p7:parameter field="wired.user.nick" use="required" version="2.0" />
             <p7:parameter field="wired.user.icon" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.descriptors" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.board.edit_thread" id="6024" version="2.0">
@@ -2326,6 +2428,7 @@
             <p7:parameter field="wired.board.thread" use="required" version="2.0" />
             <p7:parameter field="wired.board.subject" use="required" version="2.0" />
             <p7:parameter field="wired.board.text" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.ids" version="3.2" />
         </p7:message>
         
         <p7:message name="wired.board.thread_changed" id="6025" version="2.0">
@@ -2345,6 +2448,7 @@
             <p7:parameter field="wired.board.own_post" version="2.0" />
             <p7:parameter field="wired.user.nick" version="2.0" />
             <p7:parameter field="wired.user.icon" version="2.0" />
+            <p7:parameter field="wired.attachment.descriptors" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.board.move_thread" id="6026" version="2.0">
@@ -2387,6 +2491,7 @@
             <p7:parameter field="wired.board.thread" use="required" version="2.0" />
             <p7:parameter field="wired.board.subject" use="required" version="2.0" />
             <p7:parameter field="wired.board.text" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.ids" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.board.edit_post" id="6031" version="2.0">
@@ -2397,6 +2502,7 @@
             <p7:parameter field="wired.board.post" use="required" version="2.0" />
             <p7:parameter field="wired.board.subject" use="required" version="2.0" />
             <p7:parameter field="wired.board.text" use="required" version="2.0" />
+            <p7:parameter field="wired.attachment.ids" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.board.delete_post" id="6032" version="2.0">
@@ -2545,6 +2651,105 @@
             <p7:parameter field="wired.board.post" version="3.1" />
             <p7:parameter field="wired.board.reaction.emoji" use="required" version="3.1" />
             <p7:parameter field="wired.board.reaction.count" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.create" id="6043" version="3.2">
+            <p7:documentation>
+                Create a staged attachment upload for a chat, direct message, thread, post or board.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.name" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.media_type" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.size" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.sha256" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.width" version="3.2" />
+            <p7:parameter field="wired.attachment.height" version="3.2" />
+            <p7:parameter field="wired.chat.id" version="3.2" />
+            <p7:parameter field="wired.user.id" version="3.2" />
+            <p7:parameter field="wired.board.board" version="3.2" />
+            <p7:parameter field="wired.board.thread" version="3.2" />
+            <p7:parameter field="wired.board.post" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.created" id="6044" version="3.2">
+            <p7:documentation>
+                Reply containing the attachment identifier and starting offset for upload.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.offset" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.upload" id="6045" version="3.2">
+            <p7:documentation>
+                Upload a data chunk for a previously created attachment.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.offset" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.data" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.complete" id="6046" version="3.2">
+            <p7:documentation>
+                Finalise a staged attachment after all bytes have been uploaded.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.completed" id="6047" version="3.2">
+            <p7:documentation>
+                Reply confirming that the attachment can now be referenced by message IDs.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.abort" id="6048" version="3.2">
+            <p7:documentation>
+                Abort and discard a staged attachment upload.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.get_preview" id="6049" version="3.2">
+            <p7:documentation>
+                Request a lightweight preview for an attachment.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.preview" id="6050" version="3.2">
+            <p7:documentation>
+                Preview payload for an attachment.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.data" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.get_data" id="6051" version="3.2">
+            <p7:documentation>
+                Request a chunk of full attachment data.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.offset" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.length" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.attachment.data" id="6052" version="3.2">
+            <p7:documentation>
+                Full attachment data chunk.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.attachment.id" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.offset" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.data" use="required" version="3.2" />
+            <p7:parameter field="wired.attachment.complete" use="required" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.file.list_directory" id="7000" version="2.0">
@@ -4685,6 +4890,66 @@
             <p7:or>
                 <p7:reply message="wired.file.preview" count="1" use="required" version="2.0" />
                 <p7:reply message="wired.error" count="1" use="required" version="2.0" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.attachment.create" originator="client" version="3.2">
+            <p7:documentation>
+                Creates a staged attachment upload.
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.attachment.created" count="1" use="required" version="3.2" />
+                <p7:reply message="wired.error" count="1" use="required" version="3.2" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.attachment.upload" originator="client" version="3.2">
+            <p7:documentation>
+                Uploads a chunk into a staged attachment.
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.okay" count="1" use="required" version="3.2" />
+                <p7:reply message="wired.error" count="1" use="required" version="3.2" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.attachment.complete" originator="client" version="3.2">
+            <p7:documentation>
+                Finalises a staged attachment.
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.attachment.completed" count="1" use="required" version="3.2" />
+                <p7:reply message="wired.error" count="1" use="required" version="3.2" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.attachment.abort" originator="client" version="3.2">
+            <p7:documentation>
+                Aborts a staged attachment upload.
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.okay" count="1" use="required" version="3.2" />
+                <p7:reply message="wired.error" count="1" use="required" version="3.2" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.attachment.get_preview" originator="client" version="3.2">
+            <p7:documentation>
+                Requests an inline attachment preview.
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.attachment.preview" count="1" use="required" version="3.2" />
+                <p7:reply message="wired.error" count="1" use="required" version="3.2" />
+            </p7:or>
+        </p7:transaction>
+
+        <p7:transaction message="wired.attachment.get_data" originator="client" version="3.2">
+            <p7:documentation>
+                Requests a chunk of attachment data.
+            </p7:documentation>
+            <p7:or>
+                <p7:reply message="wired.attachment.data" count="1" use="required" version="3.2" />
+                <p7:reply message="wired.error" count="1" use="required" version="3.2" />
             </p7:or>
         </p7:transaction>
 

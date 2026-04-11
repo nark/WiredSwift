@@ -37,6 +37,7 @@ public class AppController {
     var eventsController: EventsController!
     var boardsController: BoardsController!
     var filesController: FilesController!
+    var attachmentsController: AttachmentsController!
     public var indexController: IndexController!
     var transfersController: TransfersController!
     var trackerController: TrackerController!
@@ -111,6 +112,8 @@ public class AppController {
         self.banListController = BanListController(databaseController: self.databaseController)
         self.eventsController = EventsController(databaseController: self.databaseController)
         self.boardsController = BoardsController(databasePath: self.databaseURL.path)
+        self.attachmentsController = AttachmentsController(workingDirectoryPath: self.workingDirectoryPath,
+                                                           databasePath: self.databaseURL.path)
         self.indexController = IndexController(databaseController: self.databaseController,
                                                filesController: self.filesController)
 

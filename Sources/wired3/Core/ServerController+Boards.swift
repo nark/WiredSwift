@@ -11,6 +11,16 @@
 import Foundation
 import WiredSwift
 
+private struct BoardReactionBroadcastPayload {
+    let board: String
+    let threadUUID: String
+    let postUUID: String?
+    let emoji: String
+    let count: Int
+    let nick: String
+    let added: Bool
+}
+
 extension ServerController {
 
     // MARK: - Board listing
@@ -143,6 +153,7 @@ extension ServerController {
         threadReply.addParameter(field: "wired.board.thread", value: thread.uuid)
         threadReply.addParameter(field: "wired.board.text", value: thread.text)
         threadReply.addParameter(field: "wired.user.icon", value: thread.icon ?? Data())
+        addAttachmentDescriptors(App.attachmentsController.descriptorsForBoardThread(thread.uuid), to: threadReply)
         self.reply(client: client, reply: threadReply, message: message)
 
         let posts = App.boardsController.getPosts(forThread: thread.uuid)
@@ -155,6 +166,7 @@ extension ServerController {
             postReply.addParameter(field: "wired.board.text", value: post.text)
             postReply.addParameter(field: "wired.user.nick", value: post.nick)
             postReply.addParameter(field: "wired.user.icon", value: post.icon ?? Data())
+            addAttachmentDescriptors(App.attachmentsController.descriptorsForBoardPost(post.uuid), to: postReply)
             if let editDate = post.editDate {
                 postReply.addParameter(field: "wired.board.edit_date", value: editDate)
             }
@@ -547,6 +559,23 @@ extension ServerController {
             return
         }
 
+        let attachmentIDs = App.attachmentsController.attachmentIDsFromMessage(message) ?? []
+        let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
+            attachmentIDs,
+            client: client,
+            context: AttachmentMessageContext(
+                chatID: nil,
+                recipientID: nil,
+                boardPath: boardPath,
+                threadUUID: nil,
+                postUUID: nil
+            )
+        )
+        guard attachmentIDs.isEmpty || descriptors != nil else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
         guard let thread = App.boardsController.addThread(
             board: boardPath,
             subject: subject,
@@ -555,6 +584,17 @@ extension ServerController {
             login: username,
             icon: client.icon
         ) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        guard attachmentIDs.isEmpty || App.attachmentsController.linkBoardThreadAttachments(
+            ids: attachmentIDs,
+            boardPath: boardPath,
+            threadUUID: thread.uuid,
+            ownerLogin: username
+        ) else {
+            _ = App.boardsController.deleteThread(uuid: thread.uuid)
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
@@ -593,7 +633,37 @@ extension ServerController {
             return
         }
 
+        let attachmentIDs = App.attachmentsController.attachmentIDsFromMessage(message)
+        if let attachmentIDs {
+            let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
+                attachmentIDs,
+                client: client,
+                context: AttachmentMessageContext(
+                    chatID: nil,
+                    recipientID: nil,
+                    boardPath: nil,
+                    threadUUID: uuid,
+                    postUUID: nil
+                )
+            )
+            guard descriptors != nil else {
+                App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+                return
+            }
+        }
+
         guard let thread = App.boardsController.editThread(uuid: uuid, subject: subject, text: text) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        if let attachmentIDs,
+           !App.attachmentsController.linkBoardThreadAttachments(
+               ids: attachmentIDs,
+               boardPath: thread.board,
+               threadUUID: uuid,
+               ownerLogin: username
+           ) {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
@@ -678,6 +748,7 @@ extension ServerController {
             return
         }
 
+        App.attachmentsController.deleteBoardAttachments(forThread: uuid)
         App.serverController.replyOK(client: client, message: message)
         broadcastThreadDeleted(uuid: uuid)
         self.recordEvent(.boardDeletedThread, client: client, parameters: [existing.subject, existing.board])
@@ -722,6 +793,23 @@ extension ServerController {
             return
         }
 
+        let attachmentIDs = App.attachmentsController.attachmentIDsFromMessage(message) ?? []
+        let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
+            attachmentIDs,
+            client: client,
+            context: AttachmentMessageContext(
+                chatID: nil,
+                recipientID: nil,
+                boardPath: nil,
+                threadUUID: threadUUID,
+                postUUID: nil
+            )
+        )
+        guard attachmentIDs.isEmpty || descriptors != nil else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
         guard let post = App.boardsController.addPost(
             threadUUID: threadUUID,
             text: text,
@@ -730,6 +818,18 @@ extension ServerController {
             icon: client.icon
         ),
         let updatedThread = App.boardsController.getThread(uuid: threadUUID) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        guard attachmentIDs.isEmpty || App.attachmentsController.linkBoardPostAttachments(
+            ids: attachmentIDs,
+            boardPath: updatedThread.board,
+            threadUUID: threadUUID,
+            postUUID: post.uuid,
+            ownerLogin: username
+        ) else {
+            _ = App.boardsController.deletePost(uuid: post.uuid)
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
@@ -768,14 +868,46 @@ extension ServerController {
             return
         }
 
-        guard App.boardsController.editPost(uuid: uuid, text: text) != nil else {
+        let attachmentIDs = App.attachmentsController.attachmentIDsFromMessage(message)
+        if let attachmentIDs {
+            let descriptors = App.attachmentsController.descriptorsForMessageAttachmentIDs(
+                attachmentIDs,
+                client: client,
+                context: AttachmentMessageContext(
+                    chatID: nil,
+                    recipientID: nil,
+                    boardPath: nil,
+                    threadUUID: nil,
+                    postUUID: uuid
+                )
+            )
+            guard descriptors != nil else {
+                App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+                return
+            }
+        }
+
+        guard let editedPost = App.boardsController.editPost(uuid: uuid, text: text) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        if let attachmentIDs,
+           let thread = App.boardsController.getThread(uuid: threadUUID),
+           !App.attachmentsController.linkBoardPostAttachments(
+               ids: attachmentIDs,
+               boardPath: thread.board,
+               threadUUID: threadUUID,
+               postUUID: uuid,
+               ownerLogin: username
+           ) {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return
         }
 
         App.serverController.replyOK(client: client, message: message)
         if let thread = App.boardsController.getThread(uuid: threadUUID) {
-            broadcastThreadChanged(thread: thread)
+            broadcastThreadChanged(thread: thread, appendedPost: editedPost)
             self.recordEvent(.boardEditedPost, client: client, parameters: [thread.subject, thread.board])
         }
     }
@@ -810,6 +942,7 @@ extension ServerController {
             return
         }
 
+        App.attachmentsController.deleteBoardAttachments(forPost: uuid)
         App.serverController.replyOK(client: client, message: message)
         if let thread = App.boardsController.getThread(uuid: threadUUID) {
             broadcastThreadChanged(thread: thread)
@@ -945,34 +1078,51 @@ extension ServerController {
         App.serverController.replyOK(client: client, message: message)
 
         if let oldEmoji = result.replacedEmoji {
-            broadcastReactionChanged(board: board.path, threadUUID: threadUUID, postUUID: postUUID,
-                                     emoji: oldEmoji, count: result.replacedCount, nick: nick, added: false)
+            broadcastReactionChanged(
+                BoardReactionBroadcastPayload(
+                    board: board.path,
+                    threadUUID: threadUUID,
+                    postUUID: postUUID,
+                    emoji: oldEmoji,
+                    count: result.replacedCount,
+                    nick: nick,
+                    added: false
+                )
+            )
         }
-        broadcastReactionChanged(board: board.path, threadUUID: threadUUID, postUUID: postUUID,
-                                 emoji: emoji, count: result.count, nick: nick, added: result.added)
+        broadcastReactionChanged(
+            BoardReactionBroadcastPayload(
+                board: board.path,
+                threadUUID: threadUUID,
+                postUUID: postUUID,
+                emoji: emoji,
+                count: result.count,
+                nick: nick,
+                added: result.added
+            )
+        )
     }
 
     // MARK: - Broadcast helpers
 
-    private func broadcastReactionChanged(board: String, threadUUID: String, postUUID: String?,
-                                          emoji: String, count: Int, nick: String, added: Bool) {
-        let messageName = added ? "wired.board.reaction_added" : "wired.board.reaction_removed"
+    private func broadcastReactionChanged(_ payload: BoardReactionBroadcastPayload) {
+        let messageName = payload.added ? "wired.board.reaction_added" : "wired.board.reaction_removed"
         forEachBoardSubscriber { connectedClient, connectedUser in
             let username  = connectedUser.username ?? ""
             let groupName = connectedUser.group ?? ""
-            guard let boardInfo = App.boardsController.getBoardInfo(path: board),
+            guard let boardInfo = App.boardsController.getBoardInfo(path: payload.board),
                   boardInfo.canRead(user: username, group: groupName) else { return }
 
             let broadcast = P7Message(withName: messageName, spec: self.spec)
-            broadcast.addParameter(field: "wired.board.board", value: board)
-            broadcast.addParameter(field: "wired.board.thread", value: threadUUID)
-            if let postUUID {
+            broadcast.addParameter(field: "wired.board.board", value: payload.board)
+            broadcast.addParameter(field: "wired.board.thread", value: payload.threadUUID)
+            if let postUUID = payload.postUUID {
                 broadcast.addParameter(field: "wired.board.post", value: postUUID)
             }
-            broadcast.addParameter(field: "wired.board.reaction.emoji", value: emoji)
-            broadcast.addParameter(field: "wired.board.reaction.count", value: UInt32(count))
-            if added {
-                broadcast.addParameter(field: "wired.board.reaction.nick", value: nick)
+            broadcast.addParameter(field: "wired.board.reaction.emoji", value: payload.emoji)
+            broadcast.addParameter(field: "wired.board.reaction.count", value: UInt32(payload.count))
+            if payload.added {
+                broadcast.addParameter(field: "wired.board.reaction.nick", value: payload.nick)
             }
             _ = self.send(message: broadcast, client: connectedClient)
         }
@@ -1047,6 +1197,7 @@ extension ServerController {
             broadcast.addParameter(field: "wired.board.subject", value: thread.subject)
             broadcast.addParameter(field: "wired.user.nick", value: thread.nick)
             broadcast.addParameter(field: "wired.user.icon", value: thread.icon ?? Data())
+            addAttachmentDescriptors(App.attachmentsController.descriptorsForBoardThread(thread.uuid), to: broadcast)
             _ = self.send(message: broadcast, client: connectedClient)
         }
     }
@@ -1079,12 +1230,20 @@ extension ServerController {
                 broadcast.addParameter(field: "wired.user.icon", value: appendedPost.icon ?? Data())
                 broadcast.addParameter(field: "wired.board.post_date", value: appendedPost.postDate)
                 broadcast.addParameter(field: "wired.board.own_post", value: appendedPost.login == username)
+                addAttachmentDescriptors(App.attachmentsController.descriptorsForBoardPost(appendedPost.uuid), to: broadcast)
                 if let editDate = appendedPost.editDate {
                     broadcast.addParameter(field: "wired.board.edit_date", value: editDate)
                 }
+            } else {
+                addAttachmentDescriptors(App.attachmentsController.descriptorsForBoardThread(thread.uuid), to: broadcast)
             }
             _ = self.send(message: broadcast, client: connectedClient)
         }
+    }
+
+    private func addAttachmentDescriptors(_ descriptors: [AttachmentDescriptor], to message: P7Message) {
+        guard !descriptors.isEmpty else { return }
+        message.addParameter(field: "wired.attachment.descriptors", value: App.attachmentsController.descriptorStrings(descriptors))
     }
 
     private func broadcastThreadMoved(thread: Thread) {

@@ -41,4 +41,10 @@ final class P7SpecMetadataTests: XCTestCase {
         let withID = P7SpecItem(name: "wired.okay", spec: spec, attributes: ["id": "1000"])
         XCTAssertEqual(withID.description, "[1000] wired.okay")
     }
+
+    func testAccountPrivilegesCollectionIncludesFileLabelPrivilege() {
+        let spec = P7Spec(withPath: nil)
+
+        XCTAssertTrue(spec.accountPrivileges?.contains("wired.account.file.set_label") == true)
+    }
 }

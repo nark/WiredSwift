@@ -13,6 +13,7 @@ public class FilesController {
     static let maxPreviewSizeBytes: UInt64 = 10 * 1_024 * 1_024
 
     public var rootPath: String
+    let metadataStore = FileMetadataStore()
     private let subscriptionsQueue = DispatchQueue(label: "wired3.files.subscriptions")
     private var subscribedRealPathsByClient: [UInt32: Set<String>] = [:]
     private var subscribedVirtualPathsByClient: [UInt32: [String: Set<String>]] = [:]
@@ -245,9 +246,9 @@ public class FilesController {
 
         reply.addParameter(field: "wired.file.link", value: resolvedPath.linkKind != .none)
         reply.addParameter(field: "wired.file.executable", value: false)
-        reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
+        reply.addParameter(field: "wired.file.label", value: metadataStore.label(forPath: realPath).rawValue)
         reply.addParameter(field: "wired.file.volume", value: UInt32(0))
-        reply.addParameter(field: "wired.file.comment", value: "")
+        reply.addParameter(field: "wired.file.comment", value: wiredFileComment(forRealPath: realPath))
 
         if type == .file {
             reply.addParameter(field: "wired.file.data_size", value: File.size(path: realPath))
@@ -471,6 +472,107 @@ public class FilesController {
             App.serverController.replyOK(client: client, message: message)
             App.serverController.recordEvent(.fileSetType, client: client, parameters: [normalizedPath])
         }
+    }
+
+    public func setComment(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        guard let rawPath = message.string(forField: "wired.file.path"),
+              let comment = message.string(forField: "wired.file.comment") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if !File.isValid(path: rawPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let resolved = resolvedVirtualPath(for: rawPath)
+        let normalizedPath = resolved.normalizedVirtualPath
+        let realPath = resolved.resolvedRealPath
+
+        guard FileManager.default.fileExists(atPath: realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !user.hasPrivilege(name: "wired.account.file.set_comment") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        do {
+            if comment.isEmpty {
+                try metadataStore.removeComment(forPath: realPath)
+            } else {
+                try metadataStore.setComment(comment, forPath: realPath)
+            }
+        } catch {
+            Logger.error("Cannot set file comment for \(realPath): \(error)")
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
+        App.serverController.replyOK(client: client, message: message)
+        App.serverController.recordEvent(.fileSetComment, client: client, parameters: [normalizedPath])
+    }
+
+    public func setLabel(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        guard let rawPath = message.string(forField: "wired.file.path"),
+              let rawLabel = message.enumeration(forField: "wired.file.label"),
+              let label = File.FileLabel(rawValue: rawLabel) else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if !File.isValid(path: rawPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let resolved = resolvedVirtualPath(for: rawPath)
+        let normalizedPath = resolved.normalizedVirtualPath
+        let realPath = resolved.resolvedRealPath
+
+        guard FileManager.default.fileExists(atPath: realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privilege).writable {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !user.hasPrivilege(name: "wired.account.file.set_label") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        do {
+            if label == .LABEL_NONE {
+                try metadataStore.removeLabel(forPath: realPath)
+            } else {
+                try metadataStore.setLabel(label, forPath: realPath)
+            }
+        } catch {
+            Logger.error("Cannot set file label for \(realPath): \(error)")
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
+        App.serverController.replyOK(client: client, message: message)
+        App.serverController.recordEvent(.fileSetLabel, client: client, parameters: [normalizedPath])
     }
 
     public func setPermissions(client: Client, message: P7Message) {
@@ -728,6 +830,8 @@ public class FilesController {
             return false
         }
 
+        removeMetadata(forPath: finalPath)
+
         self.notifyDirectoryChanged(path: parentPath)
 
         if isDirectory {
@@ -749,6 +853,8 @@ public class FilesController {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
             return false
         }
+
+        moveMetadata(from: finalSource, to: finalDestination)
 
         App.indexController.removeIndex(forPath: finalSource)
         App.indexController.addIndex(forPath: finalDestination)
@@ -856,7 +962,6 @@ public class FilesController {
                 managedPrivileges = privileges
             }
 
-            // TODO: read comment
             switch type {
             case .file:
                 datasize = File.size(path: childRealPath)
@@ -913,7 +1018,7 @@ public class FilesController {
 
             reply.addParameter(field: "wired.file.link", value: linkKind != .none)
             reply.addParameter(field: "wired.file.executable", value: false)
-            reply.addParameter(field: "wired.file.label", value: File.FileLabel.LABEL_NONE.rawValue)
+            reply.addParameter(field: "wired.file.label", value: metadataStore.label(forPath: childRealPath).rawValue)
             reply.addParameter(field: "wired.file.volume", value: UInt32(0))
 
             if isManagedDirectoryType(type) {
@@ -1349,5 +1454,19 @@ public class FilesController {
             reply.addParameter(field: "wired.file.path", value: virtualPath)
             _ = App.serverController.send(message: reply, client: client)
         }
+    }
+
+    func wiredFileComment(forRealPath path: String) -> String {
+        metadataStore.comment(forPath: path) ?? ""
+    }
+
+    private func removeMetadata(forPath path: String) {
+        do { try metadataStore.removeComment(forPath: path) } catch { Logger.warning("Could not remove comment metadata for \(path): \(error)") }
+        do { try metadataStore.removeLabel(forPath: path) } catch { Logger.warning("Could not remove label metadata for \(path): \(error)") }
+    }
+
+    private func moveMetadata(from source: String, to destination: String) {
+        do { try metadataStore.moveComment(from: source, to: destination) } catch { Logger.warning("Could not move comment metadata \(source) -> \(destination): \(error)") }
+        do { try metadataStore.moveLabel(from: source, to: destination) } catch { Logger.warning("Could not move label metadata \(source) -> \(destination): \(error)") }
     }
 }
