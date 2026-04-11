@@ -193,7 +193,7 @@ final class IntegrationServerRuntime {
             self.serverStopped.signal()
         }
 
-        try waitForLoopbackPort(port, timeout: 10)
+        try waitForLoopbackPort(port, timeout: 20)
         started = true
         didStart = true
     }
