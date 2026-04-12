@@ -7,6 +7,9 @@
 //
 
 import Foundation
+#if os(macOS)
+import Darwin
+#endif
 
 struct FileManagerFinderInfo {
     var length: UInt32 = 0
@@ -14,6 +17,10 @@ struct FileManagerFinderInfo {
 }
 
 extension FileManager {
+    #if os(macOS)
+    private static let finderUserTagsXattrName = "com.apple.metadata:_kMDItemUserTags"
+    #endif
+
     /// Sets the POSIX permission mode of the file or directory at `path`.
     ///
     /// - Parameters:
@@ -77,6 +84,109 @@ extension FileManager {
     /// - Returns: `true`.
     public func setFinderInfo(_ finderInfo: Data, atPath path: String) -> Bool {
         return true
+    }
+
+    /// Writes the modern Finder color tag xattr used by recent macOS versions.
+    ///
+    /// The xattr stores a binary plist array of `"TagName\nColorIndex"` strings.
+    /// Existing non-colour tags are preserved, while existing coloured tags are
+    /// replaced with the requested one. Passing `0` removes the coloured tag.
+    ///
+    /// - Parameters:
+    ///   - labelNumber: Finder label number (`0...7`).
+    ///   - path: Absolute filesystem path of the target file or directory.
+    ///   - tagName: Optional display name to store for the coloured tag.
+    /// - Returns: `true` on success, `false` if the xattr could not be updated.
+    public func setFinderUserTag(labelNumber: Int, atPath path: String, tagName: String? = nil) -> Bool {
+        guard fileExists(atPath: path) else { return false }
+
+        #if os(Linux)
+            return false
+        #else
+        var tags = finderUserTags(atPath: path) ?? []
+        tags.removeAll { Self.finderUserTagColorIndex(from: $0) != nil }
+
+        if labelNumber != 0 {
+            guard let defaultTagName = Self.defaultFinderUserTagName(forLabelNumber: labelNumber) else {
+                return false
+            }
+
+            let resolvedTagName: String
+            if let tagName, !tagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                resolvedTagName = tagName
+            } else {
+                resolvedTagName = defaultTagName
+            }
+
+            tags.insert("\(resolvedTagName)\n\(labelNumber)", at: 0)
+        }
+
+        if tags.isEmpty {
+            let result = removexattr(path, Self.finderUserTagsXattrName, 0)
+            return result == 0 || errno == ENOATTR
+        }
+
+        guard let plist = try? PropertyListSerialization.data(fromPropertyList: tags, format: .binary, options: 0) else {
+            return false
+        }
+
+        let result = plist.withUnsafeBytes { rawBuffer -> Int32 in
+            guard let base = rawBuffer.baseAddress else { return -1 }
+            return setxattr(path, Self.finderUserTagsXattrName, base, rawBuffer.count, 0, 0)
+        }
+
+        return result == 0
+        #endif
+    }
+
+    /// Reads the modern Finder user tags xattr and returns the stored tag strings.
+    ///
+    /// - Parameter path: Absolute filesystem path of the target file or directory.
+    /// - Returns: The raw tag strings, or `nil` if the xattr is missing or invalid.
+    public func finderUserTags(atPath path: String) -> [String]? {
+        guard fileExists(atPath: path) else { return nil }
+
+        #if os(Linux)
+            return nil
+        #else
+        let size = getxattr(path, Self.finderUserTagsXattrName, nil, 0, 0, 0)
+        if size <= 0 {
+            return nil
+        }
+
+        var data = Data(count: Int(size))
+        let readCount = data.withUnsafeMutableBytes { rawBuffer -> Int in
+            guard let base = rawBuffer.baseAddress else { return -1 }
+            return getxattr(path, Self.finderUserTagsXattrName, base, rawBuffer.count, 0, 0)
+        }
+
+        guard readCount > 0 else { return nil }
+        return (try? PropertyListSerialization.propertyList(from: data, format: nil)) as? [String]
+        #endif
+    }
+
+    /// Returns the Finder colour index encoded in a raw `_kMDItemUserTags` entry.
+    public static func finderUserTagColorIndex(from tag: String) -> Int? {
+        let parts = tag.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false)
+        guard parts.count == 2, let colorIndex = Int(parts[1]), (1...7).contains(colorIndex) else {
+            return nil
+        }
+
+        return colorIndex
+    }
+
+    /// Returns the canonical Finder tag display name for a colour index.
+    public static func defaultFinderUserTagName(forLabelNumber labelNumber: Int) -> String? {
+        switch labelNumber {
+        case 1: return "Gray"
+        case 2: return "Green"
+        case 3: return "Purple"
+        case 4: return "Blue"
+        case 5: return "Yellow"
+        case 6: return "Red"
+        case 7: return "Orange"
+        default: return nil
+        }
     }
 
     /// Reads the `com.apple.FinderInfo` extended attribute of the file at `path`.

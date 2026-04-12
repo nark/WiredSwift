@@ -39,6 +39,27 @@ final class FileMetadataStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(".wired/labels").path))
     }
 
+    func testSetLabelMirrorsModernFinderUserTagOnMacOS() throws {
+        #if os(macOS)
+        let directory = try makeTemporaryDirectory()
+        let fileURL = directory.appendingPathComponent("note.txt")
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("x".utf8))
+
+        let store = FileMetadataStore()
+        try store.setLabel(.LABEL_RED, forPath: fileURL.path)
+
+        let tags = FileManager.default.finderUserTags(atPath: fileURL.path)
+        if tags == nil {
+            throw XCTSkip("Finder user tags xattr not supported in this environment")
+        }
+
+        XCTAssertEqual(tags, ["Red\n6"])
+        #else
+        throw XCTSkip("Finder user tags are only mirrored on macOS.")
+        #endif
+    }
+
     func testMovePreservesCommentAndLabelAcrossParents() throws {
         let directory = try makeTemporaryDirectory()
         let sourceParent = directory.appendingPathComponent("a", isDirectory: true)

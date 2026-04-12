@@ -122,6 +122,59 @@ final class FileManagerResourceForkTests: XCTestCase {
         #endif
     }
 
+    func testSetFinderUserTagWritesModernFinderTagXattr() throws {
+        #if os(Linux)
+        throw XCTSkip("Finder user tags are only supported on macOS.")
+        #else
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("finder-tag.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data([0x00]))
+
+        let result = FileManager.default.setFinderUserTag(labelNumber: 6, atPath: filePath, tagName: "Red")
+        if !result {
+            throw XCTSkip("Finder user tags xattr not supported in this environment (errno \(errno))")
+        }
+
+        XCTAssertEqual(FileManager.default.finderUserTags(atPath: filePath), ["Red\n6"])
+        #endif
+    }
+
+    func testSetFinderUserTagPreservesNonColourTags() throws {
+        #if os(Linux)
+        throw XCTSkip("Finder user tags are only supported on macOS.")
+        #else
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("finder-tag-preserve.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data([0x00]))
+
+        try requireFinderUserTagsXattr(["Project X", "Old Red\n6"], atPath: filePath)
+        XCTAssertTrue(FileManager.default.setFinderUserTag(labelNumber: 2, atPath: filePath, tagName: "Green"))
+
+        XCTAssertEqual(FileManager.default.finderUserTags(atPath: filePath), ["Green\n2", "Project X"])
+        #endif
+    }
+
+    func testSetFinderUserTagRemovesColouredEntryWhenLabelNumberIsZero() throws {
+        #if os(Linux)
+        throw XCTSkip("Finder user tags are only supported on macOS.")
+        #else
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let filePath = root.appendingPathComponent("finder-tag-clear.bin").path
+        FileManager.default.createFile(atPath: filePath, contents: Data([0x00]))
+
+        try requireFinderUserTagsXattr(["Inbox", "Red\n6"], atPath: filePath)
+        XCTAssertTrue(FileManager.default.setFinderUserTag(labelNumber: 0, atPath: filePath))
+
+        XCTAssertEqual(FileManager.default.finderUserTags(atPath: filePath), ["Inbox"])
+        #endif
+    }
+
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("wiredswift-tests-\(UUID().uuidString)", isDirectory: true)
@@ -144,6 +197,22 @@ final class FileManagerResourceForkTests: XCTestCase {
             return
         }
         throw XCTSkip("FinderInfo xattr not supported in this environment (errno \(errno))")
+    }
+
+    private func requireFinderUserTagsXattr(_ tags: [String], atPath path: String) throws {
+        let name = "com.apple.metadata:_kMDItemUserTags"
+        let data = try PropertyListSerialization.data(fromPropertyList: tags, format: .binary, options: 0)
+
+        let result = data.withUnsafeBytes { rawBuffer -> Int32 in
+            guard let base = rawBuffer.baseAddress else { return -1 }
+            return setxattr(path, name, base, rawBuffer.count, 0, 0)
+        }
+
+        if result == 0 {
+            return
+        }
+
+        throw XCTSkip("Finder user tags xattr not supported in this environment (errno \(errno))")
     }
     #endif
 }

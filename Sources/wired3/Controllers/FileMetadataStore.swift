@@ -306,6 +306,27 @@ final class FileMetadataStore {
         if setResult != 0 {
             throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
         }
+
+        if !FileManager.default.setFinderUserTag(
+            labelNumber: Int(finderNumbers[Int(label.rawValue)]),
+            atPath: path,
+            tagName: finderUserTagName(for: label)
+        ) {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
+    }
+
+    private func finderUserTagName(for label: File.FileLabel) -> String? {
+        switch label {
+        case .LABEL_NONE:   return nil
+        case .LABEL_RED:    return "Red"
+        case .LABEL_ORANGE: return "Orange"
+        case .LABEL_YELLOW: return "Yellow"
+        case .LABEL_GREEN:  return "Green"
+        case .LABEL_BLUE:   return "Blue"
+        case .LABEL_PURPLE: return "Purple"
+        case .LABEL_GRAY:   return "Gray"
+        }
     }
     #endif
 }
