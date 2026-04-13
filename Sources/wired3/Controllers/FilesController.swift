@@ -812,6 +812,53 @@ public class FilesController {
         }
     }
 
+    public func link(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        guard let fromPath = message.string(forField: "wired.file.path"),
+              let toPath = message.string(forField: "wired.file.new_path") else {
+            return
+        }
+
+        if !File.isValid(path: fromPath) || !File.isValid(path: toPath) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let normalizedFromPath = NSString(string: fromPath).standardizingPath
+        let normalizedToPath = NSString(string: toPath).standardizingPath
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedFromPath) {
+            if !managedAccess(forVirtualPath: normalizedFromPath, user: user, privilege: privilege).readable {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !user.hasPrivilege(name: "wired.account.file.create_links") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if let privilege = dropBoxPrivileges(forVirtualPath: normalizedToPath) {
+            if !managedAccess(forVirtualPath: normalizedToPath, user: user, privilege: privilege).writable {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !user.hasPrivilege(name: "wired.account.file.create_links") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if !isValidMovePlacement(from: normalizedFromPath, to: normalizedToPath) {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        if link(from: normalizedFromPath, to: normalizedToPath, client: client, message: message) {
+            App.serverController.replyOK(client: client, message: message)
+            App.serverController.recordEvent(.fileLinked, client: client, parameters: [normalizedFromPath, normalizedToPath])
+        }
+    }
+
     private func delete(path: String, client: Client, message: P7Message) -> Bool {
         let realPath = resolvedVirtualPathByResolvingParent(for: path).resolvedRealPath
         let parentPath = path.stringByDeletingLastPathComponent
@@ -862,6 +909,36 @@ public class FilesController {
         if sourceParentPath != destinationParentPath {
             self.notifyDirectoryChanged(path: destinationParentPath)
         }
+
+        return true
+    }
+
+    private func link(from sourcePath: String, to destinationPath: String, client: Client, message: P7Message) -> Bool {
+        let destinationParentPath = destinationPath.stringByDeletingLastPathComponent
+        let finalSource = resolvedVirtualPathByResolvingParent(for: sourcePath).resolvedRealPath
+        let resolvedSource = URL(fileURLWithPath: finalSource).resolvingSymlinksInPath().path
+        let finalDestination = resolvedVirtualPathByResolvingParent(for: destinationPath).resolvedRealPath
+
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: finalSource, isDirectory: &isDirectory) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return false
+        }
+
+        if FileManager.default.fileExists(atPath: finalDestination) {
+            App.serverController.replyError(client: client, error: "wired.error.file_exists", message: message)
+            return false
+        }
+
+        do {
+            try FileManager.default.createSymbolicLink(atPath: finalDestination, withDestinationPath: resolvedSource)
+        } catch {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return false
+        }
+
+        App.indexController.addIndex(forPath: finalDestination)
+        self.notifyDirectoryChanged(path: destinationParentPath)
 
         return true
     }

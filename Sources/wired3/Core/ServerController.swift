@@ -779,6 +779,8 @@ public class ServerController: ServerDelegate {
             App.filesController.delete(client: client, message: message)
         } else if message.name == "wired.file.move" {
             App.filesController.move(client: client, message: message)
+        } else if message.name == "wired.file.link" {
+            App.filesController.link(client: client, message: message)
         } else if message.name == "wired.file.set_type" {
             App.filesController.setType(client: client, message: message)
         } else if message.name == "wired.file.set_comment" {

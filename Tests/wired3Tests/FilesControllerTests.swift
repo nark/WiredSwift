@@ -457,6 +457,38 @@ final class FilesControllerTests: XCTestCase {
         XCTAssertEqual(context.app.filesController.metadataStore.label(forPath: destinationURL.path), .LABEL_RED)
     }
 
+    func testLinkCreatesSymlinkWithoutMovingSource() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let sourceURL = context.rootDir.appendingPathComponent("source.txt")
+        let destinationURL = context.rootDir.appendingPathComponent("linked.txt")
+        FileManager.default.createFile(atPath: sourceURL.path, contents: Data("link".utf8))
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.create_links": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.link", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/source.txt")
+        request.addParameter(field: "wired.file.new_path", value: "/linked.txt")
+
+        context.app.filesController.link(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.okay")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: sourceURL.path))
+        XCTAssertEqual(try FileManager.default.destinationOfSymbolicLink(atPath: destinationURL.path), sourceURL.path)
+    }
+
     func testDeleteRemovesCommentAndLabelMetadata() throws {
         let context = try makeAppContext()
         let sockets = try makeConnectedP7Pair(spec: context.app.spec)
