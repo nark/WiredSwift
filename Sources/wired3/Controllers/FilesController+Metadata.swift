@@ -420,6 +420,49 @@ extension FilesController {
         notify(path: path, messageName: "wired.file.directory_deleted", removeSubscriptionAfterNotify: true)
     }
 
+    func handleExternalFilesystemChanges(realPaths: [String]) {
+        let root = URL(fileURLWithPath: rootPath).standardizedFileURL.path
+        let fileManager = FileManager.default
+        var changedDirectories = Set<String>()
+        var deletedDirectories = Set<String>()
+
+        for realPath in realPaths {
+            let standardizedPath = URL(fileURLWithPath: realPath).standardizedFileURL.path
+            guard standardizedPath == root || standardizedPath.hasPrefix(root + "/") else {
+                continue
+            }
+            guard !standardizedPath.contains("/.wired") else {
+                continue
+            }
+
+            if standardizedPath == root {
+                changedDirectories.insert("/")
+                continue
+            }
+
+            let virtualPath = normalizeVirtualPath(virtual(path: standardizedPath))
+            let parentVirtualPath = normalizeVirtualPath(virtual(path: (standardizedPath as NSString).deletingLastPathComponent))
+            changedDirectories.insert(parentVirtualPath)
+
+            var isDirectory: ObjCBool = false
+            if fileManager.fileExists(atPath: standardizedPath, isDirectory: &isDirectory) {
+                if isDirectory.boolValue {
+                    changedDirectories.insert(virtualPath)
+                }
+            } else {
+                deletedDirectories.insert(virtualPath)
+            }
+        }
+
+        for path in changedDirectories.sorted() {
+            notifyDirectoryChanged(path: path)
+        }
+
+        for path in deletedDirectories.sorted() {
+            notifyDirectoryDeleted(path: path)
+        }
+    }
+
     func notify(path: String, messageName: String, removeSubscriptionAfterNotify: Bool) {
         let realPath = resolvedVirtualPath(for: path).resolvedRealPath
         let targets: [(UInt32, String)] = subscriptionsQueue.sync {
