@@ -748,7 +748,7 @@ final class WiredServerViewModel: ObservableObject {
         return trimmed.isEmpty ? runtimeFilesPath : trimmed
     }
 
-    private func runProcess(_ launchPath: String, _ arguments: [String]) -> (status: Int32, output: String, errorOutput: String) {
+    private func runProcess(_ launchPath: String, _ arguments: [String]) -> ProcessResult {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: launchPath)
         task.arguments = arguments
@@ -762,7 +762,7 @@ final class WiredServerViewModel: ObservableObject {
             try task.run()
             task.waitUntilExit()
         } catch {
-            return (1, "", error.localizedDescription)
+            return ProcessResult(status: 1, output: "", errorOutput: error.localizedDescription)
         }
 
         let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
@@ -770,7 +770,11 @@ final class WiredServerViewModel: ObservableObject {
 
         let output = String(data: outputData, encoding: .utf8) ?? ""
         let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
-        return (task.terminationStatus, output, errorOutput)
+        return ProcessResult(
+            status: task.terminationStatus,
+            output: output,
+            errorOutput: errorOutput
+        )
     }
 
     private func runCommand(_ launchPath: String, _ arguments: [String]) -> String {
@@ -931,9 +935,19 @@ final class WiredServerViewModel: ObservableObject {
     private func bootstrapRuntimeIfNeeded() {
         do {
             try fileManager.createDirectory(atPath: workingDirectory, withIntermediateDirectories: true)
-            try fileManager.createDirectory(atPath: URL(fileURLWithPath: workingDirectory).appendingPathComponent("etc").path, withIntermediateDirectories: true)
+            try fileManager.createDirectory(
+                atPath: URL(fileURLWithPath: workingDirectory)
+                    .appendingPathComponent("etc")
+                    .path,
+                withIntermediateDirectories: true
+            )
             try fileManager.createDirectory(atPath: runtimeFilesPath, withIntermediateDirectories: true)
-            try fileManager.createDirectory(atPath: URL(fileURLWithPath: workingDirectory).appendingPathComponent("bin").path, withIntermediateDirectories: true)
+            try fileManager.createDirectory(
+                atPath: URL(fileURLWithPath: workingDirectory)
+                    .appendingPathComponent("bin")
+                    .path,
+                withIntermediateDirectories: true
+            )
 
             if !fileManager.fileExists(atPath: configPath) {
                 try defaultConfig().write(to: URL(fileURLWithPath: configPath), atomically: true, encoding: .utf8)
@@ -1192,23 +1206,31 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         do {
-            let stats = try openRawDatabaseReturning { db -> (Bool, Int, Int, Int, Int) in
+            let stats = try openRawDatabaseReturning { db -> DashboardDatabaseStats in
                 let initialized = try tableExists(db, table: "users")
-                guard initialized else { return (false, 0, 0, 0, 0) }
-                return (
-                    true,
-                    try queryCount(db, "SELECT COUNT(*) FROM users;"),
-                    try queryCount(db, "SELECT COUNT(*) FROM `groups`;"),
-                    try queryCount(db, "SELECT COUNT(*) FROM events;"),
-                    try queryCount(db, "SELECT COUNT(*) FROM boards;")
+                guard initialized else {
+                    return DashboardDatabaseStats(
+                        isInitialized: false,
+                        accountsCount: 0,
+                        groupsCount: 0,
+                        eventsCount: 0,
+                        boardsCount: 0
+                    )
+                }
+                return DashboardDatabaseStats(
+                    isInitialized: true,
+                    accountsCount: try queryCount(db, "SELECT COUNT(*) FROM users;"),
+                    groupsCount: try queryCount(db, "SELECT COUNT(*) FROM `groups`;"),
+                    eventsCount: try queryCount(db, "SELECT COUNT(*) FROM events;"),
+                    boardsCount: try queryCount(db, "SELECT COUNT(*) FROM boards;")
                 )
             }
 
-            dashboardDatabaseInitialized = stats.0
-            dashboardAccountsCount = stats.1
-            dashboardGroupsCount = stats.2
-            dashboardEventsCount = stats.3
-            dashboardBoardsCount = stats.4
+            dashboardDatabaseInitialized = stats.isInitialized
+            dashboardAccountsCount = stats.accountsCount
+            dashboardGroupsCount = stats.groupsCount
+            dashboardEventsCount = stats.eventsCount
+            dashboardBoardsCount = stats.boardsCount
         } catch {
             dashboardDatabaseInitialized = false
             dashboardAccountsCount = 0
@@ -1218,26 +1240,28 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    private func processMetrics(for pid: Int32) -> (uptime: String, cpu: String, memory: String) {
+    private func processMetrics(for pid: Int32) -> DashboardProcessMetrics {
         let result = runProcess("/bin/ps", ["-p", String(pid), "-o", "%cpu=", "-o", "rss=", "-o", "etime="])
         guard result.status == 0 else {
-            return ("-", "-", "-")
+            return .empty
         }
 
         let lines = result.output
             .split(separator: "\n", omittingEmptySubsequences: true)
             .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
-        guard let line = lines.first else { return ("-", "-", "-") }
+        guard let line = lines.first else { return .empty }
 
         let parts = line.split(whereSeparator: \.isWhitespace).map(String.init)
-        guard parts.count >= 3 else { return ("-", "-", "-") }
+        guard parts.count >= 3 else { return .empty }
 
         let cpu = parts[0].replacingOccurrences(of: ",", with: ".")
         let memoryKB = Int64(parts[1]) ?? 0
-        return (
-            parts[2],
-            cpu.isEmpty ? "-" : "\(cpu)%",
-            memoryKB > 0 ? byteCountFormatter.string(fromByteCount: memoryKB * 1024) : "-"
+        return DashboardProcessMetrics(
+            uptime: parts[2],
+            cpu: cpu.isEmpty ? "-" : "\(cpu)%",
+            memory: memoryKB > 0
+                ? byteCountFormatter.string(fromByteCount: memoryKB * 1024)
+                : "-"
         )
     }
 
@@ -1708,19 +1732,9 @@ strict_identity = yes
 
     private func normalizedCipherMode(_ any: Any?) -> String {
         let raw = stringValue(any, default: P7Socket.CipherType.SECURE_ONLY.description)
-        if let intValue = UInt32(raw), intValue > 0 {
-            let parsed = P7Socket.CipherType(rawValue: intValue)
-            switch parsed {
-            case .ALL: return P7Socket.CipherType.ALL.description
-            case .SECURE_ONLY: return P7Socket.CipherType.SECURE_ONLY.description
-            case .NONE: return P7Socket.CipherType.NONE.description
-            case .ECDH_AES256_SHA256: return P7Socket.CipherType.ECDH_AES256_SHA256.description
-            case .ECDH_AES128_GCM: return P7Socket.CipherType.ECDH_AES128_GCM.description
-            case .ECDH_AES256_GCM: return P7Socket.CipherType.ECDH_AES256_GCM.description
-            case .ECDH_CHACHA20_POLY1305: return P7Socket.CipherType.ECDH_CHACHA20_POLY1305.description
-            case .ECDH_XCHACHA20_POLY1305: return P7Socket.CipherType.ECDH_XCHACHA20_POLY1305.description
-            default: return P7Socket.CipherType.SECURE_ONLY.description
-            }
+        if let intValue = UInt32(raw), intValue > 0,
+           let normalized = normalizedCipherMode(rawValue: intValue) {
+            return normalized
         }
 
         switch normalizeToken(raw) {
@@ -1747,20 +1761,9 @@ strict_identity = yes
 
     private func normalizedChecksumMode(_ any: Any?) -> String {
         let raw = stringValue(any, default: P7Socket.Checksum.SECURE_ONLY.description)
-        if let intValue = UInt32(raw), intValue > 0 {
-            let parsed = P7Socket.Checksum(rawValue: intValue)
-            switch parsed {
-            case .ALL: return P7Socket.Checksum.ALL.description
-            case .SECURE_ONLY: return P7Socket.Checksum.SECURE_ONLY.description
-            case .NONE: return P7Socket.Checksum.NONE.description
-            case .SHA2_256: return P7Socket.Checksum.SHA2_256.description
-            case .SHA2_384: return P7Socket.Checksum.SHA2_384.description
-            case .SHA3_256: return P7Socket.Checksum.SHA3_256.description
-            case .SHA3_384: return P7Socket.Checksum.SHA3_384.description
-            case .HMAC_256: return P7Socket.Checksum.HMAC_256.description
-            case .HMAC_384: return P7Socket.Checksum.HMAC_384.description
-            default: return P7Socket.Checksum.SECURE_ONLY.description
-            }
+        if let intValue = UInt32(raw), intValue > 0,
+           let normalized = normalizedChecksumMode(rawValue: intValue) {
+            return normalized
         }
 
         switch normalizeToken(raw) {
@@ -1784,6 +1787,54 @@ strict_identity = yes
             return P7Socket.Checksum.HMAC_384.description
         default:
             return P7Socket.Checksum.SECURE_ONLY.description
+        }
+    }
+
+    private func normalizedCipherMode(rawValue: UInt32) -> String? {
+        switch P7Socket.CipherType(rawValue: rawValue) {
+        case .ALL:
+            return P7Socket.CipherType.ALL.description
+        case .SECURE_ONLY:
+            return P7Socket.CipherType.SECURE_ONLY.description
+        case .NONE:
+            return P7Socket.CipherType.NONE.description
+        case .ECDH_AES256_SHA256:
+            return P7Socket.CipherType.ECDH_AES256_SHA256.description
+        case .ECDH_AES128_GCM:
+            return P7Socket.CipherType.ECDH_AES128_GCM.description
+        case .ECDH_AES256_GCM:
+            return P7Socket.CipherType.ECDH_AES256_GCM.description
+        case .ECDH_CHACHA20_POLY1305:
+            return P7Socket.CipherType.ECDH_CHACHA20_POLY1305.description
+        case .ECDH_XCHACHA20_POLY1305:
+            return P7Socket.CipherType.ECDH_XCHACHA20_POLY1305.description
+        default:
+            return nil
+        }
+    }
+
+    private func normalizedChecksumMode(rawValue: UInt32) -> String? {
+        switch P7Socket.Checksum(rawValue: rawValue) {
+        case .ALL:
+            return P7Socket.Checksum.ALL.description
+        case .SECURE_ONLY:
+            return P7Socket.Checksum.SECURE_ONLY.description
+        case .NONE:
+            return P7Socket.Checksum.NONE.description
+        case .SHA2_256:
+            return P7Socket.Checksum.SHA2_256.description
+        case .SHA2_384:
+            return P7Socket.Checksum.SHA2_384.description
+        case .SHA3_256:
+            return P7Socket.Checksum.SHA3_256.description
+        case .SHA3_384:
+            return P7Socket.Checksum.SHA3_384.description
+        case .HMAC_256:
+            return P7Socket.Checksum.HMAC_256.description
+        case .HMAC_384:
+            return P7Socket.Checksum.HMAC_384.description
+        default:
+            return nil
         }
     }
 
@@ -1960,6 +2011,28 @@ struct DashboardHealthSummary {
     let level: DashboardHealthLevel
     let title: String
     let detail: String
+}
+
+private struct ProcessResult {
+    let status: Int32
+    let output: String
+    let errorOutput: String
+}
+
+private struct DashboardDatabaseStats {
+    let isInitialized: Bool
+    let accountsCount: Int
+    let groupsCount: Int
+    let eventsCount: Int
+    let boardsCount: Int
+}
+
+private struct DashboardProcessMetrics {
+    let uptime: String
+    let cpu: String
+    let memory: String
+
+    static let empty = DashboardProcessMetrics(uptime: "-", cpu: "-", memory: "-")
 }
 
 enum DashboardHealthLevel {
