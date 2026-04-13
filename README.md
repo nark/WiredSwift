@@ -38,6 +38,7 @@ Releases: https://github.com/nark/WiredSwift/releases
   - [Building from source on Linux](#building-from-source-on-linux)
   - [First boot and runtime layout](#first-boot-and-runtime-layout)
   - [Running as a systemd service](#running-as-a-systemd-service)
+  - [Attachment behavior and quotas](#attachment-behavior-and-quotas)
   - [Securing your server](#securing-your-server)
 - [Integrating WiredSwift in Your App](#integrating-wiredswift-in-your-app)
   - [Documentation hub](#documentation-hub)
@@ -352,6 +353,29 @@ sudo systemctl status wired3
 sudo journalctl -u wired3 -f
 sudo systemctl restart wired3
 ```
+
+### Attachment behavior and quotas
+
+The server enforces the following limits on attachments:
+
+- **Maximum attachment size**: 16 MB per file
+- **Maximum preview size**: 1 MB (for inline previews)
+- **Maximum attachments per message**: 8 files
+- **Maximum total attachment bytes per message**: 32 MB
+- **Maximum persistent board storage**: 512 MB (shared across all boards)
+- **Chunk size limit**: 256 KB per upload/download chunk
+- **Staging TTL**: 10 minutes (for incomplete uploads)
+- **Chat ephemeral TTL**: 10 minutes (for chat attachments)
+- **Direct message ephemeral TTL**: 30 days (for direct message attachments)
+
+Attachments are stored in different locations depending on their scope:
+
+- **Staging**: Temporary storage for incomplete uploads (`attachments/staging/`)
+- **Ephemeral**: Short-lived attachments for chats and direct messages (`attachments/ephemeral/`)
+- **Persistent**: Long-lived attachments for boards (`attachments/store/`)
+
+The server automatically cleans up expired attachments every 30 seconds.
+
 
 ### Securing your server
 
