@@ -38,6 +38,9 @@ enum WiredMigrations {
         migrator.registerMigration("v10_add_file_metadata_privileges") { db in
             try WiredMigrations.v10(db)
         }
+        migrator.registerMigration("v11_tracked_servers") { db in
+            try WiredMigrations.v11(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -173,6 +176,32 @@ enum WiredMigrations {
             LEFT JOIN group_privileges ref
                 ON ref.group_id = g.id AND ref.name = 'wired.account.file.set_type'
         """)
+    }
+
+    static func v11(_ db: Database) throws {
+        try db.create(table: "tracked_servers", ifNotExists: true) { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("source_ip", .text).notNull().unique()
+            t.column("display_ip", .text).notNull()
+            t.column("port", .integer).notNull()
+            t.column("url", .text).notNull()
+            t.column("category", .text).notNull()
+            t.column("is_tracker", .boolean).notNull()
+            t.column("name", .text).notNull()
+            t.column("description", .text).notNull()
+            t.column("users", .integer).notNull()
+            t.column("files_count", .integer).notNull()
+            t.column("files_size", .integer).notNull()
+            t.column("registered_at", .datetime).notNull()
+            t.column("updated_at", .datetime)
+            t.column("last_seen_at", .datetime).notNull()
+            t.column("is_active", .boolean).notNull()
+        }
+
+        try db.create(index: "tracked_servers_last_seen_at",
+                      on: "tracked_servers",
+                      columns: ["last_seen_at"],
+                      ifNotExists: true)
     }
 
     // SECURITY (FINDING_A_004): Add password_salt column for salted SHA-256 hashing

@@ -973,6 +973,34 @@ final class Lot2FeatureIntegrationTests: SerializedIntegrationTestCase {
         XCTAssertEqual(notSubscribed.string(forField: "wired.error.string"), "wired.error.not_subscribed")
     }
 
+    func testExternalFilesystemChangeTriggersDirectoryNotificationAndSearchIndexRefresh() throws {
+        let runtime = try IntegrationServerRuntime()
+        try runtime.start()
+        runtime.ensurePrivilegedUser(username: "it_admin", password: "secret")
+        defer { try? runtime.stop() }
+
+        let socket = try runtime.connectClient(username: "it_admin", password: "secret")
+        defer { socket.disconnect() }
+        try sendClientInfoAndExpectServerInfo(socket: socket)
+        _ = try sendLoginAndExpectSuccess(socket: socket, username: "it_admin", password: "secret")
+        drainMessages(socket: socket)
+
+        let subscribe = P7Message(withName: "wired.file.subscribe_directory", spec: socket.spec)
+        subscribe.addParameter(field: "wired.file.path", value: "/")
+        XCTAssertTrue(socket.write(subscribe))
+        _ = try readMessage(from: socket, expectedName: "wired.okay", maxReads: 12)
+
+        let externalFile = runtime.filesURL.appendingPathComponent("outside.txt")
+        try Data("external".utf8).write(to: externalFile)
+
+        let changed = try readMessage(from: socket, expectedName: "wired.file.directory_changed", maxReads: 80, timeout: 5)
+        XCTAssertEqual(changed.string(forField: "wired.file.path"), "/")
+
+        XCTAssertTrue(waitUntil(timeout: 5, interval: 0.1) {
+            runtime.indexedFilesCount() == 1
+        })
+    }
+
     func testAccountsSubscriberReceivesAccountsChangedBroadcastOnCreateUser() throws {
         let runtime = try IntegrationServerRuntime()
         try runtime.start()

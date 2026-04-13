@@ -46,6 +46,7 @@ public class AppController {
     var transfersController: TransfersController!
     var trackerController: TrackerController!
     var outgoingTrackersController: OutgoingTrackersController!
+    var filesystemMonitor: FilesystemMonitor?
     var bootstrapStateStore: BootstrapStateStore!
     var logsController: LogsController!
 
@@ -123,7 +124,7 @@ public class AppController {
                                                filesController: self.filesController)
 
         self.transfersController = TransfersController(filesController: filesController)
-        self.trackerController = TrackerController()
+        self.trackerController = TrackerController(databaseController: self.databaseController)
         self.outgoingTrackersController = OutgoingTrackersController()
 
         // Seed initial data (only on first run — no-op if data already exists)
@@ -145,6 +146,7 @@ public class AppController {
 
         self.indexController.indexFiles()
         self.indexController.configure(reindexInterval: resolvedReindexInterval())
+        configureFilesystemMonitoring()
         self.eventsController.configureAutoPurge(retentionPolicy: resolvedEventRetentionPolicy())
         configureSnapshotScheduling()
 
@@ -178,6 +180,8 @@ public class AppController {
         self.outgoingTrackersController?.stop()
         self.serverController?.stop()
         self.trackerController?.stop()
+        self.filesystemMonitor?.stop()
+        self.filesystemMonitor = nil
         self.indexController?.configure(reindexInterval: 0)
         self.snapshotTimer?.cancel()
         self.snapshotTimer = nil
@@ -226,6 +230,7 @@ public class AppController {
 
         // Re-arm the periodic reindex timer if the interval changed.
         self.indexController.configure(reindexInterval: resolvedReindexInterval())
+        configureFilesystemMonitoring()
         self.eventsController.configureAutoPurge(retentionPolicy: resolvedEventRetentionPolicy())
         configureSnapshotScheduling()
 
@@ -246,6 +251,21 @@ public class AppController {
             Logger.info("  log.level: \(current.description.lowercased()) → \(level.description.lowercased())")
             Logger.setMaxLevel(level)
         }
+    }
+
+    private func configureFilesystemMonitoring() {
+        filesystemMonitor?.stop()
+        filesystemMonitor = FilesystemMonitor(path: filesController.rootPath) { [weak self] realPaths in
+            guard let self else { return }
+            self.filesController.handleExternalFilesystemChanges(realPaths: realPaths)
+            self.indexController.forceReindex()
+        }
+        guard filesystemMonitor?.start() == true else {
+            Logger.info("Filesystem monitor unavailable for \(filesController.rootPath); relying on periodic reindex")
+            filesystemMonitor = nil
+            return
+        }
+        Logger.info("Filesystem monitor active for \(filesController.rootPath)")
     }
 
     /// Read the reindex interval from config.

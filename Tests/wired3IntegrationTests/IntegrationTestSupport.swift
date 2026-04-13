@@ -260,6 +260,25 @@ final class IntegrationServerRuntime {
         )
     }
 
+    func searchIndexContains(virtualPath: String) -> Bool {
+        do {
+            return try app.databaseController.dbQueue.read { db in
+                let count = try Int.fetchOne(
+                    db,
+                    sql: #"SELECT COUNT(*) FROM "index" WHERE virtual_path = ?"#,
+                    arguments: [virtualPath]
+                ) ?? 0
+                return count > 0
+            }
+        } catch {
+            return false
+        }
+    }
+
+    func indexedFilesCount() -> UInt64 {
+        app.indexController.totalFilesCount
+    }
+
     func connectClient(username: String, password plainPassword: String) throws -> P7Socket {
         let spec = P7Spec(withPath: specPath)
         let socket = P7Socket(hostname: "127.0.0.1", port: port, spec: spec)

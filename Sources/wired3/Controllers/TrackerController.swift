@@ -1,4 +1,5 @@
 import Foundation
+import GRDB
 import WiredSwift
 
 /// In-memory registry for servers that register against this Wired server acting as a tracker.
@@ -31,10 +32,13 @@ final class TrackerController {
     }
 
     private var serversBySourceIP: [String: TrackedServer] = [:]
+    private let databaseController: DatabaseController
     private let serversLock = Lock()
     private var purgeTask: Task<Void, Never>?
 
-    init() {
+    init(databaseController: DatabaseController) {
+        self.databaseController = databaseController
+        loadPersistedServers()
         startPurgeLoop()
     }
 
@@ -130,6 +134,7 @@ final class TrackerController {
         serversLock.exclusivelyWrite {
             serversBySourceIP[sourceIP] = trackedServer
         }
+        persist(trackedServer)
 
         return trackedServer
     }
@@ -147,7 +152,7 @@ final class TrackerController {
             throw TrackerError.invalidMessage
         }
 
-        return try serversLock.exclusivelyWrite {
+        let updatedServer = try serversLock.exclusivelyWrite {
             guard var existing = serversBySourceIP[sourceIP], existing.isActive else {
                 throw TrackerError.notRegistered
             }
@@ -161,14 +166,39 @@ final class TrackerController {
             serversBySourceIP[sourceIP] = existing
             return existing
         }
+        persist(updatedServer)
+        return updatedServer
     }
 
     func purgeExpiredServers(now: Date = Date()) {
-        serversLock.exclusivelyWrite {
-            serversBySourceIP = serversBySourceIP.filter { _, server in
-                guard server.isActive else { return false }
-                return now.timeIntervalSince(server.lastSeenAt) <= Self.entryExpirationInterval
+        let expiredSourceIPs = serversLock.exclusivelyWrite { () -> [String] in
+            var expired: [String] = []
+            serversBySourceIP = serversBySourceIP.filter { sourceIP, server in
+                let keep = server.isActive && now.timeIntervalSince(server.lastSeenAt) <= Self.entryExpirationInterval
+                if !keep {
+                    expired.append(sourceIP)
+                }
+                return keep
             }
+            return expired
+        }
+
+        if !expiredSourceIPs.isEmpty {
+            deletePersisted(sourceIPs: expiredSourceIPs)
+        }
+    }
+
+    func activeServersSnapshot(now: Date = Date()) -> [TrackedServer] {
+        purgeExpiredServers(now: now)
+        return serversLock.concurrentlyRead {
+            serversBySourceIP.values
+                .filter { $0.isActive }
+                .sorted { lhs, rhs in
+                    if lhs.name != rhs.name {
+                        return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+                    }
+                    return lhs.url.localizedStandardCompare(rhs.url) == .orderedAscending
+                }
         }
     }
 
@@ -181,6 +211,102 @@ final class TrackerController {
                 self.purgeExpiredServers()
             }
         }
+    }
+
+    private func loadPersistedServers(now: Date = Date()) {
+        do {
+            let records = try databaseController.dbQueue.read { db in
+                try TrackedServerRecord.fetchAll(db)
+            }
+
+            var activeServers: [String: TrackedServer] = [:]
+            var expiredSourceIPs: [String] = []
+            for record in records {
+                let server = record.trackedServer()
+                let isExpired = !server.isActive || now.timeIntervalSince(server.lastSeenAt) > Self.entryExpirationInterval
+                if isExpired {
+                    expiredSourceIPs.append(server.sourceIP)
+                } else {
+                    activeServers[server.sourceIP] = server
+                }
+            }
+
+            serversLock.exclusivelyWrite {
+                serversBySourceIP = activeServers
+            }
+
+            if !expiredSourceIPs.isEmpty {
+                deletePersisted(sourceIPs: expiredSourceIPs)
+            }
+        } catch {
+            Logger.error("TrackerController: failed to load persisted tracker registry: \(error)")
+        }
+    }
+
+    private func persist(_ server: TrackedServer) {
+        do {
+            try databaseController.dbQueue.write { db in
+                try db.execute(
+                    sql: """
+                    INSERT INTO tracked_servers (
+                        source_ip, display_ip, port, url, category, is_tracker, name, description,
+                        users, files_count, files_size, registered_at, updated_at, last_seen_at, is_active
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(source_ip) DO UPDATE SET
+                        display_ip = excluded.display_ip,
+                        port = excluded.port,
+                        url = excluded.url,
+                        category = excluded.category,
+                        is_tracker = excluded.is_tracker,
+                        name = excluded.name,
+                        description = excluded.description,
+                        users = excluded.users,
+                        files_count = excluded.files_count,
+                        files_size = excluded.files_size,
+                        registered_at = excluded.registered_at,
+                        updated_at = excluded.updated_at,
+                        last_seen_at = excluded.last_seen_at,
+                        is_active = excluded.is_active
+                    """,
+                    arguments: [
+                        server.sourceIP,
+                        server.displayIP,
+                        Int64(server.port),
+                        server.url,
+                        server.category,
+                        server.isTracker,
+                        server.name,
+                        server.description,
+                        Int64(server.users),
+                        Int64(clamping: server.filesCount),
+                        Int64(clamping: server.filesSize),
+                        server.registeredAt,
+                        server.updatedAt,
+                        server.lastSeenAt,
+                        server.isActive
+                    ]
+                )
+            }
+        } catch {
+            Logger.error("TrackerController: failed to persist tracked server \(server.sourceIP): \(error)")
+        }
+    }
+
+    private func deletePersisted(sourceIPs: [String]) {
+        do {
+            try databaseController.dbQueue.write { db in
+                try db.execute(
+                    sql: "DELETE FROM tracked_servers WHERE source_ip IN (\(databaseQuestionMarks(count: sourceIPs.count)))",
+                    arguments: StatementArguments(sourceIPs)
+                )
+            }
+        } catch {
+            Logger.error("TrackerController: failed to purge persisted tracked servers: \(error)")
+        }
+    }
+
+    private func databaseQuestionMarks(count: Int) -> String {
+        Array(repeating: "?", count: count).joined(separator: ", ")
     }
 
     private func normalizedSourceIP(from client: Client) -> String? {
