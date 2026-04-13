@@ -19,6 +19,15 @@ private enum Formatters {
         formatter.maximum = 65_535
         return formatter
     }()
+
+    static let nonNegativeInteger: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .none
+        formatter.allowsFloats = false
+        formatter.usesGroupingSeparator = false
+        formatter.minimum = 0
+        return formatter
+    }()
 }
 
 @available(macOS 12.0, *)
@@ -330,7 +339,56 @@ struct FilesTabView: View {
 }
 
 @available(macOS 12.0, *)
-struct AdvancedTabView: View {
+struct DatabaseTabView: View {
+    @EnvironmentObject private var model: WiredServerViewModel
+
+    var body: some View {
+        SettingsPane {
+            Form {
+                Section(L("database.snapshot.section")) {
+                    HStack {
+                        Text(L("database.snapshot.interval"))
+
+                        TextField("", value: $model.databaseSnapshotInterval, formatter: Formatters.nonNegativeInteger)
+                            .frame(width: UIConstants.numberFieldWidth)
+                            .textFieldStyle(.roundedBorder)
+
+                        Text(L("database.snapshot.seconds"))
+
+                        Spacer(minLength: 0)
+
+                        Button(L("common.save")) {
+                            model.saveDatabaseSettings()
+                        }
+                    }
+
+                    Text(L("database.snapshot.help"))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section(L("database.events.section")) {
+                    Picker(L("database.events.retention"), selection: $model.eventRetentionPolicy) {
+                        ForEach(model.eventRetentionOptions) { option in
+                            Text(option.title).tag(option.id)
+                        }
+                    }
+                    .onChange(of: model.eventRetentionPolicy) { _ in
+                        model.saveEventRetentionSetting()
+                    }
+
+                    Text(L("database.events.help"))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .formStyle(.grouped)
+        }
+    }
+}
+
+@available(macOS 12.0, *)
+struct SecurityTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
     @State private var fingerprintCopied = false
 
@@ -430,7 +488,7 @@ struct AdvancedTabView: View {
 
                 HStack {
                     Spacer()
-                    Button(L("advanced.save")) {
+                    Button(L("security.save")) {
                         model.saveAdvancedSettings()
                     }
                 }

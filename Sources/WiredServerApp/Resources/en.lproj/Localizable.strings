@@ -15,7 +15,8 @@
 "pane.general" = "General";
 "pane.network" = "Network";
 "pane.files" = "Files";
-"pane.advanced" = "Advanced";
+"pane.database" = "Database";
+"pane.security" = "Security";
 "pane.logs" = "Logs";
 
 "general.installation.section" = "Installation";
@@ -50,6 +51,19 @@
 "files.index.seconds" = "sec.";
 "files.index.now" = "Re-index";
 
+"database.snapshot.section" = "SQLite Snapshot";
+"database.snapshot.interval" = "Snapshot every";
+"database.snapshot.seconds" = "sec.";
+"database.snapshot.help" = "Creates a local SQLite backup copy at the configured interval. Set the interval to 0 to disable automatic snapshots.";
+"database.events.section" = "Event Retention";
+"database.events.retention" = "Automatically purge events";
+"database.events.help" = "Deletes events older than the selected retention window.";
+"database.events.retention.never" = "Never";
+"database.events.retention.daily" = "Every day";
+"database.events.retention.weekly" = "Every week";
+"database.events.retention.monthly" = "Every month";
+"database.events.retention.yearly" = "Every year";
+
 "advanced.admin.section" = "Admin account";
 "advanced.admin.password.placeholder" = "Admin password";
 "advanced.admin.set_password" = "Set Password";
@@ -74,7 +88,7 @@
 "advanced.identity.export" = "Export Public Key";
 "advanced.identity.copied" = "Fingerprint copied!";
 
-"advanced.save" = "Save advanced settings";
+"security.save" = "Save security settings";
 
 "logs.open" = "Open logs";
 "logs.empty" = "No logs yet";
@@ -88,6 +102,8 @@
 "status.port_saved" = "Port saved";
 "status.files_settings_saved" = "Files settings saved";
 "status.files_settings_saved_reloaded" = "Files settings saved and applied";
+"status.database_settings_saved" = "Database settings saved";
+"status.database_settings_saved_reloaded" = "Database settings saved and applied";
 "status.reindex_on_next_start" = "Re-indexing will run on next start";
 "status.reindex_triggered" = "Re-index triggered";
 "status.server_restarted_reindex" = "Server restarted, re-index triggered";

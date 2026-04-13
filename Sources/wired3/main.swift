@@ -296,6 +296,10 @@ port = 4871
 trackers = ["wired.read-write.fr"]
 reindex_interval = 3600
 
+[database]
+snapshot_interval = 86400
+event_retention = never
+
 [advanced]
 compression = ALL
 cipher = SECURE_ONLY

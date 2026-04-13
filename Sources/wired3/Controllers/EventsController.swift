@@ -7,10 +7,61 @@ import WiredSwift
 /// Events are written via `addEvent` and can be retrieved with `listEvents`.
 /// The `deleteEvents` method supports range-based pruning of old entries.
 public final class EventsController {
+    enum RetentionPolicy: String, Equatable {
+        case never
+        case daily
+        case weekly
+        case monthly
+        case yearly
+
+        var maxAge: TimeInterval? {
+            switch self {
+            case .never:
+                return nil
+            case .daily:
+                return 24 * 3600
+            case .weekly:
+                return 7 * 24 * 3600
+            case .monthly:
+                return 31 * 24 * 3600
+            case .yearly:
+                return 365 * 24 * 3600
+            }
+        }
+
+        static func parse(_ rawValue: String?) -> RetentionPolicy {
+            guard let rawValue else { return .never }
+
+            switch rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "never", "none":
+                return .never
+            case "daily":
+                return .daily
+            case "weekly":
+                return .weekly
+            case "monthly":
+                return .monthly
+            case "yearly":
+                return .yearly
+            default:
+                return .never
+            }
+        }
+    }
+
     private let databaseController: DatabaseController
+    private let maintenanceQueue = DispatchQueue(label: "wired3.events.maintenance")
+    private var purgeTimer: DispatchSourceTimer?
+    private var retentionPolicy: RetentionPolicy = .never
+    private var lastPurgeDate: Date?
+    private let minimumPurgeSpacing: TimeInterval = 300
 
     init(databaseController: DatabaseController) {
         self.databaseController = databaseController
+    }
+
+    deinit {
+        purgeTimer?.cancel()
     }
 
     func firstEventDate() throws -> Date? {
@@ -59,7 +110,9 @@ public final class EventsController {
         login: String,
         ip: String
     ) throws -> EventEntry {
-        try databaseController.dbQueue.write { db in
+        purgeExpiredEventsIfNeeded()
+
+        return try databaseController.dbQueue.write { db in
             let entry = EventEntry(
                 eventCode: event.rawValue,
                 parameters: parameters,
@@ -85,6 +138,55 @@ public final class EventsController {
             }
 
             try request.deleteAll(db)
+        }
+    }
+
+    func configureAutoPurge(retentionPolicy: RetentionPolicy) {
+        maintenanceQueue.async { [weak self] in
+            guard let self else { return }
+            self.retentionPolicy = retentionPolicy
+            self.purgeTimer?.cancel()
+            self.purgeTimer = nil
+
+            guard retentionPolicy != .never else { return }
+
+            let timer = DispatchSource.makeTimerSource(queue: self.maintenanceQueue)
+            timer.schedule(deadline: .now() + 60, repeating: 3600)
+            timer.setEventHandler { [weak self] in
+                self?.purgeExpiredEvents(force: false)
+            }
+            self.purgeTimer = timer
+            timer.resume()
+
+            self.purgeExpiredEvents(force: true)
+        }
+    }
+
+    func purgeExpiredEventsIfNeeded() {
+        maintenanceQueue.async { [weak self] in
+            self?.purgeExpiredEvents(force: false)
+        }
+    }
+
+    private func purgeExpiredEvents(force: Bool) {
+        guard let maxAge = retentionPolicy.maxAge else { return }
+        let now = Date()
+
+        if !force, let lastPurgeDate, now.timeIntervalSince(lastPurgeDate) < minimumPurgeSpacing {
+            return
+        }
+
+        let cutoffDate = now.addingTimeInterval(-maxAge)
+
+        do {
+            try databaseController.dbQueue.write { db in
+                try EventEntry
+                    .filter(EventEntry.Columns.time <= cutoffDate)
+                    .deleteAll(db)
+            }
+            lastPurgeDate = now
+        } catch {
+            Logger.error("Failed to purge expired events: \(error)")
         }
     }
 }

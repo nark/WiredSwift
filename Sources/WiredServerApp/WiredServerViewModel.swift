@@ -31,6 +31,8 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var filesDirectory: String = ""
     @Published var filesReindexInterval: Int = 3600
+    @Published var databaseSnapshotInterval: Int = 86400
+    @Published var eventRetentionPolicy: String = "never"
 
     @Published var serverName: String = "Wired Server"
     @Published var serverDescription: String = "Welcome to Wired Server"
@@ -109,6 +111,14 @@ final class WiredServerViewModel: ObservableObject {
         .init(id: P7Socket.Checksum.SHA3_384.description, title: P7Socket.Checksum.SHA3_384.description),
         .init(id: P7Socket.Checksum.HMAC_256.description, title: P7Socket.Checksum.HMAC_256.description),
         .init(id: P7Socket.Checksum.HMAC_384.description, title: P7Socket.Checksum.HMAC_384.description)
+    ]
+
+    let eventRetentionOptions: [AdvancedOption] = [
+        .init(id: "never", title: L("database.events.retention.never")),
+        .init(id: "daily", title: L("database.events.retention.daily")),
+        .init(id: "weekly", title: L("database.events.retention.weekly")),
+        .init(id: "monthly", title: L("database.events.retention.monthly")),
+        .init(id: "yearly", title: L("database.events.retention.yearly"))
     ]
 
     init() {
@@ -427,6 +437,40 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
+    func saveDatabaseSettings() {
+        databaseSnapshotInterval = max(0, databaseSnapshotInterval)
+        if !eventRetentionOptions.contains(where: { $0.id == eventRetentionPolicy }) {
+            eventRetentionPolicy = "never"
+        }
+
+        withConfig { config in
+            config["database", "snapshot_interval"] = String(databaseSnapshotInterval)
+            config["database", "event_retention"] = eventRetentionPolicy
+        }
+
+        if reloadServerIfPossible() {
+            statusMessage = L("status.database_settings_saved_reloaded")
+        } else {
+            statusMessage = L("status.database_settings_saved")
+        }
+    }
+
+    func saveEventRetentionSetting() {
+        if !eventRetentionOptions.contains(where: { $0.id == eventRetentionPolicy }) {
+            eventRetentionPolicy = "never"
+        }
+
+        withConfig { config in
+            config["database", "event_retention"] = eventRetentionPolicy
+        }
+
+        if reloadServerIfPossible() {
+            statusMessage = L("status.database_settings_saved_reloaded")
+        } else {
+            statusMessage = L("status.database_settings_saved")
+        }
+    }
+
     func reindexNow() async {
         guard isRunning else {
             statusMessage = L("status.reindex_on_next_start")
@@ -734,6 +778,14 @@ final class WiredServerViewModel: ObservableObject {
 
         filesDirectory = stringValue(config["server", "files"], default: runtimeFilesPath)
         filesReindexInterval = intValue(config["settings", "reindex_interval"], default: 3600)
+        databaseSnapshotInterval = max(0, intValue(config["database", "snapshot_interval"], default: 86400))
+
+        let rawRetentionPolicy = stringValue(config["database", "event_retention"], default: "never")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        eventRetentionPolicy = eventRetentionOptions.contains(where: { $0.id == rawRetentionPolicy })
+            ? rawRetentionPolicy
+            : (rawRetentionPolicy == "none" ? "never" : "never")
 
         serverName = stringValue(config["server", "name"], default: "Wired Server")
         serverDescription = stringValue(config["server", "description"], default: "Welcome to Wired Server")
@@ -1221,6 +1273,10 @@ port = 4871
 [settings]
 trackers = [\"wired.read-write.fr\"]
 register_with_trackers = no
+
+[database]
+snapshot_interval = 86400
+event_retention = never
 
 [advanced]
 compression = ALL

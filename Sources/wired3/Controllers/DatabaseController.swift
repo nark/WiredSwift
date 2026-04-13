@@ -63,4 +63,26 @@ public class DatabaseController {
             return false
         }
     }
+
+    public var snapshotURL: URL {
+        baseURL.appendingPathExtension("bak")
+    }
+
+    public func createSnapshot(at destinationURL: URL? = nil) throws {
+        let destinationURL = destinationURL ?? snapshotURL
+        let directoryURL = destinationURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+
+        let tmpURL = destinationURL.appendingPathExtension("tmp")
+        try? FileManager.default.removeItem(at: tmpURL)
+        try? FileManager.default.removeItem(at: destinationURL)
+
+        let destination = try DatabaseQueue(path: tmpURL.path)
+        try dbQueue.backup(to: destination)
+
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+        }
+        try FileManager.default.moveItem(at: tmpURL, to: destinationURL)
+    }
 }

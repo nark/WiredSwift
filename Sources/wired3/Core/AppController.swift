@@ -20,6 +20,10 @@ private let defaultFilesSeed = "files.defaults.v1"
 /// `AppController` owns every subsystem (database, clients, chats, files, …),
 /// bootstraps them in the correct order, and starts the TCP listener.
 public class AppController {
+    private enum DatabaseSettings {
+        static let defaultSnapshotInterval: TimeInterval = 86400
+    }
+
     var workingDirectoryPath: String
     var rootPath: String
     var configPath: String
@@ -46,6 +50,7 @@ public class AppController {
     var logsController: LogsController!
 
     var config: Config
+    private var snapshotTimer: DispatchSourceTimer?
 
     /// When true (--debug flag), log level is pinned to DEBUG and SIGHUP cannot lower it.
     public var debugMode: Bool = false
@@ -140,6 +145,8 @@ public class AppController {
 
         self.indexController.indexFiles()
         self.indexController.configure(reindexInterval: resolvedReindexInterval())
+        self.eventsController.configureAutoPurge(retentionPolicy: resolvedEventRetentionPolicy())
+        configureSnapshotScheduling()
 
         let port = resolvedServerPort()
 
@@ -172,6 +179,9 @@ public class AppController {
         self.serverController?.stop()
         self.trackerController?.stop()
         self.indexController?.configure(reindexInterval: 0)
+        self.snapshotTimer?.cancel()
+        self.snapshotTimer = nil
+        self.eventsController?.configureAutoPurge(retentionPolicy: .never)
     }
 
     private func resolvedServerPort() -> Int {
@@ -216,6 +226,8 @@ public class AppController {
 
         // Re-arm the periodic reindex timer if the interval changed.
         self.indexController.configure(reindexInterval: resolvedReindexInterval())
+        self.eventsController.configureAutoPurge(retentionPolicy: resolvedEventRetentionPolicy())
+        configureSnapshotScheduling()
 
         self.serverController.reloadConfig()
         self.outgoingTrackersController.refreshConfiguration(resetRegistrations: true)
@@ -260,6 +272,54 @@ public class AppController {
             }
         }
         return defaultInterval
+    }
+
+    private func resolvedSnapshotInterval() -> TimeInterval {
+        if let value = self.config["database", "snapshot_interval"] as? Int {
+            return value <= 0 ? 0 : TimeInterval(value)
+        }
+
+        if let raw = self.config["database", "snapshot_interval"] as? String {
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let parsed = Int(trimmed) {
+                return parsed <= 0 ? 0 : TimeInterval(parsed)
+            }
+            Logger.warning("Invalid database.snapshot_interval value '\(raw)'. Falling back to default.")
+        }
+
+        return DatabaseSettings.defaultSnapshotInterval
+    }
+
+    private func resolvedEventRetentionPolicy() -> EventsController.RetentionPolicy {
+        let raw = (self.config["database", "event_retention"] as? String)
+        return EventsController.RetentionPolicy.parse(raw)
+    }
+
+    private func configureSnapshotScheduling() {
+        self.snapshotTimer?.cancel()
+        self.snapshotTimer = nil
+
+        let interval = resolvedSnapshotInterval()
+        guard interval > 0 else { return }
+
+        let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
+        timer.schedule(deadline: .now() + interval, repeating: interval)
+        timer.setEventHandler { [weak self] in
+            self?.createDatabaseSnapshot()
+        }
+        self.snapshotTimer = timer
+        timer.resume()
+    }
+
+    private func createDatabaseSnapshot() {
+        guard let databaseController = self.databaseController else { return }
+
+        do {
+            try databaseController.createSnapshot()
+            Logger.info("Database snapshot written to \(databaseController.snapshotURL.path)")
+        } catch {
+            Logger.error("Failed to create database snapshot: \(error)")
+        }
     }
 
     private func bootstrapDefaultContentIfNeeded() {

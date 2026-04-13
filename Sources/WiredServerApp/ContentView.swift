@@ -70,8 +70,10 @@ struct ContentView: View {
             NetworkTabView()
         case .files:
             FilesTabView()
-        case .advanced:
-            AdvancedTabView()
+        case .database:
+            DatabaseTabView()
+        case .security:
+            SecurityTabView()
         case .logs:
             LogsTabView()
         }
@@ -83,7 +85,8 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
     case general
     case network
     case files
-    case advanced
+    case database
+    case security
     case logs
 
     var id: String { rawValue }
@@ -93,7 +96,8 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
         case .general: return L("pane.general")
         case .network: return L("pane.network")
         case .files: return L("pane.files")
-        case .advanced: return L("pane.advanced")
+        case .database: return L("pane.database")
+        case .security: return L("pane.security")
         case .logs: return L("pane.logs")
         }
     }
@@ -103,7 +107,8 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
         case .general: return "switch.2"
         case .network: return "network"
         case .files: return "folder"
-        case .advanced: return "gearshape"
+        case .database: return "externaldrive.badge.timemachine"
+        case .security: return "lock.shield"
         case .logs: return "doc.text"
         }
     }
