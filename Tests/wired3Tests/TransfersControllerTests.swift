@@ -207,6 +207,22 @@ final class TransfersControllerTests: XCTestCase {
         XCTAssertEqual(transfer.transferred, 0)
     }
 
+    func testUploadCarriesExecutableFlagIntoTransferState() throws {
+        let root = try makeTemporaryDirectory()
+        addTeardownBlock { try? FileManager.default.removeItem(at: root) }
+
+        let transfers = makeTransfersController(root: root)
+        let client = makeClientWithWiredSpec(userID: 30)
+        let message = P7Message(withName: "wired.transfer.upload_file", spec: client.socket.spec)
+
+        let transfer = try XCTUnwrap(
+            transfers.upload(path: "/upload-tool", dataSize: 12, rsrcSize: 0, executable: true, client: client, message: message)
+        )
+        defer { try? transfer.dataFd.close() }
+
+        XCTAssertTrue(transfer.executable)
+    }
+
     func testUploadResumesExistingPartialFileUsingCurrentOffset() throws {
         let root = try makeTemporaryDirectory()
         addTeardownBlock { try? FileManager.default.removeItem(at: root) }

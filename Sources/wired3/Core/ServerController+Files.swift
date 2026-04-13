@@ -132,6 +132,7 @@ extension ServerController {
 
         let dataSize = message.uint64(forField: "wired.transfer.data_size") ?? UInt64(0)
         let rsrcSize = message.uint64(forField: "wired.transfer.rsrc_size") ?? UInt64(0)
+        let executable = message.bool(forField: "wired.file.executable") ?? false
 
         if !App.filesController.validateSyncQuotaForUpload(path: normalizedPath, incomingDataSize: dataSize) {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
@@ -141,7 +142,7 @@ extension ServerController {
         if let transfer = App.transfersController.upload(path: normalizedPath,
                                                          dataSize: dataSize,
                                                          rsrcSize: rsrcSize,
-                                                         executable: false,
+                                                         executable: executable,
                                                          client: client, message: message) {
             client.transfer = transfer
             self.broadcastUserStatusForRelatedSessions(of: client)

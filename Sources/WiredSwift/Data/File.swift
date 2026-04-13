@@ -255,6 +255,41 @@ public class File {
         return FileManager.sizeOfFile(atPath: path) ?? 0
     }
 
+    /// Returns whether the filesystem entry at `path` is a regular file with any execute bit set.
+    ///
+    /// Wired reports executability for files only, mirroring the legacy server behaviour.
+    ///
+    /// - Parameter path: Absolute filesystem path to inspect.
+    /// - Returns: `true` when the path exists, is not a directory, and has at least one execute bit set.
+    public static func isExecutable(path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
+              !isDirectory.boolValue,
+              let attributes = try? FileManager.default.attributesOfItem(atPath: path),
+              let permissions = attributes[.posixPermissions] as? NSNumber else {
+            return false
+        }
+
+        return (permissions.uint16Value & 0o111) != 0
+    }
+
+    /// Applies Wired's legacy executable mode toggle to the entry at `path`.
+    ///
+    /// Setting `executable` to `true` applies mode `0755`; setting it to `false` applies mode `0644`.
+    ///
+    /// - Parameters:
+    ///   - executable: Desired executable state.
+    ///   - path: Absolute filesystem path to update.
+    /// - Returns: `true` on success, `false` if the target does not exist or the mode cannot be applied.
+    public static func set(executable: Bool, path: String) -> Bool {
+        guard FileManager.default.fileExists(atPath: path) else {
+            return false
+        }
+
+        return FileManager.set(mode: executable ? 0o755 : 0o644, toPath: path)
+    }
+
     /// Returns the number of visible (non-dot) items inside the directory at `path`.
     ///
     /// - Parameter path: Absolute filesystem path to a directory.

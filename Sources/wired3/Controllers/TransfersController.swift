@@ -499,7 +499,7 @@ public class TransfersController {
         transfer.dataOffset = dataOffset
         transfer.rsrcOffset = UInt64(0)
         transfer.transferred = dataOffset + rsrcOffset
-        transfer.executable = false
+        transfer.executable = executable
         transfer.remainingDataSize = dataSize - dataOffset
         transfer.remainingRsrcSize = rsrcSize - rsrcOffset
         transfer.actualTransferred = UInt64(0)
@@ -689,7 +689,7 @@ public class TransfersController {
                 try FileManager.default.moveItem(at: URL(fileURLWithPath: transfer.realDataPath), to: url)
 
                 if transfer.executable {
-                    if !FileManager.set(mode: 0o777, toPath: url.path) {
+                    if !FileManager.set(mode: 0o755, toPath: url.path) {
                         Logger.error("Could not set mode for executable \(url.path)")
                     }
 

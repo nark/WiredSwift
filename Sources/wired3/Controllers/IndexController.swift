@@ -416,7 +416,7 @@ public class IndexController: TableController {
                            value: (attrs?[.modificationDate] as? Date) ?? Date(timeIntervalSince1970: 0))
 
         reply.addParameter(field: "wired.file.link", value: entry.alias)
-        reply.addParameter(field: "wired.file.executable", value: false)
+        reply.addParameter(field: "wired.file.executable", value: WiredSwift.File.isExecutable(path: realPath))
         reply.addParameter(field: "wired.file.label", value: App.filesController.metadataStore.label(forPath: realPath).rawValue)
         reply.addParameter(field: "wired.file.volume", value: UInt32(0))
 

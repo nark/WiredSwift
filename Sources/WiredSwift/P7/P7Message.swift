@@ -216,6 +216,9 @@ public class P7Message: NSObject {
         if let value = self.parameters[field] as? UInt8 {
             return value == 1 ? true : false
         }
+        if let value = self.parameters[field] as? Bool {
+            return value
+        }
         return nil
     }
 

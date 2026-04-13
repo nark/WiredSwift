@@ -302,6 +302,36 @@ final class FilesControllerTests: XCTestCase {
         XCTAssertEqual(reply.enumeration(forField: "wired.file.label"), File.FileLabel.LABEL_PURPLE.rawValue)
     }
 
+    func testGetInfoIncludesExecutableFlagFromFilesystemMode() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("script.sh")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("echo hi".utf8))
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: fileURL.path)
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.get_info": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.get_info", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/script.sh")
+
+        context.app.filesController.getInfo(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.file.info")
+        XCTAssertEqual(reply.bool(forField: "wired.file.executable"), true)
+    }
+
     func testListDirectoryIncludesStoredLabelButNotComment() throws {
         let context = try makeAppContext()
         let sockets = try makeConnectedP7Pair(spec: context.app.spec)
@@ -336,6 +366,37 @@ final class FilesControllerTests: XCTestCase {
 
         let done = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
         XCTAssertEqual(done.name, "wired.file.file_list.done")
+    }
+
+    func testListDirectoryIncludesExecutableFlagFromFilesystemMode() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("tool")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("bin".utf8))
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: fileURL.path)
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.list_files": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.list_directory", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/")
+
+        context.app.filesController.listDirectory(client: client, message: request)
+
+        let listed = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(listed.name, "wired.file.file_list")
+        XCTAssertEqual(listed.string(forField: "wired.file.path"), "/tool")
+        XCTAssertEqual(listed.bool(forField: "wired.file.executable"), true)
     }
 
     func testSetCommentRepliesOkayAndStoresComment() throws {
@@ -396,6 +457,63 @@ final class FilesControllerTests: XCTestCase {
         let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
         XCTAssertEqual(reply.name, "wired.okay")
         XCTAssertEqual(context.app.filesController.metadataStore.label(forPath: fileURL.path), .LABEL_ORANGE)
+    }
+
+    func testSetExecutableRepliesOkayAndAppliesLegacyMode() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("tool")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("run".utf8))
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: fileURL.path)
+
+        let client = makeFileClient(
+            socket: sockets.server,
+            username: "alice",
+            privileges: [
+                "wired.account.file.set_executable": true
+            ]
+        )
+        let request = P7Message(withName: "wired.file.set_executable", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/tool")
+        request.addParameter(field: "wired.file.executable", value: true)
+
+        context.app.filesController.setExecutable(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.okay")
+        let attrs = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        let mode = try XCTUnwrap(attrs[.posixPermissions] as? NSNumber)
+        XCTAssertEqual(mode.uint16Value & 0o777, 0o755)
+    }
+
+    func testSetExecutableRequiresPrivilege() throws {
+        let context = try makeAppContext()
+        let sockets = try makeConnectedP7Pair(spec: context.app.spec)
+        defer {
+            closeSockets(sockets)
+            try? FileManager.default.removeItem(at: context.workingDir)
+            App = context.previous
+        }
+
+        let fileURL = context.rootDir.appendingPathComponent("tool")
+        FileManager.default.createFile(atPath: fileURL.path, contents: Data("run".utf8))
+
+        let client = makeFileClient(socket: sockets.server, username: "alice", privileges: [:])
+        let request = P7Message(withName: "wired.file.set_executable", spec: context.app.spec)
+        request.addParameter(field: "wired.file.path", value: "/tool")
+        request.addParameter(field: "wired.file.executable", value: true)
+
+        context.app.filesController.setExecutable(client: client, message: request)
+
+        let reply = try sockets.peer.readMessage(timeout: 1.0, enforceDeadline: true)
+        XCTAssertEqual(reply.name, "wired.error")
+        XCTAssertEqual(reply.enumeration(forField: "wired.error"), 5)
     }
 
     func testSetCommentRequiresPrivilege() throws {

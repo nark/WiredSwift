@@ -787,6 +787,8 @@ public class ServerController: ServerDelegate {
             App.filesController.setComment(client: client, message: message)
         } else if message.name == "wired.file.set_label" {
             App.filesController.setLabel(client: client, message: message)
+        } else if message.name == "wired.file.set_executable" {
+            App.filesController.setExecutable(client: client, message: message)
         } else if message.name == "wired.file.set_permissions" {
             App.filesController.setPermissions(client: client, message: message)
         } else if message.name == "wired.file.set_sync_policy" {

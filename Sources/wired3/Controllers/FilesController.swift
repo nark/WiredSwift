@@ -29,6 +29,10 @@ public class FilesController {
         return type == .dropbox || type == .sync
     }
 
+    private func executableFlag(forRealPath path: String) -> Bool {
+        File.isExecutable(path: path)
+    }
+
     private func defaultSyncPolicy() -> SyncPolicy {
         SyncPolicy()
     }
@@ -245,7 +249,7 @@ public class FilesController {
         }
 
         reply.addParameter(field: "wired.file.link", value: resolvedPath.linkKind != .none)
-        reply.addParameter(field: "wired.file.executable", value: false)
+        reply.addParameter(field: "wired.file.executable", value: executableFlag(forRealPath: realPath))
         reply.addParameter(field: "wired.file.label", value: metadataStore.label(forPath: realPath).rawValue)
         reply.addParameter(field: "wired.file.volume", value: UInt32(0))
         reply.addParameter(field: "wired.file.comment", value: wiredFileComment(forRealPath: realPath))
@@ -650,6 +654,50 @@ public class FilesController {
 
         App.serverController.replyOK(client: client, message: message)
         App.serverController.recordEvent(.fileSetPermissions, client: client, parameters: [normalizedPath])
+    }
+
+    public func setExecutable(client: Client, message: P7Message) {
+        guard let user = client.user else { return }
+
+        guard let path = message.string(forField: "wired.file.path"),
+              let executable = message.bool(forField: "wired.file.executable") else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        if !File.isValid(path: path) {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        let resolvedPath = resolvedVirtualPath(for: path)
+        let normalizedPath = resolvedPath.normalizedVirtualPath
+        let realPath = resolvedPath.resolvedRealPath
+
+        guard FileManager.default.fileExists(atPath: realPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.file_not_found", message: message)
+            return
+        }
+
+        if let privileges = dropBoxPrivileges(forVirtualPath: normalizedPath) {
+            if !managedAccess(forVirtualPath: normalizedPath, user: user, privilege: privileges).writable {
+                App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+                return
+            }
+        } else if !user.hasPrivilege(name: "wired.account.file.set_executable") {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        let finalPath = resolveAliasesAndSymlinks(in: realPath)
+        guard File.set(executable: executable, path: finalPath) else {
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        notifyDirectoryChanged(path: normalizedPath.stringByDeletingLastPathComponent)
+        App.serverController.replyOK(client: client, message: message)
+        App.serverController.recordEvent(.fileSetExecutable, client: client, parameters: [normalizedPath])
     }
 
     public func setSyncPolicy(client: Client, message: P7Message) {
@@ -1094,7 +1142,7 @@ public class FilesController {
             }
 
             reply.addParameter(field: "wired.file.link", value: linkKind != .none)
-            reply.addParameter(field: "wired.file.executable", value: false)
+            reply.addParameter(field: "wired.file.executable", value: executableFlag(forRealPath: childRealPath))
             reply.addParameter(field: "wired.file.label", value: metadataStore.label(forPath: childRealPath).rawValue)
             reply.addParameter(field: "wired.file.volume", value: UInt32(0))
 
