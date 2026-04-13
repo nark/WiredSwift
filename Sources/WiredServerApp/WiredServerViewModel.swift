@@ -56,6 +56,25 @@ final class WiredServerViewModel: ObservableObject {
     @Published var newAdminPassword: String = ""
 
     @Published var logsText: String = ""
+    @Published var dashboardServerPID: String = "-"
+    @Published var dashboardServerUptime: String = "-"
+    @Published var dashboardServerCPU: String = "-"
+    @Published var dashboardServerMemory: String = "-"
+    @Published var dashboardHostUptime: String = "-"
+    @Published var dashboardConnectedUsers: Int = 0
+    @Published var dashboardDatabaseSizeBytes: Int64 = 0
+    @Published var dashboardFilesSizeBytes: Int64 = 0
+    @Published var dashboardSnapshotSizeBytes: Int64 = 0
+    @Published var dashboardDiskFreeBytes: Int64 = 0
+    @Published var dashboardDiskTotalBytes: Int64 = 0
+    @Published var dashboardLastSnapshotDate: Date?
+    @Published var dashboardLastErrorLine: String = ""
+    @Published var dashboardAccountsCount: Int = 0
+    @Published var dashboardGroupsCount: Int = 0
+    @Published var dashboardEventsCount: Int = 0
+    @Published var dashboardBoardsCount: Int = 0
+    @Published var dashboardDatabaseInitialized: Bool = false
+    @Published var dashboardFilesDirectoryExists: Bool = false
 
     @Published var isBusy: Bool = false
     @Published var statusMessage: String = ""
@@ -75,6 +94,8 @@ final class WiredServerViewModel: ObservableObject {
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
     private let launchAgentLabel = "fr.read-write.wired3.server"
     private let embeddedBinarySHAKey = "Wired3EmbeddedSHA256"
+    private var lastDashboardLightRefresh = Date.distantPast
+    private var lastDashboardHeavyRefresh = Date.distantPast
 
     struct AdvancedOption: Identifiable, Hashable {
         let id: String
@@ -160,6 +181,14 @@ final class WiredServerViewModel: ObservableObject {
         URL(fileURLWithPath: workingDirectory).appendingPathComponent("bin/wired3").path
     }
 
+    var snapshotPath: String {
+        databasePath + ".bak"
+    }
+
+    var serverRootPathDisplay: String {
+        currentServerRootPath()
+    }
+
     func startPolling() {
         guard pollTimer == nil else { return }
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -189,6 +218,7 @@ final class WiredServerViewModel: ObservableObject {
         refreshRunningStatus()
         refreshAdminStatus()
         refreshLogText()
+        refreshDashboard(force: true)
         checkPort()
 
         if binaryWasUpdated && isRunning {
@@ -582,6 +612,7 @@ final class WiredServerViewModel: ObservableObject {
     private func pollState() {
         refreshRunningStatus()
         refreshLogText()
+        refreshDashboard()
     }
 
     private func refreshInstallStatus() {
@@ -893,6 +924,8 @@ final class WiredServerViewModel: ObservableObject {
                 }
             }
         }
+
+        refreshDashboard()
     }
 
     private func bootstrapRuntimeIfNeeded() {
@@ -1105,6 +1138,175 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         appendLog(line)
+    }
+
+    private func refreshDashboard(force: Bool = false) {
+        let now = Date()
+
+        if force || now.timeIntervalSince(lastDashboardLightRefresh) >= 2 {
+            refreshDashboardLightweight()
+            lastDashboardLightRefresh = now
+        }
+
+        if force || now.timeIntervalSince(lastDashboardHeavyRefresh) >= 20 {
+            refreshDashboardHeavyweight()
+            lastDashboardHeavyRefresh = now
+        }
+    }
+
+    private func refreshDashboardLightweight() {
+        dashboardHostUptime = formattedDuration(ProcessInfo.processInfo.systemUptime)
+
+        let activePIDs = activeServerPIDs()
+        if let pid = activePIDs.first {
+            dashboardServerPID = String(pid)
+            let metrics = processMetrics(for: pid)
+            dashboardServerUptime = metrics.uptime
+            dashboardServerCPU = metrics.cpu
+            dashboardServerMemory = metrics.memory
+            dashboardConnectedUsers = connectedUsersCount(for: pid)
+        } else {
+            dashboardServerPID = "-"
+            dashboardServerUptime = "-"
+            dashboardServerCPU = "-"
+            dashboardServerMemory = "-"
+            dashboardConnectedUsers = 0
+        }
+
+        dashboardLastErrorLine = extractLastErrorLine(from: logsText)
+    }
+
+    private func refreshDashboardHeavyweight() {
+        dashboardFilesDirectoryExists = fileManager.fileExists(atPath: currentServerRootPath())
+        dashboardDatabaseSizeBytes = fileSize(atPath: databasePath) + fileSize(atPath: databasePath + "-wal") + fileSize(atPath: databasePath + "-shm")
+        dashboardFilesSizeBytes = directorySize(atPath: currentServerRootPath())
+        dashboardSnapshotSizeBytes = fileSize(atPath: snapshotPath)
+        dashboardLastSnapshotDate = modificationDate(atPath: snapshotPath)
+
+        if let attributes = try? fileManager.attributesOfFileSystem(forPath: workingDirectory) {
+            dashboardDiskFreeBytes = int64Value(attributes[.systemFreeSize])
+            dashboardDiskTotalBytes = int64Value(attributes[.systemSize])
+        } else {
+            dashboardDiskFreeBytes = 0
+            dashboardDiskTotalBytes = 0
+        }
+
+        do {
+            let stats = try openRawDatabaseReturning { db -> (Bool, Int, Int, Int, Int) in
+                let initialized = try tableExists(db, table: "users")
+                guard initialized else { return (false, 0, 0, 0, 0) }
+                return (
+                    true,
+                    try queryCount(db, "SELECT COUNT(*) FROM users;"),
+                    try queryCount(db, "SELECT COUNT(*) FROM `groups`;"),
+                    try queryCount(db, "SELECT COUNT(*) FROM events;"),
+                    try queryCount(db, "SELECT COUNT(*) FROM boards;")
+                )
+            }
+
+            dashboardDatabaseInitialized = stats.0
+            dashboardAccountsCount = stats.1
+            dashboardGroupsCount = stats.2
+            dashboardEventsCount = stats.3
+            dashboardBoardsCount = stats.4
+        } catch {
+            dashboardDatabaseInitialized = false
+            dashboardAccountsCount = 0
+            dashboardGroupsCount = 0
+            dashboardEventsCount = 0
+            dashboardBoardsCount = 0
+        }
+    }
+
+    private func processMetrics(for pid: Int32) -> (uptime: String, cpu: String, memory: String) {
+        let result = runProcess("/bin/ps", ["-p", String(pid), "-o", "%cpu=", "-o", "rss=", "-o", "etime="])
+        guard result.status == 0 else {
+            return ("-", "-", "-")
+        }
+
+        let lines = result.output
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard let line = lines.first else { return ("-", "-", "-") }
+
+        let parts = line.split(whereSeparator: \.isWhitespace).map(String.init)
+        guard parts.count >= 3 else { return ("-", "-", "-") }
+
+        let cpu = parts[0].replacingOccurrences(of: ",", with: ".")
+        let memoryKB = Int64(parts[1]) ?? 0
+        return (
+            parts[2],
+            cpu.isEmpty ? "-" : "\(cpu)%",
+            memoryKB > 0 ? byteCountFormatter.string(fromByteCount: memoryKB * 1024) : "-"
+        )
+    }
+
+    private func connectedUsersCount(for pid: Int32) -> Int {
+        let result = runProcess("/usr/sbin/lsof", ["-a", "-p", String(pid), "-nP", "-iTCP:\(serverPort)", "-sTCP:ESTABLISHED"])
+        guard result.status == 0 else { return 0 }
+        let lines = result.output.split(separator: "\n", omittingEmptySubsequences: true)
+        return max(0, lines.count - 1)
+    }
+
+    private func extractLastErrorLine(from text: String) -> String {
+        let lines = text
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map(String.init)
+
+        for line in lines.reversed() {
+            let lowercased = line.lowercased()
+            if lowercased.contains("error") || lowercased.contains("fatal") {
+                return line.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+
+        return ""
+    }
+
+    private func fileSize(atPath path: String) -> Int64 {
+        guard let attributes = try? fileManager.attributesOfItem(atPath: path),
+              let rawSize = attributes[.size] else {
+            return 0
+        }
+        return int64Value(rawSize)
+    }
+
+    private func directorySize(atPath path: String) -> Int64 {
+        guard fileManager.fileExists(atPath: path) else { return 0 }
+
+        let result = runProcess("/usr/bin/du", ["-sk", path])
+        guard result.status == 0,
+              let first = result.output.split(separator: "\t").first,
+              let kilobytes = Int64(first.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return 0
+        }
+        return kilobytes * 1024
+    }
+
+    private func modificationDate(atPath path: String) -> Date? {
+        guard let attributes = try? fileManager.attributesOfItem(atPath: path) else {
+            return nil
+        }
+        return attributes[.modificationDate] as? Date
+    }
+
+    private func int64Value(_ any: Any?) -> Int64 {
+        if let value = any as? NSNumber { return value.int64Value }
+        if let value = any as? Int64 { return value }
+        if let value = any as? Int { return Int64(value) }
+        if let value = any as? UInt64 { return Int64(clamping: value) }
+        return 0
+    }
+
+    private func formattedDuration(_ interval: TimeInterval) -> String {
+        let total = Int(interval)
+        let days = total / 86_400
+        let hours = (total % 86_400) / 3_600
+        let minutes = (total % 3_600) / 60
+
+        if days > 0 { return "\(days)d \(hours)h \(minutes)m" }
+        if hours > 0 { return "\(hours)h \(minutes)m" }
+        return "\(minutes)m"
     }
 
     @discardableResult
@@ -1348,6 +1550,17 @@ strict_identity = yes
         return try body(db)
     }
 
+    private func queryCount(_ db: OpaquePointer, _ sql: String) throws -> Int {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+            throw WiredServerError.databaseStatementFailed(sql)
+        }
+        defer { sqlite3_finalize(statement) }
+
+        guard sqlite3_step(statement) == SQLITE_ROW else { return 0 }
+        return Int(sqlite3_column_int64(statement, 0))
+    }
+
     private func tableExists(_ db: OpaquePointer, table: String) throws -> Bool {
         var statement: OpaquePointer?
         let sql = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1;"
@@ -1580,6 +1793,123 @@ strict_identity = yes
         statusMessage = message
     }
 
+    private var byteCountFormatter: ByteCountFormatter {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
+        formatter.countStyle = .file
+        formatter.includesUnit = true
+        formatter.isAdaptive = true
+        return formatter
+    }
+
+    private var dateTimeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }
+
+    private var relativeDateFormatter: RelativeDateTimeFormatter {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter
+    }
+
+    var dashboardDatabaseSize: String {
+        dashboardDatabaseSizeBytes > 0 ? byteCountFormatter.string(fromByteCount: dashboardDatabaseSizeBytes) : "-"
+    }
+
+    var dashboardFilesSize: String {
+        dashboardFilesSizeBytes > 0 ? byteCountFormatter.string(fromByteCount: dashboardFilesSizeBytes) : "-"
+    }
+
+    var dashboardSnapshotSize: String {
+        dashboardSnapshotSizeBytes > 0 ? byteCountFormatter.string(fromByteCount: dashboardSnapshotSizeBytes) : "-"
+    }
+
+    var dashboardDiskFree: String {
+        dashboardDiskFreeBytes > 0 ? byteCountFormatter.string(fromByteCount: dashboardDiskFreeBytes) : "-"
+    }
+
+    var dashboardDiskTotal: String {
+        dashboardDiskTotalBytes > 0 ? byteCountFormatter.string(fromByteCount: dashboardDiskTotalBytes) : "-"
+    }
+
+    var dashboardDiskDetail: String? {
+        dashboardDiskTotal == "-" ? nil : "\(L("dashboard.metric.disk_total")): \(dashboardDiskTotal)"
+    }
+
+    var dashboardSnapshotSummary: String {
+        if databaseSnapshotInterval == 0 {
+            return L("dashboard.snapshot.disabled")
+        }
+
+        guard let date = dashboardLastSnapshotDate else {
+            return L("dashboard.snapshot.pending")
+        }
+
+        let relative = relativeDateFormatter.localizedString(for: date, relativeTo: Date())
+        return "\(dateTimeFormatter.string(from: date)) (\(relative))"
+    }
+
+    var dashboardLastErrorSummary: String {
+        dashboardLastErrorLine.isEmpty ? L("dashboard.errors.none") : dashboardLastErrorLine
+    }
+
+    var dashboardDiskFreeRatio: Double {
+        guard dashboardDiskTotalBytes > 0 else { return 0 }
+        return Double(dashboardDiskFreeBytes) / Double(dashboardDiskTotalBytes)
+    }
+
+    var dashboardServerHealth: DashboardHealthSummary {
+        if !isInstalled {
+            return .init(level: .critical, title: L("dashboard.health.critical"), detail: L("dashboard.health.server.not_installed"))
+        }
+        if !isRunning {
+            return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.server.stopped"))
+        }
+        if portStatus == .closed {
+            return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.server.port_closed"))
+        }
+        if !hasAdminPassword {
+            return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.server.admin_unsecured"))
+        }
+        if !dashboardLastErrorLine.isEmpty {
+            return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.server.recent_error"))
+        }
+        return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.server.ok"))
+    }
+
+    var dashboardHostHealth: DashboardHealthSummary {
+        if dashboardDiskTotalBytes == 0 {
+            return .init(level: .neutral, title: L("dashboard.health.unknown"), detail: L("dashboard.health.host.unknown"))
+        }
+        if dashboardDiskFreeRatio < 0.05 {
+            return .init(level: .critical, title: L("dashboard.health.critical"), detail: L("dashboard.health.host.disk_critical"))
+        }
+        if dashboardDiskFreeRatio < 0.10 {
+            return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.host.disk_warning"))
+        }
+        return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.host.ok"))
+    }
+
+    var dashboardDatabaseHealth: DashboardHealthSummary {
+        if !dashboardDatabaseInitialized {
+            return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.database.not_initialized"))
+        }
+        if databaseSnapshotInterval > 0 && dashboardLastSnapshotDate == nil {
+            return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.database.snapshot_pending"))
+        }
+        return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.database.ok"))
+    }
+
+    var dashboardFilesHealth: DashboardHealthSummary {
+        if !dashboardFilesDirectoryExists {
+            return .init(level: .critical, title: L("dashboard.health.critical"), detail: L("dashboard.health.files.missing"))
+        }
+        return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.files.ok"))
+    }
+
     private static func probePort(port: Int) async -> PortStatus {
         guard let nwPort = NWEndpoint.Port(rawValue: UInt16(max(0, min(port, 65_535)))) else {
             return .closed
@@ -1624,6 +1954,19 @@ strict_identity = yes
             connection.start(queue: queue)
         }
     }
+}
+
+struct DashboardHealthSummary {
+    let level: DashboardHealthLevel
+    let title: String
+    let detail: String
+}
+
+enum DashboardHealthLevel {
+    case good
+    case warning
+    case critical
+    case neutral
 }
 
 enum PortStatus {

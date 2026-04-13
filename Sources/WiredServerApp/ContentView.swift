@@ -3,7 +3,7 @@ import SwiftUI
 @available(macOS 14.0, *)
 struct ContentView: View {
     @EnvironmentObject private var model: WiredServerViewModel
-    @State private var selectedPane: SettingsPane = .general
+    @State private var selectedPane: SettingsPane = .dashboard
 
     var body: some View {
         NavigationSplitView(columnVisibility: .constant(.all)) {
@@ -12,7 +12,7 @@ struct ContentView: View {
                     .tag(pane)
             }
             .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+            .navigationSplitViewColumnWidth(min: 240, ideal: 240, max: 260)
             .toolbar(removing: .sidebarToggle)
         } detail: {
             Group {
@@ -64,6 +64,8 @@ struct ContentView: View {
     @ViewBuilder
     private func detailView(for pane: SettingsPane) -> some View {
         switch pane {
+        case .dashboard:
+            DashboardTabView()
         case .general:
             GeneralTabView()
         case .network:
@@ -82,6 +84,7 @@ struct ContentView: View {
 
 @available(macOS 14.0, *)
 private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
+    case dashboard
     case general
     case network
     case files
@@ -93,6 +96,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
+        case .dashboard: return L("pane.dashboard")
         case .general: return L("pane.general")
         case .network: return L("pane.network")
         case .files: return L("pane.files")
@@ -104,11 +108,12 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
 
     var symbolName: String {
         switch self {
+        case .dashboard: return "rectangle.3.group.bubble"
         case .general: return "switch.2"
         case .network: return "network"
         case .files: return "folder"
-        case .database: return "externaldrive.badge.timemachine"
-        case .security: return "lock.shield"
+        case .database: return "cylinder.split.1x2"
+        case .security: return "key.horizontal"
         case .logs: return "doc.text"
         }
     }
