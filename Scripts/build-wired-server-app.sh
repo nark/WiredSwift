@@ -215,7 +215,7 @@ resolve_signing_identity() {
   fi
 
   local auto
-  auto="$(security find-identity -v -p codesigning 2>/dev/null | sed -n 's/.*"\\(Developer ID Application:[^"]*\\)".*/\\1/p' | head -n 1)"
+  auto="$(security find-identity -v -p codesigning 2>/dev/null | sed -nE 's/.*"(Developer ID Application:[^"]*)".*/\1/p' | head -n 1)"
   if [[ -n "$auto" ]]; then
     echo "$auto"
   fi
@@ -309,9 +309,11 @@ codesign --verify --deep --strict --verbose=2 "$DIST_SERVER_BINARY"
 codesign --verify --strict --verbose=2 "$RESOURCES_DIR/$SERVER_BINARY_NAME"
 codesign --verify --deep --strict --verbose=2 "$APP_DIR"
 
-if [[ "$SIGNING_MODE" == "developer-id" ]]; then
+if [[ "$SIGNING_MODE" == "developer-id" && "$NOTARIZE" == "1" ]]; then
   echo "==> Gatekeeper assessment"
   spctl --assess --type execute --verbose=4 "$APP_DIR"
+elif [[ "$SIGNING_MODE" == "developer-id" ]]; then
+  echo "==> Gatekeeper assessment skipped (app not notarized)"
 else
   echo "==> Skipping Gatekeeper assessment for ad-hoc signature"
 fi
