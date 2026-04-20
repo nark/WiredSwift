@@ -141,7 +141,6 @@ chore(lint): suppress type_body_length in FilesController
 | `WiredSwift` | Reusable library — P7 protocol parser, crypto, connection abstractions |
 | `wired3` | Server daemon — auth, chat, files, boards, transfers |
 | `WiredServerApp` | macOS GUI wrapper around `wired3` |
-| `WiredChatBot` | Standalone bot using the WiredSwift library |
 
 Key directories inside `WiredSwift`:
 

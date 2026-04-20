@@ -107,17 +107,6 @@ targets.append(
     )
 )
 #endif
-targets.append(
-    .executableTarget(
-        name: "WiredChatBot",
-        dependencies: [
-            .byName(name: "WiredSwift"),
-            .product(name: "ArgumentParser", package: "swift-argument-parser"),
-        ],
-        path: "Sources/WiredChatBot"
-    )
-)
-
 products.append(
     .library(
         name: "WiredSwift",
@@ -140,12 +129,6 @@ products.append(
         targets: ["WiredServerApp"])
 )
 #endif
-products.append(
-    .executable(
-        name: "WiredChatBot",
-        targets: ["WiredChatBot"])
-)
-
 #if os(Linux)
 targets.append(
     .systemLibrary(
