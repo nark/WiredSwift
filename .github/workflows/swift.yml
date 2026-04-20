@@ -47,9 +47,6 @@ jobs:
       - name: Build wired3
         run: swift build -v --product wired3
 
-      - name: Build WiredChatBot
-        run: swift build -v --product WiredChatBot
-
       - name: Test
         run: |
           set -euo pipefail
@@ -237,9 +234,6 @@ jobs:
 
       - name: Build wired3
         run: swift build --product wired3 -Xswiftc -DGRDBCUSTOMSQLITE
-
-      - name: Build WiredChatBot
-        run: swift build --product WiredChatBot -Xswiftc -DGRDBCUSTOMSQLITE
 
       - name: Test
         run: swift test -Xswiftc -DGRDBCUSTOMSQLITE
