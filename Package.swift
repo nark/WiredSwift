@@ -124,6 +124,11 @@ products.append(
         targets: ["WiredSwift"])
 )
 products.append(
+    .library(
+        name: "SocketSwift",
+        targets: ["SocketSwift"])
+)
+products.append(
     .executable(
         name: "wired3",
         targets: ["wired3"])

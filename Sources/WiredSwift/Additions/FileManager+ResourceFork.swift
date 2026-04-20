@@ -100,7 +100,7 @@ extension FileManager {
     public func setFinderUserTag(labelNumber: Int, atPath path: String, tagName: String? = nil) -> Bool {
         guard fileExists(atPath: path) else { return false }
 
-        #if os(Linux)
+        #if os(Linux) || os(iOS)
             return false
         #else
         var tags = finderUserTags(atPath: path) ?? []
@@ -146,7 +146,7 @@ extension FileManager {
     public func finderUserTags(atPath path: String) -> [String]? {
         guard fileExists(atPath: path) else { return nil }
 
-        #if os(Linux)
+        #if os(Linux) || os(iOS)
             return nil
         #else
         let size = getxattr(path, Self.finderUserTagsXattrName, nil, 0, 0, 0)
