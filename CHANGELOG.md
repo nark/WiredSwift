@@ -2,6 +2,19 @@
 
 All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [3.0-beta.22+42] — 2026-04-20
+
+### Bug Fixes
+- Minor ajustments ([`e53ee9e`](https://github.com/nark/WiredSwift/commit/e53ee9e6c8c92a5e81a1bf2bd1536f7e2f65babb))
+
+
+### Documentation
+- Rename WiredBot changelog references ([`0982bfa`](https://github.com/nark/WiredSwift/commit/0982bfabd5d58d785b12c0adcd97006ac5c7e1dc))
+
+
+### Refactoring
+- Move WiredChatBot in separated repo ([`6166223`](https://github.com/nark/WiredSwift/commit/6166223b5feaef77d760884d4c0718ee73216d1f))
+
 ## [3.0-beta.21+38] — 2026-04-13
 
 ### Bug Fixes
@@ -621,9 +634,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Implement multi-user context strategy (6 improvements) ([`c6ab807`](https://github.com/nark/WiredSwift/commit/c6ab807b52dce3ea049c8a640d69c61a760d9cc6))
 
-- Add WiredBot README — documentation complète ([`2dd1c05`](https://github.com/nark/WiredSwift/commit/2dd1c054adedfc2393850e6be0163d71e7dd1411))
+- Add WiredChatBot-README.md — documentation complète ([`2dd1c05`](https://github.com/nark/WiredSwift/commit/2dd1c054adedfc2393850e6be0163d71e7dd1411))
 
-- Add WiredBot — AI-powered chatbot daemon for Wired 3 ([`bd8065c`](https://github.com/nark/WiredSwift/commit/bd8065c92977da35f53d6e426b2780485ae7953b))
+- Add WiredChatBot — AI-powered chatbot daemon for Wired 3 ([`bd8065c`](https://github.com/nark/WiredSwift/commit/bd8065c92977da35f53d6e426b2780485ae7953b))
 
 - Bootstrap default Upload/DropBox and Welcome board content ([`1c4deeb`](https://github.com/nark/WiredSwift/commit/1c4deebd3022e984ac7158fd8401998696392e1b))
 
@@ -631,7 +644,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Other
 - Make config Codable resilient to missing/unknown fields ([`97e2ec8`](https://github.com/nark/WiredSwift/commit/97e2ec8e4cad41688e800021a1e7c4f419a9effd))
 
-- Translate WiredBot README to English ([`276ecac`](https://github.com/nark/WiredSwift/commit/276ecac693752df5b3758b637d07244b74fe1dac))
+- Translate WiredChatBot-README.md to English ([`276ecac`](https://github.com/nark/WiredSwift/commit/276ecac693752df5b3758b637d07244b74fe1dac))
 
 ## [3.0+5] — 2026-03-07
 
@@ -1273,4 +1286,5 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Reduce warnings and fix Swift 5 deprecated in framework ([`5dab878`](https://github.com/nark/WiredSwift/commit/5dab878cb2f35ed973a4f321a101aced19cd53f2))
 
 - Rename and refactor ([`4d430aa`](https://github.com/nark/WiredSwift/commit/4d430aad17f9a386e608c52548c055459fdb5299))
+
 
