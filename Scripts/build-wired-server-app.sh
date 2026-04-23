@@ -20,6 +20,15 @@ APP_ZIP_PATH="$ROOT_DIR/dist/Wired-Server.app.zip"
 SERVER_ZIP_PATH="$ROOT_DIR/dist/$SERVER_BINARY_NAME.zip"
 NOTARIZE="${NOTARIZE:-}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+
+# Auto-load notary profile from ~/.wired-notary if not set via environment.
+# File format (shell-sourceable):  NOTARY_PROFILE="<your-profile>"
+if [[ -z "$NOTARY_PROFILE" && -f "${HOME}/.wired-notary" ]]; then
+  # shellcheck source=/dev/null
+  source "${HOME}/.wired-notary"
+  NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+fi
+
 VERSION_SWIFT="$ROOT_DIR/Sources/wired3/Core/Version.swift"
 VERSION_SWIFT_BACKUP=""
 
@@ -259,6 +268,15 @@ else
   codesign --force --sign - "$DIST_SERVER_BINARY"
   codesign --force --sign - "$RESOURCES_DIR/$SERVER_BINARY_NAME"
   codesign --force --deep --sign - "$APP_DIR"
+fi
+
+if [[ "$SIGNING_MODE" == "developer-id" && -z "$NOTARY_PROFILE" ]]; then
+  echo ""
+  echo "    TIP: Notarization is disabled. To enable it, create ~/.wired-notary:"
+  echo "         NOTARY_PROFILE=\"<profile-name>\""
+  echo "         Then store the credentials once with:"
+  echo "         xcrun notarytool store-credentials \"<profile-name>\" --apple-id <id> --team-id <team>"
+  echo ""
 fi
 
 if [[ -z "$NOTARIZE" ]]; then
