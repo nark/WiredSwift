@@ -52,6 +52,26 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "wired3IntegrationTests"
+               BuildableName = "wired3IntegrationTests"
+               BlueprintName = "wired3IntegrationTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "wired3Tests"
+               BuildableName = "wired3Tests"
+               BlueprintName = "wired3Tests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
@@ -78,19 +98,19 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--root /Users/nark/Development/Me/Swift/WiredSwift/run"
+            argument = "--root /Users/admin/Documents/Wired3/WiredSwift/run"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--db /Users/nark/Development/Me/Swift/WiredSwift/wired3.db"
+            argument = "--db /Users/admin/Documents/Wired3/WiredSwift/wired3.db"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--config /Users/nark/Development/Me/Swift/WiredSwift/Sources/wired3/config.ini"
+            argument = "--config /Users/admin/Documents/Wired3/WiredSwift/Sources/wired3/config.ini"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/nark/Development/Me/Swift/WiredSwift/run/wired.xml"
+            argument = "/Users/admin/Documents/Wired3/WiredSwift/run/wired.xml"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

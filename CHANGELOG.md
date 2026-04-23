@@ -2,6 +2,14 @@
 
 All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [Unreleased]
+
+### Features
+- Add Wired 2.5 → Wired 3 database migration (`wired3 --migrate-from <path>`) — migrates users, groups, bans, boards, threads and posts ([`14ff423`](https://github.com/martinmarsian/WiredSwift/commit/14ff42328c0e66f69e66d30434e327a7c7de1bb6))
+
+- Support legacy SHA1 password authentication for accounts migrated from Wired 2.5; server signals `p7.encryption.legacy_password` in `server_challenge` and sets `wired.user.password_must_change` in the login reply to trigger a mandatory credential upgrade on the client ([`8cf6e3c`](https://github.com/martinmarsian/WiredSwift/commit/8cf6e3ca99f2ae1906fd21e2e25c8222485fee94))
+
+
 ## [3.0-beta.21+38] — 2026-04-13
 
 ### Bug Fixes
