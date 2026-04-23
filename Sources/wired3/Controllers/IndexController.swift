@@ -292,16 +292,37 @@ public class IndexController: TableController {
         }
 
         // Atomically remove old-generation entries now that new ones are all inserted.
-        // FTS5 triggers handle the FTS index automatically.
+        //
+        // The FTS5 table uses content='index' (external content). The row-level delete
+        // trigger (index_ad) sends a 'delete' command to FTS5 for every removed row.
+        // If the server crashed mid-rebuild on a previous run, some rows in `index` may
+        // have no corresponding FTS5 entry — causing SQLITE_IOERR (error 10) when the
+        // trigger tries to delete a non-existent FTS5 rowid.
+        //
+        // Fix: drop the delete trigger, do the bulk delete, then call FTS5 'rebuild'
+        // which re-syncs the index from the current content table in one pass.
+        // The trigger is re-created afterwards for incremental addIndex/removeIndex calls.
         do {
             try databaseController.dbQueue.write { db in
+                if hasFTS5 {
+                    try db.execute(sql: "DROP TRIGGER IF EXISTS index_ad")
+                }
                 try WiredIndex
                     .filter(Column("generation_id") != newGen)
                     .deleteAll(db)
-
-                // Compact the FTS5 index after a full rebuild for optimal query speed.
                 if hasFTS5 {
+                    // Rebuild the FTS5 index from the current content of the `index` table.
+                    try db.execute(sql: "INSERT INTO file_search(file_search) VALUES('rebuild')")
+                    // Merge all B-tree segments for faster subsequent queries.
                     try db.execute(sql: "INSERT INTO file_search(file_search) VALUES('optimize')")
+                    // Restore the delete trigger for incremental updates.
+                    try db.execute(sql: """
+                        CREATE TRIGGER IF NOT EXISTS index_ad
+                        AFTER DELETE ON "index" BEGIN
+                            INSERT INTO file_search(file_search, rowid, name, virtual_path)
+                            VALUES ('delete', old.id, old.name, old.virtual_path);
+                        END
+                    """)
                 }
             }
             currentGeneration = newGen
@@ -314,7 +335,75 @@ public class IndexController: TableController {
             Logger.info("IndexController: rebuild complete in \(elapsed)s — \(newFiles) files (\(sizeDesc)), \(newDirs) dirs (gen \(newGen))")
         } catch {
             let elapsed = String(format: "%.2f", Date().timeIntervalSince(startTime))
-            Logger.error("IndexController: rebuild finalisation failed after \(elapsed)s: \(error)")
+            Logger.error("IndexController: rebuild finalisation failed after \(elapsed)s: \(error) — attempting FTS5 recovery")
+            // Nuclear reset: drop + recreate FTS5 and all triggers so the next rebuild
+            // starts from a clean state. pendingRebuild causes the defer block to schedule
+            // a fresh traversal immediately after this function returns.
+            recoverIndexAndFTS5()
+            pendingRebuild = true
+        }
+    }
+
+    // MARK: - Private — FTS5 recovery
+
+    /// Called when rebuild finalisation fails (e.g. SQLITE_IOERR on FTS5 shadow tables).
+    /// Drops and recreates the FTS5 virtual table and all synchronisation triggers so the
+    /// next rebuild starts from a fully clean state. Always called from `indexQueue`.
+    private func recoverIndexAndFTS5() {
+        Logger.info("IndexController: starting FTS5 recovery — clearing index and FTS5 shadow tables")
+        do {
+            try databaseController.dbQueue.write { db in
+                // Drop triggers first so clearing the index table does not cascade
+                // further FTS5 errors through the still-active delete trigger.
+                try db.execute(sql: "DROP TRIGGER IF EXISTS index_ai")
+                try db.execute(sql: "DROP TRIGGER IF EXISTS index_ad")
+                try db.execute(sql: "DROP TRIGGER IF EXISTS index_au")
+                // Drop the FTS5 virtual table (also removes all its shadow tables).
+                try db.execute(sql: "DROP TABLE IF EXISTS file_search")
+                // Clear the index table — no FTS5 trigger is active, so this is safe.
+                try db.execute(sql: "DELETE FROM \"index\"")
+                // Recreate the FTS5 table (mirrors WiredMigrations.v2).
+                try db.execute(sql: """
+                    CREATE VIRTUAL TABLE IF NOT EXISTS file_search
+                    USING fts5(
+                        name,
+                        virtual_path,
+                        content='index',
+                        content_rowid='id',
+                        tokenize='unicode61 remove_diacritics 2'
+                    )
+                """)
+                // Recreate synchronisation triggers.
+                try db.execute(sql: """
+                    CREATE TRIGGER IF NOT EXISTS index_ai
+                    AFTER INSERT ON "index" BEGIN
+                        INSERT INTO file_search(rowid, name, virtual_path)
+                        VALUES (new.id, new.name, new.virtual_path);
+                    END
+                """)
+                try db.execute(sql: """
+                    CREATE TRIGGER IF NOT EXISTS index_ad
+                    AFTER DELETE ON "index" BEGIN
+                        INSERT INTO file_search(file_search, rowid, name, virtual_path)
+                        VALUES ('delete', old.id, old.name, old.virtual_path);
+                    END
+                """)
+                try db.execute(sql: """
+                    CREATE TRIGGER IF NOT EXISTS index_au
+                    AFTER UPDATE ON "index" BEGIN
+                        INSERT INTO file_search(file_search, rowid, name, virtual_path)
+                        VALUES ('delete', old.id, old.name, old.virtual_path);
+                        INSERT INTO file_search(rowid, name, virtual_path)
+                        VALUES (new.id, new.name, new.virtual_path);
+                    END
+                """)
+            }
+            hasFTS5 = detectFTS5()
+            currentGeneration = 0
+            Logger.info("IndexController: FTS5 recovery succeeded — fresh rebuild will follow")
+        } catch {
+            Logger.error("IndexController: FTS5 recovery failed: \(error) — FTS5 search disabled for this session")
+            hasFTS5 = false
         }
     }
 
