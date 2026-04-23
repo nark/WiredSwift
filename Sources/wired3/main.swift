@@ -47,6 +47,14 @@ struct Wired: ParsableCommand {
     @Option(help: "Path to XML specification file")
     var spec: String?
 
+    @Option(name: .customLong("migrate-from"),
+            help: "Path to a Wired 2.5 SQLite database. Migrates users, groups and bans into the Wired 3 database, then exits.")
+    var migrateFrom: String?
+
+    @Flag(name: .customLong("overwrite"),
+          help: "When used with --migrate-from: overwrite existing records in the Wired 3 database.")
+    var overwrite = false
+
     @Argument(help: "Optional working directory path. For compatibility, an .xml path here is treated as the specification file path.")
     var path: String?
 
@@ -74,6 +82,40 @@ struct Wired: ParsableCommand {
         }
         bootstrapRuntimeFiles(using: resolved)
         configureLogger(logFilePath: resolved.logPath, configPath: resolved.configPath)
+
+        // ── Wired 2.5 → Wired 3 migration ────────────────────────────────────────
+        if let rawSourcePath = migrateFrom {
+            // Disable C-stdio buffering so every print() call writes immediately.
+            // Without this, output is fully-buffered on pipes/files and gets lost on crash.
+            setvbuf(stdout, nil, _IONBF, 0)
+            setvbuf(stderr, nil, _IONBF, 0)
+            let expandedSourcePath = (rawSourcePath as NSString).expandingTildeInPath
+            guard let spec = P7Spec(withUrl: URL(fileURLWithPath: resolved.specPath)) else {
+                fputs("wired3: cannot load spec at \(resolved.specPath)\n", stderr)
+                Foundation.exit(1)
+            }
+            let dbController = DatabaseController(
+                baseURL: URL(fileURLWithPath: resolved.dbPath),
+                spec: spec
+            )
+            guard dbController.initDatabase() else {
+                fputs("wired3: cannot open database at \(resolved.dbPath)\n", stderr)
+                Foundation.exit(1)
+            }
+            let migrator = MigrationController(
+                sourcePath: expandedSourcePath,
+                dbQueue: dbController.dbQueue,
+                overwrite: overwrite
+            )
+            do {
+                let result = try migrator.run()
+                result.printSummary()
+            } catch {
+                fputs("wired3: migration failed: \(error)\n", stderr)
+                Foundation.exit(1)
+            }
+            return
+        }
 
         Logger.info("Starting \(WiredServerVersion.display)")
 
