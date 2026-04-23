@@ -28,6 +28,7 @@ public class IndexController: TableController {
     private let indexQueue = DispatchQueue(label: "wired3.index", qos: .utility)
     private var currentGeneration: Int64 = 0
     private var isIndexing: Bool = false
+    private var startupCheckDone = false
     // When a rebuild is running and another request arrives, set this flag so
     // exactly one extra rebuild is scheduled after the current one finishes.
     private var pendingRebuild: Bool = false
@@ -228,6 +229,13 @@ public class IndexController: TableController {
             }
         }
 
+        // On the very first rebuild after startup, probe FTS5 for write-level errors
+        // (e.g. SQLITE_IOERR on shadow tables) before investing time in a full traversal.
+        if !startupCheckDone {
+            startupCheckDone = true
+            performFTS5StartupCheck()
+        }
+
         let newGen = currentGeneration &+ 1
         var newSize: UInt64 = 0
         var newFiles: UInt64 = 0
@@ -404,6 +412,26 @@ public class IndexController: TableController {
         } catch {
             Logger.error("IndexController: FTS5 recovery failed: \(error) — FTS5 search disabled for this session")
             hasFTS5 = false
+        }
+    }
+
+    /// Probes FTS5 write-path health on the first rebuild after startup.
+    /// Runs `integrity-check` against the FTS5 shadow tables; if it throws
+    /// (e.g. SQLITE_IOERR), triggers `recoverIndexAndFTS5()` before the
+    /// expensive filesystem traversal begins. Always called from `indexQueue`.
+    private func performFTS5StartupCheck() {
+        guard hasFTS5 else { return }
+        do {
+            try databaseController.dbQueue.write { db in
+                // integrity-check validates internal FTS5 B-tree consistency and,
+                // for external-content tables, compares against the content table.
+                // We only care whether it throws; result rows are discarded.
+                try db.execute(sql: "INSERT INTO file_search(file_search) VALUES('integrity-check')")
+            }
+            Logger.info("IndexController: FTS5 startup check passed")
+        } catch {
+            Logger.warning("IndexController: FTS5 startup check failed (\(error)) — resetting before rebuild")
+            recoverIndexAndFTS5()
         }
     }
 
