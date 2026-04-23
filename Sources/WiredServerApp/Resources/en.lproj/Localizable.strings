@@ -119,6 +119,15 @@
 "database.events.retention.monthly" = "Every month";
 "database.events.retention.yearly" = "Every year";
 
+"database.migration.section" = "Migration from Wired 2.5";
+"database.migration.source" = "Wired 2.5 database";
+"database.migration.source.none" = "No file selected";
+"database.migration.overwrite" = "Overwrite existing records";
+"database.migration.run" = "Start Migration";
+"database.migration.running" = "Migration in progress…";
+"database.migration.server_warning" = "The server must be stopped before running the migration.";
+"database.migration.help" = "Migrates users, groups and bans from a Wired 2.5 SQLite database. Passwords are copied as-is (SHA1) — users must set a new password on first login.";
+
 "advanced.admin.section" = "Admin account";
 "advanced.admin.password.placeholder" = "Admin password";
 "advanced.admin.set_password" = "Set Password";
@@ -187,3 +196,6 @@
 "error.database_not_initialized" = "Database not initialized: start the server once first";
 "error.sql_prepare_failed" = "SQL prepare failed";
 "error.sql_execution_failed" = "SQL execution failed";
+"error.migration_no_source" = "No source database selected.";
+"error.migration_server_running" = "Stop the server before running the migration.";
+"error.migration_failed" = "Migration failed";

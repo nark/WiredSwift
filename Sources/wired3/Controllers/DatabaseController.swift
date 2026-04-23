@@ -22,7 +22,7 @@ private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.sel
 /// shared `DatabaseController` instance that `AppController` creates at startup.
 public class DatabaseController {
     let baseURL: URL
-    private(set) var dbQueue: DatabaseQueue!
+    public private(set) var dbQueue: DatabaseQueue!
 
     /// Creates a new `DatabaseController` for the database at `baseURL`.
     ///

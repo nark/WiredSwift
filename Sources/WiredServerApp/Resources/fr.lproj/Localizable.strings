@@ -187,3 +187,15 @@
 "error.database_not_initialized" = "Base de données non initialisée : démarre le serveur une première fois";
 "error.sql_prepare_failed" = "Erreur SQL prepare";
 "error.sql_execution_failed" = "Erreur SQL execution";
+
+"database.migration.section" = "Migration depuis Wired 2.5";
+"database.migration.source" = "Base de données Wired 2.5";
+"database.migration.source.none" = "Aucun fichier sélectionné";
+"database.migration.overwrite" = "Écraser les entrées existantes";
+"database.migration.run" = "Démarrer la migration";
+"database.migration.running" = "Migration en cours…";
+"database.migration.server_warning" = "Le serveur doit être arrêté avant de lancer la migration.";
+"database.migration.help" = "Migre les utilisateurs, groupes et bannissements depuis une base SQLite Wired 2.5. Les mots de passe sont copiés tels quels (SHA1) — les utilisateurs devront définir un nouveau mot de passe à la première connexion.";
+"error.migration_no_source" = "Aucune base source sélectionnée.";
+"error.migration_server_running" = "Arrêtez le serveur avant de lancer la migration.";
+"error.migration_failed" = "Échec de la migration";
