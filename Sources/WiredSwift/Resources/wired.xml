@@ -264,6 +264,14 @@
             <p7:enum name="wired.user.state.disconnecting" value="4" version="2.0" />
         </p7:field>
 
+        <p7:field name="wired.user.password_must_change" type="bool" id="3016" version="3.2">
+            <p7:documentation>
+                If true, the account was migrated from Wired 2.5 and only a legacy SHA1 password
+                hash is stored. The client must prompt the user to set a new password immediately
+                after login so that the account is upgraded to a proper SHA256+salt credential.
+            </p7:documentation>
+        </p7:field>
+
         <p7:field name="wired.chat.id" type="uint32" id="4000" version="2.0">
             <p7:documentation>
                 Identification number of a chat. This number should be created when each chat is
@@ -1684,10 +1692,12 @@
 
         <p7:message name="wired.login" id="2005" version="2.0">
             <p7:documentation>
-                Login reply.
+                Login reply. If [field:wired.user.password_must_change] is true, the client must
+                immediately prompt the user to set a new password via [message:wired.account.change_password].
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
+            <p7:parameter field="wired.user.password_must_change" version="3.2" />
         </p7:message>
         
         <p7:message name="wired.banned" id="2006" version="2.0">
