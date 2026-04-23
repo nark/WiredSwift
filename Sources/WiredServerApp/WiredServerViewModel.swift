@@ -86,6 +86,11 @@ final class WiredServerViewModel: ObservableObject {
     @Published var showInitialPasswordAlert: Bool = false
     @Published var initialAdminPassword: String = ""
 
+    @Published var migrationSourcePath: String = ""
+    @Published var isMigrating: Bool = false
+    @Published var migrationOutput: String = ""
+    @Published var migrationOverwrite: Bool = false
+
     private let fileManager = FileManager.default
     private var pollTimer: Timer?
     private var process: Process?
@@ -258,6 +263,90 @@ final class WiredServerViewModel: ObservableObject {
         if panel.runModal() == .OK, let selected = panel.url?.path {
             filesDirectory = selected
             saveFilesSettings()
+        }
+    }
+
+    func chooseMigrationSource() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = L("common.choose")
+        panel.title = L("database.migration.source")
+        if panel.runModal() == .OK, let selected = panel.url?.path {
+            migrationSourcePath = selected
+            migrationOutput = ""
+        }
+    }
+
+    func runMigration() async {
+        guard !isMigrating else { return }
+        guard !migrationSourcePath.isEmpty else {
+            publishError(L("error.migration_no_source"))
+            return
+        }
+        guard !isRunning else {
+            publishError(L("error.migration_server_running"))
+            return
+        }
+
+        let executable = fileManager.isExecutableFile(atPath: installedBinaryPath) ? installedBinaryPath : binaryPath
+        guard fileManager.isExecutableFile(atPath: executable) else {
+            publishError(L("error.wired3_binary_missing"))
+            return
+        }
+
+        isMigrating = true
+
+        var args: [String] = [
+            "--working-directory", workingDirectory,
+            "--db", databasePath,
+            "--migrate-from", migrationSourcePath
+        ]
+        if migrationOverwrite {
+            args.append("--overwrite")
+        }
+
+        migrationOutput = ""
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: executable)
+        task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory, isDirectory: true)
+        task.arguments = args
+
+        // Write subprocess output to a temp file to avoid pipe-buffering race conditions.
+        let tmpURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("wired3-migration-\(Int(Date().timeIntervalSince1970)).log")
+        FileManager.default.createFile(atPath: tmpURL.path, contents: nil)
+        guard let writeHandle = FileHandle(forWritingAtPath: tmpURL.path) else {
+            isMigrating = false
+            publishError(L("error.migration_failed"))
+            return
+        }
+        task.standardOutput = writeHandle
+        task.standardError = writeHandle
+
+        do {
+            try task.run()
+        } catch {
+            writeHandle.closeFile()
+            isMigrating = false
+            publishError("\(L("error.migration_failed")): \(error.localizedDescription)")
+            return
+        }
+
+        // Wait for the process on a background thread, then read the temp file.
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            task.waitUntilExit()
+            writeHandle.closeFile()
+            let exitCode = task.terminationStatus
+            let data = (try? Data(contentsOf: tmpURL)) ?? Data()
+            let output = String(data: data, encoding: .utf8) ?? "(no output)"
+            try? FileManager.default.removeItem(at: tmpURL)
+            DispatchQueue.main.async {
+                self?.migrationOutput = output
+                self?.isMigrating = false
+            }
         }
     }
 
