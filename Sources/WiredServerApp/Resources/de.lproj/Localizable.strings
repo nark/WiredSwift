@@ -107,3 +107,4 @@
 "error.migration_no_source" = "Keine Quelldatenbank ausgewählt.";
 "error.migration_server_running" = "Stoppen Sie den Server, bevor Sie die Migration starten.";
 "error.migration_failed" = "Migration fehlgeschlagen";
+"error.migration_timed_out" = "Die Migration wurde nach 5 Minuten abgebrochen.";

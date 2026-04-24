@@ -199,3 +199,4 @@
 "error.migration_no_source" = "No source database selected.";
 "error.migration_server_running" = "Stop the server before running the migration.";
 "error.migration_failed" = "Migration failed";
+"error.migration_timed_out" = "Migration timed out after 5 minutes and was terminated.";

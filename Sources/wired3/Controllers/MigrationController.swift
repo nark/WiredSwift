@@ -261,9 +261,7 @@ public final class MigrationController {
             try migratePrivileges(
                 srcRow: srcRows.first ?? [:],
                 into: db,
-                table: "group_privileges",
-                fkColumn: "group_id",
-                fkValue: groupID
+                target: .group(id: groupID)
             )
             result.groupsMigrated += 1
         }
@@ -355,9 +353,7 @@ public final class MigrationController {
             try migratePrivileges(
                 srcRow: row,
                 into: db,
-                table: "user_privileges",
-                fkColumn: "user_id",
-                fkValue: userID
+                target: .user(id: userID)
             )
             result.usersMigrated += 1
         }
@@ -572,31 +568,54 @@ public final class MigrationController {
 
     // MARK: - Privilege helper
 
+    /// Validated target for privilege rows — eliminates raw string interpolation of
+    /// table/column names by restricting callers to an exhaustive closed enum.
+    private enum PrivilegeTarget {
+        case user(id: Int64)
+        case group(id: Int64)
+
+        var tableName: String {
+            switch self {
+            case .user:  return "user_privileges"
+            case .group: return "group_privileges"
+            }
+        }
+        var fkColumnName: String {
+            switch self {
+            case .user:  return "user_id"
+            case .group: return "group_id"
+            }
+        }
+        var id: Int64 {
+            switch self {
+            case .user(let id), .group(let id): return id
+            }
+        }
+    }
+
     /// Inserts privilege rows for a single user or group.
     ///
-    /// Non-null source columns are mapped using `boolPrivilegeMap` / `intPrivilegeMap`
-    /// and written to `table` (either `user_privileges` or `group_privileges`).
+    /// Table and column names are taken from a closed `PrivilegeTarget` enum, not from
+    /// caller-supplied strings, to prevent accidental injection of untrusted identifiers.
     private func migratePrivileges(
         srcRow: [String: String],
         into db: Database,
-        table: String,
-        fkColumn: String,
-        fkValue: Int64
+        target: PrivilegeTarget
     ) throws {
         for (srcCol, dstName) in MigrationController.boolPrivilegeMap {
             guard let raw = srcRow[srcCol] else { continue }
             let value = (Int(raw) ?? 0) != 0
             try db.execute(
-                sql: "INSERT OR REPLACE INTO \(table) (name, value, \(fkColumn)) VALUES (?,?,?)",
-                arguments: [dstName, value, fkValue]
+                sql: "INSERT OR REPLACE INTO \(target.tableName) (name, value, \(target.fkColumnName)) VALUES (?,?,?)",
+                arguments: [dstName, value, target.id]
             )
         }
         for (srcCol, dstName) in MigrationController.intPrivilegeMap {
             guard let raw = srcRow[srcCol] else { continue }
             let value = Int64(raw) ?? 0
             try db.execute(
-                sql: "INSERT OR REPLACE INTO \(table) (name, value, \(fkColumn)) VALUES (?,?,?)",
-                arguments: [dstName, value, fkValue]
+                sql: "INSERT OR REPLACE INTO \(target.tableName) (name, value, \(target.fkColumnName)) VALUES (?,?,?)",
+                arguments: [dstName, value, target.id]
             )
         }
     }
