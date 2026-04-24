@@ -37,7 +37,7 @@ if [[ "$BUILD_CONFIG" != "debug" && "$BUILD_CONFIG" != "release" ]]; then
   exit 1
 fi
 
-if [[ ! "$MARKETING_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+if [[ ! "$MARKETING_VERSION" =~ ^[0-9]+(\.[0-9]+)*(-[a-zA-Z0-9.]+)?$ ]]; then
   echo "Invalid WIRED_MARKETING_VERSION: $MARKETING_VERSION"
   exit 1
 fi
