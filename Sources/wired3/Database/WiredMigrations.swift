@@ -41,6 +41,9 @@ enum WiredMigrations {
         migrator.registerMigration("v11_tracked_servers") { db in
             try WiredMigrations.v11(db)
         }
+        migrator.registerMigration("v12_add_is_legacy") { db in
+            try WiredMigrations.v12(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -202,6 +205,18 @@ enum WiredMigrations {
                       on: "tracked_servers",
                       columns: ["last_seen_at"],
                       ifNotExists: true)
+    }
+
+    static func v12(_ db: Database) throws {
+        try db.alter(table: "users") { t in
+            t.add(column: "is_legacy", .boolean).notNull().defaults(to: false)
+        }
+        // Back-fill: any account that still has no salt and a 40-char (SHA1) hash is legacy.
+        try db.execute(sql: """
+            UPDATE users SET is_legacy = 1
+            WHERE (password_salt IS NULL OR password_salt = '')
+              AND length(password) = 40
+        """)
     }
 
     // SECURITY (FINDING_A_004): Add password_salt column for salted SHA-256 hashing

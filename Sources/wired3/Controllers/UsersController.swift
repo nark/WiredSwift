@@ -53,6 +53,10 @@ public class UsersController: TableController, SocketPasswordDelegate {
         user(withUsername: username)?.passwordSalt
     }
 
+    public func isLegacyUser(username: String) -> Bool {
+        user(withUsername: username)?.isLegacy ?? false
+    }
+
     // MARK: - Fetch
 
     /// Authenticates a user by verifying the supplied SHA-256 password hash.

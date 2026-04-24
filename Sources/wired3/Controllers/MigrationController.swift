@@ -297,9 +297,9 @@ public final class MigrationController {
                     result.usersSkipped += 1
                     continue
                 }
-                // password_salt is set to NULL because the migrated hash is SHA1,
-                // not a Wired 3 SHA256 hash. The server will treat it as a legacy
-                // credential and the user must set a new password on first login.
+                // password_salt is set to NULL and is_legacy to 1 because the migrated
+                // hash is SHA1, not a Wired 3 SHA256 hash. The server will treat it as a
+                // legacy credential and the user must set a new password on first login.
                 try db.execute(sql: """
                     UPDATE users SET
                         password=?, full_name=?, comment=?,
@@ -307,7 +307,7 @@ public final class MigrationController {
                         edited_by=?, downloads=?, download_transferred=?,
                         uploads=?, upload_transferred=?,
                         "group"=?, groups=?, color=?, files=?,
-                        password_salt=NULL
+                        password_salt=NULL, is_legacy=1
                     WHERE username=?
                     """,
                     arguments: [
@@ -328,13 +328,13 @@ public final class MigrationController {
             } else {
                 try db.execute(sql: """
                     INSERT INTO users (
-                        username, password, password_salt,
+                        username, password, password_salt, is_legacy,
                         full_name, comment,
                         creation_time, modification_time, login_time,
                         edited_by, downloads, download_transferred,
                         uploads, upload_transferred,
                         "group", groups, color, files
-                    ) VALUES (?,?,NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES (?,?,NULL,1,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """,
                     arguments: [
                         username, row["password"],
