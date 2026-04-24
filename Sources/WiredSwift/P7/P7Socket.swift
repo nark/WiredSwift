@@ -33,6 +33,10 @@ public protocol SocketPasswordDelegate: AnyObject {
     /// Returns the per-user stored salt (hex string) used to derive the base hash in key exchange.
     /// Return nil if the account has not yet been assigned a stored salt.
     func passwordSaltForUsername(username: String) -> String?
+    /// Returns whether the account was migrated from Wired 2.5 and still holds a SHA1 password hash.
+    /// The server uses this to signal the client that it must re-hash with SHA1 for this session
+    /// and that a password upgrade is required.
+    func isLegacyUser(username: String) -> Bool
 }
 
 /// Provides the server's persistent identity key for TOFU (Trust On First Use).
@@ -1546,10 +1550,8 @@ public class P7Socket: NSObject {
         // Per-user stored salt for base_hash derivation (nil = not yet assigned)
         let storedSalt = self.passwordProvider?.passwordSaltForUsername(username: self.username)
 
-        // Detect legacy SHA1 accounts migrated from Wired 2.5.
-        // A stored password that is exactly 40 hex chars and has no per-user salt is a SHA1 hash.
-        let isLegacyUser = (storedSalt == nil || storedSalt?.isEmpty == true)
-                         && (self.password?.count == 40)
+        // Detect legacy SHA1 accounts migrated from Wired 2.5 via the dedicated DB flag.
+        let isLegacyUser = self.passwordProvider?.isLegacyUser(username: self.username) ?? false
 
         // Step 3: send server_challenge {encrypted stored_salt [, legacy_password flag]}
         let storedSaltBytes: Data = storedSalt.flatMap { $0.isEmpty ? nil : $0.data(using: .utf8) } ?? Data()
