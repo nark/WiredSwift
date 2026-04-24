@@ -312,9 +312,11 @@ public class IndexController: TableController {
         // The trigger is re-created afterwards for incremental addIndex/removeIndex calls.
         do {
             try databaseController.dbQueue.write { db in
-                if hasFTS5 {
-                    try db.execute(sql: "DROP TRIGGER IF EXISTS index_ad")
-                }
+                // Drop unconditionally — hasFTS5 may be false because a previous
+                // recoverIndexAndFTS5() failed, but the trigger can still exist in
+                // the database from an earlier session. Leaving it active causes
+                // SQLITE_IOERR (10) on every bulk delete via the FTS5 shadow tables.
+                try db.execute(sql: "DROP TRIGGER IF EXISTS index_ad")
                 try WiredIndex
                     .filter(Column("generation_id") != newGen)
                     .deleteAll(db)
