@@ -91,14 +91,11 @@ extension ServerController {
         let isLegacy = client.socket.isLegacyAuth
         let user: User?
         if isLegacy {
+            // Do NOT assign a salt here. The salt is only written when the user actually
+            // completes the password-change flow (receiveAccountChangePassword). Writing it
+            // now would cause the next login attempt to take the SHA-256 path against a
+            // still-SHA1 stored hash, permanently locking the account out.
             user = App.usersController.userWithPrivileges(withUsername: login)
-            // Assign a stored_salt on the spot (same lazy-migration path as normal login)
-            if let u = user, u.passwordSalt == nil || u.passwordSalt!.isEmpty {
-                let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
-                         + UUID().uuidString.replacingOccurrences(of: "-", with: "")
-                u.passwordSalt = salt
-                App.usersController.save(user: u)
-            }
         } else {
             user = App.usersController.user(withUsername: login, password: password)
         }
