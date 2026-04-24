@@ -335,19 +335,40 @@ final class WiredServerViewModel: ObservableObject {
             return
         }
 
-        // Wait for the process on a background thread, then read the temp file.
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            task.waitUntilExit()
-            writeHandle.closeFile()
-            let exitCode = task.terminationStatus
-            let data = (try? Data(contentsOf: tmpURL)) ?? Data()
-            let output = String(data: data, encoding: .utf8) ?? "(no output)"
-            try? FileManager.default.removeItem(at: tmpURL)
-            DispatchQueue.main.async {
-                self?.migrationOutput = output
-                self?.isMigrating = false
+        // Wait for the process using structured concurrency; cap at 5 minutes so
+        // isMigrating can never be stuck true forever if the subprocess hangs.
+        let didTimeout = await withTaskGroup(of: Bool.self) { group -> Bool in
+            group.addTask {
+                await withCheckedContinuation { cont in
+                    DispatchQueue.global(qos: .utility).async {
+                        task.waitUntilExit()
+                        cont.resume(returning: false)
+                    }
+                }
             }
+            group.addTask {
+                do {
+                    try await Task.sleep(nanoseconds: 5 * 60 * 1_000_000_000)
+                    task.terminate()
+                    return true
+                } catch {
+                    return false
+                }
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
         }
+
+        writeHandle.closeFile()
+        let data = (try? Data(contentsOf: tmpURL)) ?? Data()
+        let output = String(data: data, encoding: .utf8) ?? "(no output)"
+        try? FileManager.default.removeItem(at: tmpURL)
+
+        migrationOutput = didTimeout
+            ? (output.isEmpty ? "" : output + "\n") + L("error.migration_timed_out")
+            : output
+        isMigrating = false
     }
 
     func chooseBinaryPath() {

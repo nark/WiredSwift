@@ -199,3 +199,4 @@
 "error.migration_no_source" = "Aucune base source sélectionnée.";
 "error.migration_server_running" = "Arrêtez le serveur avant de lancer la migration.";
 "error.migration_failed" = "Échec de la migration";
+"error.migration_timed_out" = "La migration a expiré après 5 minutes et a été arrêtée.";

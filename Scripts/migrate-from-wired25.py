@@ -11,11 +11,17 @@ Usage:
         [--dry-run]   # analyse only, no writes
         [--overwrite] # replace existing users/groups in Wired 3
 
+SCOPE:
+  This script migrates accounts (users + groups + bans) only.
+  Boards, threads and posts are NOT migrated by this script.
+  Use the built-in server migration instead (wired3 --migrate-from <path>)
+  if you also need to carry over board content — that path migrates everything.
+
 IMPORTANT:
   • Make a backup of both databases before running!
   • Wired 2.5 stores passwords as SHA1 hashes, Wired 3 uses SHA256 + salt.
-    Passwords are copied as-is. Wired 3 will treat them as "legacy" and users
-    will need to set a new password on first login (or you reset them manually).
+    Passwords are copied as-is (is_legacy flag set to 1). Wired 3 will treat
+    them as "legacy" and users will need to set a new password on first login.
   • The 'admin' account that Wired 3 creates by default is never overwritten
     unless --overwrite is passed.
 """
