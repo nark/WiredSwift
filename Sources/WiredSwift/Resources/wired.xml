@@ -344,6 +344,11 @@
                 Original timestamp when the offline message was sent.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.message.offline.sender_nick" type="string" id="5013" version="3.0">
+            <p7:documentation>
+                Display nick of the sender at delivery time, derived from last_nick in the server database.
+            </p7:documentation>
+        </p7:field>
 
         <p7:field name="wired.board.board" type="string" id="6000" version="2.0">
             <p7:documentation>
@@ -2236,6 +2241,7 @@
             <p7:parameter field="wired.message.offline.sender_login" use="required" version="3.0" />
             <p7:parameter field="wired.message.message" use="required" version="3.0" />
             <p7:parameter field="wired.message.offline.date" use="required" version="3.0" />
+            <p7:parameter field="wired.message.offline.sender_nick" use="optional" version="3.0" />
         </p7:message>
 
         <p7:message name="wired.board.get_boards" id="6000" version="2.0">
