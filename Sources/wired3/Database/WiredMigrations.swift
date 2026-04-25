@@ -53,6 +53,9 @@ enum WiredMigrations {
         migrator.registerMigration("v15_last_nick") { db in
             try WiredMigrations.v15(db)
         }
+        migrator.registerMigration("v16_offline_messages_encrypted") { db in
+            try WiredMigrations.v16(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -434,6 +437,12 @@ enum WiredMigrations {
                        WHERE recipient_identity = NEW.recipient_identity) >= 100;
             END;
         """)
+    }
+
+    static func v16(_ db: Database) throws {
+        try db.alter(table: "offline_messages") { t in
+            t.add(column: "is_encrypted", .integer).notNull().defaults(to: 0)
+        }
     }
 
     // v15: Persist the user's last known chat nick so the offline user list can show it.

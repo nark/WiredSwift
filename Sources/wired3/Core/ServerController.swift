@@ -683,6 +683,10 @@ public class ServerController: ServerDelegate {
             self.receiveUserDisconnectUser(client: client, message: message)
         } else if message.name == "wired.user.ban_user" {
             self.receiveUserBanUser(client: client, message: message)
+        } else if message.name == "wired.user.set_public_key" {
+            self.receiveUserSetPublicKey(client, message)
+        } else if message.name == "wired.user.get_public_key" {
+            self.receiveUserGetPublicKey(client, message)
         } else if message.name == "wired.chat.get_chats" {
             App.chatsController.getChats(message: message, client: client)
         } else if message.name == "wired.chat.create_public_chat" {

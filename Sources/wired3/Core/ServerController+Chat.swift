@@ -164,11 +164,13 @@ extension ServerController {
         }
 
         let senderLogin = senderUser.username ?? ""
+        let isEncrypted = message.bool(forField: "wired.message.offline.encrypted") ?? false
         var offlineMessage = OfflineMessage(
             senderLogin: senderLogin,
             recipientLogin: recipientLogin,
             body: body,
-            sentAt: Date()
+            sentAt: Date(),
+            isEncrypted: isEncrypted
         )
 
         do {
@@ -193,24 +195,27 @@ extension ServerController {
             let senderNick: String?
             let body: String
             let sentAt: Date
+            let isEncrypted: Bool
         }
 
         let messages: [PendingMessage]
         do {
             messages = try App.databaseController.dbQueue.read { db in
                 let rows = try Row.fetchAll(db, sql: """
-                    SELECT om.sender_login, om.body, om.sent_at, u.last_nick AS sender_nick
+                    SELECT om.sender_login, om.body, om.sent_at, om.is_encrypted, u.last_nick AS sender_nick
                     FROM offline_messages om
                     LEFT JOIN users u ON u.username = om.sender_login
                     WHERE om.recipient_login = ?
                     ORDER BY om.sent_at ASC
                 """, arguments: [recipientLogin])
                 return rows.map {
-                    PendingMessage(
+                    let encryptedInt: Int = $0["is_encrypted"] ?? 0
+                    return PendingMessage(
                         senderLogin: $0["sender_login"],
                         senderNick: $0["sender_nick"],
                         body: $0["body"],
-                        sentAt: Date(timeIntervalSince1970: $0["sent_at"])
+                        sentAt: Date(timeIntervalSince1970: $0["sent_at"]),
+                        isEncrypted: encryptedInt != 0
                     )
                 }
             }
@@ -228,6 +233,9 @@ extension ServerController {
             delivery.addParameter(field: "wired.message.offline.date", value: msg.sentAt)
             if let nick = msg.senderNick, !nick.isEmpty {
                 delivery.addParameter(field: "wired.message.offline.sender_nick", value: nick)
+            }
+            if msg.isEncrypted {
+                delivery.addParameter(field: "wired.message.offline.encrypted", value: true)
             }
             _ = self.send(message: delivery, client: client)
         }
