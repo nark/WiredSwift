@@ -862,6 +862,8 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func startServer() async {
+        // LaunchDaemon is managed by launchd — never start a local process in that mode.
+        guard installMode == .launchAgent else { return }
         refreshRunningStatus()
         guard !isRunning else { return }
 
