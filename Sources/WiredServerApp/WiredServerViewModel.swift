@@ -100,6 +100,7 @@ final class WiredServerViewModel: ObservableObject {
     private let workingDirectoryKey = "wired3WorkingDirectory"
     private let installModeKey = "wired3InstallMode"
     private let daemonUserNameKey = "wired3DaemonUserName"
+    private let daemonGroupNameKey = "wired3DaemonGroupName"
     private let daemonStartAtBootKey = "wired3DaemonStartAtBoot"
     private let launchAgentLabel = "fr.read-write.wired3.server"
     private let launchDaemonPlistPath = "/Library/LaunchDaemons/fr.read-write.wired3.server.plist"
@@ -112,6 +113,7 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var installMode: ServerInstallMode = .launchAgent
     @Published var daemonUserName: String = "_wired"
+    @Published var daemonGroupName: String = "staff"
     @Published var daemonStartAtBoot: Bool = false
     @Published var isSwitchingMode: Bool = false
     @Published var modeSwitchStatus: String = ""
@@ -186,6 +188,7 @@ final class WiredServerViewModel: ObservableObject {
         let savedMode = UserDefaults.standard.string(forKey: "wired3InstallMode")
         self.installMode = ServerInstallMode(rawValue: savedMode ?? "") ?? .launchAgent
         self.daemonUserName = UserDefaults.standard.string(forKey: "wired3DaemonUserName") ?? "_wired"
+        self.daemonGroupName = UserDefaults.standard.string(forKey: "wired3DaemonGroupName") ?? "staff"
         self.daemonStartAtBoot = UserDefaults.standard.bool(forKey: "wired3DaemonStartAtBoot")
 
         if #available(macOS 13.0, *) {
@@ -404,6 +407,10 @@ final class WiredServerViewModel: ObservableObject {
         runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
     }
 
+    var daemonGroupExists: Bool {
+        runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
+    }
+
     var launchDaemonInstalled: Bool {
         fileManager.fileExists(atPath: launchDaemonPlistPath)
     }
@@ -415,6 +422,7 @@ final class WiredServerViewModel: ObservableObject {
 
     func saveDaemonSettings() {
         userDefaults.set(daemonUserName, forKey: daemonUserNameKey)
+        userDefaults.set(daemonGroupName, forKey: daemonGroupNameKey)
         userDefaults.set(daemonStartAtBoot, forKey: daemonStartAtBootKey)
     }
 
@@ -487,25 +495,40 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    // One admin dialog: create user (optional) + chown + install plist
+    // One admin dialog: create group (optional) + create user (optional) + chown + install plist
     private func activateLaunchDaemon(name: String, createUser: Bool) throws {
         let tempURL = try writeDaemonPlistToTemp()
+        let group = daemonGroupName
+        let createGroup = !daemonGroupExists
 
         var cmds: [String] = []
+
+        if createGroup {
+            let gid = findFreeSystemGID()
+            cmds += [
+                "dscl . -create /Groups/\(group)",
+                "dscl . -create /Groups/\(group) PrimaryGroupID \(gid)",
+                "dscl . -create /Groups/\(group) Password '*'",
+                "dscl . -create /Groups/\(group) RealName 'Wired Server'"
+            ]
+        }
+
         if createUser {
             let uid = findFreeSystemUID()
+            let gid = groupGID(for: group)
             cmds += [
                 "dscl . -create /Users/\(name)",
                 "dscl . -create /Users/\(name) UserShell /usr/bin/false",
                 "dscl . -create /Users/\(name) RealName 'Wired Server'",
                 "dscl . -create /Users/\(name) UniqueID \(uid)",
-                "dscl . -create /Users/\(name) PrimaryGroupID 20",
+                "dscl . -create /Users/\(name) PrimaryGroupID \(gid)",
                 "dscl . -create /Users/\(name) NFSHomeDirectory /Library/Wired3",
                 "dscl . -create /Users/\(name) IsHidden 1"
             ]
         }
+
         cmds += [
-            "chown -R \(name):staff /Library/Wired3",
+            "chown -R \(name):\(group) /Library/Wired3",
             "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
             "chmod 644 '\(launchDaemonPlistPath)'",
             "chown root:wheel '\(launchDaemonPlistPath)'"
@@ -520,7 +543,7 @@ final class WiredServerViewModel: ObservableObject {
         let cmds = [
             "launchctl bootout system/\(launchAgentLabel) 2>/dev/null",
             "rm -f '\(launchDaemonPlistPath)'",
-            "chown -R \(restoreUser):staff /Library/Wired3"
+            "chown -R \(restoreUser):staff /Library/Wired3"  // back to staff for LaunchAgent
         ].joined(separator: "; ")
 
         try runPrivileged(cmds, error: WiredServerError.launchDaemonRemoveFailed(""))
@@ -585,6 +608,27 @@ final class WiredServerViewModel: ObservableObject {
         })
         for uid in 400...499 where !used.contains(uid) { return uid }
         return 489
+    }
+
+    private func findFreeSystemGID() -> Int {
+        let output = runCommand("/usr/bin/dscl", [".", "-list", "/Groups", "PrimaryGroupID"])
+        let used = Set(output.components(separatedBy: .newlines).compactMap { line -> Int? in
+            let parts = line.split(separator: " ").map(String.init)
+            return parts.count >= 2 ? Int(parts.last ?? "") : nil
+        })
+        for gid in 400...499 where !used.contains(gid) { return gid }
+        return 488
+    }
+
+    private func groupGID(for group: String) -> Int {
+        let output = runCommand("/usr/bin/dscl", [".", "-read", "/Groups/\(group)", "PrimaryGroupID"])
+        for line in output.components(separatedBy: .newlines) {
+            let parts = line.split(separator: " ").map(String.init)
+            if parts.first == "PrimaryGroupID:", let gid = Int(parts.last ?? "") {
+                return gid
+            }
+        }
+        return 20  // fall back to staff GID
     }
 
     // MARK: - Wired 2.5 Migration

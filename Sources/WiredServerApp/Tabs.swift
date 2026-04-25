@@ -206,20 +206,27 @@ struct GeneralTabView: View {
                         .disabled(model.isSwitchingMode || model.isBusy)
 
                         if model.installMode == .launchDaemon {
-                            HStack {
-                                Text("System User")
+                            HStack(spacing: 8) {
+                                Text("User")
                                     .bold()
+                                    .frame(width: 40, alignment: .leading)
                                 TextField("_wired", text: $model.daemonUserName)
                                     .textFieldStyle(.roundedBorder)
-                                    .frame(width: 120)
+                                    .frame(width: 100)
                                     .disabled(model.isSwitchingMode || model.launchDaemonInstalled)
-                                if model.daemonUserExists {
-                                    Image(systemName: "person.fill.checkmark")
-                                        .foregroundStyle(.green)
-                                } else {
-                                    Image(systemName: "person.fill.xmark")
-                                        .foregroundStyle(.secondary)
-                                }
+                                Image(systemName: model.daemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
+                                    .foregroundStyle(model.daemonUserExists ? .green : .secondary)
+
+                                Text("Group")
+                                    .bold()
+                                    .frame(width: 44, alignment: .leading)
+                                TextField("staff", text: $model.daemonGroupName)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 100)
+                                    .disabled(model.isSwitchingMode || model.launchDaemonInstalled)
+                                Image(systemName: model.daemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
+                                    .foregroundStyle(model.daemonGroupExists ? .green : .secondary)
+
                                 Spacer()
                                 Button("Save") { model.saveDaemonSettings() }
                                     .disabled(model.isSwitchingMode)
