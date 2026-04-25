@@ -214,7 +214,7 @@ extension ServerController {
                         senderLogin: $0["sender_login"],
                         senderNick: $0["sender_nick"],
                         body: $0["body"],
-                        sentAt: Date(timeIntervalSince1970: $0["sent_at"]),
+                        sentAt: $0["sent_at"],
                         isEncrypted: encryptedInt != 0
                     )
                 }
