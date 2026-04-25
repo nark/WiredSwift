@@ -98,13 +98,24 @@ final class WiredServerViewModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
     private let workingDirectoryKey = "wired3WorkingDirectory"
+    private let installModeKey = "wired3InstallMode"
+    private let daemonUserNameKey = "wired3DaemonUserName"
+    private let daemonStartAtBootKey = "wired3DaemonStartAtBoot"
     private let launchAgentLabel = "fr.read-write.wired3.server"
+    private let launchDaemonPlistPath = "/Library/LaunchDaemons/fr.read-write.wired3.server.plist"
     private let embeddedBinarySHAKey = "Wired3EmbeddedSHA256"
 
     static let systemDataDirectory = "/Library/Wired3"
 
     @Published var isSystemMigrating: Bool = false
     @Published var systemMigrationStatus: String = ""
+
+    @Published var installMode: ServerInstallMode = .launchAgent
+    @Published var daemonUserName: String = "_wired"
+    @Published var daemonStartAtBoot: Bool = false
+    @Published var isSwitchingMode: Bool = false
+    @Published var modeSwitchStatus: String = ""
+
     private var lastDashboardLightRefresh = Date.distantPast
     private var lastDashboardHeavyRefresh = Date.distantPast
 
@@ -170,7 +181,12 @@ final class WiredServerViewModel: ObservableObject {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let defaultDirectory = appSupport.appendingPathComponent("Wired3", isDirectory: true).path
         self.workingDirectory = UserDefaults.standard.string(forKey: "wired3WorkingDirectory") ?? defaultDirectory
-        self.launchServerAtAppStart = userDefaults.bool(forKey: launchAtAppStartKey)
+        self.launchServerAtAppStart = UserDefaults.standard.bool(forKey: launchAtAppStartKey)
+
+        let savedMode = UserDefaults.standard.string(forKey: "wired3InstallMode")
+        self.installMode = ServerInstallMode(rawValue: savedMode ?? "") ?? .launchAgent
+        self.daemonUserName = UserDefaults.standard.string(forKey: "wired3DaemonUserName") ?? "_wired"
+        self.daemonStartAtBoot = UserDefaults.standard.bool(forKey: "wired3DaemonStartAtBoot")
 
         if #available(macOS 13.0, *) {
             try? SMAppService.mainApp.unregister()
@@ -380,6 +396,195 @@ final class WiredServerViewModel: ObservableObject {
            let result = sqlite3_column_text(stmt, 0),
            String(cString: result) == "ok" { return }
         throw WiredServerError.systemMigrationFailed("Database integrity check failed")
+    }
+
+    // MARK: - LaunchDaemon / LaunchAgent Mode Switching
+
+    var daemonUserExists: Bool {
+        runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
+    }
+
+    var launchDaemonInstalled: Bool {
+        fileManager.fileExists(atPath: launchDaemonPlistPath)
+    }
+
+    var daemonRunning: Bool {
+        let result = runProcess("/bin/launchctl", ["print", "system/\(launchAgentLabel)"])
+        return result.status == 0
+    }
+
+    func saveDaemonSettings() {
+        userDefaults.set(daemonUserName, forKey: daemonUserNameKey)
+        userDefaults.set(daemonStartAtBoot, forKey: daemonStartAtBootKey)
+    }
+
+    func switchInstallMode(to mode: ServerInstallMode) async {
+        guard mode != installMode, !isSwitchingMode else { return }
+        guard isUsingSystemDirectory else {
+            publishError("Please migrate data to /Library/Wired3/ before switching to LaunchDaemon mode.")
+            return
+        }
+        isSwitchingMode = true
+        modeSwitchStatus = "Preparing..."
+
+        do {
+            if isRunning {
+                modeSwitchStatus = "Stopping server..."
+                stopServer()
+                try await Task.sleep(for: .seconds(2))
+            }
+
+            switch mode {
+            case .launchDaemon:
+                modeSwitchStatus = "Creating system user '\(daemonUserName)' (admin required)..."
+                if !daemonUserExists {
+                    try createDaemonUser(name: daemonUserName)
+                }
+                modeSwitchStatus = "Setting directory ownership..."
+                try setSystemDirectoryOwnership(user: daemonUserName)
+                modeSwitchStatus = "Installing LaunchDaemon..."
+                if launchAtLogin {
+                    try configureLaunchAtLogin(enabled: false)
+                    launchAtLogin = false
+                }
+                try installLaunchDaemon()
+
+            case .launchAgent:
+                modeSwitchStatus = "Removing LaunchDaemon..."
+                try removeLaunchDaemon()
+                modeSwitchStatus = "Resetting directory ownership..."
+                try setSystemDirectoryOwnership(user: NSUserName())
+            }
+
+            installMode = mode
+            userDefaults.set(mode.rawValue, forKey: installModeKey)
+            modeSwitchStatus = "Done."
+        } catch {
+            modeSwitchStatus = "Failed: \(error.localizedDescription)"
+            publishError("Mode switch failed: \(error.localizedDescription)")
+        }
+
+        isSwitchingMode = false
+        refreshAll()
+    }
+
+    func toggleDaemonStartAtBoot(_ enabled: Bool) {
+        daemonStartAtBoot = enabled
+        userDefaults.set(enabled, forKey: daemonStartAtBootKey)
+        guard launchDaemonInstalled else { return }
+        do {
+            try installLaunchDaemon()
+        } catch {
+            publishError("Failed to update LaunchDaemon: \(error.localizedDescription)")
+        }
+    }
+
+    func startDaemon() {
+        _ = runProcess("/bin/launchctl",
+            ["bootstrap", "system", launchDaemonPlistPath])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.refreshAll()
+        }
+    }
+
+    func stopDaemon() {
+        _ = runProcess("/bin/launchctl",
+            ["bootout", "system/\(launchAgentLabel)"])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.refreshAll()
+        }
+    }
+
+    private func createDaemonUser(name: String) throws {
+        let uid = findFreeSystemUID()
+        let script = """
+        do shell script "dscl . -create /Users/\(name) && \
+        dscl . -create /Users/\(name) UserShell /usr/bin/false && \
+        dscl . -create /Users/\(name) RealName 'Wired Server' && \
+        dscl . -create /Users/\(name) UniqueID \(uid) && \
+        dscl . -create /Users/\(name) PrimaryGroupID 20 && \
+        dscl . -create /Users/\(name) NFSHomeDirectory /Library/Wired3 && \
+        dscl . -create /Users/\(name) IsHidden 1" with administrator privileges
+        """
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
+        if let err = errorInfo {
+            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
+            throw WiredServerError.daemonUserCreationFailed(msg)
+        }
+        guard daemonUserExists else {
+            throw WiredServerError.daemonUserCreationFailed("User '\(name)' missing after creation")
+        }
+    }
+
+    private func setSystemDirectoryOwnership(user: String) throws {
+        let script = """
+        do shell script "chown -R \(user):staff /Library/Wired3" with administrator privileges
+        """
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
+        if let err = errorInfo {
+            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
+            throw WiredServerError.systemDirectoryOwnershipFailed(msg)
+        }
+    }
+
+    private func installLaunchDaemon() throws {
+        let filesRoot = currentServerRootPath()
+        let plist: [String: Any] = [
+            "Label": launchAgentLabel,
+            "ProgramArguments": [
+                installedBinaryPath,
+                "--working-directory", workingDirectory,
+                "--db", databasePath,
+                "--config", configPath,
+                "--root", filesRoot
+            ],
+            "UserName": daemonUserName,
+            "WorkingDirectory": workingDirectory,
+            "RunAtLoad": daemonStartAtBoot,
+            "KeepAlive": false,
+            "StandardOutPath": logPath,
+            "StandardErrorPath": logPath
+        ]
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fr.read-write.wired3.server.plist")
+        guard (plist as NSDictionary).write(to: tempURL, atomically: true) else {
+            throw WiredServerError.launchDaemonWriteFailed
+        }
+
+        let script = """
+        do shell script "cp '\(tempURL.path)' '\(launchDaemonPlistPath)' && chmod 644 '\(launchDaemonPlistPath)' && chown root:wheel '\(launchDaemonPlistPath)'" with administrator privileges
+        """
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
+        if let err = errorInfo {
+            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
+            throw WiredServerError.launchDaemonInstallFailed(msg)
+        }
+    }
+
+    private func removeLaunchDaemon() throws {
+        let script = """
+        do shell script "launchctl bootout system/\(launchAgentLabel) 2>/dev/null; rm -f '\(launchDaemonPlistPath)'" with administrator privileges
+        """
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
+        if let err = errorInfo {
+            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
+            throw WiredServerError.launchDaemonRemoveFailed(msg)
+        }
+    }
+
+    private func findFreeSystemUID() -> Int {
+        let output = runCommand("/usr/bin/dscl", [".", "-list", "/Users", "UniqueID"])
+        let used = Set(output.components(separatedBy: .newlines).compactMap { line -> Int? in
+            let parts = line.split(separator: " ").map(String.init)
+            return parts.count >= 2 ? Int(parts.last ?? "") : nil
+        })
+        for uid in 400...499 where !used.contains(uid) { return uid }
+        return 489
     }
 
     // MARK: - Wired 2.5 Migration
@@ -2263,6 +2468,18 @@ private struct DashboardProcessMetrics {
     static let empty = DashboardProcessMetrics(uptime: "-", cpu: "-", memory: "-")
 }
 
+enum ServerInstallMode: String {
+    case launchAgent
+    case launchDaemon
+
+    var displayName: String {
+        switch self {
+        case .launchAgent: return "LaunchAgent (current user, starts at login)"
+        case .launchDaemon: return "LaunchDaemon (system service, starts at boot)"
+        }
+    }
+}
+
 enum DashboardHealthLevel {
     case good
     case warning
@@ -2300,6 +2517,11 @@ enum WiredServerError: LocalizedError, Equatable {
     case databaseExecutionFailed(String)
     case systemDirectoryCreationFailed(String)
     case systemMigrationFailed(String)
+    case systemDirectoryOwnershipFailed(String)
+    case daemonUserCreationFailed(String)
+    case launchDaemonWriteFailed
+    case launchDaemonInstallFailed(String)
+    case launchDaemonRemoveFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -2327,6 +2549,16 @@ enum WiredServerError: LocalizedError, Equatable {
             return "Failed to create system data directory: \(msg)"
         case .systemMigrationFailed(let msg):
             return "Data migration failed: \(msg)"
+        case .systemDirectoryOwnershipFailed(let msg):
+            return "Failed to set directory ownership: \(msg)"
+        case .daemonUserCreationFailed(let msg):
+            return "Failed to create daemon user: \(msg)"
+        case .launchDaemonWriteFailed:
+            return "Failed to write LaunchDaemon plist"
+        case .launchDaemonInstallFailed(let msg):
+            return "Failed to install LaunchDaemon: \(msg)"
+        case .launchDaemonRemoveFailed(let msg):
+            return "Failed to remove LaunchDaemon: \(msg)"
         }
     }
 }
