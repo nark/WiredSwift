@@ -77,4 +77,18 @@ public class ClientsController {
             Array(self.connectedClients.values)
         }
     }
+
+    /// Returns the login names of all currently connected authenticated clients.
+    public func allConnectedLogins() -> [String] {
+        self.clientsLock.concurrentlyRead {
+            self.connectedClients.values.compactMap { $0.user?.username }
+        }
+    }
+
+    /// Returns the connected client whose account login matches `login`, or `nil`.
+    public func user(withLogin login: String) -> Client? {
+        self.clientsLock.concurrentlyRead {
+            self.connectedClients.values.first { $0.user?.username == login }
+        }
+    }
 }

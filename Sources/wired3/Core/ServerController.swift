@@ -711,6 +711,8 @@ public class ServerController: ServerDelegate {
             App.chatsController.kickUser(message: message, client: client)
         } else if message.name == "wired.message.send_message" {
             self.receiveMessageSendMessage(client: client, message: message)
+        } else if message.name == "wired.message.send_offline_message" {
+            self.receiveMessageSendOfflineMessage(client: client, message: message)
         } else if message.name == "wired.message.send_broadcast" {
             self.receiveMessageSendBroadcast(client: client, message: message)
         } else if message.name == "wired.attachment.create" {

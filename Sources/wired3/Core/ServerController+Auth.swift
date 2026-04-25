@@ -159,6 +159,10 @@ extension ServerController {
             loginOverride: login
         )
 
+        // Send list of offline registered users, then deliver any queued offline messages
+        self.sendOfflineUserList(to: client)
+        self.deliverOfflineMessages(to: client)
+
         return true
     }
 }
