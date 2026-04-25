@@ -50,6 +50,9 @@ enum WiredMigrations {
         migrator.registerMigration("v14_last_login_at") { db in
             try WiredMigrations.v14(db)
         }
+        migrator.registerMigration("v15_last_nick") { db in
+            try WiredMigrations.v15(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -431,6 +434,13 @@ enum WiredMigrations {
                        WHERE recipient_identity = NEW.recipient_identity) >= 100;
             END;
         """)
+    }
+
+    // v15: Persist the user's last known chat nick so the offline user list can show it.
+    static func v15(_ db: Database) throws {
+        try db.alter(table: "users") { t in
+            t.add(column: "last_nick", .text)
+        }
     }
 
     // v14: Add last_login_at to users so we can filter the offline user list to recent accounts.

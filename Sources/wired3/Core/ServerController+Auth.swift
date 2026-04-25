@@ -149,10 +149,17 @@ extension ServerController {
         client.idleTime = client.loginTime
 
         try? App.databaseController.dbQueue.write { db in
-            try db.execute(
-                sql: "UPDATE users SET last_login_at = ? WHERE username = ?",
-                arguments: [Date().timeIntervalSince1970, login]
-            )
+            if let nick = client.nick, !nick.isEmpty {
+                try db.execute(
+                    sql: "UPDATE users SET last_login_at = ?, last_nick = ? WHERE username = ?",
+                    arguments: [Date().timeIntervalSince1970, nick, login]
+                )
+            } else {
+                try db.execute(
+                    sql: "UPDATE users SET last_login_at = ? WHERE username = ?",
+                    arguments: [Date().timeIntervalSince1970, login]
+                )
+            }
         }
 
         let clientInfo = [client.applicationName, client.applicationVersion]

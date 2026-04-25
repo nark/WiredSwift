@@ -3,6 +3,7 @@
 //  wired3
 //
 import Foundation
+import GRDB
 import WiredSwift
 
 extension ServerController {
@@ -59,12 +60,23 @@ extension ServerController {
         App.serverController.reply(client: client, reply: response, message: message)
 
         // broadcast if already logged in
-        if client.state == .LOGGED_IN && client.user != nil {
+        if client.state == .LOGGED_IN, let username = client.user?.username {
             let newNick = client.nick ?? ""
             if previousNick != newNick {
                 self.recordEvent(.userChangedNick, client: client, parameters: [previousNick, newNick])
+                persistLastNick(newNick, forUsername: username)
             }
             self.sendUserStatus(forClient: client)
+        }
+    }
+
+    func persistLastNick(_ nick: String, forUsername username: String) {
+        guard !nick.isEmpty else { return }
+        try? App.databaseController.dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE users SET last_nick = ? WHERE username = ?",
+                arguments: [nick, username]
+            )
         }
     }
 
