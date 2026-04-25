@@ -253,9 +253,12 @@ final class WiredServerViewModel: ObservableObject {
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
         var binaryWasUpdated = false
-        // In LaunchDaemon mode, never auto-replace the binary while the daemon
-        // is running — launchd detects the file change and kills the process.
-        let canAutoUpdate = installMode == .launchAgent || !isDaemonRunning
+        // In LaunchDaemon mode: skip auto-update when daemon is running (launchd
+        // kills the process on binary replacement) and only attempt when we have
+        // write access to the bin directory.
+        let binDir = URL(fileURLWithPath: installedBinaryPath).deletingLastPathComponent().path
+        let canWrite = fileManager.isWritableFile(atPath: binDir)
+        let canAutoUpdate = (installMode == .launchAgent || !isDaemonRunning) && canWrite
         if canAutoUpdate {
             do {
                 binaryWasUpdated = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
@@ -563,6 +566,9 @@ final class WiredServerViewModel: ObservableObject {
 
         cmds += [
             "chown -R \(name):\(group) /Library/Wired3",
+            // bin/ stays group-writable so the admin user (in staff group) can update the binary
+            "chmod 775 /Library/Wired3/bin",
+            "chmod 755 /Library/Wired3/bin/wired3 2>/dev/null || true",
             "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
             "chmod 644 '\(launchDaemonPlistPath)'",
             "chown root:wheel '\(launchDaemonPlistPath)'"
