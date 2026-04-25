@@ -436,24 +436,16 @@ final class WiredServerViewModel: ObservableObject {
 
             switch mode {
             case .launchDaemon:
-                modeSwitchStatus = "Creating system user '\(daemonUserName)' (admin required)..."
-                if !daemonUserExists {
-                    try createDaemonUser(name: daemonUserName)
-                }
-                modeSwitchStatus = "Setting directory ownership..."
-                try setSystemDirectoryOwnership(user: daemonUserName)
-                modeSwitchStatus = "Installing LaunchDaemon..."
                 if launchAtLogin {
                     try configureLaunchAtLogin(enabled: false)
                     launchAtLogin = false
                 }
-                try installLaunchDaemon()
+                modeSwitchStatus = "Activating LaunchDaemon (one admin dialog)..."
+                try activateLaunchDaemon(name: daemonUserName, createUser: !daemonUserExists)
 
             case .launchAgent:
-                modeSwitchStatus = "Removing LaunchDaemon..."
-                try removeLaunchDaemon()
-                modeSwitchStatus = "Resetting directory ownership..."
-                try setSystemDirectoryOwnership(user: NSUserName())
+                modeSwitchStatus = "Deactivating LaunchDaemon (one admin dialog)..."
+                try deactivateLaunchDaemon(restoreUser: NSUserName())
             }
 
             installMode = mode
@@ -473,7 +465,7 @@ final class WiredServerViewModel: ObservableObject {
         userDefaults.set(enabled, forKey: daemonStartAtBootKey)
         guard launchDaemonInstalled else { return }
         do {
-            try installLaunchDaemon()
+            try reinstallDaemonPlist()
         } catch {
             publishError("Failed to update LaunchDaemon: \(error.localizedDescription)")
         }
@@ -495,42 +487,57 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    private func createDaemonUser(name: String) throws {
-        let uid = findFreeSystemUID()
-        let script = """
-        do shell script "dscl . -create /Users/\(name) && \
-        dscl . -create /Users/\(name) UserShell /usr/bin/false && \
-        dscl . -create /Users/\(name) RealName 'Wired Server' && \
-        dscl . -create /Users/\(name) UniqueID \(uid) && \
-        dscl . -create /Users/\(name) PrimaryGroupID 20 && \
-        dscl . -create /Users/\(name) NFSHomeDirectory /Library/Wired3 && \
-        dscl . -create /Users/\(name) IsHidden 1" with administrator privileges
-        """
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
-        if let err = errorInfo {
-            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
-            throw WiredServerError.daemonUserCreationFailed(msg)
+    // One admin dialog: create user (optional) + chown + install plist
+    private func activateLaunchDaemon(name: String, createUser: Bool) throws {
+        let tempURL = try writeDaemonPlistToTemp()
+
+        var cmds: [String] = []
+        if createUser {
+            let uid = findFreeSystemUID()
+            cmds += [
+                "dscl . -create /Users/\(name)",
+                "dscl . -create /Users/\(name) UserShell /usr/bin/false",
+                "dscl . -create /Users/\(name) RealName 'Wired Server'",
+                "dscl . -create /Users/\(name) UniqueID \(uid)",
+                "dscl . -create /Users/\(name) PrimaryGroupID 20",
+                "dscl . -create /Users/\(name) NFSHomeDirectory /Library/Wired3",
+                "dscl . -create /Users/\(name) IsHidden 1"
+            ]
         }
-        guard daemonUserExists else {
-            throw WiredServerError.daemonUserCreationFailed("User '\(name)' missing after creation")
-        }
+        cmds += [
+            "chown -R \(name):staff /Library/Wired3",
+            "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
+            "chmod 644 '\(launchDaemonPlistPath)'",
+            "chown root:wheel '\(launchDaemonPlistPath)'"
+        ]
+
+        try runPrivileged(cmds.joined(separator: " && "),
+                          error: WiredServerError.launchDaemonInstallFailed(""))
     }
 
-    private func setSystemDirectoryOwnership(user: String) throws {
-        let script = """
-        do shell script "chown -R \(user):staff /Library/Wired3" with administrator privileges
-        """
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
-        if let err = errorInfo {
-            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
-            throw WiredServerError.systemDirectoryOwnershipFailed(msg)
-        }
+    // One admin dialog: bootout + remove plist + chown back to current user
+    private func deactivateLaunchDaemon(restoreUser: String) throws {
+        let cmds = [
+            "launchctl bootout system/\(launchAgentLabel) 2>/dev/null",
+            "rm -f '\(launchDaemonPlistPath)'",
+            "chown -R \(restoreUser):staff /Library/Wired3"
+        ].joined(separator: "; ")
+
+        try runPrivileged(cmds, error: WiredServerError.launchDaemonRemoveFailed(""))
     }
 
-    private func installLaunchDaemon() throws {
-        let filesRoot = currentServerRootPath()
+    // Used by toggleDaemonStartAtBoot — updates existing plist with one admin dialog
+    private func reinstallDaemonPlist() throws {
+        let tempURL = try writeDaemonPlistToTemp()
+        let cmds = [
+            "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
+            "chmod 644 '\(launchDaemonPlistPath)'",
+            "chown root:wheel '\(launchDaemonPlistPath)'"
+        ].joined(separator: " && ")
+        try runPrivileged(cmds, error: WiredServerError.launchDaemonInstallFailed(""))
+    }
+
+    private func writeDaemonPlistToTemp() throws -> URL {
         let plist: [String: Any] = [
             "Label": launchAgentLabel,
             "ProgramArguments": [
@@ -538,7 +545,7 @@ final class WiredServerViewModel: ObservableObject {
                 "--working-directory", workingDirectory,
                 "--db", databasePath,
                 "--config", configPath,
-                "--root", filesRoot
+                "--root", currentServerRootPath()
             ],
             "UserName": daemonUserName,
             "WorkingDirectory": workingDirectory,
@@ -547,33 +554,26 @@ final class WiredServerViewModel: ObservableObject {
             "StandardOutPath": logPath,
             "StandardErrorPath": logPath
         ]
-
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("fr.read-write.wired3.server.plist")
         guard (plist as NSDictionary).write(to: tempURL, atomically: true) else {
             throw WiredServerError.launchDaemonWriteFailed
         }
-
-        let script = """
-        do shell script "cp '\(tempURL.path)' '\(launchDaemonPlistPath)' && chmod 644 '\(launchDaemonPlistPath)' && chown root:wheel '\(launchDaemonPlistPath)'" with administrator privileges
-        """
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
-        if let err = errorInfo {
-            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
-            throw WiredServerError.launchDaemonInstallFailed(msg)
-        }
+        return tempURL
     }
 
-    private func removeLaunchDaemon() throws {
-        let script = """
-        do shell script "launchctl bootout system/\(launchAgentLabel) 2>/dev/null; rm -f '\(launchDaemonPlistPath)'" with administrator privileges
-        """
+    private func runPrivileged(_ shellScript: String, error fallbackError: WiredServerError) throws {
+        let appleScript = "do shell script \"\(shellScript)\" with administrator privileges"
         var errorInfo: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
+        NSAppleScript(source: appleScript)?.executeAndReturnError(&errorInfo)
         if let err = errorInfo {
             let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
-            throw WiredServerError.launchDaemonRemoveFailed(msg)
+            // Re-throw with the actual message by matching the error type
+            switch fallbackError {
+            case .launchDaemonInstallFailed: throw WiredServerError.launchDaemonInstallFailed(msg)
+            case .launchDaemonRemoveFailed:  throw WiredServerError.launchDaemonRemoveFailed(msg)
+            default:                         throw fallbackError
+            }
         }
     }
 
