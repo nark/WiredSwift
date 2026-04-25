@@ -253,10 +253,15 @@ final class WiredServerViewModel: ObservableObject {
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
         var binaryWasUpdated = false
-        do {
-            binaryWasUpdated = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
-        } catch {
-            publishError("\(L("error.install_failed")): \(error.localizedDescription)")
+        // In LaunchDaemon mode, never auto-replace the binary while the daemon
+        // is running — launchd detects the file change and kills the process.
+        let canAutoUpdate = installMode == .launchAgent || !isDaemonRunning
+        if canAutoUpdate {
+            do {
+                binaryWasUpdated = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
+            } catch {
+                publishError("\(L("error.install_failed")): \(error.localizedDescription)")
+            }
         }
         refreshInstallStatus()
         refreshInstalledVersion()
