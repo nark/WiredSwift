@@ -14,6 +14,7 @@ struct OfflineMessage: Codable, FetchableRecord, MutablePersistableRecord {
     var recipientLogin: String
     var body: String
     var sentAt: Date
+    var isEncrypted: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -21,6 +22,7 @@ struct OfflineMessage: Codable, FetchableRecord, MutablePersistableRecord {
         case recipientLogin = "recipient_login"
         case body
         case sentAt         = "sent_at"
+        case isEncrypted    = "is_encrypted"
     }
 
     mutating func didInsert(_ inserted: InsertionSuccess) {
