@@ -138,14 +138,22 @@ struct DashboardTabView: View {
 
                     HStack(spacing: 8) {
                         Button(
-                            model.isRunning
+                            model.isServerActive
                                 ? L("general.execution.stop")
                                 : L("general.execution.start")
                         ) {
-                            if model.isRunning {
-                                model.stopServer()
+                            if model.isServerActive {
+                                if model.installMode == .launchDaemon {
+                                    model.stopDaemon()
+                                } else {
+                                    model.stopServer()
+                                }
                             } else {
-                                Task { await model.startServer() }
+                                if model.installMode == .launchDaemon {
+                                    model.startDaemon()
+                                } else {
+                                    Task { await model.startServer() }
+                                }
                             }
                         }
 
@@ -182,14 +190,14 @@ struct DashboardTabView: View {
                     LazyVGrid(columns: metricsColumns, alignment: .leading, spacing: 14) {
                         DashboardMetricCard(
                             title: L("dashboard.metric.server_status"),
-                            value: model.isRunning
+                            value: model.isServerActive
                                 ? L("general.execution.running")
                                 : L("general.execution.stopped"),
                             detail: model.statusMessage,
-                            symbolName: model.isRunning
+                            symbolName: model.isServerActive
                                 ? "play.circle.fill"
                                 : "stop.circle.fill",
-                            tint: model.isRunning ? .green : .orange
+                            tint: model.isServerActive ? .green : .orange
                         )
                         DashboardMetricCard(
                             title: L("dashboard.metric.connected_users"),
