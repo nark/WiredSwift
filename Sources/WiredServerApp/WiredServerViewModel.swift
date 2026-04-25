@@ -574,6 +574,9 @@ final class WiredServerViewModel: ObservableObject {
             // bin/ uses staff group so the admin user can write the binary (admin is not in daemon group)
             "chown \(name):staff /Library/Wired3/bin",
             "chmod 775 /Library/Wired3/bin",
+            // Remove stale .updates dir: chown -R would have set it to _wired:daemon,
+            // preventing admin (not in daemon group) from writing inside it.
+            "rm -rf '/Library/Wired3/bin/.updates'",
             "chmod 755 /Library/Wired3/bin/wired3 2>/dev/null || true",
             "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
             "chmod 644 '\(launchDaemonPlistPath)'",
