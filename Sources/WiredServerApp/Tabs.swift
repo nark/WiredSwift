@@ -249,8 +249,8 @@ struct GeneralTabView: View {
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 100)
                                 .disabled(model.isSwitchingMode)
-                            Image(systemName: model.daemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
-                                .foregroundStyle(model.daemonUserExists ? .green : .secondary)
+                            Image(systemName: model.isDaemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
+                                .foregroundStyle(model.isDaemonUserExists ? .green : .secondary)
 
                             Text("Group")
                                 .bold()
@@ -259,8 +259,8 @@ struct GeneralTabView: View {
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 100)
                                 .disabled(model.isSwitchingMode)
-                            Image(systemName: model.daemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
-                                .foregroundStyle(model.daemonGroupExists ? .green : .secondary)
+                            Image(systemName: model.isDaemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
+                                .foregroundStyle(model.isDaemonGroupExists ? .green : .secondary)
 
                             Spacer()
                             Button("Save") { model.saveDaemonSettings() }
@@ -325,11 +325,11 @@ struct GeneralTabView: View {
                 Section(L("general.execution.section")) {
                     if model.installMode == .launchDaemon {
                         HStack {
-                            StatusDot(color: model.daemonRunning ? .green : .red)
-                            Text(model.daemonRunning ? "Running (daemon)" : "Stopped (daemon)")
+                            StatusDot(color: model.isDaemonRunning ? .green : .red)
+                            Text(model.isDaemonRunning ? "Running (daemon)" : "Stopped (daemon)")
                             Spacer()
-                            Button(model.daemonRunning ? "Stop" : "Start") {
-                                if model.daemonRunning { model.stopDaemon() }
+                            Button(model.isDaemonRunning ? "Stop" : "Start") {
+                                if model.isDaemonRunning { model.stopDaemon() }
                                 else { model.startDaemon() }
                             }
                             .disabled(!model.launchDaemonInstalled)
