@@ -227,24 +227,31 @@ extension ServerController {
     func sendOfflineUserList(to client: Client) {
         let onlineLogins = Set(App.clientsController.allConnectedLogins())
 
-        let allLogins: [String]
+        let entries: [(login: String, nick: String)]
         do {
-            allLogins = try App.databaseController.dbQueue.read { db in
-                try String.fetchAll(db, sql: """
-                    SELECT username FROM users
+            entries = try App.databaseController.dbQueue.read { db in
+                let rows = try Row.fetchAll(db, sql: """
+                    SELECT username, full_name FROM users
                     WHERE username IS NOT NULL AND username != ''
+                      AND (last_login_at IS NULL OR last_login_at > unixepoch('now') - 2592000)
                     ORDER BY username ASC
                 """)
+                return rows.map { row in
+                    let login: String = row["username"]
+                    let fullName: String? = row["full_name"]
+                    let nick = (fullName.flatMap { $0.isEmpty ? nil : $0 }) ?? login
+                    return (login: login, nick: nick)
+                }
             }
         } catch {
             Logger.error("Failed to load offline user list: \(error)")
             return
         }
 
-        for login in allLogins where !onlineLogins.contains(login) {
+        for entry in entries where !onlineLogins.contains(entry.login) {
             let msg = P7Message(withName: "wired.user.offline_list", spec: self.spec)
-            msg.addParameter(field: "wired.user.login", value: login)
-            msg.addParameter(field: "wired.user.nick", value: login)
+            msg.addParameter(field: "wired.user.login", value: entry.login)
+            msg.addParameter(field: "wired.user.nick", value: entry.nick)
             _ = self.send(message: msg, client: client)
         }
 
