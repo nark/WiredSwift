@@ -121,6 +121,10 @@ final class WiredServerViewModel: ObservableObject {
     @Published var isDaemonUserExists: Bool = false
     @Published var isDaemonGroupExists: Bool = false
 
+    var isServerActive: Bool {
+        installMode == .launchDaemon ? isDaemonRunning : isRunning
+    }
+
     private var lastDashboardLightRefresh = Date.distantPast
     private var lastDashboardHeavyRefresh = Date.distantPast
 
@@ -521,9 +525,11 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func startDaemon() {
+        // bootstrap registers the service (no-op if already registered).
+        // kickstart starts it regardless of RunAtLoad value.
+        let cmd = "launchctl bootstrap system '\(launchDaemonPlistPath)' 2>/dev/null; launchctl kickstart system/\(launchAgentLabel) 2>/dev/null; true"
         do {
-            try runPrivileged("launchctl bootstrap system '\(launchDaemonPlistPath)'",
-                              error: .launchDaemonInstallFailed("start"))
+            try runPrivileged(cmd, error: .launchDaemonInstallFailed("start"))
         } catch {
             publishError("Failed to start daemon: \(error.localizedDescription)")
         }
@@ -534,7 +540,7 @@ final class WiredServerViewModel: ObservableObject {
 
     func stopDaemon() {
         do {
-            try runPrivileged("launchctl bootout system/'\(launchAgentLabel)'",
+            try runPrivileged("launchctl bootout system/\(launchAgentLabel) 2>/dev/null; true",
                               error: .launchDaemonRemoveFailed("stop"))
         } catch {
             publishError("Failed to stop daemon: \(error.localizedDescription)")
