@@ -255,7 +255,7 @@ struct GeneralTabView: View {
                             Text("Group")
                                 .bold()
                                 .frame(width: 44, alignment: .leading)
-                            TextField("staff", text: $model.daemonGroupName)
+                            TextField("daemon", text: $model.daemonGroupName)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 100)
                                 .disabled(model.isSwitchingMode)

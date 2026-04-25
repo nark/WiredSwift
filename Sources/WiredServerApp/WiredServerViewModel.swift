@@ -113,7 +113,7 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var installMode: ServerInstallMode = .launchAgent
     @Published var daemonUserName: String = "_wired"
-    @Published var daemonGroupName: String = "staff"
+    @Published var daemonGroupName: String = "daemon"
     @Published var daemonStartAtBoot: Bool = false
     @Published var isSwitchingMode: Bool = false
     @Published var modeSwitchStatus: String = ""
@@ -191,7 +191,7 @@ final class WiredServerViewModel: ObservableObject {
         let savedMode = UserDefaults.standard.string(forKey: "wired3InstallMode")
         self.installMode = ServerInstallMode(rawValue: savedMode ?? "") ?? .launchAgent
         self.daemonUserName = UserDefaults.standard.string(forKey: "wired3DaemonUserName") ?? "_wired"
-        self.daemonGroupName = UserDefaults.standard.string(forKey: "wired3DaemonGroupName") ?? "staff"
+        self.daemonGroupName = UserDefaults.standard.string(forKey: "wired3DaemonGroupName") ?? "daemon"
         self.daemonStartAtBoot = UserDefaults.standard.bool(forKey: "wired3DaemonStartAtBoot")
 
         if #available(macOS 13.0, *) {
@@ -566,7 +566,8 @@ final class WiredServerViewModel: ObservableObject {
 
         cmds += [
             "chown -R \(name):\(group) /Library/Wired3",
-            // bin/ stays group-writable so the admin user (in staff group) can update the binary
+            // bin/ uses staff group so the admin user can write the binary (admin is not in daemon group)
+            "chown \(name):staff /Library/Wired3/bin",
             "chmod 775 /Library/Wired3/bin",
             "chmod 755 /Library/Wired3/bin/wired3 2>/dev/null || true",
             "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
