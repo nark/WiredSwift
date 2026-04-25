@@ -188,13 +188,31 @@ extension ServerController {
     func deliverOfflineMessages(to client: Client) {
         guard let recipientLogin = client.user?.username else { return }
 
-        let messages: [OfflineMessage]
+        struct PendingMessage {
+            let senderLogin: String
+            let senderNick: String?
+            let body: String
+            let sentAt: Date
+        }
+
+        let messages: [PendingMessage]
         do {
             messages = try App.databaseController.dbQueue.read { db in
-                try OfflineMessage
-                    .filter(Column("recipient_login") == recipientLogin)
-                    .order(Column("sent_at").asc)
-                    .fetchAll(db)
+                let rows = try Row.fetchAll(db, sql: """
+                    SELECT om.sender_login, om.body, om.sent_at, u.last_nick AS sender_nick
+                    FROM offline_messages om
+                    LEFT JOIN users u ON u.username = om.sender_login
+                    WHERE om.recipient_login = ?
+                    ORDER BY om.sent_at ASC
+                """, arguments: [recipientLogin])
+                return rows.map {
+                    PendingMessage(
+                        senderLogin: $0["sender_login"],
+                        senderNick: $0["sender_nick"],
+                        body: $0["body"],
+                        sentAt: Date(timeIntervalSince1970: $0["sent_at"])
+                    )
+                }
             }
         } catch {
             Logger.error("Failed to load offline messages for '\(recipientLogin)': \(error)")
@@ -208,6 +226,9 @@ extension ServerController {
             delivery.addParameter(field: "wired.message.offline.sender_login", value: msg.senderLogin)
             delivery.addParameter(field: "wired.message.message", value: msg.body)
             delivery.addParameter(field: "wired.message.offline.date", value: msg.sentAt)
+            if let nick = msg.senderNick, !nick.isEmpty {
+                delivery.addParameter(field: "wired.message.offline.sender_nick", value: nick)
+            }
             _ = self.send(message: delivery, client: client)
         }
 
