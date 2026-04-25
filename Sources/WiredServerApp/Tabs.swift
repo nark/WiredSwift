@@ -89,6 +89,42 @@ private struct KeyValueRow<Control: View>: View {
 }
 
 @available(macOS 12.0, *)
+private struct ExternalVolumeWarningView: View {
+    let hasFDA: Bool
+    let onOpenSettings: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: hasFDA ? "externaldrive.fill.badge.checkmark" : "externaldrive.badge.exclamationmark")
+                .foregroundStyle(hasFDA ? .green : .orange)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(hasFDA ? "Full Disk Access granted for wired3." : "Files directory is on an external volume.")
+                    .font(.footnote).bold()
+                    .foregroundStyle(hasFDA ? .primary : .orange)
+                Text(hasFDA
+                    ? "The daemon can access the external drive."
+                    : "Grant Full Disk Access to wired3 so the LaunchDaemon can read and write files on this volume."
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if !hasFDA {
+                Button("Open Settings…") { onOpenSettings() }
+                    .font(.footnote)
+            }
+        }
+        .padding(8)
+        .background((hasFDA ? Color.green : Color.orange).opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+}
+
+@available(macOS 12.0, *)
 private struct StatusDot: View {
     let color: Color
 
@@ -230,6 +266,12 @@ struct GeneralTabView: View {
                                 Spacer()
                                 Button("Save") { model.saveDaemonSettings() }
                                     .disabled(model.isSwitchingMode)
+                            }
+                        }
+
+                        if model.installMode == .launchDaemon && model.filesDirectoryIsOnExternalVolume {
+                            ExternalVolumeWarningView(hasFDA: model.wired3HasFullDiskAccess) {
+                                model.openFullDiskAccessSettings()
                             }
                         }
 
@@ -417,6 +459,12 @@ struct FilesTabView: View {
 
                         Button(L("common.choose")) {
                             model.chooseFilesDirectory()
+                        }
+                    }
+
+                    if model.installMode == .launchDaemon && model.filesDirectoryIsOnExternalVolume {
+                        ExternalVolumeWarningView(hasFDA: model.wired3HasFullDiskAccess) {
+                            model.openFullDiskAccessSettings()
                         }
                     }
                 }
