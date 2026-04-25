@@ -231,15 +231,18 @@ extension ServerController {
         do {
             entries = try App.databaseController.dbQueue.read { db in
                 let rows = try Row.fetchAll(db, sql: """
-                    SELECT username, full_name FROM users
+                    SELECT username, last_nick, full_name FROM users
                     WHERE username IS NOT NULL AND username != ''
                       AND (last_login_at IS NULL OR last_login_at > unixepoch('now') - 2592000)
                     ORDER BY username ASC
                 """)
                 return rows.map { row in
                     let login: String = row["username"]
+                    let lastNick: String? = row["last_nick"]
                     let fullName: String? = row["full_name"]
-                    let nick = (fullName.flatMap { $0.isEmpty ? nil : $0 }) ?? login
+                    let nick = lastNick.flatMap { $0.isEmpty ? nil : $0 }
+                           ?? fullName.flatMap { $0.isEmpty ? nil : $0 }
+                           ?? login
                     return (login: login, nick: nick)
                 }
             }
