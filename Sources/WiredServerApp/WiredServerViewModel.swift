@@ -411,6 +411,33 @@ final class WiredServerViewModel: ObservableObject {
         runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
     }
 
+    // MARK: - External Volume / FDA
+
+    var filesDirectoryIsOnExternalVolume: Bool {
+        let path = currentServerRootPath()
+        let url = URL(fileURLWithPath: path)
+        guard let values = try? url.resourceValues(forKeys: [.volumeURLKey]),
+              let volumeURL = values.volumeURL else { return false }
+        return volumeURL.path.hasPrefix("/Volumes/")
+    }
+
+    // Checks FDA for the wired3 binary via the TCC database (readable only with FDA granted)
+    var wired3HasFullDiskAccess: Bool {
+        let tcc = "/Library/Application Support/com.apple.TCC/TCC.db"
+        guard FileManager.default.isReadableFile(atPath: tcc) else { return false }
+        // TCC.db is readable — query for the wired3 binary
+        let binaryPath = installedBinaryPath
+        let output = runCommand("/usr/bin/sqlite3", [tcc,
+            "SELECT allowed FROM access WHERE service='kTCCServiceSystemPolicyAllFiles' AND client='\(binaryPath)' LIMIT 1"])
+        return output.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
+    }
+
+    func openFullDiskAccessSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     var launchDaemonInstalled: Bool {
         fileManager.fileExists(atPath: launchDaemonPlistPath)
     }
