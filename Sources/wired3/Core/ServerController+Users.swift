@@ -70,6 +70,49 @@ extension ServerController {
         }
     }
 
+    func receiveUserSetPublicKey(_ client: Client, _ message: P7Message) {
+        guard client.user != nil else {
+            replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+        guard let keyData = message.data(forField: "wired.user.public_key"),
+              keyData.count == 32 else {
+            replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+        let username = client.user?.username ?? ""
+        try? App.databaseController.dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE users SET offline_public_key = ?, offline_key_id = 'x25519' WHERE username = ?",
+                arguments: [keyData, username]
+            )
+        }
+        replyOK(client: client, message: message)
+    }
+
+    func receiveUserGetPublicKey(_ client: Client, _ message: P7Message) {
+        guard client.user != nil else {
+            replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+        guard let login = message.string(forField: "wired.user.login"), !login.isEmpty else {
+            replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+        let keyData: Data? = try? App.databaseController.dbQueue.read { db in
+            guard let row = try Row.fetchOne(db, sql: "SELECT offline_public_key FROM users WHERE username = ?", arguments: [login]) else {
+                return nil
+            }
+            return row["offline_public_key"] as? Data
+        }
+        let reply = P7Message(withName: "wired.user.public_key", spec: self.spec)
+        reply.addParameter(field: "wired.user.login", value: login)
+        if let data = keyData, !data.isEmpty {
+            reply.addParameter(field: "wired.user.public_key", value: data)
+        }
+        self.reply(client: client, reply: reply, message: message)
+    }
+
     func persistLastNick(_ nick: String, forUsername username: String) {
         guard !nick.isEmpty else { return }
         try? App.databaseController.dbQueue.write { db in

@@ -349,6 +349,16 @@
                 Display nick of the sender at delivery time, derived from last_nick in the server database.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.user.public_key" type="data" id="5014" version="3.0">
+            <p7:documentation>
+                X25519 public key for end-to-end encrypted offline messages (raw 32-byte representation).
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.message.offline.encrypted" type="bool" id="5015" version="3.0">
+            <p7:documentation>
+                If true, the message body is an ECIES-encrypted blob rather than plaintext.
+            </p7:documentation>
+        </p7:field>
 
         <p7:field name="wired.board.board" type="string" id="6000" version="2.0">
             <p7:documentation>
@@ -1871,6 +1881,34 @@
             </p7:documentation>
         </p7:message>
 
+        <p7:message name="wired.user.set_public_key" id="3013" version="3.0">
+            <p7:documentation>
+                Upload the client's X25519 public key for end-to-end encrypted offline messaging.
+                The server stores the key associated with the authenticated user's account.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.0" />
+            <p7:parameter field="wired.user.public_key" use="required" version="3.0" />
+        </p7:message>
+
+        <p7:message name="wired.user.get_public_key" id="3014" version="3.0">
+            <p7:documentation>
+                Request the X25519 public key of another user by login name.
+                Required before sending an end-to-end encrypted offline message.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.0" />
+            <p7:parameter field="wired.user.login" use="required" version="3.0" />
+        </p7:message>
+
+        <p7:message name="wired.user.public_key" id="3015" version="3.0">
+            <p7:documentation>
+                Server response to wired.user.get_public_key.
+                If wired.user.public_key is absent, the user has not registered a key.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.0" />
+            <p7:parameter field="wired.user.login" use="required" version="3.0" />
+            <p7:parameter field="wired.user.public_key" version="3.0" />
+        </p7:message>
+
         <p7:message name="wired.chat.join_chat" id="4000" version="2.0">
             <p7:documentation>
                 Join chat message.
@@ -2231,6 +2269,7 @@
             <p7:parameter field="wired.transaction" version="3.0" />
             <p7:parameter field="wired.message.offline.recipient_login" use="required" version="3.0" />
             <p7:parameter field="wired.message.message" use="required" version="3.0" />
+            <p7:parameter field="wired.message.offline.encrypted" use="optional" version="3.0" />
         </p7:message>
 
         <p7:message name="wired.message.offline_message" id="5011" version="3.0">
@@ -2242,6 +2281,7 @@
             <p7:parameter field="wired.message.message" use="required" version="3.0" />
             <p7:parameter field="wired.message.offline.date" use="required" version="3.0" />
             <p7:parameter field="wired.message.offline.sender_nick" use="optional" version="3.0" />
+            <p7:parameter field="wired.message.offline.encrypted" use="optional" version="3.0" />
         </p7:message>
 
         <p7:message name="wired.board.get_boards" id="6000" version="2.0">
