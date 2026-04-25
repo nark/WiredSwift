@@ -260,7 +260,7 @@ final class WiredServerViewModel: ObservableObject {
         // pgrep works without root; launchctl print system/... can return non-zero for
         // non-root users even when the daemon is running, causing false negatives.
         if installMode == .launchDaemon {
-            isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+            isDaemonRunning = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
         }
         var binaryWasUpdated = false
         // In LaunchDaemon mode: skip auto-update when daemon is running (launchd
@@ -431,7 +431,7 @@ final class WiredServerViewModel: ObservableObject {
     func refreshDaemonStatus() {
         // pgrep works without root and is faster/more reliable than launchctl print for
         // detecting whether the daemon process is actually running.
-        isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+        isDaemonRunning = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
         isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
         isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
     }
@@ -525,6 +525,23 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func startDaemon() {
+        // Kill any stale LaunchAgent wired3 process (running from user home, not /Library/Wired3/).
+        // This can happen when switching from LaunchAgent to LaunchDaemon mode while a server
+        // is still running, or if stopServer() was skipped. Without this the daemon cannot
+        // bind port 4871.
+        let pgrepOut = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).output
+        let allWiredPIDs = pgrepOut.split(separator: "\n").compactMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        let staleAgentPIDs = allWiredPIDs.filter { pid in
+            let args = runProcess("/bin/ps", ["-p", "\(pid)", "-o", "args="]).output.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !args.hasPrefix("/Library/Wired3/bin/wired3")
+        }
+        for pid in staleAgentPIDs {
+            kill(pid, SIGTERM)
+        }
+        if !staleAgentPIDs.isEmpty {
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+
         // bootstrap registers the service (no-op if already registered).
         // kickstart starts it regardless of RunAtLoad value.
         let cmd = "launchctl bootstrap system '\(launchDaemonPlistPath)' 2>/dev/null; launchctl kickstart system/\(launchAgentLabel) 2>/dev/null; true"
@@ -1545,7 +1562,7 @@ final class WiredServerViewModel: ObservableObject {
         // replacement and kills the process. Check here as a last-resort guard regardless
         // of which call path reaches this function.
         if installMode == .launchDaemon {
-            let daemonLive = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+            let daemonLive = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
             if daemonLive {
                 appendRuntimeLog("binary-update: daemon is running, skipping binary replacement")
                 return false
