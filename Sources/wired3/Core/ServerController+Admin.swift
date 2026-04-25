@@ -1231,25 +1231,8 @@ extension ServerController {
     }
 
     private func broadcastNewOfflineUser(username: String) {
-        let onlineLogins = Set(App.clientsController.allConnectedLogins())
-        guard !onlineLogins.contains(username) else { return }
-
-        // New accounts have no last_nick yet; use full_name or username as fallback
-        let displayNick: String
-        if let user = App.usersController.user(withUsername: username) {
-            displayNick = [user.fullName].compactMap({ $0?.isEmpty == false ? $0 : nil }).first ?? username
-        } else {
-            displayNick = username
-        }
-
-        let msg = P7Message(withName: "wired.user.offline_list", spec: self.spec)
-        msg.addParameter(field: "wired.user.login", value: username)
-        msg.addParameter(field: "wired.user.nick", value: displayNick)
-
-        for connectedClient in App.clientsController.connectedClientsSnapshot() {
-            guard connectedClient.state == .LOGGED_IN else { continue }
-            _ = self.send(message: msg, client: connectedClient)
-        }
+        // New accounts have no last_nick yet — don't expose login or full_name.
+        // The account will appear automatically after their first login.
     }
 
     private func broadcastAccountsChangedToSubscribers() {
