@@ -233,7 +233,8 @@ extension ServerController {
                 let rows = try Row.fetchAll(db, sql: """
                     SELECT username, last_nick, full_name FROM users
                     WHERE username IS NOT NULL AND username != ''
-                      AND (last_login_at IS NULL OR last_login_at > unixepoch('now') - 2592000)
+                      AND last_login_at IS NOT NULL
+                      AND last_login_at > unixepoch('now') - 2592000
                     ORDER BY username ASC
                 """)
                 return rows.map { row in
