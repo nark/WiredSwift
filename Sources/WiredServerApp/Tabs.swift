@@ -153,6 +153,41 @@ struct GeneralTabView: View {
                     }
                 }
 
+                Section("System Data Directory") {
+                    if model.isUsingSystemDirectory {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("/Library/Wired3/ (system-wide)")
+                                .textSelection(.enabled)
+                        }
+                    } else if model.systemMigrationAvailable {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Migrate server data to /Library/Wired3/ to enable LaunchDaemon support. The original data will be preserved as a backup.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+
+                            HStack(spacing: 10) {
+                                Button("Migrate to /Library/Wired3/") {
+                                    Task { await model.migrateToSystemDirectory() }
+                                }
+                                .disabled(model.isSystemMigrating || model.isBusy)
+
+                                if model.isSystemMigrating {
+                                    ProgressView().controlSize(.small)
+                                }
+                            }
+
+                            if !model.systemMigrationStatus.isEmpty {
+                                Text(model.systemMigrationStatus)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                        }
+                    }
+                }
+
                 Section("Versions") {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))

@@ -97,8 +97,14 @@ final class WiredServerViewModel: ObservableObject {
 
     private let userDefaults = UserDefaults.standard
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
+    private let workingDirectoryKey = "wired3WorkingDirectory"
     private let launchAgentLabel = "fr.read-write.wired3.server"
     private let embeddedBinarySHAKey = "Wired3EmbeddedSHA256"
+
+    static let systemDataDirectory = "/Library/Wired3"
+
+    @Published var isSystemMigrating: Bool = false
+    @Published var systemMigrationStatus: String = ""
     private var lastDashboardLightRefresh = Date.distantPast
     private var lastDashboardHeavyRefresh = Date.distantPast
 
@@ -147,9 +153,23 @@ final class WiredServerViewModel: ObservableObject {
         .init(id: "yearly", title: L("database.events.retention.yearly"))
     ]
 
+    var legacyDataDirectory: String {
+        fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Wired3", isDirectory: true).path
+    }
+
+    var isUsingSystemDirectory: Bool {
+        workingDirectory == Self.systemDataDirectory
+    }
+
+    var systemMigrationAvailable: Bool {
+        !isUsingSystemDirectory && fileManager.fileExists(atPath: workingDirectory)
+    }
+
     init() {
-        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        self.workingDirectory = appSupport.appendingPathComponent("Wired3", isDirectory: true).path
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let defaultDirectory = appSupport.appendingPathComponent("Wired3", isDirectory: true).path
+        self.workingDirectory = UserDefaults.standard.string(forKey: "wired3WorkingDirectory") ?? defaultDirectory
         self.launchServerAtAppStart = userDefaults.bool(forKey: launchAtAppStartKey)
 
         if #available(macOS 13.0, *) {
@@ -265,6 +285,104 @@ final class WiredServerViewModel: ObservableObject {
             saveFilesSettings()
         }
     }
+
+    // MARK: - System Data Directory Migration
+
+    func persistWorkingDirectory() {
+        userDefaults.set(workingDirectory, forKey: workingDirectoryKey)
+    }
+
+    func migrateToSystemDirectory() async {
+        guard !isSystemMigrating, systemMigrationAvailable else { return }
+        isSystemMigrating = true
+        systemMigrationStatus = "Preparing..."
+
+        let source = workingDirectory
+
+        do {
+            if isRunning {
+                systemMigrationStatus = "Stopping server..."
+                stopServer()
+                try await Task.sleep(for: .seconds(2))
+            }
+
+            systemMigrationStatus = "Creating system directory (admin required)..."
+            try createSystemDataDirectory()
+
+            systemMigrationStatus = "Copying data..."
+            try copyDirectoryContents(from: source, to: Self.systemDataDirectory)
+
+            systemMigrationStatus = "Verifying database integrity..."
+            let newDBPath = URL(fileURLWithPath: Self.systemDataDirectory)
+                .appendingPathComponent("wired3.db").path
+            if fileManager.fileExists(atPath: newDBPath) {
+                try verifySystemDatabaseIntegrity(at: newDBPath)
+            }
+
+            systemMigrationStatus = "Switching to system directory..."
+            workingDirectory = Self.systemDataDirectory
+            persistWorkingDirectory()
+            binaryPath = installedBinaryPath
+
+            if launchAtLogin {
+                try configureLaunchAtLogin(enabled: true)
+            }
+
+            systemMigrationStatus = "Done. Backup preserved at: \(source)"
+            refreshAll()
+        } catch {
+            systemMigrationStatus = "Migration failed: \(error.localizedDescription)"
+            publishError("Data migration failed: \(error.localizedDescription)")
+        }
+
+        isSystemMigrating = false
+    }
+
+    private func createSystemDataDirectory() throws {
+        let username = NSUserName()
+        let script = """
+        do shell script "mkdir -p /Library/Wired3 && chown \(username):staff /Library/Wired3 && chmod 755 /Library/Wired3" with administrator privileges
+        """
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
+        if let err = errorInfo {
+            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
+            throw WiredServerError.systemDirectoryCreationFailed(msg)
+        }
+        guard fileManager.fileExists(atPath: Self.systemDataDirectory) else {
+            throw WiredServerError.systemDirectoryCreationFailed("Directory missing after creation")
+        }
+    }
+
+    private func copyDirectoryContents(from source: String, to destination: String) throws {
+        let sourceURL = URL(fileURLWithPath: source)
+        let destURL = URL(fileURLWithPath: destination)
+        let items = try fileManager.contentsOfDirectory(at: sourceURL, includingPropertiesForKeys: nil)
+        for item in items {
+            let dest = destURL.appendingPathComponent(item.lastPathComponent)
+            if fileManager.fileExists(atPath: dest.path) {
+                try fileManager.removeItem(at: dest)
+            }
+            try fileManager.copyItem(at: item, to: dest)
+        }
+    }
+
+    private func verifySystemDatabaseIntegrity(at path: String) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+            throw WiredServerError.systemMigrationFailed("Cannot open database for verification")
+        }
+        defer { sqlite3_close(db) }
+        var stmt: OpaquePointer?
+        sqlite3_prepare_v2(db, "PRAGMA integrity_check", -1, &stmt, nil)
+        defer { sqlite3_finalize(stmt) }
+        if sqlite3_step(stmt) == SQLITE_ROW,
+           let result = sqlite3_column_text(stmt, 0),
+           String(cString: result) == "ok" { return }
+        throw WiredServerError.systemMigrationFailed("Database integrity check failed")
+    }
+
+    // MARK: - Wired 2.5 Migration
 
     func chooseMigrationSource() {
         let panel = NSOpenPanel()
@@ -2180,6 +2298,8 @@ enum WiredServerError: LocalizedError, Equatable {
     case databaseNotInitialized
     case databaseStatementFailed(String)
     case databaseExecutionFailed(String)
+    case systemDirectoryCreationFailed(String)
+    case systemMigrationFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -2203,6 +2323,10 @@ enum WiredServerError: LocalizedError, Equatable {
             return "\(L("error.sql_prepare_failed")): \(sql)"
         case .databaseExecutionFailed(let sql):
             return "\(L("error.sql_execution_failed")): \(sql)"
+        case .systemDirectoryCreationFailed(let msg):
+            return "Failed to create system data directory: \(msg)"
+        case .systemMigrationFailed(let msg):
+            return "Data migration failed: \(msg)"
         }
     }
 }
