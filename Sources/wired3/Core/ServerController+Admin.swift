@@ -627,6 +627,7 @@ extension ServerController {
 
         App.serverController.replyOK(client: client, message: message)
         self.broadcastAccountsChangedToSubscribers()
+        self.broadcastNewOfflineUser(username: name)
         self.recordEvent(.accountCreatedUser, client: client, parameters: [name])
     }
 
@@ -1227,6 +1228,28 @@ extension ServerController {
         let hash = isHexSHA256 ? password.lowercased() : password.sha256()
         let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
         return (hash: hash, salt: salt)
+    }
+
+    private func broadcastNewOfflineUser(username: String) {
+        let onlineLogins = Set(App.clientsController.allConnectedLogins())
+        guard !onlineLogins.contains(username) else { return }
+
+        let displayNick: String
+        if let user = App.usersController.user(withUsername: username),
+           let fullName = user.fullName, !fullName.isEmpty {
+            displayNick = fullName
+        } else {
+            displayNick = username
+        }
+
+        let msg = P7Message(withName: "wired.user.offline_list", spec: self.spec)
+        msg.addParameter(field: "wired.user.login", value: username)
+        msg.addParameter(field: "wired.user.nick", value: displayNick)
+
+        for connectedClient in App.clientsController.connectedClientsSnapshot() {
+            guard connectedClient.state == .LOGGED_IN else { continue }
+            _ = self.send(message: msg, client: connectedClient)
+        }
     }
 
     private func broadcastAccountsChangedToSubscribers() {
