@@ -241,32 +241,30 @@ struct GeneralTabView: View {
                         }
                         .disabled(model.isSwitchingMode || model.isBusy)
 
-                        if model.installMode == .launchDaemon {
-                            HStack(spacing: 8) {
-                                Text("User")
-                                    .bold()
-                                    .frame(width: 40, alignment: .leading)
-                                TextField("_wired", text: $model.daemonUserName)
-                                    .textFieldStyle(.roundedBorder)
-                                    .frame(width: 100)
-                                    .disabled(model.isSwitchingMode || model.launchDaemonInstalled)
-                                Image(systemName: model.daemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
-                                    .foregroundStyle(model.daemonUserExists ? .green : .secondary)
+                        HStack(spacing: 8) {
+                            Text("Daemon User")
+                                .bold()
+                                .frame(width: 90, alignment: .leading)
+                            TextField("_wired", text: $model.daemonUserName)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 100)
+                                .disabled(model.isSwitchingMode)
+                            Image(systemName: model.daemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
+                                .foregroundStyle(model.daemonUserExists ? .green : .secondary)
 
-                                Text("Group")
-                                    .bold()
-                                    .frame(width: 44, alignment: .leading)
-                                TextField("staff", text: $model.daemonGroupName)
-                                    .textFieldStyle(.roundedBorder)
-                                    .frame(width: 100)
-                                    .disabled(model.isSwitchingMode || model.launchDaemonInstalled)
-                                Image(systemName: model.daemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
-                                    .foregroundStyle(model.daemonGroupExists ? .green : .secondary)
+                            Text("Group")
+                                .bold()
+                                .frame(width: 44, alignment: .leading)
+                            TextField("staff", text: $model.daemonGroupName)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 100)
+                                .disabled(model.isSwitchingMode)
+                            Image(systemName: model.daemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
+                                .foregroundStyle(model.daemonGroupExists ? .green : .secondary)
 
-                                Spacer()
-                                Button("Save") { model.saveDaemonSettings() }
-                                    .disabled(model.isSwitchingMode)
-                            }
+                            Spacer()
+                            Button("Save") { model.saveDaemonSettings() }
+                                .disabled(model.isSwitchingMode)
                         }
 
                         if model.installMode == .launchDaemon && model.filesDirectoryIsOnExternalVolume {
