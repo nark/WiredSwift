@@ -252,10 +252,11 @@ final class WiredServerViewModel: ObservableObject {
 
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
-        // Refresh daemon status synchronously so isDaemonRunning is current before the
-        // auto-update guard below (the poll timer may not have fired yet since last start).
+        // Quick pgrep check to get a fresh isDaemonRunning before the auto-update guard.
+        // pgrep works without root; launchctl print system/... can return non-zero for
+        // non-root users even when the daemon is running, causing false negatives.
         if installMode == .launchDaemon {
-            refreshDaemonStatus()
+            isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
         }
         var binaryWasUpdated = false
         // In LaunchDaemon mode: skip auto-update when daemon is running (launchd
@@ -272,7 +273,11 @@ final class WiredServerViewModel: ObservableObject {
             }
         }
         refreshInstallStatus()
-        refreshInstalledVersion()
+        // Skip version check when daemon is running: avoids launching wired3 --version
+        // concurrently with the daemon process (potential interference + main thread blocking).
+        if !isDaemonRunning {
+            refreshInstalledVersion()
+        }
         launchAtLogin = isLaunchAtLoginEnabled()
         loadConfig()
         refreshRunningStatus()
@@ -420,7 +425,9 @@ final class WiredServerViewModel: ObservableObject {
     // MARK: - LaunchDaemon / LaunchAgent Mode Switching
 
     func refreshDaemonStatus() {
-        isDaemonRunning = runProcess("/bin/launchctl", ["print", "system/\(launchAgentLabel)"]).status == 0
+        // pgrep works without root and is faster/more reliable than launchctl print for
+        // detecting whether the daemon process is actually running.
+        isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
         isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
         isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
     }
