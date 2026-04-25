@@ -230,21 +230,18 @@ extension ServerController {
         let entries: [(login: String, nick: String)]
         do {
             entries = try App.databaseController.dbQueue.read { db in
+                // Only include users who have a last_nick set (i.e. connected at least once
+                // since v15). This avoids exposing login names or account full names.
                 let rows = try Row.fetchAll(db, sql: """
-                    SELECT username, last_nick, full_name FROM users
+                    SELECT username, last_nick FROM users
                     WHERE username IS NOT NULL AND username != ''
                       AND last_login_at IS NOT NULL
                       AND last_login_at > unixepoch('now') - 2592000
-                    ORDER BY username ASC
+                      AND last_nick IS NOT NULL AND last_nick != ''
+                    ORDER BY last_nick ASC
                 """)
                 return rows.map { row in
-                    let login: String = row["username"]
-                    let lastNick: String? = row["last_nick"]
-                    let fullName: String? = row["full_name"]
-                    let nick = lastNick.flatMap { $0.isEmpty ? nil : $0 }
-                           ?? fullName.flatMap { $0.isEmpty ? nil : $0 }
-                           ?? login
-                    return (login: login, nick: nick)
+                    (login: row["username"] as String, nick: row["last_nick"] as String)
                 }
             }
         } catch {
