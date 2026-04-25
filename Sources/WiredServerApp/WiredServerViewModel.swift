@@ -117,6 +117,9 @@ final class WiredServerViewModel: ObservableObject {
     @Published var daemonStartAtBoot: Bool = false
     @Published var isSwitchingMode: Bool = false
     @Published var modeSwitchStatus: String = ""
+    @Published var isDaemonRunning: Bool = false
+    @Published var isDaemonUserExists: Bool = false
+    @Published var isDaemonGroupExists: Bool = false
 
     private var lastDashboardLightRefresh = Date.distantPast
     private var lastDashboardHeavyRefresh = Date.distantPast
@@ -403,12 +406,10 @@ final class WiredServerViewModel: ObservableObject {
 
     // MARK: - LaunchDaemon / LaunchAgent Mode Switching
 
-    var daemonUserExists: Bool {
-        runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
-    }
-
-    var daemonGroupExists: Bool {
-        runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
+    func refreshDaemonStatus() {
+        isDaemonRunning = runProcess("/bin/launchctl", ["print", "system/\(launchAgentLabel)"]).status == 0
+        isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
+        isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
     }
 
     // MARK: - External Volume / FDA
@@ -439,11 +440,6 @@ final class WiredServerViewModel: ObservableObject {
         fileManager.fileExists(atPath: launchDaemonPlistPath)
     }
 
-    var daemonRunning: Bool {
-        let result = runProcess("/bin/launchctl", ["print", "system/\(launchAgentLabel)"])
-        return result.status == 0
-    }
-
     func saveDaemonSettings() {
         userDefaults.set(daemonUserName, forKey: daemonUserNameKey)
         userDefaults.set(daemonGroupName, forKey: daemonGroupNameKey)
@@ -458,6 +454,7 @@ final class WiredServerViewModel: ObservableObject {
         }
         isSwitchingMode = true
         modeSwitchStatus = "Preparing..."
+        refreshDaemonStatus()
 
         do {
             if isRunning {
@@ -473,7 +470,7 @@ final class WiredServerViewModel: ObservableObject {
                     launchAtLogin = false
                 }
                 modeSwitchStatus = "Activating LaunchDaemon (one admin dialog)..."
-                try activateLaunchDaemon(name: daemonUserName, createUser: !daemonUserExists)
+                try activateLaunchDaemon(name: daemonUserName, createUser: !isDaemonUserExists)
 
             case .launchAgent:
                 modeSwitchStatus = "Deactivating LaunchDaemon (one admin dialog)..."
@@ -504,18 +501,26 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func startDaemon() {
-        _ = runProcess("/bin/launchctl",
-            ["bootstrap", "system", launchDaemonPlistPath])
+        do {
+            try runPrivileged("launchctl bootstrap system '\(launchDaemonPlistPath)'",
+                              error: .launchDaemonInstallFailed("start"))
+        } catch {
+            publishError("Failed to start daemon: \(error.localizedDescription)")
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.refreshAll()
+            self?.refreshDaemonStatus()
         }
     }
 
     func stopDaemon() {
-        _ = runProcess("/bin/launchctl",
-            ["bootout", "system/\(launchAgentLabel)"])
+        do {
+            try runPrivileged("launchctl bootout system/'\(launchAgentLabel)'",
+                              error: .launchDaemonRemoveFailed("stop"))
+        } catch {
+            publishError("Failed to stop daemon: \(error.localizedDescription)")
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.refreshAll()
+            self?.refreshDaemonStatus()
         }
     }
 
@@ -523,7 +528,7 @@ final class WiredServerViewModel: ObservableObject {
     private func activateLaunchDaemon(name: String, createUser: Bool) throws {
         let tempURL = try writeDaemonPlistToTemp()
         let group = daemonGroupName
-        let createGroup = !daemonGroupExists
+        let createGroup = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status != 0
 
         var cmds: [String] = []
 
@@ -1112,6 +1117,9 @@ final class WiredServerViewModel: ObservableObject {
 
     private func pollState() {
         refreshRunningStatus()
+        if installMode == .launchDaemon {
+            refreshDaemonStatus()
+        }
         refreshLogText()
         refreshDashboard()
     }
