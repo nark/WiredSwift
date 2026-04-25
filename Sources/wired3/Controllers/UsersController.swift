@@ -107,6 +107,13 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    /// Returns `true` if a registered account with the given login name exists.
+    public func userExists(withUsername username: String) -> Bool {
+        (try? databaseController.dbQueue.read { db in
+            try User.filter(Column("username") == username).fetchCount(db) > 0
+        }) ?? false
+    }
+
     /// Fetches a user by login name and eagerly loads their privilege set.
     ///
     /// - Parameter username: The account login name.
