@@ -44,6 +44,9 @@ enum WiredMigrations {
         migrator.registerMigration("v12_add_is_legacy") { db in
             try WiredMigrations.v12(db)
         }
+        migrator.registerMigration("v13_offline_messages") { db in
+            try WiredMigrations.v13(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -423,6 +426,39 @@ enum WiredMigrations {
                 SELECT RAISE(ABORT, 'per-recipient offline message limit exceeded')
                 WHERE (SELECT COUNT(*) FROM offline_messages
                        WHERE recipient_identity = NEW.recipient_identity) >= 100;
+            END;
+        """)
+    }
+
+    // v13: Replace the speculative E2E-encrypted offline_messages schema (never used)
+    //      with a simple plaintext table that matches our actual implementation.
+    static func v13(_ db: Database) throws {
+        try db.execute(sql: "DROP TRIGGER IF EXISTS offline_messages_per_recipient_limit")
+        try db.execute(sql: "DROP INDEX IF EXISTS offline_messages_recipient_index")
+        try db.execute(sql: "DROP INDEX IF EXISTS offline_messages_expires_index")
+        try db.execute(sql: "DROP TABLE IF EXISTS offline_messages")
+
+        try db.create(table: "offline_messages") { t in
+            t.autoIncrementedPrimaryKey("id")
+            t.column("sender_login", .text).notNull()
+            t.column("recipient_login", .text).notNull()
+            t.column("body", .text).notNull()
+            t.column("sent_at", .datetime).notNull()
+        }
+        try db.create(
+            index: "offline_messages_recipient_index",
+            on: "offline_messages",
+            columns: ["recipient_login"]
+        )
+
+        // Limit: max 100 queued messages per recipient to prevent storage DoS
+        try db.execute(sql: """
+            CREATE TRIGGER offline_messages_per_recipient_limit
+            BEFORE INSERT ON offline_messages
+            BEGIN
+                SELECT RAISE(ABORT, 'per-recipient offline message limit exceeded')
+                WHERE (SELECT COUNT(*) FROM offline_messages
+                       WHERE recipient_login = NEW.recipient_login) >= 100;
             END;
         """)
     }

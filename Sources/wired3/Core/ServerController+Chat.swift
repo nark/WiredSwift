@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import GRDB
 import WiredSwift
 
 extension ServerController {
@@ -119,5 +120,135 @@ extension ServerController {
         App.clientsController.broadcast(message: broadcast)
         App.serverController.replyOK(client: client, message: message)
         self.recordEvent(.messageBroadcasted, client: client)
+    }
+
+    // MARK: - Offline messages
+
+    func receiveMessageSendOfflineMessage(client: Client, message: P7Message) {
+        guard let senderUser = client.user else {
+            App.serverController.replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
+            return
+        }
+
+        guard senderUser.hasPrivilege(name: "wired.account.message.send_offline_messages") else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            return
+        }
+
+        guard let recipientLogin = message.string(forField: "wired.message.offline.recipient_login"),
+              !recipientLogin.isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        guard let body = message.string(forField: "wired.message.message"),
+              !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            App.serverController.replyError(client: client, error: "wired.error.invalid_message", message: message)
+            return
+        }
+
+        // Verify the recipient account exists
+        guard App.usersController.userExists(withUsername: recipientLogin) else {
+            App.serverController.replyError(client: client, error: "wired.error.user_not_found", message: message)
+            return
+        }
+
+        // If the recipient is currently online, deliver immediately instead
+        if let onlineClient = App.clientsController.user(withLogin: recipientLogin) {
+            let reply = P7Message(withName: "wired.message.message", spec: self.spec)
+            reply.addParameter(field: "wired.user.id", value: client.userID)
+            reply.addParameter(field: "wired.message.message", value: body)
+            _ = self.send(message: reply, client: onlineClient)
+            App.serverController.replyOK(client: client, message: message)
+            return
+        }
+
+        let senderLogin = senderUser.username ?? ""
+        var offlineMessage = OfflineMessage(
+            senderLogin: senderLogin,
+            recipientLogin: recipientLogin,
+            body: body,
+            sentAt: Date()
+        )
+
+        do {
+            try App.databaseController.dbQueue.write { db in
+                try offlineMessage.insert(db)
+            }
+        } catch {
+            Logger.error("Failed to store offline message for '\(recipientLogin)': \(error)")
+            App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
+            return
+        }
+
+        App.serverController.replyOK(client: client, message: message)
+        Logger.info("Offline message from '\(senderLogin)' stored for '\(recipientLogin)'")
+    }
+
+    func deliverOfflineMessages(to client: Client) {
+        guard let recipientLogin = client.user?.username else { return }
+
+        let messages: [OfflineMessage]
+        do {
+            messages = try App.databaseController.dbQueue.read { db in
+                try OfflineMessage
+                    .filter(Column("recipient_login") == recipientLogin)
+                    .order(Column("sent_at").asc)
+                    .fetchAll(db)
+            }
+        } catch {
+            Logger.error("Failed to load offline messages for '\(recipientLogin)': \(error)")
+            return
+        }
+
+        guard !messages.isEmpty else { return }
+
+        for msg in messages {
+            let delivery = P7Message(withName: "wired.message.offline_message", spec: self.spec)
+            delivery.addParameter(field: "wired.message.offline.sender_login", value: msg.senderLogin)
+            delivery.addParameter(field: "wired.message.message", value: msg.body)
+            delivery.addParameter(field: "wired.message.offline.date", value: msg.sentAt)
+            _ = self.send(message: delivery, client: client)
+        }
+
+        do {
+            try App.databaseController.dbQueue.write { db in
+                try OfflineMessage
+                    .filter(Column("recipient_login") == recipientLogin)
+                    .deleteAll(db)
+            }
+        } catch {
+            Logger.error("Failed to delete delivered offline messages for '\(recipientLogin)': \(error)")
+        }
+
+        Logger.info("Delivered \(messages.count) offline message(s) to '\(recipientLogin)'")
+    }
+
+    func sendOfflineUserList(to client: Client) {
+        let onlineLogins = Set(App.clientsController.allConnectedLogins())
+
+        let allLogins: [String]
+        do {
+            allLogins = try App.databaseController.dbQueue.read { db in
+                try String.fetchAll(db, sql: """
+                    SELECT username FROM users
+                    WHERE username IS NOT NULL AND username != ''
+                    ORDER BY username ASC
+                """)
+            }
+        } catch {
+            Logger.error("Failed to load offline user list: \(error)")
+            return
+        }
+
+        for login in allLogins where !onlineLogins.contains(login) {
+            let msg = P7Message(withName: "wired.user.offline_list", spec: self.spec)
+            msg.addParameter(field: "wired.user.login", value: login)
+            msg.addParameter(field: "wired.user.nick", value: login)
+            _ = self.send(message: msg, client: client)
+        }
+
+        let done = P7Message(withName: "wired.user.offline_list.done", spec: self.spec)
+        _ = self.send(message: done, client: client)
     }
 }
