@@ -415,10 +415,7 @@ final class WiredServerViewModel: ObservableObject {
 
     var filesDirectoryIsOnExternalVolume: Bool {
         let path = currentServerRootPath()
-        let url = URL(fileURLWithPath: path)
-        guard let values = try? url.resourceValues(forKeys: [.volumeURLKey]),
-              let volumeURL = values.volumeURL else { return false }
-        return volumeURL.path.hasPrefix("/Volumes/")
+        return path.hasPrefix("/Volumes/")
     }
 
     // Checks FDA for the wired3 binary via the TCC database (readable only with FDA granted)

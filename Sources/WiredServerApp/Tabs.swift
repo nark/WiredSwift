@@ -102,7 +102,7 @@ private struct ExternalVolumeWarningView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(hasFDA ? "Full Disk Access granted for wired3." : "Files directory is on an external volume.")
                     .font(.footnote).bold()
-                    .foregroundStyle(hasFDA ? .primary : .orange)
+                    .foregroundStyle(hasFDA ? Color.primary : Color.orange)
                 Text(hasFDA
                     ? "The daemon can access the external drive."
                     : "Grant Full Disk Access to wired3 so the LaunchDaemon can read and write files on this volume."
