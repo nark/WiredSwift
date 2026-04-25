@@ -1533,6 +1533,17 @@ final class WiredServerViewModel: ObservableObject {
 
     @discardableResult
     private func synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: Bool = true) throws -> Bool {
+        // Never replace the binary while the daemon is running — launchd detects the
+        // replacement and kills the process. Check here as a last-resort guard regardless
+        // of which call path reaches this function.
+        if installMode == .launchDaemon {
+            let daemonLive = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+            if daemonLive {
+                appendRuntimeLog("binary-update: daemon is running, skipping binary replacement")
+                return false
+            }
+        }
+
         guard let bundledBinary = bundledServerBinaryPath() else {
             appendRuntimeLog("binary-update: no bundled wired3 found, skipping synchronization")
             return false
