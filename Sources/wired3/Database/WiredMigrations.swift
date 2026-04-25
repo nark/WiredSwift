@@ -47,6 +47,9 @@ enum WiredMigrations {
         migrator.registerMigration("v13_offline_messages") { db in
             try WiredMigrations.v13(db)
         }
+        migrator.registerMigration("v14_last_login_at") { db in
+            try WiredMigrations.v14(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -428,6 +431,13 @@ enum WiredMigrations {
                        WHERE recipient_identity = NEW.recipient_identity) >= 100;
             END;
         """)
+    }
+
+    // v14: Add last_login_at to users so we can filter the offline user list to recent accounts.
+    static func v14(_ db: Database) throws {
+        try db.alter(table: "users") { t in
+            t.add(column: "last_login_at", .real)
+        }
     }
 
     // v13: Replace the speculative E2E-encrypted offline_messages schema (never used)
