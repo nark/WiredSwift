@@ -22,6 +22,8 @@ The project is currently in beta. It is already usable, but it is still evolving
 
 Releases: https://github.com/nark/WiredSwift/releases
 
+> **Client compatibility:** Wired 3.0 uses a new version of the P7 protocol and is **not compatible** with older Wired 2.x clients (including Zankasoftware-era clients). Only Wired 3.x clients can connect to a Wired 3.0 server.
+
 ---
 
 ## Table of Contents
