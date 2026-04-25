@@ -252,6 +252,11 @@ final class WiredServerViewModel: ObservableObject {
 
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
+        // Refresh daemon status synchronously so isDaemonRunning is current before the
+        // auto-update guard below (the poll timer may not have fired yet since last start).
+        if installMode == .launchDaemon {
+            refreshDaemonStatus()
+        }
         var binaryWasUpdated = false
         // In LaunchDaemon mode: skip auto-update when daemon is running (launchd
         // kills the process on binary replacement) and only attempt when we have
