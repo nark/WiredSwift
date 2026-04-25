@@ -1234,10 +1234,10 @@ extension ServerController {
         let onlineLogins = Set(App.clientsController.allConnectedLogins())
         guard !onlineLogins.contains(username) else { return }
 
+        // New accounts have no last_nick yet; use full_name or username as fallback
         let displayNick: String
-        if let user = App.usersController.user(withUsername: username),
-           let fullName = user.fullName, !fullName.isEmpty {
-            displayNick = fullName
+        if let user = App.usersController.user(withUsername: username) {
+            displayNick = [user.fullName].compactMap({ $0?.isEmpty == false ? $0 : nil }).first ?? username
         } else {
             displayNick = username
         }
