@@ -429,13 +429,22 @@ final class WiredServerViewModel: ObservableObject {
 
     // MARK: - LaunchDaemon / LaunchAgent Mode Switching
 
+    private var daemonAccountsVerified = false
+
     func refreshDaemonStatus() {
         // pgrep works without root and is faster/more reliable than launchctl print for
         // detecting whether the daemon process is actually running.
-        isDaemonRunning = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
-        isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
-        isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
+        isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+        if !daemonAccountsVerified {
+            isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
+            isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
+            daemonAccountsVerified = true
+        }
         checkFDAFast()
+    }
+
+    func invalidateDaemonAccountsCache() {
+        daemonAccountsVerified = false
     }
 
     // MARK: - External Volume / FDA
@@ -632,8 +641,20 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
+    private func validateDaemonIdentifier(_ value: String) throws {
+        let pattern = "^[a-z_][a-z0-9_-]{0,31}$"
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              regex.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) != nil else {
+            throw WiredServerError.launchDaemonInstallFailed(
+                "Invalid account name '\(value)'. Use only lowercase letters, digits, underscores, or hyphens (max 32 chars)."
+            )
+        }
+    }
+
     // One admin dialog: create group (optional) + create user (optional) + chown + install plist
     private func activateLaunchDaemon(name: String, createUser: Bool) throws {
+        try validateDaemonIdentifier(name)
+        try validateDaemonIdentifier(daemonGroupName)
         let tempURL = try writeDaemonPlistToTemp()
         let group = daemonGroupName
         let createGroup = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status != 0
@@ -641,7 +662,7 @@ final class WiredServerViewModel: ObservableObject {
         var cmds: [String] = []
 
         if createGroup {
-            let gid = findFreeSystemGID()
+            let gid = try findFreeSystemGID()
             cmds += [
                 "dscl . -create /Groups/\(group)",
                 "dscl . -create /Groups/\(group) PrimaryGroupID \(gid)",
@@ -651,7 +672,7 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         if createUser {
-            let uid = findFreeSystemUID()
+            let uid = try findFreeSystemUID()
             let gid = groupGID(for: group)
             cmds += [
                 "dscl . -create /Users/\(name)",
@@ -685,6 +706,7 @@ final class WiredServerViewModel: ObservableObject {
 
         try runPrivileged(cmds.joined(separator: " && "),
                           error: WiredServerError.launchDaemonInstallFailed(""))
+        daemonAccountsVerified = false
     }
 
     // One admin dialog: bootout + remove plist + chown back to current user
@@ -693,9 +715,10 @@ final class WiredServerViewModel: ObservableObject {
             "launchctl bootout system/\(launchAgentLabel) 2>/dev/null",
             "rm -f '\(launchDaemonPlistPath)'",
             "chown -R \(restoreUser):staff /Library/Wired3"  // back to staff for LaunchAgent
-        ].joined(separator: "; ")
+        ].joined(separator: " && ")
 
         try runPrivileged(cmds, error: WiredServerError.launchDaemonRemoveFailed(""))
+        daemonAccountsVerified = false
     }
 
     // Used by toggleDaemonStartAtBoot — updates existing plist with one admin dialog
@@ -749,24 +772,28 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    private func findFreeSystemUID() -> Int {
+    private func findFreeSystemUID() throws -> Int {
         let output = runCommand("/usr/bin/dscl", [".", "-list", "/Users", "UniqueID"])
         let used = Set(output.components(separatedBy: .newlines).compactMap { line -> Int? in
             let parts = line.split(separator: " ").map(String.init)
             return parts.count >= 2 ? Int(parts.last ?? "") : nil
         })
         for uid in 400...499 where !used.contains(uid) { return uid }
-        return 489
+        throw WiredServerError.launchDaemonInstallFailed(
+            "No free UID available in the 400–499 system range. Free a UID and try again."
+        )
     }
 
-    private func findFreeSystemGID() -> Int {
+    private func findFreeSystemGID() throws -> Int {
         let output = runCommand("/usr/bin/dscl", [".", "-list", "/Groups", "PrimaryGroupID"])
         let used = Set(output.components(separatedBy: .newlines).compactMap { line -> Int? in
             let parts = line.split(separator: " ").map(String.init)
             return parts.count >= 2 ? Int(parts.last ?? "") : nil
         })
         for gid in 400...499 where !used.contains(gid) { return gid }
-        return 488
+        throw WiredServerError.launchDaemonInstallFailed(
+            "No free GID available in the 400–499 system range. Free a GID and try again."
+        )
     }
 
     private func groupGID(for group: String) -> Int {
@@ -782,7 +809,7 @@ final class WiredServerViewModel: ObservableObject {
 
     // MARK: - Wired 2.5 Migration
 
-    func chooseMigrationSource() {
+    @MainActor func chooseMigrationSource() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
