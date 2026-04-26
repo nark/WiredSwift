@@ -166,21 +166,26 @@ extension ServerController {
         let senderLogin = senderUser.username ?? ""
         let isEncrypted = message.bool(forField: "wired.message.offline.encrypted") ?? false
 
-        // Enforce encryption when the recipient has registered an offline public key.
-        // A client that supports E2E offline messaging must encrypt before sending;
-        // accepting plaintext bodies when a key is on file would silently store
-        // readable content in the database.
-        let recipientHasKey: Bool = (try? App.databaseController.dbQueue.read { db in
+        // Offline messages are always stored encrypted. The recipient must have registered
+        // a public key (so the sender can encrypt), and the client must set is_encrypted=true.
+        // Plaintext storage is never acceptable — it would let server admins read private messages.
+        let recipientPublicKey: Data? = (try? App.databaseController.dbQueue.read { db in
             let row = try Row.fetchOne(db,
                 sql: "SELECT offline_public_key FROM users WHERE username = ?",
                 arguments: [recipientLogin])
             let keyData = row?["offline_public_key"] as? Data
-            return keyData != nil && !keyData!.isEmpty
-        }) ?? false
+            return (keyData != nil && !keyData!.isEmpty) ? keyData : nil
+        }) ?? nil
 
-        if recipientHasKey && !isEncrypted {
+        guard let _ = recipientPublicKey else {
             App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
-            Logger.warning("Rejected unencrypted offline message for '\(recipientLogin)' — recipient has a public key registered")
+            Logger.warning("Rejected offline message for '\(recipientLogin)' — no public key registered (encryption required)")
+            return
+        }
+
+        guard isEncrypted else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            Logger.warning("Rejected unencrypted offline message for '\(recipientLogin)' — is_encrypted must be true")
             return
         }
 
