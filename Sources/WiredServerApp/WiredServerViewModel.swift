@@ -608,6 +608,11 @@ final class WiredServerViewModel: ObservableObject {
             // preventing admin (not in daemon group) from writing inside it.
             "rm -rf '/Library/Wired3/bin/.updates'",
             "chmod 755 /Library/Wired3/bin/wired3 2>/dev/null || true",
+            // etc/ uses staff group so the admin user can write config.ini
+            "chown \(name):staff /Library/Wired3/etc",
+            "chmod 775 /Library/Wired3/etc",
+            "chown \(name):staff /Library/Wired3/etc/config.ini 2>/dev/null || true",
+            "chmod 664 /Library/Wired3/etc/config.ini 2>/dev/null || true",
             "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
             "chmod 644 '\(launchDaemonPlistPath)'",
             "chown root:wheel '\(launchDaemonPlistPath)'"
