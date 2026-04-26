@@ -120,6 +120,7 @@ final class WiredServerViewModel: ObservableObject {
     @Published var isDaemonRunning: Bool = false
     @Published var isDaemonUserExists: Bool = false
     @Published var isDaemonGroupExists: Bool = false
+    @Published var wired3HasFullDiskAccess: Bool = false
 
     var isServerActive: Bool {
         installMode == .launchDaemon ? isDaemonRunning : isRunning
@@ -434,6 +435,7 @@ final class WiredServerViewModel: ObservableObject {
         isDaemonRunning = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
         isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
         isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
+        checkFDAFast()
     }
 
     // MARK: - External Volume / FDA
@@ -443,28 +445,55 @@ final class WiredServerViewModel: ObservableObject {
         return path.hasPrefix("/Volumes/")
     }
 
-    // Checks whether wired3 has FDA by asking launchd to probe the TCC database
-    // on its behalf. The app itself may not have FDA, so we probe via sqlite3 run
-    // as the daemon user, falling back to a direct TCC.db read if possible.
-    var wired3HasFullDiskAccess: Bool {
-        let tcc = "/Library/Application Support/com.apple.TCC/TCC.db"
-        let binaryPath = installedBinaryPath
-        let query = "SELECT allowed FROM access WHERE service='kTCCServiceSystemPolicyAllFiles' AND client='\(binaryPath)' LIMIT 1"
-
-        // Try reading TCC.db directly (works if this app has FDA).
-        if FileManager.default.isReadableFile(atPath: tcc) {
-            let output = runCommand("/usr/bin/sqlite3", [tcc, query])
-            if output.trimmingCharacters(in: .whitespacesAndNewlines) == "1" { return true }
+    // Non-privileged fast check: can our app process list the files directory?
+    // External volumes under /Volumes/ don't need FDA — they're accessible by all processes.
+    // This avoids the TCC.db read (which SIP protects even from root on macOS 14+).
+    private func checkFDAFast() {
+        guard filesDirectoryIsOnExternalVolume, !wired3HasFullDiskAccess else { return }
+        let path = currentServerRootPath()
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue {
+            wired3HasFullDiskAccess = true
         }
+    }
 
-        // Fallback: run sqlite3 as the daemon user so it can read the system TCC.db.
-        let result = runProcess("/usr/bin/sudo", ["-u", daemonUserName, "-n",
-            "/usr/bin/sqlite3", tcc, query])
-        if result.output.trimmingCharacters(in: .whitespacesAndNewlines) == "1" { return true }
+    // Writes a shell script that tests whether the daemon user can list the files directory.
+    // TCC.db is protected by SIP on macOS 14+ and cannot be read even by root without special
+    // entitlements. A functional access test is the only reliable approach.
+    private func writeFDACheckScript(filesDir: String, daemonUser: String, outputFile: String, to scriptPath: String) {
+        let sh = """
+        #!/bin/sh
+        OUT='\(outputFile)'
+        FILES='\(filesDir)'
+        DUSER='\(daemonUser)'
 
-        // Last resort: try to open a file in a protected location as a live FDA probe.
-        // If the daemon can read /Library/Application Support/com.apple.TCC/ the grant is active.
-        return FileManager.default.isReadableFile(atPath: tcc)
+        # Test if the daemon user can read the files directory (Unix permissions check).
+        # External volumes don't require FDA — this tests actual access, not TCC grants.
+        if sudo -u "$DUSER" /bin/ls "$FILES" >/dev/null 2>&1; then
+            echo 1 > "$OUT"
+        else
+            echo 0 > "$OUT"
+        fi
+        """
+        try? sh.write(toFile: scriptPath, atomically: true, encoding: .utf8)
+    }
+
+    // Privileged access check — runs as root (AppleScript admin auth) to test _wired user access.
+    func refreshFDAStatusPrivileged() {
+        guard filesDirectoryIsOnExternalVolume else {
+            wired3HasFullDiskAccess = false
+            return
+        }
+        let filesDir = currentServerRootPath()
+        let ts = Int(Date().timeIntervalSince1970)
+        let fdaTmpFile = "/tmp/.wired3fda_\(ts)"
+        let fdaShFile  = "/tmp/.wired3sh_\(ts).sh"
+        writeFDACheckScript(filesDir: filesDir, daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
+        try? runPrivileged("sh '\(fdaShFile)'; true", error: .launchDaemonInstallFailed(""))
+        let raw = (try? String(contentsOfFile: fdaTmpFile, encoding: .utf8)) ?? "0"
+        try? FileManager.default.removeItem(atPath: fdaTmpFile)
+        try? FileManager.default.removeItem(atPath: fdaShFile)
+        wired3HasFullDiskAccess = raw.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
     }
 
     func openFullDiskAccessSettings() {
@@ -557,9 +586,32 @@ final class WiredServerViewModel: ObservableObject {
 
         // bootstrap registers the service (no-op if already registered).
         // kickstart starts it regardless of RunAtLoad value.
-        let cmd = "launchctl bootstrap system '\(launchDaemonPlistPath)' 2>/dev/null; launchctl kickstart system/\(launchAgentLabel) 2>/dev/null; true"
+        // If files dir is on an external volume, embed a TCC/FDA check in the SAME privileged
+        // script so only ONE admin auth dialog is shown.
+        let onExternal = filesDirectoryIsOnExternalVolume
+        let ts = Int(Date().timeIntervalSince1970)
+        let fdaTmpFile = "/tmp/.wired3fda_\(ts)"
+        let fdaShFile  = "/tmp/.wired3sh_\(ts).sh"
+
+        if onExternal {
+            writeFDACheckScript(filesDir: currentServerRootPath(), daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
+        }
+
+        var cmd = "launchctl bootstrap system '\(launchDaemonPlistPath)' 2>/dev/null"
+        cmd += "; launchctl kickstart system/\(launchAgentLabel) 2>/dev/null"
+        if onExternal {
+            cmd += "; sh '\(fdaShFile)'"
+        }
+        cmd += "; true"
+
         do {
             try runPrivileged(cmd, error: .launchDaemonInstallFailed("start"))
+            if onExternal {
+                let raw = (try? String(contentsOfFile: fdaTmpFile, encoding: .utf8)) ?? "0"
+                try? FileManager.default.removeItem(atPath: fdaTmpFile)
+                try? FileManager.default.removeItem(atPath: fdaShFile)
+                wired3HasFullDiskAccess = raw.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
+            }
         } catch {
             publishError("Failed to start daemon: \(error.localizedDescription)")
         }
