@@ -101,12 +101,12 @@ private struct ExternalVolumeWarningView: View {
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(hasFDA ? "Full Disk Access granted for wired3." : "Files directory is on an external volume.")
+                Text(hasFDA ? "Daemon can access the external volume." : "Files directory is on an external volume.")
                     .font(.footnote).bold()
                     .foregroundStyle(hasFDA ? Color.primary : Color.orange)
                 Text(hasFDA
-                    ? "The daemon can access the external drive."
-                    : "Grant Full Disk Access to wired3 in System Settings, then restart the daemon."
+                    ? "The daemon user has read access to the files directory."
+                    : "Ensure the files directory is readable by the daemon user, then click Re-check."
                 )
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -115,8 +115,10 @@ private struct ExternalVolumeWarningView: View {
             Spacer()
 
             if !hasFDA {
-                Button("Open Settings…") { onOpenSettings() }
-                    .font(.footnote)
+                Button("Re-check") {
+                    model.refreshFDAStatusPrivileged()
+                }
+                .font(.footnote)
 
                 Button("Restart Daemon") {
                     model.stopDaemon()
@@ -276,6 +278,7 @@ struct GeneralTabView: View {
                             Button("Save") { model.saveDaemonSettings() }
                                 .disabled(model.isSwitchingMode)
                         }
+                        .labelsHidden()
 
                         if model.installMode == .launchDaemon && model.filesDirectoryIsOnExternalVolume {
                             ExternalVolumeWarningView(hasFDA: model.wired3HasFullDiskAccess) {
