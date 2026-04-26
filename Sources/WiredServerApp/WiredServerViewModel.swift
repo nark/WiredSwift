@@ -594,7 +594,7 @@ final class WiredServerViewModel: ObservableObject {
                 "dscl . -create /Users/\(name) RealName 'Wired Server'",
                 "dscl . -create /Users/\(name) UniqueID \(uid)",
                 "dscl . -create /Users/\(name) PrimaryGroupID \(gid)",
-                "dscl . -create /Users/\(name) NFSHomeDirectory /Library/Wired3",
+                "dscl . -create /Users/\(name) NFSHomeDirectory /var/empty",
                 "dscl . -create /Users/\(name) IsHidden 1"
             ]
         }
