@@ -278,11 +278,7 @@ final class WiredServerViewModel: ObservableObject {
             }
         }
         refreshInstallStatus()
-        // Skip version check when daemon is running: avoids launching wired3 --version
-        // concurrently with the daemon process (potential interference + main thread blocking).
-        if !isDaemonRunning {
-            refreshInstalledVersion()
-        }
+        refreshInstalledVersion()
         launchAtLogin = isLaunchAtLoginEnabled()
         loadConfig()
         refreshRunningStatus()
