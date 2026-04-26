@@ -77,6 +77,17 @@ public class ServerIdentity: ServerIdentityProvider {
             privateKey = pk
         }
 
+        // Write a world-readable public key companion file so the GUI (running as the logged-in user)
+        // can display the fingerprint without needing to read the restricted private key file.
+        let pubPath = (workingDirectory as NSString).appendingPathComponent("wired-identity.pub")
+        try? privateKey.publicKey.rawRepresentation.write(
+            to: URL(fileURLWithPath: pubPath), options: .atomic
+        )
+        try? FileManager.default.setAttributes(
+            [.posixPermissions: 0o644 as NSNumber],
+            ofItemAtPath: pubPath
+        )
+
         fingerprint = ServerIdentity.computeFingerprint(privateKey.publicKey.rawRepresentation)
     }
 
@@ -116,6 +127,18 @@ public class ServerIdentity: ServerIdentityProvider {
             return nil
         }
         let fp = computeFingerprint(pk.publicKey.rawRepresentation)
+        return format(fingerprint: fp)
+    }
+
+    /// Load the raw P256 public key from a companion .pub file (world-readable, 0644)
+    /// and return its formatted fingerprint, or nil if the file is missing or invalid.
+    /// Prefer this over fingerprintFromKeyFile when running as a different user than the daemon.
+    public static func fingerprintFromPublicKeyFile(at path: String) -> String? {
+        guard let rawData = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              let pk = try? P256.Signing.PublicKey(rawRepresentation: rawData) else {
+            return nil
+        }
+        let fp = computeFingerprint(pk.rawRepresentation)
         return format(fingerprint: fp)
     }
 
