@@ -261,7 +261,7 @@ final class WiredServerViewModel: ObservableObject {
         // pgrep works without root; launchctl print system/... can return non-zero for
         // non-root users even when the daemon is running, causing false negatives.
         if installMode == .launchDaemon {
-            isDaemonRunning = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
+            isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
         }
         var binaryWasUpdated = false
         // In LaunchDaemon mode: skip auto-update when daemon is running (launchd
@@ -287,7 +287,7 @@ final class WiredServerViewModel: ObservableObject {
         refreshDashboard(force: true)
         checkPort()
 
-        if binaryWasUpdated && isRunning {
+        if binaryWasUpdated {
             showRestartAfterUpdateAlert = true
         }
     }
@@ -623,8 +623,9 @@ final class WiredServerViewModel: ObservableObject {
         } catch {
             publishError("Failed to stop daemon: \(error.localizedDescription)")
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.refreshDaemonStatus()
+        // Use refreshAll so a pending binary update is installed now that the daemon is stopped.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            self?.refreshAll()
         }
     }
 
@@ -1040,9 +1041,15 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func restartServer() async {
-        stopServer()
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        await startServer()
+        if installMode == .launchDaemon {
+            stopDaemon()
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            startDaemon()
+        } else {
+            stopServer()
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await startServer()
+        }
     }
 
     func saveNetworkSettings() {
@@ -1642,7 +1649,7 @@ final class WiredServerViewModel: ObservableObject {
         // replacement and kills the process. Check here as a last-resort guard regardless
         // of which call path reaches this function.
         if installMode == .launchDaemon {
-            let daemonLive = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
+            let daemonLive = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
             if daemonLive {
                 appendRuntimeLog("binary-update: daemon is running, skipping binary replacement")
                 return false
