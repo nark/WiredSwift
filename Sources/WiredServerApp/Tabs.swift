@@ -90,6 +90,7 @@ private struct KeyValueRow<Control: View>: View {
 
 @available(macOS 12.0, *)
 private struct ExternalVolumeWarningView: View {
+    @EnvironmentObject private var model: WiredServerViewModel
     let hasFDA: Bool
     let onOpenSettings: () -> Void
 
@@ -105,7 +106,7 @@ private struct ExternalVolumeWarningView: View {
                     .foregroundStyle(hasFDA ? Color.primary : Color.orange)
                 Text(hasFDA
                     ? "The daemon can access the external drive."
-                    : "Grant Full Disk Access to wired3 so the LaunchDaemon can read and write files on this volume."
+                    : "Grant Full Disk Access to wired3 in System Settings, then restart the daemon."
                 )
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -116,6 +117,15 @@ private struct ExternalVolumeWarningView: View {
             if !hasFDA {
                 Button("Open Settings…") { onOpenSettings() }
                     .font(.footnote)
+
+                Button("Restart Daemon") {
+                    model.stopDaemon()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        model.startDaemon()
+                    }
+                }
+                .font(.footnote)
+                .disabled(!model.isDaemonRunning)
             }
         }
         .padding(8)

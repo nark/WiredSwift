@@ -443,15 +443,28 @@ final class WiredServerViewModel: ObservableObject {
         return path.hasPrefix("/Volumes/")
     }
 
-    // Checks FDA for the wired3 binary via the TCC database (readable only with FDA granted)
+    // Checks whether wired3 has FDA by asking launchd to probe the TCC database
+    // on its behalf. The app itself may not have FDA, so we probe via sqlite3 run
+    // as the daemon user, falling back to a direct TCC.db read if possible.
     var wired3HasFullDiskAccess: Bool {
         let tcc = "/Library/Application Support/com.apple.TCC/TCC.db"
-        guard FileManager.default.isReadableFile(atPath: tcc) else { return false }
-        // TCC.db is readable — query for the wired3 binary
         let binaryPath = installedBinaryPath
-        let output = runCommand("/usr/bin/sqlite3", [tcc,
-            "SELECT allowed FROM access WHERE service='kTCCServiceSystemPolicyAllFiles' AND client='\(binaryPath)' LIMIT 1"])
-        return output.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
+        let query = "SELECT allowed FROM access WHERE service='kTCCServiceSystemPolicyAllFiles' AND client='\(binaryPath)' LIMIT 1"
+
+        // Try reading TCC.db directly (works if this app has FDA).
+        if FileManager.default.isReadableFile(atPath: tcc) {
+            let output = runCommand("/usr/bin/sqlite3", [tcc, query])
+            if output.trimmingCharacters(in: .whitespacesAndNewlines) == "1" { return true }
+        }
+
+        // Fallback: run sqlite3 as the daemon user so it can read the system TCC.db.
+        let result = runProcess("/usr/bin/sudo", ["-u", daemonUserName, "-n",
+            "/usr/bin/sqlite3", tcc, query])
+        if result.output.trimmingCharacters(in: .whitespacesAndNewlines) == "1" { return true }
+
+        // Last resort: try to open a file in a protected location as a live FDA probe.
+        // If the daemon can read /Library/Application Support/com.apple.TCC/ the grant is active.
+        return FileManager.default.isReadableFile(atPath: tcc)
     }
 
     func openFullDiskAccessSettings() {
