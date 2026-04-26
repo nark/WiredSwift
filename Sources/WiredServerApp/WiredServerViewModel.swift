@@ -1015,6 +1015,15 @@ final class WiredServerViewModel: ObservableObject {
             config["server", "files"] = filesDirectory
             config["settings", "reindex_interval"] = String(filesReindexInterval)
         }
+        // In daemon mode the --root path is baked into the LaunchDaemon plist;
+        // regenerate it whenever the files directory changes.
+        if installMode == .launchDaemon && launchDaemonInstalled {
+            do {
+                try reinstallDaemonPlist()
+            } catch {
+                publishError("Failed to update LaunchDaemon plist: \(error.localizedDescription)")
+            }
+        }
         if launchAtLogin {
             do {
                 try configureLaunchAtLogin(enabled: true)
