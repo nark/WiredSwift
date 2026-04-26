@@ -215,6 +215,7 @@ extension ServerController {
         guard let recipientLogin = client.user?.username else { return }
 
         struct PendingMessage {
+            let id: Int64
             let senderLogin: String
             let senderNick: String?
             let body: String
@@ -226,7 +227,8 @@ extension ServerController {
         do {
             messages = try App.databaseController.dbQueue.read { db in
                 let rows = try Row.fetchAll(db, sql: """
-                    SELECT om.sender_login, om.body, om.sent_at, om.is_encrypted, u.last_nick AS sender_nick
+                    SELECT om.id, om.sender_login, om.body, om.sent_at, om.is_encrypted,
+                           u.last_nick AS sender_nick
                     FROM offline_messages om
                     LEFT JOIN users u ON u.username = om.sender_login
                     WHERE om.recipient_login = ?
@@ -235,6 +237,7 @@ extension ServerController {
                 return rows.map {
                     let encryptedInt: Int = $0["is_encrypted"] ?? 0
                     return PendingMessage(
+                        id: $0["id"],
                         senderLogin: $0["sender_login"],
                         senderNick: $0["sender_nick"],
                         body: $0["body"],
@@ -250,6 +253,11 @@ extension ServerController {
 
         guard !messages.isEmpty else { return }
 
+        // Track which message IDs were successfully written to the socket.
+        // Only those are deleted — if the connection drops mid-delivery the
+        // remaining messages stay in the DB and will be re-delivered on next login.
+        var deliveredIDs: [Int64] = []
+
         for msg in messages {
             let delivery = P7Message(withName: "wired.message.offline_message", spec: self.spec)
             delivery.addParameter(field: "wired.message.offline.sender_login", value: msg.senderLogin)
@@ -261,20 +269,24 @@ extension ServerController {
             if msg.isEncrypted {
                 delivery.addParameter(field: "wired.message.offline.encrypted", value: true)
             }
-            _ = self.send(message: delivery, client: client)
+            if self.send(message: delivery, client: client) {
+                deliveredIDs.append(msg.id)
+            }
         }
 
+        guard !deliveredIDs.isEmpty else { return }
+
         do {
-            try App.databaseController.dbQueue.write { db in
+            _ = try App.databaseController.dbQueue.write { db in
                 try OfflineMessage
-                    .filter(Column("recipient_login") == recipientLogin)
+                    .filter(deliveredIDs.contains(Column("id")))
                     .deleteAll(db)
             }
         } catch {
             Logger.error("Failed to delete delivered offline messages for '\(recipientLogin)': \(error)")
         }
 
-        Logger.info("Delivered \(messages.count) offline message(s) to '\(recipientLogin)'")
+        Logger.info("Delivered \(deliveredIDs.count)/\(messages.count) offline message(s) to '\(recipientLogin)'")
     }
 
     func sendOfflineUserList(to client: Client) {
