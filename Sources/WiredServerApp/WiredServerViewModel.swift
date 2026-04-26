@@ -1505,9 +1505,14 @@ final class WiredServerViewModel: ObservableObject {
 
     /// Reload the identity fingerprint from the key file on disk.
     func refreshIdentityFingerprint() {
-        let keyPath = URL(fileURLWithPath: workingDirectory)
-            .appendingPathComponent("wired-identity.key").path
-        identityFingerprint = ServerIdentity.fingerprintFromKeyFile(at: keyPath) ?? ""
+        let base = URL(fileURLWithPath: workingDirectory)
+        let pubPath = base.appendingPathComponent("wired-identity.pub").path
+        let keyPath = base.appendingPathComponent("wired-identity.key").path
+        // Prefer the world-readable public key file (written by the daemon alongside the private key).
+        // Fall back to reading the private key directly when running as the same user as the server.
+        identityFingerprint = ServerIdentity.fingerprintFromPublicKeyFile(at: pubPath)
+            ?? ServerIdentity.fingerprintFromKeyFile(at: keyPath)
+            ?? ""
     }
 
     /// Opens a save panel so the admin can export the server's identity public key.
