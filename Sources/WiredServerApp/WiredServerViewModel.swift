@@ -2567,7 +2567,7 @@ strict_identity = yes
         if !isInstalled {
             return .init(level: .critical, title: L("dashboard.health.critical"), detail: L("dashboard.health.server.not_installed"))
         }
-        if !isRunning {
+        if !isServerActive {
             return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.server.stopped"))
         }
         if portStatus == .closed {
