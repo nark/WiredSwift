@@ -711,6 +711,7 @@ extension ServerController {
         let result = normalizedPasswordForStorage(password)
         account.password = result.hash
         account.passwordSalt = result.salt
+        account.isLegacy = false
 
         guard App.usersController.save(user: account) else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)

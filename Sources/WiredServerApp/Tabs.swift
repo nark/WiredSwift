@@ -381,6 +381,86 @@ struct DatabaseTabView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+
+                Section(L("database.migration.section")) {
+                    // Warning when server is running
+                    if model.isRunning {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text(L("database.migration.server_warning"))
+                                .foregroundStyle(.orange)
+                        }
+                    }
+
+                    // File picker row
+                    HStack(spacing: 8) {
+                        Text(L("database.migration.source"))
+                            .bold()
+
+                        if model.migrationSourcePath.isEmpty {
+                            Text(L("database.migration.source.none"))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        } else {
+                            Text(model.migrationSourcePath)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .textSelection(.enabled)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Button(L("common.choose")) {
+                            model.chooseMigrationSource()
+                        }
+                        .disabled(model.isMigrating)
+                    }
+
+                    // Overwrite toggle
+                    Toggle(L("database.migration.overwrite"), isOn: $model.migrationOverwrite)
+                        .disabled(model.isMigrating)
+
+                    // Start button
+                    HStack {
+                        Spacer()
+                        if model.isMigrating {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .frame(width: 20, height: 20)
+                            Text(L("database.migration.running"))
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Button(L("database.migration.run")) {
+                                Task { await model.runMigration() }
+                            }
+                            .disabled(model.migrationSourcePath.isEmpty || model.isRunning)
+                        }
+                    }
+
+                    // Output area (shown once migration has run)
+                    if !model.migrationOutput.isEmpty {
+                        ScrollView {
+                            Text(model.migrationOutput)
+                                .font(.system(.caption, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                                .padding(8)
+                        }
+                        .frame(minHeight: 180, maxHeight: 300)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+
+                    Text(L("database.migration.help"))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
             .formStyle(.grouped)
         }

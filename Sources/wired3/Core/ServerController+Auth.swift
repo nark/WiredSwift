@@ -85,14 +85,28 @@ extension ServerController {
             return false
         }
 
-        guard let user = App.usersController.user(withUsername: login, password: password) else {
+        // Legacy SHA1 accounts (migrated from Wired 2.5) are authenticated by the P7 ECDSA key
+        // exchange which already used their stored SHA1 hash.  Bypass the redundant application-
+        // level hash comparison so that the SHA256 value sent in wired.send_login doesn't fail.
+        let isLegacy = client.socket.isLegacyAuth
+        let user: User?
+        if isLegacy {
+            // Do NOT assign a salt here. The salt is only written when the user actually
+            // completes the password-change flow (receiveAccountChangePassword). Writing it
+            // now would cause the next login attempt to take the SHA-256 path against a
+            // still-SHA1 stored hash, permanently locking the account out.
+            user = App.usersController.userWithPrivileges(withUsername: login)
+        } else {
+            user = App.usersController.user(withUsername: login, password: password)
+        }
+
+        guard let user else {
             // SECURITY (FINDING_A_014): Perform dummy SHA-256 to prevent username enumeration via timing
             _ = (UUID().uuidString + password).sha256()
 
             let reply = P7Message(withName: "wired.error", spec: message.spec)
             reply.addParameter(field: "wired.error.string", value: "Login failed")
-            reply.addParameter(field: "wired.error", value: UInt32(4
-            ))
+            reply.addParameter(field: "wired.error", value: UInt32(4))
             App.serverController.reply(client: client, reply: reply, message: message)
 
             Logger.warning("Login from \(clientIP) failed for '\(login)': Wrong password")
@@ -123,6 +137,11 @@ extension ServerController {
 
         let response = P7Message(withName: "wired.login", spec: self.spec)
         response.addParameter(field: "wired.user.id", value: client.userID)
+        // Inform the client that this is a legacy account and a password change is required.
+        if isLegacy {
+            response.addParameter(field: "wired.user.password_must_change", value: true)
+            Logger.info("Legacy SHA1 user '\(login)' logged in — client must prompt for password change")
+        }
         App.serverController.reply(client: client, reply: response, message: message)
 
         client.loginTime = Date()

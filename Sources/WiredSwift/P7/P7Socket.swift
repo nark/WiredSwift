@@ -33,6 +33,10 @@ public protocol SocketPasswordDelegate: AnyObject {
     /// Returns the per-user stored salt (hex string) used to derive the base hash in key exchange.
     /// Return nil if the account has not yet been assigned a stored salt.
     func passwordSaltForUsername(username: String) -> String?
+    /// Returns whether the account was migrated from Wired 2.5 and still holds a SHA1 password hash.
+    /// The server uses this to signal the client that it must re-hash with SHA1 for this session
+    /// and that a password upgrade is required.
+    func isLegacyUser(username: String) -> Bool
 }
 
 /// Provides the server's persistent identity key for TOFU (Trust On First Use).
@@ -300,6 +304,10 @@ public class P7Socket: NSObject {
 
     public var connected: Bool = false
     public var passwordProvider: SocketPasswordDelegate?
+    /// Set to `true` after a successful key exchange in which the server indicated that the
+    /// account uses a legacy SHA1 password hash (migrated from Wired 2.5).  Consumers should
+    /// treat this as a signal to force the user to change their password after login.
+    public var isLegacyAuth: Bool = false
 
     /// Server-side: provides the persistent identity key for TOFU signing.
     /// Set before calling `accept()` on the server side.
@@ -1295,12 +1303,9 @@ public class P7Socket: NSObject {
             throw P7SocketError.keyExchangeFailed(message)
         }
 
-        if self.password == nil || self.password?.isEmpty == true {
-            self.password = "".sha256()
-        } else {
-            self.password = self.password.sha256()
-        }
-        let passwordData = self.password.data(using: .utf8)!
+        // Keep the raw password for deferred hashing: the hash algorithm (SHA1 vs SHA256) is
+        // determined only after receiving the server_challenge in step 4.
+        let rawPassword: String = self.password ?? ""
 
         guard let ecdsa = ECDSA(privateKey: derivedKey) else {
             let message = "Cannot init ECDSA"
@@ -1336,7 +1341,16 @@ public class P7Socket: NSObject {
         }
 
         // Step 5: derive base_hash
-        // If server provided a per-user stored_salt, the expected stored hash is SHA256(storedSalt || SHA256(plain)).
+        // Check whether the server flagged this as a legacy SHA1 account (migrated from Wired 2.5).
+        // If so, hash the password with SHA1; otherwise use SHA256.
+        let isLegacy = challengeMsg.bool(forField: "p7.encryption.legacy_password") ?? false
+        let hashedPassword: String = isLegacy
+            ? (rawPassword.isEmpty ? "".sha1() : rawPassword.sha1())
+            : (rawPassword.isEmpty ? "".sha256() : rawPassword.sha256())
+        let passwordData = hashedPassword.data(using: .utf8)!
+        if isLegacy { self.isLegacyAuth = true }
+
+        // If server provided a per-user stored_salt, derive: SHA256(storedSalt || hashedPassword.utf8).
         // We replicate that derivation so both sides produce the same proof value.
         let baseHashData: Data
         if let encryptedStoredSalt = challengeMsg.data(forField: "p7.encryption.stored_salt"),
@@ -1536,7 +1550,10 @@ public class P7Socket: NSObject {
         // Per-user stored salt for base_hash derivation (nil = not yet assigned)
         let storedSalt = self.passwordProvider?.passwordSaltForUsername(username: self.username)
 
-        // Step 3: send server_challenge {encrypted stored_salt}
+        // Detect legacy SHA1 accounts migrated from Wired 2.5 via the dedicated DB flag.
+        let isLegacyUser = self.passwordProvider?.isLegacyUser(username: self.username) ?? false
+
+        // Step 3: send server_challenge {encrypted stored_salt [, legacy_password flag]}
         let storedSaltBytes: Data = storedSalt.flatMap { $0.isEmpty ? nil : $0.data(using: .utf8) } ?? Data()
         guard let encryptedStoredSalt = try? self.sslCipher.encrypt(data: storedSaltBytes) else {
             let message = "Cannot encrypt stored_salt for server_challenge"
@@ -1545,6 +1562,9 @@ public class P7Socket: NSObject {
         }
         let challengeMsg = P7Message(withName: "p7.encryption.server_challenge", spec: self.spec)
         challengeMsg.addParameter(field: "p7.encryption.stored_salt", value: encryptedStoredSalt)
+        if isLegacyUser {
+            challengeMsg.addParameter(field: "p7.encryption.legacy_password", value: true)
+        }
         if !self.write(challengeMsg) {
             let message = "Failed to send server_challenge"
             Logger.error(message)
@@ -1604,6 +1624,10 @@ public class P7Socket: NSObject {
             Logger.error(message)
             throw P7SocketError.keyExchangeFailed(message)
         }
+
+        // Record whether this session used legacy SHA1 auth so the application layer can
+        // skip the redundant wired.send_login password check and prompt for a password upgrade.
+        if isLegacyUser { self.isLegacyAuth = true }
 
         // Step 7: send acknowledge {server ECDSA signature}
         guard let ecdsa2 = ECDSA(privateKey: derivedKey) else {

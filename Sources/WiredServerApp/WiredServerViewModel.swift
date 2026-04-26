@@ -86,6 +86,11 @@ final class WiredServerViewModel: ObservableObject {
     @Published var showInitialPasswordAlert: Bool = false
     @Published var initialAdminPassword: String = ""
 
+    @Published var migrationSourcePath: String = ""
+    @Published var isMigrating: Bool = false
+    @Published var migrationOutput: String = ""
+    @Published var migrationOverwrite: Bool = false
+
     private let fileManager = FileManager.default
     private var pollTimer: Timer?
     private var process: Process?
@@ -259,6 +264,111 @@ final class WiredServerViewModel: ObservableObject {
             filesDirectory = selected
             saveFilesSettings()
         }
+    }
+
+    func chooseMigrationSource() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = L("common.choose")
+        panel.title = L("database.migration.source")
+        if panel.runModal() == .OK, let selected = panel.url?.path {
+            migrationSourcePath = selected
+            migrationOutput = ""
+        }
+    }
+
+    func runMigration() async {
+        guard !isMigrating else { return }
+        guard !migrationSourcePath.isEmpty else {
+            publishError(L("error.migration_no_source"))
+            return
+        }
+        guard !isRunning else {
+            publishError(L("error.migration_server_running"))
+            return
+        }
+
+        let executable = fileManager.isExecutableFile(atPath: installedBinaryPath) ? installedBinaryPath : binaryPath
+        guard fileManager.isExecutableFile(atPath: executable) else {
+            publishError(L("error.wired3_binary_missing"))
+            return
+        }
+
+        isMigrating = true
+
+        var args: [String] = [
+            "--working-directory", workingDirectory,
+            "--db", databasePath,
+            "--migrate-from", migrationSourcePath
+        ]
+        if migrationOverwrite {
+            args.append("--overwrite")
+        }
+
+        migrationOutput = ""
+
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: executable)
+        task.currentDirectoryURL = URL(fileURLWithPath: workingDirectory, isDirectory: true)
+        task.arguments = args
+
+        // Write subprocess output to a temp file to avoid pipe-buffering race conditions.
+        let tmpURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("wired3-migration-\(Int(Date().timeIntervalSince1970)).log")
+        FileManager.default.createFile(atPath: tmpURL.path, contents: nil)
+        guard let writeHandle = FileHandle(forWritingAtPath: tmpURL.path) else {
+            isMigrating = false
+            publishError(L("error.migration_failed"))
+            return
+        }
+        task.standardOutput = writeHandle
+        task.standardError = writeHandle
+
+        do {
+            try task.run()
+        } catch {
+            writeHandle.closeFile()
+            isMigrating = false
+            publishError("\(L("error.migration_failed")): \(error.localizedDescription)")
+            return
+        }
+
+        // Wait for the process using structured concurrency; cap at 5 minutes so
+        // isMigrating can never be stuck true forever if the subprocess hangs.
+        let didTimeout = await withTaskGroup(of: Bool.self) { group -> Bool in
+            group.addTask {
+                await withCheckedContinuation { cont in
+                    DispatchQueue.global(qos: .utility).async {
+                        task.waitUntilExit()
+                        cont.resume(returning: false)
+                    }
+                }
+            }
+            group.addTask {
+                do {
+                    try await Task.sleep(nanoseconds: 5 * 60 * 1_000_000_000)
+                    task.terminate()
+                    return true
+                } catch {
+                    return false
+                }
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+
+        writeHandle.closeFile()
+        let data = (try? Data(contentsOf: tmpURL)) ?? Data()
+        let output = String(data: data, encoding: .utf8) ?? "(no output)"
+        try? FileManager.default.removeItem(at: tmpURL)
+
+        migrationOutput = didTimeout
+            ? (output.isEmpty ? "" : output + "\n") + L("error.migration_timed_out")
+            : output
+        isMigrating = false
     }
 
     func chooseBinaryPath() {
