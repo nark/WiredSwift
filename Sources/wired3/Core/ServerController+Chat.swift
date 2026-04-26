@@ -165,6 +165,30 @@ extension ServerController {
 
         let senderLogin = senderUser.username ?? ""
         let isEncrypted = message.bool(forField: "wired.message.offline.encrypted") ?? false
+
+        // Offline messages are always stored encrypted. The recipient must have registered
+        // a public key (so the sender can encrypt), and the client must set is_encrypted=true.
+        // Plaintext storage is never acceptable — it would let server admins read private messages.
+        let recipientPublicKey: Data? = (try? App.databaseController.dbQueue.read { db in
+            let row = try Row.fetchOne(db,
+                sql: "SELECT offline_public_key FROM users WHERE username = ?",
+                arguments: [recipientLogin])
+            let keyData = row?["offline_public_key"] as? Data
+            return (keyData != nil && !keyData!.isEmpty) ? keyData : nil
+        }) ?? nil
+
+        guard let _ = recipientPublicKey else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            Logger.warning("Rejected offline message for '\(recipientLogin)' — no public key registered (encryption required)")
+            return
+        }
+
+        guard isEncrypted else {
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
+            Logger.warning("Rejected unencrypted offline message for '\(recipientLogin)' — is_encrypted must be true")
+            return
+        }
+
         var offlineMessage = OfflineMessage(
             senderLogin: senderLogin,
             recipientLogin: recipientLogin,
