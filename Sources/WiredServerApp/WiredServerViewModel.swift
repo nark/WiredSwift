@@ -754,38 +754,59 @@ final class WiredServerViewModel: ObservableObject {
 
     // MARK: - Privileged execution
 
-    private func runPrivileged(_ shellScript: String, error fallbackError: WiredServerError) throws {
-        // 1. Try Touch ID — if available and a credential is stored
+    // Session cache: password stays valid for 30 s (like sudo timeout)
+    private var sessionPassword: String?
+    private var sessionPasswordExpiry: Date = .distantPast
+
+    private func resolveAdminCredential() -> String? {
+        // 1. In-memory session cache (avoids repeated Touch ID for multi-step operations)
+        if let cached = sessionPassword, Date() < sessionPasswordExpiry {
+            return cached
+        }
+        sessionPassword = nil
+
+        // 2. Keychain via Touch ID
         if BiometricCredentialStore.isAvailable && BiometricCredentialStore.hasStoredCredential {
             if let pw = BiometricCredentialStore.load(reason: L("touchid.reason")) {
-                let succeeded = executePrivileged(shellScript: shellScript, password: pw)
-                if succeeded {
-                    return
-                }
-                // Wrong stored password — clear it and fall through to manual dialog
-                BiometricCredentialStore.delete()
-                hasTouchIDCredential = false
+                cacheSessionPassword(pw)
+                return pw
             }
-            // User cancelled Touch ID — fall through to manual dialog
         }
 
-        // 2. Custom password dialog (so we capture the password for optional Touch ID save)
-        guard let pw = promptAdminPassword() else {
+        // 3. Custom password dialog
+        guard let pw = promptAdminPassword() else { return nil }
+        cacheSessionPassword(pw)
+        return pw
+    }
+
+    private func cacheSessionPassword(_ password: String) {
+        sessionPassword = password
+        sessionPasswordExpiry = Date().addingTimeInterval(30)
+    }
+
+    private func runPrivileged(_ shellScript: String, error fallbackError: WiredServerError) throws {
+        guard let pw = resolveAdminCredential() else {
             throw fallbackError
         }
 
         let succeeded = executePrivileged(shellScript: shellScript, password: pw)
-        guard succeeded else {
+        if !succeeded {
+            // Wrong password — clear cache and Keychain entry if it was from Touch ID
+            sessionPassword = nil
+            if BiometricCredentialStore.hasStoredCredential {
+                BiometricCredentialStore.delete()
+                hasTouchIDCredential = false
+            }
             let msg = L("touchid.wrong_password")
             switch fallbackError {
-            case .launchDaemonInstallFailed: throw WiredServerError.launchDaemonInstallFailed(msg)
-            case .launchDaemonRemoveFailed:  throw WiredServerError.launchDaemonRemoveFailed(msg)
+            case .launchDaemonInstallFailed:     throw WiredServerError.launchDaemonInstallFailed(msg)
+            case .launchDaemonRemoveFailed:      throw WiredServerError.launchDaemonRemoveFailed(msg)
             case .systemDirectoryCreationFailed: throw WiredServerError.systemDirectoryCreationFailed(msg)
-            default:                         throw fallbackError
+            default:                             throw fallbackError
             }
         }
 
-        // 3. Offer to save for Touch ID (only if available and not already stored)
+        // Offer to save for Touch ID after first successful manual entry
         if BiometricCredentialStore.isAvailable && !BiometricCredentialStore.hasStoredCredential {
             offerTouchIDSave(password: pw)
         }
