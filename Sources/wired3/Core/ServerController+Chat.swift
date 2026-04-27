@@ -321,7 +321,7 @@ extension ServerController {
 
         for entry in entries where !onlineLogins.contains(entry.login) {
             let msg = P7Message(withName: "wired.user.offline_list", spec: self.spec)
-            msg.addParameter(field: "wired.user.login", value: entry.login)
+            msg.addParameter(field: "wired.message.offline.recipient_login", value: entry.login)
             msg.addParameter(field: "wired.user.nick", value: entry.nick)
             _ = self.send(message: msg, client: client)
         }

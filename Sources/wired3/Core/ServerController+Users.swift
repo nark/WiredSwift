@@ -95,7 +95,7 @@ extension ServerController {
             replyError(client: client, error: "wired.error.message_out_of_sequence", message: message)
             return
         }
-        guard let login = message.string(forField: "wired.user.login"), !login.isEmpty else {
+        guard let login = message.string(forField: "wired.message.offline.recipient_login"), !login.isEmpty else {
             replyError(client: client, error: "wired.error.invalid_message", message: message)
             return
         }
@@ -106,7 +106,7 @@ extension ServerController {
             return row["offline_public_key"] as? Data
         }
         let reply = P7Message(withName: "wired.user.public_key", spec: self.spec)
-        reply.addParameter(field: "wired.user.login", value: login)
+        reply.addParameter(field: "wired.message.offline.recipient_login", value: login)
         if let data = keyData, !data.isEmpty {
             reply.addParameter(field: "wired.user.public_key", value: data)
         }
