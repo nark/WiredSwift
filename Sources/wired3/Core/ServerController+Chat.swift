@@ -301,8 +301,8 @@ extension ServerController {
         do {
             entries = try App.databaseController.dbQueue.read { db in
                 // Returns login + last_nick for users active within the last 30 days.
-                // wired.user.login IS sent to the requester so the client can address
-                // the offline message. Only users who have a last_nick set are included
+                // wired.message.offline.recipient_login is used (not wired.user.login) to avoid
+                // exposing the auth credential field to non-admin clients. Only users who have a last_nick set are included
                 // (connected at least once since v15); account full_name is never sent.
                 let rows = try Row.fetchAll(db, sql: """
                     SELECT username, last_nick FROM users
@@ -323,7 +323,7 @@ extension ServerController {
 
         for entry in entries where !onlineLogins.contains(entry.login) {
             let msg = P7Message(withName: "wired.user.offline_list", spec: self.spec)
-            msg.addParameter(field: "wired.user.login", value: entry.login)
+            msg.addParameter(field: "wired.message.offline.recipient_login", value: entry.login)
             msg.addParameter(field: "wired.user.nick", value: entry.nick)
             _ = self.send(message: msg, client: client)
         }
