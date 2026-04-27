@@ -133,6 +133,10 @@ public class P7Spec: NSObject, XMLParserDelegate {
     <p7:field name="p7.encryption.server_identity_sig" id="20" type="data" />
     <!-- New in P7 v1.3: if true, clients MUST reject connections when the server identity key changes -->
     <p7:field name="p7.encryption.strict_identity" id="21" type="bool" />
+    <!-- New in P7 v1.4: if true, the account was migrated from Wired 2.5 and uses a SHA1 password hash.
+         The client must hash its password with SHA1 instead of SHA256 for this session, and
+         will be required to set a new password immediately after login. -->
+    <p7:field name="p7.encryption.legacy_password" id="22" type="bool" />
 
     <p7:field name="p7.compatibility_check.specification" id="15" type="string" />
     <p7:field name="p7.compatibility_check.status" id="16" type="bool" />
@@ -188,9 +192,11 @@ public class P7Spec: NSObject, XMLParserDelegate {
       <p7:parameter field="p7.encryption.username"   use="required" />
     </p7:message>
 
-    <!-- New in P7 v1.2: server sends per-user stored salt (encrypted) before client proves password -->
+    <!-- New in P7 v1.2: server sends per-user stored salt (encrypted) before client proves password.
+         In P7 v1.4 the optional legacy_password flag indicates the account uses a SHA1 hash. -->
     <p7:message name="p7.encryption.server_challenge" id="11">
       <p7:parameter field="p7.encryption.stored_salt" use="required" />
+      <p7:parameter field="p7.encryption.legacy_password" />
     </p7:message>
 
     <p7:message name="p7.compatibility_check.specification" id="8">

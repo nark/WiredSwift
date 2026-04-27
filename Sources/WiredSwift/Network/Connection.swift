@@ -31,6 +31,10 @@ public protocol ConnectionDelegate: class {
 
     func connectionDidLogin(connection: Connection, message: P7Message)
     func connectionDidReceivePriviledges(connection: Connection, message: P7Message)
+    /// Called when the server signals that the account was migrated from Wired 2.5 and the
+    /// user must set a new password before continuing.  The client should present a password-
+    /// change dialog and send `wired.account.change_password` before doing anything else.
+    func connectionRequiresPasswordChange(connection: Connection)
 }
 
 public protocol ClientInfoDelegate: class {
@@ -51,6 +55,7 @@ public extension ConnectionDelegate {
     func connectionDidSendMessage(connection: Connection, message: P7Message) { }
     func connectionDidLogin(connection: Connection, message: P7Message) { }
     func connectionDidReceivePriviledges(connection: Connection, message: P7Message) { }
+    func connectionRequiresPasswordChange(connection: Connection) { }
 }
 
 public extension ClientInfoDelegate {
@@ -552,9 +557,14 @@ open class Connection: NSObject {
             self.userID = uid
         }
 
+        let needsPasswordChange = response.bool(forField: "wired.user.password_must_change") ?? false
+
         DispatchQueue.main.async {
             for d in self.delegates {
                 d.connectionDidLogin(connection: self, message: response)
+                if needsPasswordChange {
+                    d.connectionRequiresPasswordChange(connection: self)
+                }
             }
         }
 

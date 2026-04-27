@@ -40,6 +40,9 @@ public class User: Codable, FetchableRecord, PersistableRecord {
     public var username: String?
     public var password: String?
     public var passwordSalt: String?
+    /// `true` when the account was migrated from Wired 2.5 and still holds a raw SHA1 hash.
+    /// Cleared to `false` once the user completes a password-change flow.
+    public var isLegacy: Bool
     public var fullName: String?
     public var identity: String?
     public var comment: String?
@@ -64,6 +67,7 @@ public class User: Codable, FetchableRecord, PersistableRecord {
         case username
         case password
         case passwordSalt = "password_salt"
+        case isLegacy = "is_legacy"
         case fullName = "full_name"
         case identity
         case comment
@@ -92,6 +96,7 @@ public class User: Codable, FetchableRecord, PersistableRecord {
         username            = try c.decodeIfPresent(String.self, forKey: .username)
         password            = try c.decodeIfPresent(String.self, forKey: .password)
         passwordSalt        = try c.decodeIfPresent(String.self, forKey: .passwordSalt)
+        isLegacy            = (try? c.decode(Bool.self, forKey: .isLegacy)) ?? false
         fullName            = try c.decodeIfPresent(String.self, forKey: .fullName)
         identity            = try c.decodeIfPresent(String.self, forKey: .identity)
         comment             = try c.decodeIfPresent(String.self, forKey: .comment)
@@ -121,9 +126,10 @@ public class User: Codable, FetchableRecord, PersistableRecord {
     /// - Parameters:
     ///   - username: The account login name.
     ///   - password: The hashed password string.
-    public init(username: String, password: String) {
+    public init(username: String, password: String, isLegacy: Bool = false) {
         self.username = username
         self.password = password
+        self.isLegacy = isLegacy
     }
 
     /// Returns whether this user belongs to the named group.

@@ -627,6 +627,7 @@ extension ServerController {
 
         App.serverController.replyOK(client: client, message: message)
         self.broadcastAccountsChangedToSubscribers()
+        self.broadcastNewOfflineUser(username: name)
         self.recordEvent(.accountCreatedUser, client: client, parameters: [name])
     }
 
@@ -711,6 +712,7 @@ extension ServerController {
         let result = normalizedPasswordForStorage(password)
         account.password = result.hash
         account.passwordSalt = result.salt
+        account.isLegacy = false
 
         guard App.usersController.save(user: account) else {
             App.serverController.replyError(client: client, error: "wired.error.internal_error", message: message)
@@ -1226,6 +1228,11 @@ extension ServerController {
         let hash = isHexSHA256 ? password.lowercased() : password.sha256()
         let salt = UUID().uuidString.replacingOccurrences(of: "-", with: "")
         return (hash: hash, salt: salt)
+    }
+
+    private func broadcastNewOfflineUser(username: String) {
+        // New accounts have no last_nick yet — don't expose login or full_name.
+        // The account will appear automatically after their first login.
     }
 
     private func broadcastAccountsChangedToSubscribers() {

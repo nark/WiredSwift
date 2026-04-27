@@ -264,6 +264,21 @@
             <p7:enum name="wired.user.state.disconnecting" value="4" version="2.0" />
         </p7:field>
 
+        <p7:field name="wired.user.password_must_change" type="bool" id="3016" version="3.2">
+            <p7:documentation>
+                If true, the account was migrated from Wired 2.5 and only a legacy SHA1 password
+                hash is stored. The client must prompt the user to set a new password immediately
+                after login so that the account is upgraded to a proper SHA256+salt credential.
+            </p7:documentation>
+        </p7:field>
+
+        <p7:field name="wired.user.is_offline" type="bool" id="3017" version="3.0">
+            <p7:documentation>
+                If true, this user entry represents a registered but currently disconnected account,
+                sent as part of the offline user list after login.
+            </p7:documentation>
+        </p7:field>
+
         <p7:field name="wired.chat.id" type="uint32" id="4000" version="2.0">
             <p7:documentation>
                 Identification number of a chat. This number should be created when each chat is
@@ -310,6 +325,38 @@
         <p7:field name="wired.message.broadcast" type="string" id="5001" version="2.0">
             <p7:documentation>
                 A public broadcast message.
+            </p7:documentation>
+        </p7:field>
+
+        <p7:field name="wired.message.offline.sender_login" type="string" id="5010" version="3.0">
+            <p7:documentation>
+                Login name of the sender of an offline message, included when the server delivers
+                a stored offline message to the recipient upon login.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.message.offline.recipient_login" type="string" id="5011" version="3.0">
+            <p7:documentation>
+                Login name of the intended recipient when sending an offline message.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.message.offline.date" type="date" id="5012" version="3.0">
+            <p7:documentation>
+                Original timestamp when the offline message was sent.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.message.offline.sender_nick" type="string" id="5013" version="3.0">
+            <p7:documentation>
+                Display nick of the sender at delivery time, derived from last_nick in the server database.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.user.public_key" type="data" id="5014" version="3.0">
+            <p7:documentation>
+                X25519 public key for end-to-end encrypted offline messages (raw 32-byte representation).
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.message.offline.encrypted" type="bool" id="5015" version="3.0">
+            <p7:documentation>
+                If true, the message body is an ECIES-encrypted blob rather than plaintext.
             </p7:documentation>
         </p7:field>
 
@@ -1684,10 +1731,12 @@
 
         <p7:message name="wired.login" id="2005" version="2.0">
             <p7:documentation>
-                Login reply.
+                Login reply. If [field:wired.user.password_must_change] is true, the client must
+                immediately prompt the user to set a new password via [message:wired.account.change_password].
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
+            <p7:parameter field="wired.user.password_must_change" version="3.2" />
         </p7:message>
         
         <p7:message name="wired.banned" id="2006" version="2.0">
@@ -1815,6 +1864,49 @@
                 User list completion message.
             </p7:documentation>
             <p7:parameter field="wired.transaction" version="2.0" />
+        </p7:message>
+
+        <p7:message name="wired.user.offline_list" id="3011" version="3.0">
+            <p7:documentation>
+                One entry in the offline user list sent by the server after login.
+                Each message represents a registered account that is not currently connected.
+            </p7:documentation>
+            <p7:parameter field="wired.user.login" use="required" version="3.0" />
+            <p7:parameter field="wired.user.nick" version="3.0" />
+        </p7:message>
+
+        <p7:message name="wired.user.offline_list.done" id="3012" version="3.0">
+            <p7:documentation>
+                Marks the end of the offline user list.
+            </p7:documentation>
+        </p7:message>
+
+        <p7:message name="wired.user.set_public_key" id="3013" version="3.0">
+            <p7:documentation>
+                Upload the client's X25519 public key for end-to-end encrypted offline messaging.
+                The server stores the key associated with the authenticated user's account.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.0" />
+            <p7:parameter field="wired.user.public_key" use="required" version="3.0" />
+        </p7:message>
+
+        <p7:message name="wired.user.get_public_key" id="3014" version="3.0">
+            <p7:documentation>
+                Request the X25519 public key of another user by login name.
+                Required before sending an end-to-end encrypted offline message.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.0" />
+            <p7:parameter field="wired.user.login" use="required" version="3.0" />
+        </p7:message>
+
+        <p7:message name="wired.user.public_key" id="3015" version="3.0">
+            <p7:documentation>
+                Server response to wired.user.get_public_key.
+                If wired.user.public_key is absent, the user has not registered a key.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.0" />
+            <p7:parameter field="wired.user.login" use="required" version="3.0" />
+            <p7:parameter field="wired.user.public_key" version="3.0" />
         </p7:message>
 
         <p7:message name="wired.chat.join_chat" id="4000" version="2.0">
@@ -2166,6 +2258,30 @@
             </p7:documentation>
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
             <p7:parameter field="wired.message.broadcast" use="required" version="2.0" />
+        </p7:message>
+
+        <p7:message name="wired.message.send_offline_message" id="5010" version="3.0">
+            <p7:documentation>
+                Send a private message to a user who is currently offline, addressed by login name.
+                The server stores the message and delivers it when the recipient next logs in.
+                Requires [field:wired.account.message.send_offline_messages] privilege.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.0" />
+            <p7:parameter field="wired.message.offline.recipient_login" use="required" version="3.0" />
+            <p7:parameter field="wired.message.message" use="required" version="3.0" />
+            <p7:parameter field="wired.message.offline.encrypted" use="optional" version="3.0" />
+        </p7:message>
+
+        <p7:message name="wired.message.offline_message" id="5011" version="3.0">
+            <p7:documentation>
+                Delivery of a stored offline message to the recipient upon login.
+                The server sends one of these for each pending offline message.
+            </p7:documentation>
+            <p7:parameter field="wired.message.offline.sender_login" use="required" version="3.0" />
+            <p7:parameter field="wired.message.message" use="required" version="3.0" />
+            <p7:parameter field="wired.message.offline.date" use="required" version="3.0" />
+            <p7:parameter field="wired.message.offline.sender_nick" use="optional" version="3.0" />
+            <p7:parameter field="wired.message.offline.encrypted" use="optional" version="3.0" />
         </p7:message>
 
         <p7:message name="wired.board.get_boards" id="6000" version="2.0">

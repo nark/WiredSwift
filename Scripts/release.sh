@@ -19,7 +19,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_CONFIG="${1:-release}"
-DOWNLOADS_DIR="${HOME}/Downloads"
+DOWNLOADS_DIR="/Users/admin/Desktop/VirtualBuddyShared/maertin/Downloads"
 
 # ── Version: auto-detect from last git tag (e.g. v3.0-beta.21+38) ────────────
 

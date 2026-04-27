@@ -95,3 +95,16 @@
 "error.database_not_initialized" = "Datenbank nicht initialisiert: Server zunächst einmal starten";
 "error.sql_prepare_failed" = "SQL-Vorbereitung fehlgeschlagen";
 "error.sql_execution_failed" = "SQL-Ausführung fehlgeschlagen";
+
+"database.migration.section" = "Migration von Wired 2.5";
+"database.migration.source" = "Wired 2.5-Datenbank";
+"database.migration.source.none" = "Keine Datei ausgewählt";
+"database.migration.overwrite" = "Vorhandene Einträge überschreiben";
+"database.migration.run" = "Migration starten";
+"database.migration.running" = "Migration läuft…";
+"database.migration.server_warning" = "Der Server muss gestoppt sein, bevor die Migration gestartet wird.";
+"database.migration.help" = "Migriert Benutzer, Gruppen und Sperren aus einer Wired 2.5-SQLite-Datenbank. Passwörter werden unverändert übernommen (SHA1) – Benutzer müssen beim ersten Login ein neues Passwort setzen.";
+"error.migration_no_source" = "Keine Quelldatenbank ausgewählt.";
+"error.migration_server_running" = "Stoppen Sie den Server, bevor Sie die Migration starten.";
+"error.migration_failed" = "Migration fehlgeschlagen";
+"error.migration_timed_out" = "Die Migration wurde nach 5 Minuten abgebrochen.";

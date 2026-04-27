@@ -22,7 +22,7 @@ private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.sel
 /// shared `DatabaseController` instance that `AppController` creates at startup.
 public class DatabaseController {
     let baseURL: URL
-    private(set) var dbQueue: DatabaseQueue!
+    public private(set) var dbQueue: DatabaseQueue!
 
     /// Creates a new `DatabaseController` for the database at `baseURL`.
     ///
@@ -55,6 +55,14 @@ public class DatabaseController {
             var migrator = DatabaseMigrator()
             WiredMigrations.register(into: &migrator)
             try migrator.migrate(dbQueue)
+
+            // Checkpoint and truncate the WAL from any previous run before we start.
+            // On a fresh server start there are no active readers, so TRUNCATE is safe.
+            // This prevents accumulated stale FTS5 shadow-table writes in the WAL from
+            // causing SQLITE_IOERR on the first write transaction after a crash.
+            try dbQueue.write { db in
+                try db.execute(sql: "PRAGMA wal_checkpoint(TRUNCATE)")
+            }
 
             Logger.info("Database opened at \(baseURL.path)")
             return true
