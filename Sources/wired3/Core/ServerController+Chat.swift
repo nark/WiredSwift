@@ -290,6 +290,11 @@ extension ServerController {
     }
 
     func sendOfflineUserList(to client: Client) {
+        guard let user = client.user,
+              user.hasPrivilege(name: "wired.account.user.list_offline_users") else {
+            return
+        }
+
         let onlineLogins = Set(App.clientsController.allConnectedLogins())
 
         let entries: [(login: String, nick: String)]
