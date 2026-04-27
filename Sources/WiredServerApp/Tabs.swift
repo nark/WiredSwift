@@ -644,6 +644,27 @@ struct SecurityTabView: View {
     var body: some View {
         SettingsScrollPane {
             Form {
+                if BiometricCredentialStore.isAvailable {
+                    Section(L("touchid.section")) {
+                        HStack {
+                            StatusDot(color: model.hasTouchIDCredential ? .green : .gray)
+                            Text(model.hasTouchIDCredential
+                                 ? L("touchid.status.enabled")
+                                 : L("touchid.status.disabled"))
+                            Spacer()
+                            if model.hasTouchIDCredential {
+                                Button(L("touchid.forget")) {
+                                    model.forgetTouchIDCredential()
+                                }
+                                .foregroundStyle(.red)
+                            }
+                        }
+                        Text(L("touchid.description"))
+                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+                    }
+                }
+
                 Section(L("advanced.admin.section")) {
                     HStack {
                         StatusDot(color: model.hasAdminPassword ? .green : .red)

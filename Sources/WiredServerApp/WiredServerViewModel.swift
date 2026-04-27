@@ -2,6 +2,7 @@
 // TODO: Split WiredServerViewModel into focused sub-view-models
 import AppKit
 import Foundation
+import LocalAuthentication
 import Network
 import ServiceManagement
 #if os(Linux)
@@ -78,6 +79,8 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var isBusy: Bool = false
     @Published var statusMessage: String = ""
+
+    @Published var hasTouchIDCredential: Bool = BiometricCredentialStore.hasStoredCredential
 
     @Published var showErrorAlert: Bool = false
     @Published var lastErrorMessage: String = ""
@@ -381,15 +384,10 @@ final class WiredServerViewModel: ObservableObject {
 
     private func createSystemDataDirectory() throws {
         let username = NSUserName()
-        let script = """
-        do shell script "mkdir -p /Library/Wired3 && chown \(username):staff /Library/Wired3 && chmod 755 /Library/Wired3" with administrator privileges
-        """
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: script)?.executeAndReturnError(&errorInfo)
-        if let err = errorInfo {
-            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
-            throw WiredServerError.systemDirectoryCreationFailed(msg)
-        }
+        try runPrivileged(
+            "mkdir -p /Library/Wired3 && chown \(username):staff /Library/Wired3 && chmod 755 /Library/Wired3",
+            error: .systemDirectoryCreationFailed("")
+        )
         guard fileManager.fileExists(atPath: Self.systemDataDirectory) else {
             throw WiredServerError.systemDirectoryCreationFailed("Directory missing after creation")
         }
@@ -754,19 +752,92 @@ final class WiredServerViewModel: ObservableObject {
         return tempURL
     }
 
+    // MARK: - Privileged execution
+
     private func runPrivileged(_ shellScript: String, error fallbackError: WiredServerError) throws {
-        let appleScript = "do shell script \"\(shellScript)\" with administrator privileges"
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: appleScript)?.executeAndReturnError(&errorInfo)
-        if let err = errorInfo {
-            let msg = (err[NSAppleScript.errorMessage] as? String) ?? "Unknown error"
-            // Re-throw with the actual message by matching the error type
+        // 1. Try Touch ID — if available and a credential is stored
+        if BiometricCredentialStore.isAvailable && BiometricCredentialStore.hasStoredCredential {
+            if let pw = BiometricCredentialStore.load(reason: L("touchid.reason")) {
+                let succeeded = executePrivileged(shellScript: shellScript, password: pw)
+                if succeeded {
+                    return
+                }
+                // Wrong stored password — clear it and fall through to manual dialog
+                BiometricCredentialStore.delete()
+                hasTouchIDCredential = false
+            }
+            // User cancelled Touch ID — fall through to manual dialog
+        }
+
+        // 2. Custom password dialog (so we capture the password for optional Touch ID save)
+        guard let pw = promptAdminPassword() else {
+            throw fallbackError
+        }
+
+        let succeeded = executePrivileged(shellScript: shellScript, password: pw)
+        guard succeeded else {
+            let msg = L("touchid.wrong_password")
             switch fallbackError {
             case .launchDaemonInstallFailed: throw WiredServerError.launchDaemonInstallFailed(msg)
             case .launchDaemonRemoveFailed:  throw WiredServerError.launchDaemonRemoveFailed(msg)
+            case .systemDirectoryCreationFailed: throw WiredServerError.systemDirectoryCreationFailed(msg)
             default:                         throw fallbackError
             }
         }
+
+        // 3. Offer to save for Touch ID (only if available and not already stored)
+        if BiometricCredentialStore.isAvailable && !BiometricCredentialStore.hasStoredCredential {
+            offerTouchIDSave(password: pw)
+        }
+    }
+
+    /// Execute a shell command with an explicit admin password via AppleScript.
+    /// Returns true on success, false on auth failure or error.
+    @discardableResult
+    private func executePrivileged(shellScript: String, password: String) -> Bool {
+        let escapedPw = password
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        let appleScript = "do shell script \"\(shellScript)\" with administrator privileges password \"\(escapedPw)\""
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: appleScript)?.executeAndReturnError(&errorInfo)
+        return errorInfo == nil
+    }
+
+    /// Show a custom password dialog. Returns the entered password, or nil if cancelled.
+    private func promptAdminPassword() -> String? {
+        let alert = NSAlert()
+        alert.messageText = L("touchid.dialog.title")
+        alert.informativeText = L("touchid.dialog.message")
+        alert.addButton(withTitle: L("common.ok"))
+        alert.addButton(withTitle: L("common.cancel"))
+
+        let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
+        field.placeholderString = L("touchid.dialog.placeholder")
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+        let pw = field.stringValue
+        return pw.isEmpty ? nil : pw
+    }
+
+    /// Ask the user once whether to save the password for Touch ID.
+    private func offerTouchIDSave(password: String) {
+        let alert = NSAlert()
+        alert.messageText = L("touchid.save.title")
+        alert.informativeText = L("touchid.save.message")
+        alert.addButton(withTitle: L("touchid.save.enable"))
+        alert.addButton(withTitle: L("common.cancel"))
+        if alert.runModal() == .alertFirstButtonReturn {
+            BiometricCredentialStore.save(password: password)
+            hasTouchIDCredential = true
+        }
+    }
+
+    func forgetTouchIDCredential() {
+        BiometricCredentialStore.delete()
+        hasTouchIDCredential = false
     }
 
     private func findFreeSystemUID() throws -> Int {

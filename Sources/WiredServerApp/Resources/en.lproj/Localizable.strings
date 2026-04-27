@@ -128,6 +128,20 @@
 "database.migration.server_warning" = "The server must be stopped before running the migration.";
 "database.migration.help" = "Migrates users, groups and bans from a Wired 2.5 SQLite database. Passwords are copied as-is (SHA1) — users must set a new password on first login.";
 
+"touchid.section" = "Touch ID / Apple Watch";
+"touchid.status.enabled" = "Touch ID is enabled for admin operations";
+"touchid.status.disabled" = "Touch ID is not enabled";
+"touchid.description" = "When enabled, admin operations (start/stop daemon, install) use Touch ID instead of a password prompt.";
+"touchid.forget" = "Forget Password";
+"touchid.reason" = "Authenticate to control Wired Server";
+"touchid.dialog.title" = "Administrator Password Required";
+"touchid.dialog.message" = "Enter your macOS administrator password to continue.";
+"touchid.dialog.placeholder" = "Password";
+"touchid.save.title" = "Enable Touch ID?";
+"touchid.save.message" = "Save your administrator password with Touch ID so future operations don't require a password prompt.";
+"touchid.save.enable" = "Enable Touch ID";
+"touchid.wrong_password" = "Authentication failed — wrong password.";
+
 "advanced.admin.section" = "Admin account";
 "advanced.admin.password.placeholder" = "Admin password";
 "advanced.admin.set_password" = "Set Password";
