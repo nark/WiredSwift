@@ -1,5 +1,9 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Fehler";
+"alert.privileged_update.title" = "Server-Update verfügbar";
+"alert.privileged_update.message" = "Eine neue Version der Server-Binary ist in dieser App enthalten. Jetzt installieren? Ihr Administrator-Passwort wird benötigt.";
+"alert.privileged_update.install" = "Jetzt installieren";
+"alert.privileged_update.later" = "Später";
 "common.ok" = "OK";
 "common.choose" = "Auswählen";
 "common.select" = "Auswählen";

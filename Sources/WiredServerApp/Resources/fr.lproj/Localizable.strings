@@ -1,6 +1,10 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Erreur";
 "alert.binary_updated.title" = "Serveur mis à jour";
+"alert.privileged_update.title" = "Mise à jour disponible";
+"alert.privileged_update.message" = "Une nouvelle version du binaire serveur est incluse dans cette application. L'installer maintenant ? Votre mot de passe administrateur sera requis.";
+"alert.privileged_update.install" = "Installer maintenant";
+"alert.privileged_update.later" = "Plus tard";
 "alert.binary_updated.message" = "Une nouvelle version du binaire serveur a été installée. Le serveur en cours d'exécution utilise encore l'ancienne version. Voulez-vous le redémarrer maintenant ?";
 "alert.binary_updated.restart" = "Redémarrer maintenant";
 "alert.binary_updated.later" = "Plus tard";

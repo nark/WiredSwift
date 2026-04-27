@@ -2,8 +2,8 @@ import Foundation
 import LocalAuthentication
 import Security
 
-/// Stores the macOS admin password in the Keychain protected by biometric authentication.
-/// Reading the item triggers a Touch ID / Apple Watch sheet automatically.
+/// Stores the macOS admin password in the Keychain, protected by explicit Touch ID / Apple Watch
+/// authentication at read time. Saving does not require biometric — authentication happens in load().
 struct BiometricCredentialStore {
     private static let service = "fr.read-write.WiredServer3"
     private static let account = "admin-privilege-password"
@@ -13,62 +13,65 @@ struct BiometricCredentialStore {
         LAContext().canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
     }
 
-    /// True if a credential has been saved, without triggering any authentication UI.
+    /// True if a credential has been saved. Does not trigger any authentication UI.
     static var hasStoredCredential: Bool {
-        let context = LAContext()
-        context.interactionNotAllowed = true
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecUseAuthenticationContext as String: context
+            kSecAttrAccount as String: account
         ]
-        let status = SecItemCopyMatching(query as CFDictionary, nil)
-        // errSecInteractionNotAllowed → item exists but needs biometric; errSecSuccess → readable without
-        return status == errSecSuccess || status == errSecInteractionNotAllowed
+        return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
     }
 
-    /// Save password. Access to the stored item requires biometric auth.
-    /// Invalidated automatically when enrolled fingerprints change (.biometryCurrentSet).
+    /// Save password to keychain. No biometric ACL on the item — Touch ID is enforced at load time
+    /// via LAContext.evaluatePolicy, which works reliably regardless of app signing.
     static func save(password: String) {
         guard let data = password.data(using: .utf8) else { return }
-        var cfError: Unmanaged<CFError>?
-        guard let access = SecAccessControlCreateWithFlags(
-            nil,
-            kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-            .biometryCurrentSet,
-            &cfError
-        ) else { return }
+
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
 
         let attrs: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecValueData as String: data,
-            kSecAttrAccessControl as String: access
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
-        SecItemDelete(attrs as CFDictionary)
         SecItemAdd(attrs as CFDictionary, nil)
     }
 
-    /// Retrieve the stored password. Triggers the Touch ID / Apple Watch UI.
-    /// Returns nil if the user cancels or no credential is stored.
+    /// Retrieve the stored password. Shows the Touch ID / Apple Watch sheet first.
+    /// Blocks the calling thread until authentication completes.
+    /// Returns nil if the user cancels, authentication fails, or no credential is stored.
     static func load(reason: String) -> String? {
         let context = LAContext()
-        context.localizedReason = reason
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecUseAuthenticationContext as String: context
-        ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess,
-              let data = result as? Data,
-              let password = String(data: data, encoding: .utf8) else { return nil }
-        return password
+        var laError: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &laError) else { return nil }
+
+        var result: String?
+        let semaphore = DispatchSemaphore(value: 0)
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, _ in
+            defer { semaphore.signal() }
+            guard success else { return }
+            let query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: service,
+                kSecAttrAccount as String: account,
+                kSecReturnData as String: true
+            ]
+            var item: AnyObject?
+            guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+                  let data = item as? Data,
+                  let password = String(data: data, encoding: .utf8) else { return }
+            result = password
+        }
+        semaphore.wait()
+        return result
     }
 
     /// Remove any stored credential.

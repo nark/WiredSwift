@@ -86,6 +86,7 @@ final class WiredServerViewModel: ObservableObject {
     @Published var lastErrorMessage: String = ""
 
     @Published var showRestartAfterUpdateAlert: Bool = false
+    @Published var showPrivilegedUpdateAlert: Bool = false
     @Published var showInitialPasswordAlert: Bool = false
     @Published var initialAdminPassword: String = ""
 
@@ -267,17 +268,20 @@ final class WiredServerViewModel: ObservableObject {
             isDaemonRunning = runProcess("/usr/bin/pgrep", ["-f", "/Library/Wired3/bin/wired3"]).status == 0
         }
         var binaryWasUpdated = false
-        // In LaunchDaemon mode: skip auto-update when daemon is running (launchd
-        // kills the process on binary replacement) and only attempt when we have
-        // write access to the bin directory.
         let binDir = URL(fileURLWithPath: installedBinaryPath).deletingLastPathComponent().path
         let canWrite = fileManager.isWritableFile(atPath: binDir)
-        let canAutoUpdate = (installMode == .launchAgent || !isDaemonRunning) && canWrite
-        if canAutoUpdate {
+        if installMode == .launchAgent && canWrite {
+            // LaunchAgent mode: update binary in-place (user owns the bin dir).
             do {
                 binaryWasUpdated = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
             } catch {
                 publishError("\(L("error.install_failed")): \(error.localizedDescription)")
+            }
+        } else if installMode == .launchDaemon && !isDaemonRunning && !canWrite {
+            // LaunchDaemon mode: bin dir is root-owned. When the daemon is stopped,
+            // detect if an update is available and offer a privileged install via alert.
+            if !showPrivilegedUpdateAlert, isBinaryUpdateAvailable() {
+                showPrivilegedUpdateAlert = true
             }
         }
         refreshInstallStatus()
@@ -632,6 +636,11 @@ final class WiredServerViewModel: ObservableObject {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.refreshDaemonStatus()
+            // After daemon stops, check if a privileged binary update is available
+            if let self, self.installMode == .launchDaemon, !self.isDaemonRunning,
+               !self.showPrivilegedUpdateAlert, self.isBinaryUpdateAvailable() {
+                self.showPrivilegedUpdateAlert = true
+            }
         }
     }
 
@@ -788,13 +797,16 @@ final class WiredServerViewModel: ObservableObject {
             throw fallbackError
         }
 
-        let succeeded = executePrivileged(shellScript: shellScript, password: pw)
+        let (succeeded, isAuthFailure) = executePrivileged(shellScript: shellScript, password: pw)
         if !succeeded {
-            // Wrong password — clear cache and Keychain entry if it was from Touch ID
             sessionPassword = nil
-            if BiometricCredentialStore.hasStoredCredential {
-                BiometricCredentialStore.delete()
-                hasTouchIDCredential = false
+            if isAuthFailure {
+                // Only wipe the keychain entry on confirmed auth failure (wrong password),
+                // not on shell command errors — those leave a valid credential untouched.
+                if BiometricCredentialStore.hasStoredCredential {
+                    BiometricCredentialStore.delete()
+                    hasTouchIDCredential = false
+                }
             }
             let msg = L("touchid.wrong_password")
             switch fallbackError {
@@ -812,16 +824,19 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     /// Execute a shell command with an explicit admin password via AppleScript.
-    /// Returns true on success, false on auth failure or error.
+    /// Returns (success, isAuthFailure). AppleScript error codes < 0 indicate auth/system
+    /// failures; positive codes are shell exit statuses (command ran but failed).
     @discardableResult
-    private func executePrivileged(shellScript: String, password: String) -> Bool {
+    private func executePrivileged(shellScript: String, password: String) -> (Bool, Bool) {
         let escapedPw = password
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
         let appleScript = "do shell script \"\(shellScript)\" with administrator privileges password \"\(escapedPw)\""
         var errorInfo: NSDictionary?
         NSAppleScript(source: appleScript)?.executeAndReturnError(&errorInfo)
-        return errorInfo == nil
+        guard let errorInfo else { return (true, false) }
+        let code = errorInfo[NSAppleScript.errorNumber] as? Int ?? 0
+        return (false, code < 0)
     }
 
     /// Show a custom password dialog. Returns the entered password, or nil if cancelled.
@@ -1796,6 +1811,36 @@ final class WiredServerViewModel: ObservableObject {
         try installBinaryWithStagingRollback(from: bundledBinary, expectedSHA256: expectedSHA256)
         return true
     }
+
+    /// Returns true if the bundled binary differs from the installed binary (update available).
+    private func isBinaryUpdateAvailable() -> Bool {
+        guard let bundledBinary = bundledServerBinaryPath() else { return false }
+        guard let bundledSHA256 = try? normalizedSHA256ForFile(at: bundledBinary) else { return false }
+        let metadataSHA256 = bundledBinaryExpectedSHA256()
+        let expectedSHA256 = (metadataSHA256 == bundledSHA256 ? metadataSHA256 : nil) ?? bundledSHA256
+        guard fileManager.isExecutableFile(atPath: installedBinaryPath),
+              let installedSHA256 = try? normalizedSHA256ForFile(at: installedBinaryPath) else { return true }
+        return installedSHA256 != expectedSHA256
+    }
+
+    /// Install the bundled binary into the LaunchDaemon bin dir using a privileged shell copy.
+    /// Only safe to call when the daemon is confirmed stopped.
+    func applyPrivilegedUpdate() {
+        guard let bundledBinary = bundledServerBinaryPath() else { return }
+        let src = bundledBinary.replacingOccurrences(of: "'", with: "'\\''")
+        let dst = installedBinaryPath.replacingOccurrences(of: "'", with: "'\\''")
+        let script = "cp -f '\(src)' '\(dst)' && chmod 755 '\(dst)'"
+        do {
+            try runPrivileged(script, error: .launchDaemonInstallFailed(""))
+            appendRuntimeLog("binary-update: privileged update applied")
+            showPrivilegedUpdateAlert = false
+            refreshInstallStatus()
+            refreshInstalledVersion()
+        } catch {
+            publishError("\(L("error.install_failed")): \(error.localizedDescription)")
+        }
+    }
+
 
     private func installBinaryWithStagingRollback(from sourcePath: String, expectedSHA256: String) throws {
         let destinationURL = URL(fileURLWithPath: installedBinaryPath)
