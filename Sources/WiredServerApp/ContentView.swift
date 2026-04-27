@@ -50,6 +50,14 @@ struct ContentView: View {
         } message: {
             Text(L("alert.binary_updated.message"))
         }
+        .alert(L("alert.privileged_update.title"), isPresented: $model.showPrivilegedUpdateAlert) {
+            Button(L("alert.privileged_update.install")) {
+                model.applyPrivilegedUpdate()
+            }
+            Button(L("alert.privileged_update.later"), role: .cancel) {}
+        } message: {
+            Text(L("alert.privileged_update.message"))
+        }
         .alert(L("alert.initial_password.title"), isPresented: $model.showInitialPasswordAlert) {
             Button(L("alert.initial_password.copy")) {
                 NSPasteboard.general.clearContents()
