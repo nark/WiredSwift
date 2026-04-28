@@ -1179,6 +1179,17 @@ final class WiredServerViewModel: ObservableObject {
                 throw WiredServerError.binaryIntegrityCheckFailed("installed hash mismatch")
             }
 
+            // Re-sign with an ad-hoc signature. When the wired3 binary is extracted
+            // from the app bundle and placed at /Library/Wired3/bin/ as a standalone
+            // executable, macOS code-signing validation (SIGKILL/Invalid Page) requires
+            // an individual signature — the bundle signature it inherited is not enough.
+            let signResult = runProcess("/usr/bin/codesign", ["--force", "--sign", "-", destinationURL.path])
+            if signResult.status != 0 {
+                appendRuntimeLog("binary-update: codesign warning — \(signResult.output.trimmingCharacters(in: .whitespacesAndNewlines))")
+            } else {
+                appendRuntimeLog("binary-update: ad-hoc signature applied")
+            }
+
             if fileManager.fileExists(atPath: backupURL.path) {
                 try? fileManager.removeItem(at: backupURL)
             }
@@ -1281,8 +1292,13 @@ final class WiredServerViewModel: ObservableObject {
     private func refreshDashboardLightweight() {
         dashboardHostUptime = formattedDuration(ProcessInfo.processInfo.systemUptime)
 
-        let activePIDs = activeServerPIDs()
-        if let pid = activePIDs.first {
+        // In daemon mode lsof can't cross the user boundary (_wired vs. maertin),
+        // so read the PID directly from the PID file the server writes on startup.
+        let pid: Int32? = installMode == .launchDaemon
+            ? serverPIDFromFile()
+            : activeServerPIDs().first
+
+        if let pid {
             dashboardServerPID = String(pid)
             let metrics = processMetrics(for: pid)
             dashboardServerUptime = metrics.uptime
@@ -1298,6 +1314,13 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         dashboardLastErrorLine = extractLastErrorLine(from: logsText)
+    }
+
+    private func serverPIDFromFile() -> Int32? {
+        let pidPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired3.pid").path
+        guard let raw = try? String(contentsOfFile: pidPath, encoding: .utf8) else { return nil }
+        return pid_t(raw.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private func refreshDashboardHeavyweight() {
