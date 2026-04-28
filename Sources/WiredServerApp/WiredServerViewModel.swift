@@ -438,7 +438,6 @@ final class WiredServerViewModel: ObservableObject {
             isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
             daemonAccountsVerified = true
         }
-        checkFDAFast()
     }
 
     func invalidateDaemonAccountsCache() {
@@ -452,21 +451,13 @@ final class WiredServerViewModel: ObservableObject {
         return path.hasPrefix("/Volumes/")
     }
 
-    // Non-privileged fast check: can our app process list the files directory?
-    // External volumes under /Volumes/ don't need FDA — they're accessible by all processes.
-    // This avoids the TCC.db read (which SIP protects even from root on macOS 14+).
-    private func checkFDAFast() {
-        guard filesDirectoryIsOnExternalVolume, !wired3HasFullDiskAccess else { return }
-        let path = currentServerRootPath()
-        var isDir: ObjCBool = false
-        if FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue {
-            wired3HasFullDiskAccess = true
-        }
-    }
-
     // Writes a shell script that tests whether the daemon user can list the files directory.
-    // TCC.db is protected by SIP on macOS 14+ and cannot be read even by root without special
-    // entitlements. A functional access test is the only reliable approach.
+    // Uses `su -m` rather than `sudo -u` so the subprocess runs with the daemon user's process
+    // identity — `sudo -u` launched from root inherits root's TCC context and can bypass macOS
+    // Removable Volumes / Full Disk Access checks that the actual daemon binary would hit.
+    // NOTE: This check is still approximate. If the server log shows "0 files, 0 dirs" after
+    // a binary update, re-grant FDA to /Library/Wired3/bin/wired3 in
+    // System Settings → Privacy & Security → Full Disk Access.
     private func writeFDACheckScript(filesDir: String, daemonUser: String, outputFile: String, to scriptPath: String) {
         let sh = """
         #!/bin/sh
@@ -474,9 +465,10 @@ final class WiredServerViewModel: ObservableObject {
         FILES='\(filesDir)'
         DUSER='\(daemonUser)'
 
-        # Test if the daemon user can read the files directory (Unix permissions check).
-        # External volumes don't require FDA — this tests actual access, not TCC grants.
-        if sudo -u "$DUSER" /bin/ls "$FILES" >/dev/null 2>&1; then
+        # Test whether the daemon user can read the files directory.
+        # su -m preserves the current environment but switches UID, giving a better TCC context
+        # than sudo -u (which inherits root's TCC grants).
+        if su -m "$DUSER" -c "/bin/ls \\"$FILES\\"" >/dev/null 2>&1; then
             echo 1 > "$OUT"
         else
             echo 0 > "$OUT"

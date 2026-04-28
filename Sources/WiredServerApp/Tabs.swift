@@ -101,11 +101,11 @@ private struct ExternalVolumeWarningView: View {
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(hasFDA ? "Daemon can access the external volume." : "Files directory is on an external volume.")
+                Text(hasFDA ? "Daemon access check passed." : "Files directory is on an external volume.")
                     .font(.footnote).bold()
                     .foregroundStyle(hasFDA ? Color.primary : Color.orange)
                 Text(hasFDA
-                    ? "The daemon user has read access to the files directory."
+                    ? "The daemon user appears to have read access. After a binary update, re-signing may revoke this — verify by checking the server log for \"0 files, 0 dirs\"."
                     : "Ensure the files directory is readable by the daemon user, then click Re-check."
                 )
                 .font(.footnote)
