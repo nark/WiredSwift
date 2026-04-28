@@ -110,6 +110,10 @@
 "database.snapshot.interval" = "Snapshot every";
 "database.snapshot.seconds" = "sec.";
 "database.snapshot.help" = "Creates a local SQLite backup copy at the configured interval. Set the interval to 0 to disable automatic snapshots.";
+"database.snapshot.trigger_now" = "Create Snapshot Now";
+"status.snapshot_triggered" = "Database snapshot triggered.";
+"status.snapshot_not_running" = "Server is not running.";
+"status.snapshot_failed" = "Failed to trigger snapshot — PID file not found.";
 "database.events.section" = "Event Retention";
 "database.events.retention" = "Automatically purge events";
 "database.events.help" = "Deletes events older than the selected retention window.";

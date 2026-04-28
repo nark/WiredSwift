@@ -1465,6 +1465,45 @@ final class WiredServerViewModel: ObservableObject {
         sendSignal(SIGUSR1)
     }
 
+    /// Send SIGUSR2 to the running wired3 process to trigger an immediate database snapshot.
+    @discardableResult
+    private func sendSnapshotSignal() -> Bool {
+        sendSignal(SIGUSR2)
+    }
+
+    func triggerSnapshotNow() {
+        if installMode == .launchDaemon {
+            // Daemon runs as a different OS user — kill() is rejected by macOS.
+            // Use launchctl, which routes through the system domain and accepts
+            // the signal with root privileges.
+            do {
+                try runPrivileged(
+                    "launchctl kill SIGUSR2 system/\(launchAgentLabel)",
+                    error: .launchDaemonInstallFailed("snapshot")
+                )
+                statusMessage = L("status.snapshot_triggered")
+            } catch {
+                statusMessage = L("status.snapshot_failed")
+            }
+        } else {
+            guard hasPIDFile else {
+                statusMessage = L("status.snapshot_not_running")
+                return
+            }
+            if sendSnapshotSignal() {
+                statusMessage = L("status.snapshot_triggered")
+            } else {
+                statusMessage = L("status.snapshot_failed")
+            }
+        }
+    }
+
+    var hasPIDFile: Bool {
+        let pidPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired3.pid").path
+        return FileManager.default.fileExists(atPath: pidPath)
+    }
+
     /// Read the PID file and send `signal` to the running wired3 process.
     @discardableResult
     private func sendSignal(_ signal: Int32) -> Bool {

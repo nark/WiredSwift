@@ -110,6 +110,10 @@
 "database.snapshot.interval" = "Faire un snapshot toutes les";
 "database.snapshot.seconds" = "sec.";
 "database.snapshot.help" = "Crée une copie locale de sauvegarde SQLite à l'intervalle configuré. Mettre l'intervalle à 0 désactive les snapshots automatiques.";
+"database.snapshot.trigger_now" = "Créer un snapshot maintenant";
+"status.snapshot_triggered" = "Snapshot de la base de données déclenché.";
+"status.snapshot_not_running" = "Le serveur n'est pas en cours d'exécution.";
+"status.snapshot_failed" = "Échec du déclenchement du snapshot — fichier PID introuvable.";
 "database.events.section" = "Rétention des événements";
 "database.events.retention" = "Purger automatiquement les événements";
 "database.events.help" = "Supprime les événements plus anciens que la durée de rétention choisie.";
