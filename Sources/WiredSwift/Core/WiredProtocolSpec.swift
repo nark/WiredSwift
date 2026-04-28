@@ -3,12 +3,21 @@ import Foundation
 public enum WiredProtocolSpec {
     public static func bundledSpecURL() -> URL? {
         // Bundle.module crashes with assertionFailure when the SPM .bundle directory
-        // is missing from the app package. Search manually instead, then fall back to
-        // Bundle.main.resourceURL where the build script also copies wired.xml directly.
+        // is missing from the app package. Search manually instead.
+        //
+        // Path reasoning:
+        //  - Production app:    Bundle.main.resourceURL / Contents/Resources
+        //  - Linux swift test:  executable is in .build/debug/, bundle is beside it
+        //  - macOS swift test:  Bundle.main.bundleURL is the .xctest package;
+        //                       its parent directory is .build/debug/ where the
+        //                       WiredSwift_WiredSwift.bundle actually lives
+        let bundleName = "WiredSwift_WiredSwift"
         let candidates: [URL?] = [
-            Bundle.main.resourceURL?.appendingPathComponent("WiredSwift_WiredSwift.bundle"),
+            Bundle.main.resourceURL?.appendingPathComponent("\(bundleName).bundle"),
             Bundle.main.executableURL?.deletingLastPathComponent()
-                .appendingPathComponent("WiredSwift_WiredSwift.bundle"),
+                .appendingPathComponent("\(bundleName).bundle"),
+            Bundle.main.bundleURL.deletingLastPathComponent()
+                .appendingPathComponent("\(bundleName).bundle"),
         ]
         for case let bundleURL? in candidates {
             if let b = Bundle(url: bundleURL),
