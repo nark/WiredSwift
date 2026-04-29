@@ -277,7 +277,7 @@ struct DashboardTabView: View {
                             value: String(model.serverPort),
                             detail: model.portStatus.description,
                             symbolName: "network",
-                            tint: model.portStatus == .open ? .green : .orange
+                            tint: model.portStatus == .open ? .green : (model.portStatus == .error ? .orange : .red)
                         )
                     }
                 }

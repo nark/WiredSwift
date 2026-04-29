@@ -41,9 +41,10 @@
 "network.port" = "Listening Port";
 "network.check" = "Check";
 "network.restart_required" = "Server must be restarted after port change.";
-"network.port_status.unknown" = "Unknown port status";
-"network.port_status.open" = "Port is open";
-"network.port_status.closed" = "Port is closed";
+"network.port_status.unknown" = "Checking external reachability…";
+"network.port_status.open" = "Reachable from internet";
+"network.port_status.closed" = "Not reachable from internet";
+"network.port_status.error" = "Port check failed (no internet?)";
 
 "files.section" = "Files";
 "files.directory" = "Files directory";
