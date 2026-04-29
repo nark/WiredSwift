@@ -3,6 +3,16 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_CONFIG="${1:-release}"
+
+# Command Line Tools lack x86_64 Swift compatibility libs; prefer full Xcode.
+if [[ -z "${DEVELOPER_DIR:-}" ]]; then
+  for _xcode in /Applications/Xcode.app /Applications/Xcode-beta.app; do
+    if [[ -d "$_xcode/Contents/Developer" ]]; then
+      export DEVELOPER_DIR="$_xcode/Contents/Developer"
+      break
+    fi
+  done
+fi
 APP_NAME="Wired Server"
 EXECUTABLE_NAME="WiredServerApp"
 SERVER_BINARY_NAME="wired3"
@@ -248,7 +258,13 @@ notarize_zip() {
   local label="$3"
 
   echo "==> Notarizing $label"
-  xcrun notarytool submit "$zip_path" --keychain-profile "$profile" --wait
+  local output
+  output="$(xcrun notarytool submit "$zip_path" --keychain-profile "$profile" --wait 2>&1)"
+  echo "$output"
+  if ! echo "$output" | grep -q "status: Accepted"; then
+    echo "Notarization was not accepted for $label — aborting." >&2
+    exit 1
+  fi
 }
 
 SIGNING_IDENTITY="$(resolve_signing_identity || true)"
@@ -320,6 +336,13 @@ if [[ "$NOTARIZE" == "1" ]]; then
   xcrun stapler validate "$APP_DIR"
   rm -f "$APP_ZIP_PATH"
   ditto -c -k --keepParent "$APP_DIR" "$APP_ZIP_PATH"
+
+  # Flat executables cannot have notarization tickets stapled (xcrun stapler
+  # only supports .app/.dmg/.pkg). The ticket is registered in Apple's CDN;
+  # Gatekeeper verifies it online at first launch when the quarantine flag is
+  # present. The app install flow re-signs wired3 with ad-hoc after copying
+  # it to /Library/Wired3/bin/, which removes the Hardened Runtime flag and
+  # makes it launchable by the LaunchDaemon without a stapled ticket.
 fi
 
 echo "==> Verifying signatures"

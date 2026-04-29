@@ -55,10 +55,24 @@ struct Wired: ParsableCommand {
           help: "When used with --migrate-from: overwrite existing records in the Wired 3 database.")
     var overwrite = false
 
+    @Option(name: .customLong("check-access"),
+            help: "Test whether this binary can read the given path, then exit (0 = ok, 1 = denied). Used by WiredServerApp for FDA status checks.")
+    var checkAccess: String?
+
     @Argument(help: "Optional working directory path. For compatibility, an .xml path here is treated as the specification file path.")
     var path: String?
 
     mutating func run() throws {
+        if let accessPath = checkAccess {
+            let url = URL(fileURLWithPath: (accessPath as NSString).expandingTildeInPath)
+            do {
+                _ = try FileManager.default.contentsOfDirectory(atPath: url.path)
+                Foundation.exit(0)
+            } catch {
+                Foundation.exit(1)
+            }
+        }
+
         if showVersion {
             print(WiredServerVersion.display)
             return
