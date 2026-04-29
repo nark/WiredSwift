@@ -459,16 +459,18 @@ final class WiredServerViewModel: ObservableObject {
     // a binary update, re-grant FDA to /Library/Wired3/bin/wired3 in
     // System Settings → Privacy & Security → Full Disk Access.
     private func writeFDACheckScript(filesDir: String, daemonUser: String, outputFile: String, to scriptPath: String) {
+        let wired3Binary = installedBinaryPath
         let sh = """
         #!/bin/sh
         OUT='\(outputFile)'
         FILES='\(filesDir)'
         DUSER='\(daemonUser)'
+        WIRED3='\(wired3Binary)'
 
-        # Test whether the daemon user can read the files directory.
-        # su -m preserves the current environment but switches UID, giving a better TCC context
-        # than sudo -u (which inherits root's TCC grants).
-        if su -m "$DUSER" -c "/bin/ls \\"$FILES\\"" >/dev/null 2>&1; then
+        # Run the actual wired3 binary (which holds the FDA/Removable-Volumes TCC grant)
+        # to probe the files directory. Using /bin/ls would fail on macOS 26+ because the
+        # TCC grant is bound to the wired3 binary path, not to the _wired user.
+        if su -m "$DUSER" -c "\\"$WIRED3\\" --check-access \\"$FILES\\"" >/dev/null 2>&1; then
             echo 1 > "$OUT"
         else
             echo 0 > "$OUT"
