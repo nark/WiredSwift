@@ -3,6 +3,7 @@ import Foundation
 private enum AppLanguage: String {
     case en
     case fr
+    case de
 }
 
 private final class Localizer {
@@ -17,7 +18,8 @@ private final class Localizer {
         self.selectedLanguage = selected
         self.tableByLanguage = [
             .en: Localizer.loadTable(for: .en),
-            .fr: Localizer.loadTable(for: .fr)
+            .fr: Localizer.loadTable(for: .fr),
+            .de: Localizer.loadTable(for: .de)
         ]
     }
 
@@ -40,6 +42,9 @@ private final class Localizer {
                 .first?
                 .lowercased()
 
+            if languageCode == AppLanguage.de.rawValue {
+                return .de
+            }
             if languageCode == AppLanguage.fr.rawValue {
                 return .fr
             }
