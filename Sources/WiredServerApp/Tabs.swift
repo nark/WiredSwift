@@ -499,10 +499,8 @@ struct SecurityTabView: View {
 
                     HStack(spacing: 8) {
                         SecureField(L("advanced.admin.password.placeholder"), text: $passwordText)
-                            .frame(width: 260)
+                            .textFieldStyle(.roundedBorder)
                             .onSubmit { applyPassword() }
-
-                        Spacer()
 
                         Button(L("advanced.admin.set_password")) {
                             applyPassword()
