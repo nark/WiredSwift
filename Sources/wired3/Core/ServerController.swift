@@ -900,12 +900,12 @@ public class ServerController: ServerDelegate {
 
         message.addParameter(field: "wired.info.os.version", value: ProcessInfo.processInfo.operatingSystemVersionString)
 
-        #if os(iOS)
-        message.addParameter(field: "wired.info.arch", value: "armv7")
-        #elseif os(macOS)
+        #if arch(arm64)
+        message.addParameter(field: "wired.info.arch", value: "arm64")
+        #elseif arch(x86_64)
         message.addParameter(field: "wired.info.arch", value: "x86_64")
         #else
-        message.addParameter(field: "wired.info.arch", value: "x86_64")
+        message.addParameter(field: "wired.info.arch", value: "unknown")
         #endif
 
         message.addParameter(field: "wired.info.supports_rsrc", value: false)
