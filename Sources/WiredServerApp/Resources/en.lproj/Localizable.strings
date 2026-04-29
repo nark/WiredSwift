@@ -52,6 +52,7 @@
 
 "files.section" = "Files";
 "files.directory" = "Files directory";
+"files.daemon_userpath_warning" = "This path is under /Users/ and may not be accessible to the LaunchDaemon. The daemon starts at boot before login — home directories may not be mounted or decrypted yet. Use a path under /Library/ or /var/ instead.";
 "files.index.section" = "Index";
 "files.index.every" = "Re-index server files every";
 "files.index.seconds" = "sec.";

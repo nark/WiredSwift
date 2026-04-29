@@ -493,6 +493,11 @@ struct FilesTabView: View {
                             model.openFullDiskAccessSettings()
                         }
                     }
+                    if model.installMode == .launchDaemon && model.filesDirectory.hasPrefix("/Users/") {
+                        Label(L("files.daemon_userpath_warning"), systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.footnote)
+                    }
                 }
 
                 Section(L("files.index.section")) {

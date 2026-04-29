@@ -52,6 +52,7 @@
 
 "files.section" = "Fichiers";
 "files.directory" = "Répertoire de fichiers";
+"files.daemon_userpath_warning" = "Ce chemin est sous /Users/ et pourrait ne pas être accessible au LaunchDaemon. Le daemon démarre au boot avant la connexion — les répertoires personnels peuvent ne pas être montés ou déchiffrés à ce stade. Utilise un chemin sous /Library/ ou /var/ à la place.";
 "files.index.section" = "Index";
 "files.index.every" = "Réindexer les fichiers toutes les";
 "files.index.seconds" = "sec.";
