@@ -2854,7 +2854,7 @@ strict_identity = yes
     }
 
     private static func checkPortExternal(ip: String, port: Int) async -> PortStatus {
-        guard let url = URL(string: "https://check-host.net/check-tcp?host=\(ip):\(port)&max_nodes=1") else { return .error }
+        guard let url = URL(string: "https://check-host.net/check-tcp?host=\(ip):\(port)&max_nodes=3") else { return .error }
         var req = URLRequest(url: url)
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.timeoutInterval = 15
@@ -2873,12 +2873,15 @@ strict_identity = yes
             guard let (resultData, _) = try? await URLSession.shared.data(for: resultReq) else { continue }
             guard let json = try? JSONSerialization.jsonObject(with: resultData) as? [String: Any] else { continue }
 
+            var anyOpen = false
+            var anyPending = false
             for (_, nodeValue) in json {
+                if nodeValue is NSNull { anyPending = true; continue }
                 guard let results = nodeValue as? [[String: Any]], !results.isEmpty else { continue }
-                if results.first?["address"] != nil { return .open }
-                if results.first?["error"] != nil { return .closed }
+                if results.first?["address"] != nil { anyOpen = true }
             }
-            // null means still pending — continue polling
+            if anyOpen { return .open }
+            if !anyPending { return .closed }  // all nodes answered, none succeeded
         }
         return .closed
     }
