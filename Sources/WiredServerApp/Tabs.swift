@@ -223,6 +223,7 @@ struct GeneralTabView: View {
 @available(macOS 12.0, *)
 struct NetworkTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
+    @State private var portText: String = ""
 
     var body: some View {
         SettingsScrollPane {
@@ -234,12 +235,16 @@ struct NetworkTabView: View {
 
                         Spacer()
 
-                        TextField("", value: $model.serverPort, formatter: Formatters.integer)
+                        TextField("4871", text: $portText)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: UIConstants.numberFieldWidth)
+                            .onChange(of: portText) { newValue in
+                                portText = String(newValue.filter { $0.isNumber }.prefix(5))
+                            }
+                            .onSubmit { savePort() }
 
                         Button(L("common.save")) {
-                            model.saveNetworkSettings()
+                            savePort()
                         }
                     }
 
@@ -270,6 +275,15 @@ struct NetworkTabView: View {
         } message: {
             Text(L("network.consent.message"))
         }
+        .onAppear { portText = String(model.serverPort) }
+        .onChange(of: model.serverPort) { portText = String($0) }
+    }
+
+    private func savePort() {
+        let parsed = Int(portText) ?? model.serverPort
+        model.serverPort = max(1, min(parsed, 65_535))
+        portText = String(model.serverPort)
+        model.saveNetworkSettings()
     }
 
     private func color(for status: PortStatus) -> Color {
