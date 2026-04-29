@@ -34,25 +34,17 @@ private final class Localizer {
     }
 
     private static func resolveLanguage() -> AppLanguage {
-        let preferred = Bundle.main.preferredLocalizations + Locale.preferredLanguages
-        for value in preferred {
+        for value in Locale.preferredLanguages {
             let languageCode = value
                 .replacingOccurrences(of: "_", with: "-")
                 .split(separator: "-")
                 .first?
                 .lowercased()
 
-            if languageCode == AppLanguage.de.rawValue {
-                return .de
-            }
-            if languageCode == AppLanguage.fr.rawValue {
-                return .fr
-            }
-            if languageCode == AppLanguage.en.rawValue {
-                return .en
-            }
+            if languageCode == AppLanguage.de.rawValue { return .de }
+            if languageCode == AppLanguage.fr.rawValue { return .fr }
+            if languageCode == AppLanguage.en.rawValue { return .en }
         }
-
         return .en
     }
 
