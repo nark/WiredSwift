@@ -77,17 +77,7 @@ private final class Localizer {
     }
 
     private static func candidateBundles() -> [Bundle] {
-        var bundles: [Bundle] = [Bundle.main]
-
-        if let resourceBundles = Bundle.main.urls(forResourcesWithExtension: "bundle", subdirectory: nil) {
-            for url in resourceBundles {
-                if let bundle = Bundle(url: url) {
-                    bundles.append(bundle)
-                }
-            }
-        }
-
-        return bundles
+        [.module, .main]
     }
 }
 
