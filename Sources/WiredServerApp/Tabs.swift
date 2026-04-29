@@ -486,6 +486,7 @@ struct DatabaseTabView: View {
 struct SecurityTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
     @State private var fingerprintCopied = false
+    @State private var passwordText: String = ""
 
     var body: some View {
         SettingsScrollPane {
@@ -497,17 +498,20 @@ struct SecurityTabView: View {
                     }
 
                     HStack(spacing: 8) {
-                        SecureField(L("advanced.admin.password.placeholder"), text: $model.newAdminPassword)
+                        SecureField(L("advanced.admin.password.placeholder"), text: $passwordText)
                             .frame(width: 260)
+                            .onSubmit { applyPassword() }
 
                         Spacer()
 
                         Button(L("advanced.admin.set_password")) {
-                            model.setAdminPassword()
+                            applyPassword()
                         }
 
                         Button(L("advanced.admin.create_user")) {
+                            model.newAdminPassword = passwordText
                             model.createAdminUser()
+                            passwordText = ""
                         }
                     }
                 }
@@ -591,6 +595,12 @@ struct SecurityTabView: View {
             .formStyle(.grouped)
         }
         .onAppear { model.refreshIdentityFingerprint() }
+    }
+
+    private func applyPassword() {
+        model.newAdminPassword = passwordText
+        model.setAdminPassword()
+        passwordText = ""
     }
 }
 
