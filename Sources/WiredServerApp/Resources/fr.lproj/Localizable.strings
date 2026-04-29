@@ -45,9 +45,10 @@
 "network.port" = "Port en écoute";
 "network.check" = "Vérifier";
 "network.restart_required" = "Le serveur doit être redémarré après un changement de port.";
-"network.port_status.unknown" = "Statut du port inconnu";
-"network.port_status.open" = "Le port est ouvert";
-"network.port_status.closed" = "Le port est fermé";
+"network.port_status.unknown" = "Vérification de la disponibilité externe…";
+"network.port_status.open" = "Accessible depuis internet";
+"network.port_status.closed" = "Non accessible depuis internet";
+"network.port_status.error" = "Vérification échouée (pas d'internet ?)";
 
 "files.section" = "Fichiers";
 "files.directory" = "Répertoire de fichiers";

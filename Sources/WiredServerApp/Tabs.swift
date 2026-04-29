@@ -390,47 +390,46 @@ struct NetworkTabView: View {
 
     var body: some View {
         SettingsScrollPane {
-            Form {
-                Section(L("network.section")) {
-                    HStack {
-                        Text(L("network.port"))
-                            .bold()
+            SettingsSection(title: L("network.section")) {
+                HStack(spacing: 8) {
+                    Text(L("network.port"))
+                        .bold()
 
-                        Spacer()
-
-                        TextField("4871", text: $portText)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: UIConstants.numberFieldWidth)
-                            .onChange(of: portText) { newValue in
-                                portText = String(newValue.filter { $0.isNumber }.prefix(5))
-                            }
-                            .onSubmit { savePort() }
-
-                        Button(L("common.save")) {
-                            savePort()
+                    TextField("", text: $portText)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 70)
+                        .multilineTextAlignment(.center)
+                        .onChange(of: portText) { newValue in
+                            portText = String(newValue.filter { $0.isNumber }.prefix(5))
                         }
-                    }
+                        .onSubmit { savePort() }
 
-                    HStack(spacing: 8) {
-                        StatusDot(color: color(for: model.portStatus))
-                        Text(model.portStatus.description)
-
-                        Spacer()
-
-                        Button(L("network.check")) {
-                            model.checkPort()
-                        }
-                    }
-
-                }
-
-                Section {
-                    Text(L("network.restart_required"))
-                        .font(.footnote)
+                    Text("Default: 4871")
                         .foregroundStyle(.secondary)
+
+                    Spacer(minLength: 8)
+
+                    Button(L("common.save")) {
+                        savePort()
+                    }
                 }
+
+                Divider()
+
+                HStack(spacing: 8) {
+                    StatusDot(color: color(for: model.portStatus))
+                    Text(model.portStatus.description)
+                        .frame(minWidth: 200, alignment: .leading)
+                    Spacer()
+                    Button(L("network.check")) {
+                        model.checkPort()
+                    }
+                }
+
+                Text(L("network.restart_required"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
-            .formStyle(.grouped)
         }
         .onAppear { portText = String(model.serverPort) }
         .onChange(of: model.serverPort) { portText = String($0) }
@@ -451,6 +450,8 @@ struct NetworkTabView: View {
             return .green
         case .closed:
             return .red
+        case .error:
+            return .orange
         }
     }
 }
