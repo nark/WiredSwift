@@ -89,54 +89,6 @@ private struct KeyValueRow<Control: View>: View {
 }
 
 @available(macOS 12.0, *)
-private struct ExternalVolumeWarningView: View {
-    @EnvironmentObject private var model: WiredServerViewModel
-    let hasFDA: Bool
-    let onOpenSettings: () -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: hasFDA ? "externaldrive.fill.badge.checkmark" : "externaldrive.badge.exclamationmark")
-                .foregroundStyle(hasFDA ? .green : .orange)
-                .font(.title3)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(hasFDA ? "Daemon access check passed." : "Files directory is on an external volume.")
-                    .font(.footnote).bold()
-                    .foregroundStyle(hasFDA ? Color.primary : Color.orange)
-                Text(hasFDA
-                    ? "The daemon user appears to have read access. After a binary update, re-signing may revoke this — verify by checking the server log for \"0 files, 0 dirs\"."
-                    : "Ensure the files directory is readable by the daemon user, then click Re-check."
-                )
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if !hasFDA {
-                Button("Re-check") {
-                    model.refreshFDAStatusPrivileged()
-                }
-                .font(.footnote)
-
-                Button("Restart Daemon") {
-                    model.stopDaemon()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        model.startDaemon()
-                    }
-                }
-                .font(.footnote)
-                .disabled(!model.isDaemonRunning)
-            }
-        }
-        .padding(8)
-        .background((hasFDA ? Color.green : Color.orange).opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-    }
-}
-
-@available(macOS 12.0, *)
 private struct StatusDot: View {
     let color: Color
 
@@ -201,107 +153,6 @@ struct GeneralTabView: View {
                     }
                 }
 
-                Section("System Data Directory") {
-                    if model.isUsingSystemDirectory {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("/Library/Wired3/ (system-wide)")
-                                .textSelection(.enabled)
-                        }
-                    } else if model.systemMigrationAvailable {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Migrate server data to /Library/Wired3/ to enable LaunchDaemon support. The original data will be preserved as a backup.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-
-                            HStack(spacing: 10) {
-                                Button("Migrate to /Library/Wired3/") {
-                                    Task { await model.migrateToSystemDirectory() }
-                                }
-                                .disabled(model.isSystemMigrating || model.isBusy)
-
-                                if model.isSystemMigrating {
-                                    ProgressView().controlSize(.small)
-                                }
-                            }
-
-                            if !model.systemMigrationStatus.isEmpty {
-                                Text(model.systemMigrationStatus)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .textSelection(.enabled)
-                            }
-                        }
-                    }
-                }
-
-                Section("Install Mode") {
-                    if !model.isUsingSystemDirectory {
-                        Label("Migrate to /Library/Wired3/ first to enable LaunchDaemon mode.", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.orange)
-                            .font(.footnote)
-                    } else {
-                        Picker("Mode", selection: Binding(
-                            get: { model.installMode },
-                            set: { newMode in
-                                Task { await model.switchInstallMode(to: newMode) }
-                            }
-                        )) {
-                            Text("LaunchAgent (current user)").tag(ServerInstallMode.launchAgent)
-                            Text("LaunchDaemon (system service)").tag(ServerInstallMode.launchDaemon)
-                        }
-                        .disabled(model.isSwitchingMode || model.isBusy)
-
-                        HStack(spacing: 8) {
-                            Text("Daemon User")
-                                .bold()
-                                .frame(width: 90, alignment: .leading)
-                            TextField("_wired", text: $model.daemonUserName)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 100)
-                                .disabled(model.isSwitchingMode)
-                            Image(systemName: model.isDaemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
-                                .foregroundStyle(model.isDaemonUserExists ? .green : .secondary)
-
-                            Text("Group")
-                                .bold()
-                                .frame(width: 44, alignment: .leading)
-                            TextField("daemon", text: $model.daemonGroupName)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 100)
-                                .disabled(model.isSwitchingMode)
-                            Image(systemName: model.isDaemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
-                                .foregroundStyle(model.isDaemonGroupExists ? .green : .secondary)
-
-                            Spacer()
-                            Button("Save") { model.saveDaemonSettings() }
-                                .disabled(model.isSwitchingMode)
-                        }
-                        .labelsHidden()
-
-                        if model.installMode == .launchDaemon && model.filesDirectoryIsOnExternalVolume {
-                            ExternalVolumeWarningView(hasFDA: model.wired3HasFullDiskAccess) {
-                                model.openFullDiskAccessSettings()
-                            }
-                        }
-
-                        if model.isSwitchingMode {
-                            HStack(spacing: 8) {
-                                ProgressView().controlSize(.small)
-                                Text(model.modeSwitchStatus)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else if !model.modeSwitchStatus.isEmpty {
-                            Text(model.modeSwitchStatus)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                        }
-                    }
-                }
-
                 Section("Versions") {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))
@@ -336,39 +187,25 @@ struct GeneralTabView: View {
                 }
 
                 Section(L("general.execution.section")) {
-                    if model.installMode == .launchDaemon {
-                        HStack {
-                            StatusDot(color: model.isDaemonRunning ? .green : .red)
-                            Text(model.isDaemonRunning ? "Running (daemon)" : "Stopped (daemon)")
-                            Spacer()
-                            Button(model.isDaemonRunning ? "Stop" : "Start") {
-                                if model.isDaemonRunning { model.stopDaemon() }
-                                else { model.startDaemon() }
-                            }
-                            .disabled(!model.launchDaemonInstalled)
-                        }
+                    HStack {
+                        StatusDot(color: model.isRunning ? .green : .red)
+                        Text(model.isRunning ? L("general.execution.running") : L("general.execution.stopped"))
 
-                        Toggle("Start at Boot", isOn: Binding(
-                            get: { model.daemonStartAtBoot },
-                            set: { model.toggleDaemonStartAtBoot($0) }
-                        ))
-                        .disabled(!model.launchDaemonInstalled)
-                    } else {
-                        HStack {
-                            StatusDot(color: model.isRunning ? .green : .red)
-                            Text(model.isRunning ? L("general.execution.running") : L("general.execution.stopped"))
-                            Spacer()
-                            Button(model.isRunning ? L("general.execution.stop") : L("general.execution.start")) {
-                                if model.isRunning { model.stopServer() }
-                                else { Task { await model.startServer() } }
+                        Spacer()
+
+                        Button(model.isRunning ? L("general.execution.stop") : L("general.execution.start")) {
+                            if model.isRunning {
+                                model.stopServer()
+                            } else {
+                                Task { await model.startServer() }
                             }
                         }
-
-                        Toggle(L("general.execution.start_on_login"), isOn: Binding(
-                            get: { model.launchAtLogin },
-                            set: { model.toggleLaunchAtLogin($0) }
-                        ))
                     }
+
+                    Toggle(L("general.execution.start_on_login"), isOn: Binding(
+                        get: { model.launchAtLogin },
+                        set: { model.toggleLaunchAtLogin($0) }
+                    ))
                 }
 
 //                if !model.statusMessage.isEmpty {
@@ -386,60 +223,47 @@ struct GeneralTabView: View {
 @available(macOS 12.0, *)
 struct NetworkTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
-    @State private var portText: String = ""
 
     var body: some View {
         SettingsScrollPane {
-            SettingsSection(title: L("network.section")) {
-                HStack(spacing: 8) {
-                    Text(L("network.port"))
-                        .bold()
+            Form {
+                Section(L("network.section")) {
+                    HStack {
+                        Text(L("network.port"))
+                            .bold()
 
-                    TextField("", text: $portText)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 70)
-                        .multilineTextAlignment(.center)
-                        .onChange(of: portText) { newValue in
-                            portText = String(newValue.filter { $0.isNumber }.prefix(5))
+                        Spacer()
+
+                        TextField("", value: $model.serverPort, formatter: Formatters.integer)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: UIConstants.numberFieldWidth)
+
+                        Button(L("common.save")) {
+                            model.saveNetworkSettings()
                         }
-                        .onSubmit { savePort() }
+                    }
 
-                    Text("Default: 4871")
+                    HStack(spacing: 8) {
+                        StatusDot(color: color(for: model.portStatus))
+                        Text(model.portStatus.description)
+
+                        Spacer()
+
+                        Button(L("network.check")) {
+                            model.checkPort()
+                        }
+                    }
+
+                }
+
+                Section {
+                    Text(L("network.restart_required"))
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
-
-                    Spacer(minLength: 8)
-
-                    Button(L("common.save")) {
-                        savePort()
-                    }
                 }
-
-                Divider()
-
-                HStack(spacing: 8) {
-                    StatusDot(color: color(for: model.portStatus))
-                    Text(model.portStatus.description)
-                        .frame(minWidth: 200, alignment: .leading)
-                    Spacer()
-                    Button(L("network.check")) {
-                        model.checkPort()
-                    }
-                }
-
-                Text(L("network.restart_required"))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
+            .formStyle(.grouped)
         }
-        .onAppear { portText = String(model.serverPort) }
-        .onChange(of: model.serverPort) { portText = String($0) }
-    }
-
-    private func savePort() {
-        let parsed = Int(portText) ?? model.serverPort
-        model.serverPort = max(1, min(parsed, 65_535))
-        portText = String(model.serverPort)
-        model.saveNetworkSettings()
     }
 
     private func color(for status: PortStatus) -> Color {
@@ -488,12 +312,7 @@ struct FilesTabView: View {
                         }
                     }
 
-                    if model.installMode == .launchDaemon && model.filesDirectoryIsOnExternalVolume {
-                        ExternalVolumeWarningView(hasFDA: model.wired3HasFullDiskAccess) {
-                            model.openFullDiskAccessSettings()
-                        }
-                    }
-                    if model.installMode == .launchDaemon && model.filesDirectory.hasPrefix("/Users/") {
+                    if model.filesDirectory.hasPrefix("/Users/") {
                         Label(L("files.daemon_userpath_warning"), systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
                             .font(.footnote)
@@ -554,14 +373,6 @@ struct DatabaseTabView: View {
                     Text(L("database.snapshot.help"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-
-                    HStack {
-                        Spacer(minLength: 0)
-                        Button(L("database.snapshot.trigger_now")) {
-                            model.triggerSnapshotNow()
-                        }
-                        .disabled(!model.hasPIDFile)
-                    }
                 }
 
                 Section(L("database.events.section")) {
@@ -673,27 +484,6 @@ struct SecurityTabView: View {
     var body: some View {
         SettingsScrollPane {
             Form {
-                if BiometricCredentialStore.isAvailable {
-                    Section(L("touchid.section")) {
-                        HStack {
-                            StatusDot(color: model.hasTouchIDCredential ? .green : .gray)
-                            Text(model.hasTouchIDCredential
-                                 ? L("touchid.status.enabled")
-                                 : L("touchid.status.disabled"))
-                            Spacer()
-                            if model.hasTouchIDCredential {
-                                Button(L("touchid.forget")) {
-                                    model.forgetTouchIDCredential()
-                                }
-                                .foregroundStyle(.red)
-                            }
-                        }
-                        Text(L("touchid.description"))
-                            .foregroundStyle(.secondary)
-                            .font(.footnote)
-                    }
-                }
-
                 Section(L("advanced.admin.section")) {
                     HStack {
                         StatusDot(color: model.hasAdminPassword ? .green : .red)
