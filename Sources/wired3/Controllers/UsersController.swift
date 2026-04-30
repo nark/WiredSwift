@@ -503,11 +503,13 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
-    /// For existing installations, grant `wired.account.user.list_offline_users` to every
-    /// user and group that already has `wired.account.message.send_offline_messages = true`.
+    /// For existing installations, grant `wired.account.user.list_offline_users` only to
+    /// users and groups that already have `wired.account.user.get_users` (admin-level access).
+    /// Granting it to everyone with `send_offline_messages` would expose the full offline user
+    /// list to regular users, which is a privacy concern.
     private func migrateListOfflineUsersPrivilegeIfNeeded(db: OpaquePointer) {
         let targetPrivilege = "wired.account.user.list_offline_users"
-        let sourcePrivilege = "wired.account.message.send_offline_messages"
+        let adminPrivilege = "wired.account.user.get_users"
 
         let tables: [(table: String, ownerColumn: String)] = [
             ("user_privileges", "user_id"),
@@ -519,7 +521,7 @@ public class UsersController: TableController, SocketPasswordDelegate {
             INSERT OR IGNORE INTO "\(entry.table)" (name, value, \(entry.ownerColumn))
             SELECT '\(targetPrivilege)', 1, \(entry.ownerColumn)
             FROM "\(entry.table)"
-            WHERE name = '\(sourcePrivilege)' AND value = 1
+            WHERE name = '\(adminPrivilege)' AND value = 1
               AND \(entry.ownerColumn) NOT IN (
                   SELECT \(entry.ownerColumn) FROM "\(entry.table)" WHERE name = '\(targetPrivilege)'
               );
