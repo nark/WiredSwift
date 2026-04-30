@@ -383,11 +383,11 @@ final class WiredServerViewModel: ObservableObject {
         return path.hasPrefix("/Volumes/")
     }
 
-    // Writes a shell script that tests whether the daemon binary can list the files directory.
-    // Uses `sudo -u` to run as the daemon user. `su -m user -c cmd` cannot be used because
-    // _wired is created with UserShell=/usr/bin/false, so su delegates to false and always
-    // exits 1 before running the command. FDA grants in the system TCC.db are keyed by the
-    // binary's code signature, not by UID, so sudo -u gives correct TCC enforcement.
+    // Writes a shell script that tests whether the wired3 binary can list the files directory.
+    // Runs as root (the script is already privileged via AppleScript admin auth). On macOS 12+
+    // TCC is enforced even for root — the FDA grant in the system TCC.db is keyed by wired3's
+    // code signature, not by UID. Neither `su -m` (_wired has UserShell=/usr/bin/false) nor
+    // `sudo -u` (can block in a non-interactive AppleScript shell) are used.
     // NOTE: If the server log shows "0 files, 0 dirs" after a binary update, re-grant FDA
     // to /Library/Wired3/bin/wired3 in System Settings → Privacy & Security → Full Disk Access.
     private func writeFDACheckScript(filesDir: String, daemonUser: String, outputFile: String, to scriptPath: String) {
@@ -395,12 +395,12 @@ final class WiredServerViewModel: ObservableObject {
         #!/bin/sh
         OUT='\(outputFile)'
         FILES='\(filesDir)'
-        DUSER='\(daemonUser)'
+        WIRED3='\(wired3Binary)'
 
         # Run the actual wired3 binary (which holds the FDA/Removable-Volumes TCC grant)
-        # to probe the files directory. Using /bin/ls would fail because the TCC grant
-        # is bound to wired3's code signature, not to a generic tool.
-        if sudo -u "$DUSER" "$WIRED3" --check-access "$FILES" >/dev/null 2>&1; then
+        # to probe the files directory. Runs as root — TCC checks the binary's code signature,
+        # not the UID, so the result reflects whether the grant is in place.
+        if "$WIRED3" --check-access "$FILES" >/dev/null 2>&1; then
             echo 1 > "$OUT"
         else
             echo 0 > "$OUT"
