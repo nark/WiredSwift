@@ -451,6 +451,18 @@ final class WiredServerViewModel: ObservableObject {
         return path.hasPrefix("/Volumes/")
     }
 
+    // Creates a private 0700 temporary directory via mkdtemp so that neither the output file
+    // nor the script file can be symlink-raced by an unprivileged local user before root runs them.
+    private func makePrivateTempDir() throws -> URL {
+        // mkdtemp(3) requires a mutable C-string buffer ending in "XXXXXX".
+        var template = Array((NSTemporaryDirectory() + "wired3fda.XXXXXX").utf8CString)
+        guard mkdtemp(&template) != nil else {
+            throw NSError(domain: POSIXError.errorDomain, code: Int(errno),
+                          userInfo: [NSLocalizedDescriptionKey: "mkdtemp failed: \(errno)"])
+        }
+        return URL(fileURLWithPath: String(cString: template), isDirectory: true)
+    }
+
     // Writes a shell script that tests whether the daemon user can list the files directory.
     // Uses `su -m` rather than `sudo -u` so the subprocess runs with the daemon user's process
     // identity — `sudo -u` launched from root inherits root's TCC context and can bypass macOS
@@ -486,14 +498,16 @@ final class WiredServerViewModel: ObservableObject {
             return
         }
         let filesDir = currentServerRootPath()
-        let ts = Int(Date().timeIntervalSince1970)
-        let fdaTmpFile = "/tmp/.wired3fda_\(ts)"
-        let fdaShFile  = "/tmp/.wired3sh_\(ts).sh"
+        guard let tmpDir = try? makePrivateTempDir() else {
+            wired3HasFullDiskAccess = false
+            return
+        }
+        defer { try? FileManager.default.removeItem(at: tmpDir) }
+        let fdaTmpFile = tmpDir.appendingPathComponent("result").path
+        let fdaShFile  = tmpDir.appendingPathComponent("check.sh").path
         writeFDACheckScript(filesDir: filesDir, daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
         try? runPrivileged("sh '\(fdaShFile)'; true", error: .launchDaemonInstallFailed(""))
         let raw = (try? String(contentsOfFile: fdaTmpFile, encoding: .utf8)) ?? "0"
-        try? FileManager.default.removeItem(atPath: fdaTmpFile)
-        try? FileManager.default.removeItem(atPath: fdaShFile)
         wired3HasFullDiskAccess = raw.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
     }
 
@@ -590,27 +604,30 @@ final class WiredServerViewModel: ObservableObject {
         // If files dir is on an external volume, embed a TCC/FDA check in the SAME privileged
         // script so only ONE admin auth dialog is shown.
         let onExternal = filesDirectoryIsOnExternalVolume
-        let ts = Int(Date().timeIntervalSince1970)
-        let fdaTmpFile = "/tmp/.wired3fda_\(ts)"
-        let fdaShFile  = "/tmp/.wired3sh_\(ts).sh"
-
-        if onExternal {
+        // Use a private 0700 temp directory (mkdtemp) so neither the script nor the output
+        // file can be symlink-raced by an unprivileged user before root executes them.
+        var fdaTmpFile = ""
+        var fdaShFile  = ""
+        var tmpDir: URL?
+        if onExternal, let dir = try? makePrivateTempDir() {
+            tmpDir = dir
+            fdaTmpFile = dir.appendingPathComponent("result").path
+            fdaShFile  = dir.appendingPathComponent("check.sh").path
             writeFDACheckScript(filesDir: currentServerRootPath(), daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
         }
 
         var cmd = "launchctl bootstrap system '\(launchDaemonPlistPath)' 2>/dev/null"
         cmd += "; launchctl kickstart system/\(launchAgentLabel) 2>/dev/null"
-        if onExternal {
+        if onExternal && !fdaShFile.isEmpty {
             cmd += "; sh '\(fdaShFile)'"
         }
         cmd += "; true"
 
         do {
             try runPrivileged(cmd, error: .launchDaemonInstallFailed("start"))
-            if onExternal {
+            if onExternal, let dir = tmpDir {
                 let raw = (try? String(contentsOfFile: fdaTmpFile, encoding: .utf8)) ?? "0"
-                try? FileManager.default.removeItem(atPath: fdaTmpFile)
-                try? FileManager.default.removeItem(atPath: fdaShFile)
+                try? FileManager.default.removeItem(at: dir)
                 wired3HasFullDiskAccess = raw.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
             }
         } catch {
