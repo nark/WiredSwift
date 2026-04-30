@@ -274,6 +274,8 @@ struct NetworkTabView: View {
             return .green
         case .closed:
             return .red
+        case .error:
+            return .orange
         }
     }
 }
@@ -308,6 +310,12 @@ struct FilesTabView: View {
                         Button(L("common.choose")) {
                             model.chooseFilesDirectory()
                         }
+                    }
+
+                    if model.filesDirectory.hasPrefix("/Users/") {
+                        Label(L("files.daemon_userpath_warning"), systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.footnote)
                     }
                 }
 
@@ -471,6 +479,7 @@ struct DatabaseTabView: View {
 struct SecurityTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
     @State private var fingerprintCopied = false
+    @State private var passwordText: String = ""
 
     var body: some View {
         SettingsScrollPane {
@@ -482,17 +491,18 @@ struct SecurityTabView: View {
                     }
 
                     HStack(spacing: 8) {
-                        SecureField(L("advanced.admin.password.placeholder"), text: $model.newAdminPassword)
-                            .frame(width: 260)
-
-                        Spacer()
+                        SecureField(L("advanced.admin.password.placeholder"), text: $passwordText)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { applyPassword() }
 
                         Button(L("advanced.admin.set_password")) {
-                            model.setAdminPassword()
+                            applyPassword()
                         }
 
                         Button(L("advanced.admin.create_user")) {
+                            model.newAdminPassword = passwordText
                             model.createAdminUser()
+                            passwordText = ""
                         }
                     }
                 }
@@ -576,6 +586,12 @@ struct SecurityTabView: View {
             .formStyle(.grouped)
         }
         .onAppear { model.refreshIdentityFingerprint() }
+    }
+
+    private func applyPassword() {
+        model.newAdminPassword = passwordText
+        model.setAdminPassword()
+        passwordText = ""
     }
 }
 

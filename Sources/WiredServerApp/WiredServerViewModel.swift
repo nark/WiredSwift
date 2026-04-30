@@ -2071,49 +2071,57 @@ strict_identity = yes
         return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.files.ok"))
     }
 
+    // MARK: - External port reachability check
+
+    /// Two-step external port check:
+    ///   1. Resolve external IP via api.ipify.org
+    ///   2. Probe TCP reachability via check-host.net
     private static func probePort(port: Int) async -> PortStatus {
-        guard let nwPort = NWEndpoint.Port(rawValue: UInt16(max(0, min(port, 65_535)))) else {
-            return .closed
+        guard (1...65_535).contains(port) else { return .closed }
+        guard let externalIP = await fetchExternalIP() else { return .error }
+        return await checkPortExternal(ip: externalIP, port: port)
+    }
+
+    private static func fetchExternalIP() async -> String? {
+        guard let url = URL(string: "https://api.ipify.org?format=json") else { return nil }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        guard let (data, _) = try? await URLSession.shared.data(for: req) else { return nil }
+        struct IPResponse: Decodable { let ip: String }
+        return (try? JSONDecoder().decode(IPResponse.self, from: data))?.ip
+    }
+
+    private static func checkPortExternal(ip: String, port: Int) async -> PortStatus {
+        guard let url = URL(string: "https://check-host.net/check-tcp?host=\(ip):\(port)&max_nodes=3") else { return .error }
+        var req = URLRequest(url: url)
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.timeoutInterval = 15
+        guard let (data, _) = try? await URLSession.shared.data(for: req) else { return .error }
+
+        struct CheckInit: Decodable { let request_id: String }
+        guard let checkResp = try? JSONDecoder().decode(CheckInit.self, from: data) else { return .error }
+
+        // Poll at 3 s, then +4 s, then +6 s (open ports resolve in ~2 s, timeouts in ~6 s)
+        for delay: UInt64 in [3_000_000_000, 4_000_000_000, 6_000_000_000] {
+            try? await Task.sleep(nanoseconds: delay)
+            guard let resultURL = URL(string: "https://check-host.net/check-result/\(checkResp.request_id)") else { return .error }
+            var resultReq = URLRequest(url: resultURL)
+            resultReq.setValue("application/json", forHTTPHeaderField: "Accept")
+            resultReq.timeoutInterval = 10
+            guard let (resultData, _) = try? await URLSession.shared.data(for: resultReq) else { continue }
+            guard let json = try? JSONSerialization.jsonObject(with: resultData) as? [String: Any] else { continue }
+
+            var anyOpen = false
+            var anyPending = false
+            for (_, nodeValue) in json {
+                if nodeValue is NSNull { anyPending = true; continue }
+                guard let results = nodeValue as? [[String: Any]], !results.isEmpty else { continue }
+                if results.first?["address"] != nil { anyOpen = true }
+            }
+            if anyOpen { return .open }
+            if !anyPending { return .closed }  // all nodes answered, none succeeded
         }
-
-        return await withCheckedContinuation { continuation in
-            let connection = NWConnection(host: .ipv4(.loopback), port: nwPort, using: .tcp)
-            let queue = DispatchQueue(label: "wired.server.port.check")
-            final class ResolutionState: @unchecked Sendable {
-                let lock = NSLock()
-                var resolved = false
-            }
-            let state = ResolutionState()
-
-            @Sendable func finish(_ status: PortStatus) {
-                state.lock.lock()
-                if state.resolved {
-                    state.lock.unlock()
-                    return
-                }
-                state.resolved = true
-                state.lock.unlock()
-                connection.cancel()
-                continuation.resume(returning: status)
-            }
-
-            connection.stateUpdateHandler = { state in
-                switch state {
-                case .ready:
-                    finish(.open)
-                case .failed, .waiting, .cancelled:
-                    finish(.closed)
-                default:
-                    break
-                }
-            }
-
-            queue.asyncAfter(deadline: .now() + 1.5) {
-                finish(.closed)
-            }
-
-            connection.start(queue: queue)
-        }
+        return .closed
     }
 }
 
@@ -2156,6 +2164,7 @@ enum PortStatus {
     case unknown
     case open
     case closed
+    case error
 
     var description: String {
         switch self {
@@ -2165,6 +2174,8 @@ enum PortStatus {
             return L("network.port_status.open")
         case .closed:
             return L("network.port_status.closed")
+        case .error:
+            return L("network.port_status.error")
         }
     }
 }
