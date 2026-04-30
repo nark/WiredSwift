@@ -1,6 +1,10 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Erreur";
 "alert.binary_updated.title" = "Serveur mis à jour";
+"alert.privileged_update.title" = "Mise à jour disponible";
+"alert.privileged_update.message" = "Une nouvelle version du binaire serveur est incluse dans cette application. L'installer maintenant ? Votre mot de passe administrateur sera requis.";
+"alert.privileged_update.install" = "Installer maintenant";
+"alert.privileged_update.later" = "Plus tard";
 "alert.binary_updated.message" = "Une nouvelle version du binaire serveur a été installée. Le serveur en cours d'exécution utilise encore l'ancienne version. Voulez-vous le redémarrer maintenant ?";
 "alert.binary_updated.restart" = "Redémarrer maintenant";
 "alert.binary_updated.later" = "Plus tard";
@@ -118,6 +122,20 @@
 "database.events.retention.weekly" = "Chaque semaine";
 "database.events.retention.monthly" = "Chaque mois";
 "database.events.retention.yearly" = "Chaque année";
+
+"touchid.section" = "Touch ID / Apple Watch";
+"touchid.status.enabled" = "Touch ID activé pour les opérations admin";
+"touchid.status.disabled" = "Touch ID non activé";
+"touchid.description" = "Lorsqu'activé, les opérations admin (démarrer/arrêter le daemon, installer) utilisent Touch ID au lieu d'un mot de passe.";
+"touchid.forget" = "Oublier le mot de passe";
+"touchid.reason" = "Authentification pour contrôler le serveur Wired";
+"touchid.dialog.title" = "Mot de passe administrateur requis";
+"touchid.dialog.message" = "Entrez votre mot de passe administrateur macOS pour continuer.";
+"touchid.dialog.placeholder" = "Mot de passe";
+"touchid.save.title" = "Activer Touch ID ?";
+"touchid.save.message" = "Enregistrez votre mot de passe administrateur avec Touch ID pour éviter de le saisir à chaque opération.";
+"touchid.save.enable" = "Activer Touch ID";
+"touchid.wrong_password" = "Authentification échouée — mot de passe incorrect.";
 
 "advanced.admin.section" = "Compte admin";
 "advanced.admin.password.placeholder" = "Mot de passe admin";

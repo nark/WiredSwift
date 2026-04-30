@@ -107,6 +107,13 @@ public class UsersController: TableController, SocketPasswordDelegate {
         }
     }
 
+    /// Returns `true` if a registered account with the given login name exists.
+    public func userExists(withUsername username: String) -> Bool {
+        (try? databaseController.dbQueue.read { db in
+            try User.filter(Column("username") == username).fetchCount(db) > 0
+        }) ?? false
+    }
+
     /// Fetches a user by login name and eagerly loads their privilege set.
     ///
     /// - Parameter username: The account login name.
@@ -419,6 +426,8 @@ public class UsersController: TableController, SocketPasswordDelegate {
         migrateOfflineMessagesTableIfNeeded(db: db)
         migrateAddReactionsPrivilegeIfNeeded(db: db)
         migrateFileMetadataPrivilegesIfNeeded(db: db)
+        migrateSendOfflineMessagesPrivilegeIfNeeded(db: db)
+        migrateListOfflineUsersPrivilegeIfNeeded(db: db)
     }
 
     /// For existing installations, grant `wired.account.board.add_reactions` (true) to every
@@ -490,6 +499,68 @@ public class UsersController: TableController, SocketPasswordDelegate {
                 } else {
                     WiredSwift.Logger.info("Migrated \(targetPrivilege) for \(entry.table)")
                 }
+            }
+        }
+    }
+
+    /// For existing installations, grant `wired.account.user.list_offline_users` to every
+    /// user and group that already has `wired.account.message.send_offline_messages = true`.
+    private func migrateListOfflineUsersPrivilegeIfNeeded(db: OpaquePointer) {
+        let targetPrivilege = "wired.account.user.list_offline_users"
+        let sourcePrivilege = "wired.account.message.send_offline_messages"
+
+        let tables: [(table: String, ownerColumn: String)] = [
+            ("user_privileges", "user_id"),
+            ("group_privileges", "group_id")
+        ]
+
+        for entry in tables {
+            let sql = """
+            INSERT OR IGNORE INTO "\(entry.table)" (name, value, \(entry.ownerColumn))
+            SELECT '\(targetPrivilege)', 1, \(entry.ownerColumn)
+            FROM "\(entry.table)"
+            WHERE name = '\(sourcePrivilege)' AND value = 1
+              AND \(entry.ownerColumn) NOT IN (
+                  SELECT \(entry.ownerColumn) FROM "\(entry.table)" WHERE name = '\(targetPrivilege)'
+              );
+            """
+            if sqliteExec(db: db, sql) != SQLITE_OK {
+                if let msg = sqlite3_errmsg(db) {
+                    WiredSwift.Logger.error("migrateListOfflineUsersPrivilege (\(entry.table)): \(String(cString: msg))")
+                }
+            } else {
+                WiredSwift.Logger.info("Migrated \(targetPrivilege) for \(entry.table)")
+            }
+        }
+    }
+
+    /// For existing installations, grant `wired.account.message.send_offline_messages` to every
+    /// user and group that already has `wired.account.message.send_messages = true`.
+    private func migrateSendOfflineMessagesPrivilegeIfNeeded(db: OpaquePointer) {
+        let targetPrivilege = "wired.account.message.send_offline_messages"
+        let sourcePrivilege = "wired.account.message.send_messages"
+
+        let tables: [(table: String, ownerColumn: String)] = [
+            ("user_privileges", "user_id"),
+            ("group_privileges", "group_id")
+        ]
+
+        for entry in tables {
+            let sql = """
+            INSERT OR IGNORE INTO "\(entry.table)" (name, value, \(entry.ownerColumn))
+            SELECT '\(targetPrivilege)', 1, \(entry.ownerColumn)
+            FROM "\(entry.table)"
+            WHERE name = '\(sourcePrivilege)' AND value = 1
+              AND \(entry.ownerColumn) NOT IN (
+                  SELECT \(entry.ownerColumn) FROM "\(entry.table)" WHERE name = '\(targetPrivilege)'
+              );
+            """
+            if sqliteExec(db: db, sql) != SQLITE_OK {
+                if let msg = sqlite3_errmsg(db) {
+                    WiredSwift.Logger.error("migrateSendOfflineMessagesPrivilege (\(entry.table)): \(String(cString: msg))")
+                }
+            } else {
+                WiredSwift.Logger.info("Migrated \(targetPrivilege) for \(entry.table)")
             }
         }
     }

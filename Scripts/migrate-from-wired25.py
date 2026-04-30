@@ -220,7 +220,7 @@ def migrate_users(src, dst, dry_run, overwrite):
                     edited_by=?, downloads=?, download_transferred=?,
                     uploads=?, upload_transferred=?,
                     "group"=?, groups=?, color=?, files=?,
-                    password_salt=NULL
+                    password_salt=NULL, is_legacy=1
                 WHERE username=?
             """, (
                 password, full_name, comment,
@@ -237,13 +237,13 @@ def migrate_users(src, dst, dry_run, overwrite):
         else:
             cur = dst.execute("""
                 INSERT INTO users (
-                    username, password, password_salt,
+                    username, password, password_salt, is_legacy,
                     full_name, comment,
                     creation_time, modification_time, login_time,
                     edited_by, downloads, download_transferred,
                     uploads, upload_transferred,
                     "group", groups, color, files
-                ) VALUES (?,?,NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ) VALUES (?,?,NULL,1,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """, (
                 username, password,
                 full_name, comment,

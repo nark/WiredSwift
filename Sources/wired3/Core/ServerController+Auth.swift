@@ -3,6 +3,7 @@
 //  wired3
 //
 import Foundation
+import GRDB
 import WiredSwift
 
 extension ServerController {
@@ -147,6 +148,20 @@ extension ServerController {
         client.loginTime = Date()
         client.idleTime = client.loginTime
 
+        try? App.databaseController.dbQueue.write { db in
+            if let nick = client.nick, !nick.isEmpty {
+                try db.execute(
+                    sql: "UPDATE users SET last_login_at = ?, last_nick = ? WHERE username = ?",
+                    arguments: [Date().timeIntervalSince1970, nick, login]
+                )
+            } else {
+                try db.execute(
+                    sql: "UPDATE users SET last_login_at = ? WHERE username = ?",
+                    arguments: [Date().timeIntervalSince1970, login]
+                )
+            }
+        }
+
         let clientInfo = [client.applicationName, client.applicationVersion]
             .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
         Logger.info("Login from \(clientIP) as '\(login)' succeeded using \(clientInfo.isEmpty ? "unknown client" : clientInfo)")
@@ -158,6 +173,10 @@ extension ServerController {
             parameters: [client.applicationName, client.osName],
             loginOverride: login
         )
+
+        // Send list of offline registered users, then deliver any queued offline messages
+        self.sendOfflineUserList(to: client)
+        self.deliverOfflineMessages(to: client)
 
         return true
     }
