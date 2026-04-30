@@ -28,7 +28,6 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var serverPort: Int = 4871
     @Published var portStatus: PortStatus = .unknown
-    @Published var portCheckConsentGiven: Bool = UserDefaults.standard.bool(forKey: "portCheckConsentGiven")
     @Published var showPortCheckConsentAlert = false
 
     @Published var filesDirectory: String = ""
@@ -226,8 +225,6 @@ final class WiredServerViewModel: ObservableObject {
         refreshAdminStatus()
         refreshLogText()
         refreshDashboard(force: true)
-        if portCheckConsentGiven { checkPort() }
-
         if binaryWasUpdated && isRunning {
             showRestartAfterUpdateAlert = true
         }
@@ -548,10 +545,10 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func checkPort() {
-        guard portCheckConsentGiven else {
-            showPortCheckConsentAlert = true
-            return
-        }
+        showPortCheckConsentAlert = true
+    }
+
+    func confirmPortCheckConsent() {
         let port = serverPort
         portStatus = .checking
         Task.detached {
@@ -560,12 +557,6 @@ final class WiredServerViewModel: ObservableObject {
                 self.portStatus = status
             }
         }
-    }
-
-    func confirmPortCheckConsent() {
-        portCheckConsentGiven = true
-        UserDefaults.standard.set(true, forKey: "portCheckConsentGiven")
-        checkPort()
     }
 
     func saveFilesSettings() {
