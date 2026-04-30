@@ -12,6 +12,7 @@
 "alert.initial_password.message" = "The server has been initialized with a random admin password. Save it now — it will not be shown again.";
 "alert.initial_password.copy" = "Copy to Clipboard";
 "common.ok" = "OK";
+"common.cancel" = "Cancel";
 "common.choose" = "Choose";
 "common.select" = "Select";
 "common.save" = "Save";
@@ -45,10 +46,14 @@
 "network.port" = "Listening Port";
 "network.check" = "Check";
 "network.restart_required" = "Server must be restarted after port change.";
-"network.port_status.unknown" = "Checking external reachability…";
+"network.port_status.unknown" = "Press 'Check' to test external reachability";
+"network.port_status.checking" = "Checking external reachability…";
 "network.port_status.open" = "Reachable from internet";
 "network.port_status.closed" = "Not reachable from internet";
 "network.port_status.error" = "Port check failed (no internet?)";
+"network.consent.title" = "External Port Check";
+"network.consent.message" = "Checking port reachability requires sending your public IP address to portchecker.co, a service hosted in the Netherlands (EU). This is used only to verify that your server port is reachable from the internet and is not stored or shared. Do you agree?";
+"network.consent.agree" = "I Agree";
 
 "files.section" = "Files";
 "files.directory" = "Files directory";

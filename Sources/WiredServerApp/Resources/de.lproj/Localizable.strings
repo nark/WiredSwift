@@ -12,6 +12,7 @@
 "alert.initial_password.message" = "Der Server wurde mit einem zufälligen Admin-Passwort initialisiert. Notieren Sie es jetzt — es wird nicht erneut angezeigt.";
 "alert.initial_password.copy" = "In Zwischenablage kopieren";
 "common.ok" = "OK";
+"common.cancel" = "Abbrechen";
 "common.choose" = "Auswählen";
 "common.select" = "Auswählen";
 "common.save" = "Speichern";
@@ -45,10 +46,14 @@
 "network.port" = "Listening-Port";
 "network.check" = "Prüfen";
 "network.restart_required" = "Der Server muss nach einer Port-Änderung neu gestartet werden.";
-"network.port_status.unknown" = "Externer Portcheck läuft…";
+"network.port_status.unknown" = "„Prüfen" antippen, um die externe Erreichbarkeit zu testen";
+"network.port_status.checking" = "Externer Portcheck läuft…";
 "network.port_status.open" = "Von außen erreichbar";
 "network.port_status.closed" = "Von außen nicht erreichbar";
 "network.port_status.error" = "Portcheck fehlgeschlagen (kein Internet?)";
+"network.consent.title" = "Externer Portcheck";
+"network.consent.message" = "Für den Portcheck wird deine öffentliche IP-Adresse an portchecker.co gesendet, einen Dienst mit Sitz in den Niederlanden (EU). Die Daten werden ausschließlich zur Überprüfung verwendet und weder gespeichert noch weitergegeben. Bist du einverstanden?";
+"network.consent.agree" = "Einverstanden";
 
 "files.section" = "Dateien";
 "files.directory" = "Dateiverzeichnis";

@@ -264,11 +264,17 @@ struct NetworkTabView: View {
             }
             .formStyle(.grouped)
         }
+        .alert(L("network.consent.title"), isPresented: $model.showPortCheckConsentAlert) {
+            Button(L("network.consent.agree")) { model.confirmPortCheckConsent() }
+            Button(L("common.cancel"), role: .cancel) { }
+        } message: {
+            Text(L("network.consent.message"))
+        }
     }
 
     private func color(for status: PortStatus) -> Color {
         switch status {
-        case .unknown:
+        case .unknown, .checking:
             return .gray
         case .open:
             return .green

@@ -12,6 +12,7 @@
 "alert.initial_password.message" = "Le serveur a été initialisé avec un mot de passe admin aléatoire. Notez-le maintenant, il ne sera plus affiché.";
 "alert.initial_password.copy" = "Copier";
 "common.ok" = "OK";
+"common.cancel" = "Annuler";
 "common.choose" = "Choisir";
 "common.select" = "Sélectionner";
 "common.save" = "Enregistrer";
@@ -45,10 +46,14 @@
 "network.port" = "Port en écoute";
 "network.check" = "Vérifier";
 "network.restart_required" = "Le serveur doit être redémarré après un changement de port.";
-"network.port_status.unknown" = "Vérification de la disponibilité externe…";
+"network.port_status.unknown" = "Cliquez sur « Vérifier » pour tester la disponibilité externe";
+"network.port_status.checking" = "Vérification de la disponibilité externe…";
 "network.port_status.open" = "Accessible depuis internet";
 "network.port_status.closed" = "Non accessible depuis internet";
 "network.port_status.error" = "Vérification échouée (pas d'internet ?)";
+"network.consent.title" = "Vérification externe du port";
+"network.consent.message" = "La vérification de l'accessibilité du port nécessite l'envoi de votre adresse IP publique à portchecker.co, un service hébergé aux Pays-Bas (UE). Ces données sont utilisées uniquement pour vérifier que votre port est accessible depuis internet et ne sont ni stockées ni partagées. Acceptez-vous ?";
+"network.consent.agree" = "J'accepte";
 
 "files.section" = "Fichiers";
 "files.directory" = "Répertoire de fichiers";

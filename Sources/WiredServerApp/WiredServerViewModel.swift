@@ -28,6 +28,8 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var serverPort: Int = 4871
     @Published var portStatus: PortStatus = .unknown
+    @Published var portCheckConsentGiven: Bool = UserDefaults.standard.bool(forKey: "portCheckConsentGiven")
+    @Published var showPortCheckConsentAlert = false
 
     @Published var filesDirectory: String = ""
     @Published var filesReindexInterval: Int = 3600
@@ -224,7 +226,7 @@ final class WiredServerViewModel: ObservableObject {
         refreshAdminStatus()
         refreshLogText()
         refreshDashboard(force: true)
-        checkPort()
+        if portCheckConsentGiven { checkPort() }
 
         if binaryWasUpdated && isRunning {
             showRestartAfterUpdateAlert = true
@@ -546,15 +548,24 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func checkPort() {
+        guard portCheckConsentGiven else {
+            showPortCheckConsentAlert = true
+            return
+        }
         let port = serverPort
-        portStatus = .unknown
-
+        portStatus = .checking
         Task.detached {
             let status = await Self.probePort(port: port)
             await MainActor.run {
                 self.portStatus = status
             }
         }
+    }
+
+    func confirmPortCheckConsent() {
+        portCheckConsentGiven = true
+        UserDefaults.standard.set(true, forKey: "portCheckConsentGiven")
+        checkPort()
     }
 
     func saveFilesSettings() {
@@ -2071,19 +2082,20 @@ strict_identity = yes
         return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.files.ok"))
     }
 
-    // MARK: - External port reachability check
+    // MARK: - External port reachability check (opt-in, EU-hosted)
 
-    /// Two-step external port check:
-    ///   1. Resolve external IP via api.ipify.org
-    ///   2. Probe TCP reachability via check-host.net
+    /// Two-step external port check (requires prior user consent):
+    ///   1. Resolve external IP via api.seeip.org (Netherlands)
+    ///   2. Probe TCP reachability via portchecker.co (Netherlands)
     private static func probePort(port: Int) async -> PortStatus {
         guard (1...65_535).contains(port) else { return .closed }
         guard let externalIP = await fetchExternalIP() else { return .error }
         return await checkPortExternal(ip: externalIP, port: port)
     }
 
+    /// Fetches the machine's external IP from api.seeip.org (Netherlands, EU).
     private static func fetchExternalIP() async -> String? {
-        guard let url = URL(string: "https://api.ipify.org?format=json") else { return nil }
+        guard let url = URL(string: "https://api.seeip.org/json") else { return nil }
         var req = URLRequest(url: url)
         req.timeoutInterval = 10
         guard let (data, _) = try? await URLSession.shared.data(for: req) else { return nil }
@@ -2091,37 +2103,18 @@ strict_identity = yes
         return (try? JSONDecoder().decode(IPResponse.self, from: data))?.ip
     }
 
+    /// Probes TCP reachability via portchecker.co (Netherlands, EU).
+    /// Single synchronous request — no polling needed.
     private static func checkPortExternal(ip: String, port: Int) async -> PortStatus {
-        guard let url = URL(string: "https://check-host.net/check-tcp?host=\(ip):\(port)&max_nodes=3") else { return .error }
+        let escaped = ip.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ip
+        guard let url = URL(string: "https://portchecker.co/api/v1/query?host=\(escaped)&port=\(port)") else { return .error }
         var req = URLRequest(url: url)
         req.setValue("application/json", forHTTPHeaderField: "Accept")
-        req.timeoutInterval = 15
+        req.timeoutInterval = 20
         guard let (data, _) = try? await URLSession.shared.data(for: req) else { return .error }
-
-        struct CheckInit: Decodable { let request_id: String }
-        guard let checkResp = try? JSONDecoder().decode(CheckInit.self, from: data) else { return .error }
-
-        // Poll at 3 s, then +4 s, then +6 s (open ports resolve in ~2 s, timeouts in ~6 s)
-        for delay: UInt64 in [3_000_000_000, 4_000_000_000, 6_000_000_000] {
-            try? await Task.sleep(nanoseconds: delay)
-            guard let resultURL = URL(string: "https://check-host.net/check-result/\(checkResp.request_id)") else { return .error }
-            var resultReq = URLRequest(url: resultURL)
-            resultReq.setValue("application/json", forHTTPHeaderField: "Accept")
-            resultReq.timeoutInterval = 10
-            guard let (resultData, _) = try? await URLSession.shared.data(for: resultReq) else { continue }
-            guard let json = try? JSONSerialization.jsonObject(with: resultData) as? [String: Any] else { continue }
-
-            var anyOpen = false
-            var anyPending = false
-            for (_, nodeValue) in json {
-                if nodeValue is NSNull { anyPending = true; continue }
-                guard let results = nodeValue as? [[String: Any]], !results.isEmpty else { continue }
-                if results.first?["address"] != nil { anyOpen = true }
-            }
-            if anyOpen { return .open }
-            if !anyPending { return .closed }  // all nodes answered, none succeeded
-        }
-        return .closed
+        struct PortCheckResponse: Decodable { let isOpen: Bool }
+        guard let resp = try? JSONDecoder().decode(PortCheckResponse.self, from: data) else { return .error }
+        return resp.isOpen ? .open : .closed
     }
 }
 
@@ -2162,6 +2155,7 @@ enum DashboardHealthLevel {
 
 enum PortStatus {
     case unknown
+    case checking
     case open
     case closed
     case error
@@ -2170,6 +2164,8 @@ enum PortStatus {
         switch self {
         case .unknown:
             return L("network.port_status.unknown")
+        case .checking:
+            return L("network.port_status.checking")
         case .open:
             return L("network.port_status.open")
         case .closed:
