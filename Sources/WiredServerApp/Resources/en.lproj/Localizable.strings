@@ -8,6 +8,7 @@
 "alert.initial_password.message" = "The server has been initialized with a random admin password. Save it now — it will not be shown again.";
 "alert.initial_password.copy" = "Copy to Clipboard";
 "common.ok" = "OK";
+"common.cancel" = "Cancel";
 "common.choose" = "Choose";
 "common.select" = "Select";
 "common.save" = "Save";

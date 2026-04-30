@@ -1,6 +1,7 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Fehler";
 "common.ok" = "OK";
+"common.cancel" = "Abbrechen";
 "common.choose" = "Auswählen";
 "common.select" = "Auswählen";
 "common.save" = "Speichern";

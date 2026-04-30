@@ -8,6 +8,7 @@
 "alert.initial_password.message" = "Le serveur a été initialisé avec un mot de passe admin aléatoire. Notez-le maintenant, il ne sera plus affiché.";
 "alert.initial_password.copy" = "Copier";
 "common.ok" = "OK";
+"common.cancel" = "Annuler";
 "common.choose" = "Choisir";
 "common.select" = "Sélectionner";
 "common.save" = "Enregistrer";
