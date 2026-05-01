@@ -37,9 +37,33 @@
 "general.execution.section" = "Ausführung";
 "general.execution.running" = "Server läuft";
 "general.execution.stopped" = "Server läuft nicht";
+"general.execution.running_daemon" = "Läuft (Daemon)";
+"general.execution.stopped_daemon" = "Gestoppt (Daemon)";
 "general.execution.start" = "Starten";
 "general.execution.stop" = "Stoppen";
 "general.execution.start_on_login" = "Automatisch beim Systemstart starten";
+"general.execution.start_at_boot" = "Beim Systemstart starten";
+
+"general.system_data_dir.section" = "Systemweites Datenverzeichnis";
+"general.system_data_dir.migrate_description" = "Serverdaten nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren. Die ursprünglichen Daten werden als Backup aufbewahrt.";
+"general.system_data_dir.migrate_button" = "Nach /Library/Wired3/ migrieren";
+
+"general.install_mode.section" = "Installationsmodus";
+"general.install_mode.migrate_warning" = "Zuerst nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren.";
+"general.install_mode.mode" = "Modus";
+"general.install_mode.launch_agent" = "LaunchAgent (aktueller Benutzer)";
+"general.install_mode.launch_daemon" = "LaunchDaemon (Systemdienst)";
+"general.install_mode.daemon_user" = "Daemon-Benutzer";
+"general.install_mode.group" = "Gruppe";
+
+"general.versions.section" = "Versionen";
+
+"fda.check.passed" = "Daemon-Zugriffsprüfung erfolgreich.";
+"fda.external_volume" = "Dateiverzeichnis liegt auf einem externen Volume.";
+"fda.check.passed.detail" = "Der Daemon-Benutzer hat scheinbar Lesezugriff. Nach einem Binary-Update kann eine Neusignierung diesen Zugriff entziehen — prüfe das Server-Protokoll auf \"0 files, 0 dirs\".";
+"fda.check.failed.detail" = "Sicherstellen, dass das Dateiverzeichnis für den Daemon-Benutzer lesbar ist, dann auf \"Erneut prüfen\" klicken.";
+"fda.recheck" = "Erneut prüfen";
+"fda.restart_daemon" = "Daemon neu starten";
 
 "network.section" = "Netzwerk";
 "network.port" = "Listening-Port";
