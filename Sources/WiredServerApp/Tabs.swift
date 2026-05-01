@@ -115,19 +115,26 @@ private struct ExternalVolumeWarningView: View {
             Spacer()
 
             if !hasFDA {
-                Button("Re-check") {
-                    model.refreshFDAStatusPrivileged()
-                }
-                .font(.footnote)
-
-                Button("Restart Daemon") {
-                    model.stopDaemon()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        model.startDaemon()
+                VStack(alignment: .trailing, spacing: 6) {
+                    Button(L("fda.open_settings")) {
+                        onOpenSettings()
                     }
+                    .font(.footnote)
+
+                    Button(L("fda.recheck")) {
+                        model.refreshFDAStatusPrivileged()
+                    }
+                    .font(.footnote)
+
+                    Button(L("fda.restart_daemon")) {
+                        model.stopDaemon()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            model.startDaemon()
+                        }
+                    }
+                    .font(.footnote)
+                    .disabled(!model.isDaemonRunning)
                 }
-                .font(.footnote)
-                .disabled(!model.isDaemonRunning)
             }
         }
         .padding(8)

@@ -428,7 +428,13 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func openFullDiskAccessSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+        let urlString: String
+        if #available(macOS 13, *) {
+            urlString = "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
+        } else {
+            urlString = "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
+        }
+        if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
     }

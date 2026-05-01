@@ -37,6 +37,29 @@
 "general.execution.start" = "Démarrer";
 "general.execution.stop" = "Arrêter";
 "general.execution.start_on_login" = "Démarrer automatiquement à la connexion macOS";
+"general.execution.start_at_boot" = "Démarrer au démarrage";
+
+"general.system_data_dir.section" = "Répertoire système des données";
+"general.system_data_dir.migrate_description" = "Migrer les données du serveur vers /Library/Wired3/ pour activer le mode LaunchDaemon. Les données d'origine seront conservées en sauvegarde.";
+"general.system_data_dir.migrate_button" = "Migrer vers /Library/Wired3/";
+
+"general.install_mode.section" = "Mode d'installation";
+"general.install_mode.migrate_warning" = "Migrer d'abord vers /Library/Wired3/ pour activer le mode LaunchDaemon.";
+"general.install_mode.mode" = "Mode";
+"general.install_mode.launch_agent" = "LaunchAgent (utilisateur courant)";
+"general.install_mode.launch_daemon" = "LaunchDaemon (service système)";
+"general.install_mode.daemon_user" = "Utilisateur daemon";
+"general.install_mode.group" = "Groupe";
+
+"general.versions.section" = "Versions";
+
+"fda.check.passed" = "Vérification d'accès daemon réussie.";
+"fda.external_volume" = "Le répertoire de fichiers est sur un volume externe.";
+"fda.check.passed.detail" = "L'utilisateur daemon semble avoir accès en lecture. Après une mise à jour binaire, la re-signature peut révoquer cet accès — vérifiez le journal serveur pour \"0 files, 0 dirs\".";
+"fda.check.failed.detail" = "Assurez-vous que le répertoire de fichiers est lisible par l'utilisateur daemon, puis cliquez sur Revérifier.";
+"fda.open_settings" = "Ouvrir Accès disque complet…";
+"fda.recheck" = "Revérifier";
+"fda.restart_daemon" = "Redémarrer le daemon";
 
 "network.section" = "Réseau";
 "network.port" = "Port en écoute";
