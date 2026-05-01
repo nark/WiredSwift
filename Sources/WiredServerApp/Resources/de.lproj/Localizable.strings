@@ -1,14 +1,27 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Fehler";
+"alert.binary_updated.title" = "Server aktualisiert";
+"alert.binary_updated.message" = "Eine neue Version der Server-Binary wurde installiert. Der laufende Server verwendet noch die alte Version. Möchten Sie ihn jetzt neu starten?";
+"alert.binary_updated.restart" = "Jetzt neu starten";
+"alert.binary_updated.later" = "Später";
+"alert.privileged_update.title" = "Server-Update verfügbar";
+"alert.privileged_update.message" = "Eine neue Version der Server-Binary ist in dieser App enthalten. Jetzt installieren? Ihr Administrator-Passwort wird benötigt.";
+"alert.privileged_update.install" = "Jetzt installieren";
+"alert.privileged_update.later" = "Später";
+"alert.initial_password.title" = "Erstes Admin-Passwort";
+"alert.initial_password.message" = "Der Server wurde mit einem zufälligen Admin-Passwort initialisiert. Notieren Sie es jetzt — es wird nicht erneut angezeigt.";
+"alert.initial_password.copy" = "In Zwischenablage kopieren";
 "common.ok" = "OK";
 "common.choose" = "Auswählen";
 "common.select" = "Auswählen";
 "common.save" = "Speichern";
 
 "pane.general" = "Allgemein";
+"pane.dashboard" = "Dashboard";
 "pane.network" = "Netzwerk";
 "pane.files" = "Dateien";
-"pane.advanced" = "Erweitert";
+"pane.database" = "Datenbank";
+"pane.security" = "Sicherheit";
 "pane.logs" = "Protokolle";
 
 "general.installation.section" = "Installation";
@@ -17,22 +30,49 @@
 "general.install.state.installed" = "Installiert";
 "general.install.state.uninstalled" = "Nicht installiert";
 "general.install.directory" = "Installationsverzeichnis";
-"general.install.version" = "Version";
+"general.install.version" = "Server-Version";
+"general.install.p7_version" = "P7-Protokoll";
+"general.install.wired_protocol" = "Wired-Protokoll";
 
 "general.execution.section" = "Ausführung";
 "general.execution.running" = "Server läuft";
 "general.execution.stopped" = "Server läuft nicht";
+"general.execution.running_daemon" = "Läuft (Daemon)";
+"general.execution.stopped_daemon" = "Gestoppt (Daemon)";
 "general.execution.start" = "Starten";
 "general.execution.stop" = "Stoppen";
 "general.execution.start_on_login" = "Automatisch beim Systemstart starten";
+"general.execution.start_at_boot" = "Beim Systemstart starten";
+
+"general.system_data_dir.section" = "Systemweites Datenverzeichnis";
+"general.system_data_dir.migrate_description" = "Serverdaten nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren. Die ursprünglichen Daten werden als Backup aufbewahrt.";
+"general.system_data_dir.migrate_button" = "Nach /Library/Wired3/ migrieren";
+
+"general.install_mode.section" = "Installationsmodus";
+"general.install_mode.migrate_warning" = "Zuerst nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren.";
+"general.install_mode.mode" = "Modus";
+"general.install_mode.launch_agent" = "LaunchAgent (aktueller Benutzer)";
+"general.install_mode.launch_daemon" = "LaunchDaemon (Systemdienst)";
+"general.install_mode.daemon_user" = "Daemon-Benutzer";
+"general.install_mode.group" = "Gruppe";
+
+"general.versions.section" = "Versionen";
+
+"fda.check.passed" = "Daemon-Zugriffsprüfung erfolgreich.";
+"fda.external_volume" = "Dateiverzeichnis liegt auf einem externen Volume.";
+"fda.check.passed.detail" = "Der Daemon-Benutzer hat scheinbar Lesezugriff. Nach einem Binary-Update kann eine Neusignierung diesen Zugriff entziehen — prüfe das Server-Protokoll auf \"0 files, 0 dirs\".";
+"fda.check.failed.detail" = "Sicherstellen, dass das Dateiverzeichnis für den Daemon-Benutzer lesbar ist, dann auf \"Erneut prüfen\" klicken.";
+"fda.recheck" = "Erneut prüfen";
+"fda.restart_daemon" = "Daemon neu starten";
 
 "network.section" = "Netzwerk";
 "network.port" = "Listening-Port";
 "network.check" = "Prüfen";
 "network.restart_required" = "Der Server muss nach einer Port-Änderung neu gestartet werden.";
-"network.port_status.unknown" = "Port-Status unbekannt";
-"network.port_status.open" = "Port ist geöffnet";
-"network.port_status.closed" = "Port ist geschlossen";
+"network.port_status.unknown" = "Externer Portcheck läuft…";
+"network.port_status.open" = "Von außen erreichbar";
+"network.port_status.closed" = "Von außen nicht erreichbar";
+"network.port_status.error" = "Portcheck fehlgeschlagen (kein Internet?)";
 
 "files.section" = "Dateien";
 "files.directory" = "Dateiverzeichnis";
@@ -40,6 +80,91 @@
 "files.index.every" = "Server-Dateien neu indizieren alle";
 "files.index.seconds" = "Sek.";
 "files.index.now" = "Neu indizieren";
+
+"dashboard.title" = "Server-Dashboard";
+"dashboard.subtitle" = "Schnellübersicht: Gesundheit, Laufzeit, Speicher und Überwachung.";
+"dashboard.section.live" = "Live-Status";
+"dashboard.section.storage" = "Speicher";
+"dashboard.section.database" = "Datenbank";
+"dashboard.section.attention" = "Aufmerksamkeit";
+"dashboard.metric.server_status" = "Server-Status";
+"dashboard.metric.connected_users" = "Verbundene Benutzer";
+"dashboard.metric.connected_users.help" = "Geschätzt aus aktiven Verbindungen.";
+"dashboard.metric.pid" = "Prozess-ID";
+"dashboard.metric.server_uptime" = "Server-Uptime";
+"dashboard.metric.cpu" = "CPU";
+"dashboard.metric.memory" = "Arbeitsspeicher";
+"dashboard.metric.files_size" = "Dateigröße";
+"dashboard.metric.database_size" = "Datenbankgröße";
+"dashboard.metric.snapshot" = "Letzter Snapshot";
+"dashboard.metric.disk_free" = "Freier Speicher";
+"dashboard.metric.disk_total" = "Gesamtspeicher";
+"dashboard.metric.host_uptime" = "Host-Uptime";
+"dashboard.metric.port" = "Listening-Port";
+"dashboard.metric.accounts" = "Konten";
+"dashboard.metric.groups" = "Gruppen";
+"dashboard.metric.events" = "Ereignisse";
+"dashboard.metric.boards" = "Boards";
+"dashboard.metric.snapshot_interval" = "Snapshot-Intervall";
+"dashboard.metric.event_retention" = "Ereignisaufbewahrung";
+"dashboard.metric.last_error" = "Letzter Fehlereintrag";
+"dashboard.snapshot.disabled" = "Deaktiviert";
+"dashboard.snapshot.pending" = "Warten auf ersten Snapshot";
+"dashboard.errors.none" = "Keine aktuellen Fehler erkannt";
+"dashboard.health.server" = "Server";
+"dashboard.health.host" = "Host";
+"dashboard.health.database" = "Datenbank";
+"dashboard.health.files" = "Dateien";
+"dashboard.health.good" = "Gut";
+"dashboard.health.warning" = "Warnung";
+"dashboard.health.critical" = "Kritisch";
+"dashboard.health.unknown" = "Unbekannt";
+"dashboard.health.server.not_installed" = "Die Server-Binary ist noch nicht installiert.";
+"dashboard.health.server.stopped" = "Der Server ist installiert, aber aktuell gestoppt.";
+"dashboard.health.server.port_closed" = "Der Prozess läuft, aber der konfigurierte Port scheint geschlossen.";
+"dashboard.health.server.admin_unsecured" = "Das Admin-Konto hat noch kein wirksames Passwort.";
+"dashboard.health.server.recent_error" = "Aktuelle Fehlereinträge erfordern Aufmerksamkeit.";
+"dashboard.health.server.ok" = "Server-Prozess und Core-Runtime sehen gesund aus.";
+"dashboard.health.host.unknown" = "Host-Festplatteninformationen sind nicht verfügbar.";
+"dashboard.health.host.disk_critical" = "Der freie Speicherplatz des Hosts ist kritisch niedrig.";
+"dashboard.health.host.disk_warning" = "Der freie Speicherplatz des Hosts wird knapp.";
+"dashboard.health.host.ok" = "Host-Speicher sieht gesund aus.";
+"dashboard.health.database.not_initialized" = "Die Datenbank wurde noch nicht initialisiert.";
+"dashboard.health.database.snapshot_pending" = "Snapshots sind aktiviert, aber noch kein Snapshot vorhanden.";
+"dashboard.health.database.ok" = "Datenbank und Aufbewahrungseinstellungen sehen gesund aus.";
+"dashboard.health.files.missing" = "Das konfigurierte Dateiverzeichnis existiert nicht.";
+"dashboard.health.files.ok" = "Das Dateistammverzeichnis ist vorhanden und lesbar.";
+
+"database.snapshot.section" = "SQLite-Snapshot";
+"database.snapshot.interval" = "Snapshot alle";
+"database.snapshot.seconds" = "Sek.";
+"database.snapshot.help" = "Erstellt eine lokale SQLite-Sicherungskopie im konfigurierten Intervall. Auf 0 setzen, um automatische Snapshots zu deaktivieren.";
+"database.snapshot.trigger_now" = "Snapshot jetzt erstellen";
+"status.snapshot_triggered" = "Datenbank-Snapshot ausgelöst.";
+"status.snapshot_not_running" = "Der Server läuft nicht.";
+"status.snapshot_failed" = "Snapshot konnte nicht ausgelöst werden — PID-Datei nicht gefunden.";
+"database.events.section" = "Ereignisaufbewahrung";
+"database.events.retention" = "Ereignisse automatisch löschen";
+"database.events.help" = "Löscht Ereignisse, die älter als das gewählte Aufbewahrungsfenster sind.";
+"database.events.retention.never" = "Nie";
+"database.events.retention.daily" = "Täglich";
+"database.events.retention.weekly" = "Wöchentlich";
+"database.events.retention.monthly" = "Monatlich";
+"database.events.retention.yearly" = "Jährlich";
+
+"touchid.section" = "Touch ID / Apple Watch";
+"touchid.status.enabled" = "Touch ID für Admin-Operationen aktiviert";
+"touchid.status.disabled" = "Touch ID nicht aktiviert";
+"touchid.description" = "Wenn aktiviert, verwenden Admin-Operationen (Start/Stopp Daemon, Installation) Touch ID statt einer Passwort-Eingabe.";
+"touchid.forget" = "Passwort vergessen";
+"touchid.reason" = "Authentifizierung zur Kontrolle des Wired-Servers";
+"touchid.dialog.title" = "Administrator-Passwort erforderlich";
+"touchid.dialog.message" = "Geben Sie Ihr macOS-Administrator-Passwort ein, um fortzufahren.";
+"touchid.dialog.placeholder" = "Passwort";
+"touchid.save.title" = "Touch ID aktivieren?";
+"touchid.save.message" = "Speichern Sie Ihr Administrator-Passwort mit Touch ID, damit zukünftige Operationen keine Passwort-Eingabe erfordern.";
+"touchid.save.enable" = "Touch ID aktivieren";
+"touchid.wrong_password" = "Authentifizierung fehlgeschlagen — falsches Passwort.";
 
 "advanced.admin.section" = "Admin-Konto";
 "advanced.admin.password.placeholder" = "Admin-Passwort";
@@ -56,7 +181,16 @@
 "advanced.security.compression" = "Bevorzugte Komprimierung";
 "advanced.security.cipher" = "Bevorzugte Verschlüsselung";
 "advanced.security.checksum" = "Bevorzugte Prüfsumme";
-"advanced.save" = "Erweiterte Einstellungen speichern";
+
+"advanced.identity.section" = "Server-Identität (TOFU)";
+"advanced.identity.fingerprint" = "Fingerabdruck";
+"advanced.identity.fingerprint.none" = "Kein Identitätsschlüssel — Server einmal starten, um ihn zu generieren";
+"advanced.identity.strict" = "Strikter Modus";
+"advanced.identity.strict.help" = "Clients müssen die Verbindung ablehnen, wenn sich der Server-Schlüssel ändert (empfohlen).";
+"advanced.identity.export" = "Öffentlichen Schlüssel exportieren";
+"advanced.identity.copied" = "Fingerabdruck kopiert!";
+
+"security.save" = "Sicherheitseinstellungen speichern";
 
 "logs.open" = "Protokolle öffnen";
 "logs.empty" = "Noch keine Protokolle";
@@ -69,9 +203,14 @@
 "status.port_saved_restart_required" = "Port gespeichert. Neustart erforderlich.";
 "status.port_saved" = "Port gespeichert";
 "status.files_settings_saved" = "Dateieinstellungen gespeichert";
+"status.files_settings_saved_reloaded" = "Dateieinstellungen gespeichert und angewendet";
+"status.database_settings_saved" = "Datenbankeinstellungen gespeichert";
+"status.database_settings_saved_reloaded" = "Datenbankeinstellungen gespeichert und angewendet";
 "status.reindex_on_next_start" = "Neu-Indizierung wird beim nächsten Start durchgeführt";
+"status.reindex_triggered" = "Neu-Indizierung ausgelöst";
 "status.server_restarted_reindex" = "Server neu gestartet, Neu-Indizierung ausgelöst";
 "status.advanced_saved" = "Erweiterte Einstellungen gespeichert";
+"status.advanced_saved_reloaded" = "Erweiterte Einstellungen gespeichert und angewendet";
 "status.admin_password_updated" = "Admin-Passwort aktualisiert";
 "status.admin_user_created" = "Admin-Benutzer erstellt";
 "status.building_binary" = "wired3-Binary wird kompiliert...";
@@ -95,6 +234,10 @@
 "error.database_not_initialized" = "Datenbank nicht initialisiert: Server zunächst einmal starten";
 "error.sql_prepare_failed" = "SQL-Vorbereitung fehlgeschlagen";
 "error.sql_execution_failed" = "SQL-Ausführung fehlgeschlagen";
+"error.migration_no_source" = "Keine Quelldatenbank ausgewählt.";
+"error.migration_server_running" = "Stoppen Sie den Server, bevor Sie die Migration starten.";
+"error.migration_failed" = "Migration fehlgeschlagen";
+"error.migration_timed_out" = "Die Migration wurde nach 5 Minuten abgebrochen.";
 
 "database.migration.section" = "Migration von Wired 2.5";
 "database.migration.source" = "Wired 2.5-Datenbank";
@@ -104,7 +247,3 @@
 "database.migration.running" = "Migration läuft…";
 "database.migration.server_warning" = "Der Server muss gestoppt sein, bevor die Migration gestartet wird.";
 "database.migration.help" = "Migriert Benutzer, Gruppen und Sperren aus einer Wired 2.5-SQLite-Datenbank. Passwörter werden unverändert übernommen (SHA1) – Benutzer müssen beim ersten Login ein neues Passwort setzen.";
-"error.migration_no_source" = "Keine Quelldatenbank ausgewählt.";
-"error.migration_server_running" = "Stoppen Sie den Server, bevor Sie die Migration starten.";
-"error.migration_failed" = "Migration fehlgeschlagen";
-"error.migration_timed_out" = "Die Migration wurde nach 5 Minuten abgebrochen.";
