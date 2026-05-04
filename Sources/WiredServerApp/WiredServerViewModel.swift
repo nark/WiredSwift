@@ -99,6 +99,7 @@ final class WiredServerViewModel: ObservableObject {
     private var pollTimer: Timer?
     private var process: Process?
     private var isPolling = false
+    private var logLineBuffer: [String] = []
 
     private let userDefaults = UserDefaults.standard
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
@@ -1722,20 +1723,22 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         if let content = try? String(contentsOfFile: logPath, encoding: .utf8) {
-            let lines = content.split(separator: "\n", omittingEmptySubsequences: false)
-            logsText = lines.suffix(400).joined(separator: "\n")
+            let all = content.components(separatedBy: "\n")
+            logLineBuffer = Array(all.suffix(400))
+            logsText = logLineBuffer.joined(separator: "\n")
         }
     }
 
     private func appendLog(_ text: String) {
         guard !text.isEmpty else { return }
-        let current = logsText + text
-        let lines = current.split(separator: "\n", omittingEmptySubsequences: false)
-        logsText = lines.suffix(400).joined(separator: "\n")
+        // Maintain a separate line buffer so we never re-split the accumulated
+        // logsText string on every call (was O(n²) during rapid log output).
+        logLineBuffer.append(contentsOf: text.components(separatedBy: "\n"))
+        if logLineBuffer.count > 400 { logLineBuffer.removeFirst(logLineBuffer.count - 400) }
+        logsText = logLineBuffer.joined(separator: "\n")
 
         // Detect initial admin password generated on first launch
         if initialAdminPassword.isEmpty, text.contains("INITIAL ADMIN PASSWORD") {
-            // Extract password between "INITIAL ADMIN PASSWORD: " and " ==="
             if let range = text.range(of: "INITIAL ADMIN PASSWORD: "),
                let endRange = text[range.upperBound...].range(of: " ===") {
                 let password = String(text[range.upperBound..<endRange.lowerBound])
@@ -1745,8 +1748,7 @@ final class WiredServerViewModel: ObservableObject {
                 }
             }
         }
-
-        refreshDashboard()
+        // Dashboard is refreshed by the polling loop — no subprocess call here.
     }
 
     private func bootstrapRuntimeIfNeeded() {
