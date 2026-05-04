@@ -1376,6 +1376,7 @@ final class WiredServerViewModel: ObservableObject {
 
     func setAdminPassword() {
         let password = newAdminPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        defer { newAdminPassword = "" }
         guard !password.isEmpty else {
             publishError(L("error.admin_password_empty"))
             return
@@ -1387,7 +1388,6 @@ final class WiredServerViewModel: ObservableObject {
                 let hash = sha256(password)
                 try executeSQL(db, "UPDATE users SET password = ?, modification_time = CURRENT_TIMESTAMP WHERE username = 'admin';", values: [hash])
             }
-            newAdminPassword = ""
             refreshAdminStatus()
             statusMessage = L("status.admin_password_updated")
         } catch {
@@ -1396,6 +1396,7 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func createAdminUser() {
+        defer { newAdminPassword = "" }
         do {
             try openDatabase { db in
                 let existing = try querySingleString(db, "SELECT username FROM users WHERE username = 'admin' LIMIT 1;")
