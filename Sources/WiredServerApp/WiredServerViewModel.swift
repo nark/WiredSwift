@@ -1179,17 +1179,6 @@ final class WiredServerViewModel: ObservableObject {
                 throw WiredServerError.binaryIntegrityCheckFailed("installed hash mismatch")
             }
 
-            // Re-sign with an ad-hoc signature. When the wired3 binary is extracted
-            // from the app bundle and placed at /Library/Wired3/bin/ as a standalone
-            // executable, macOS code-signing validation (SIGKILL/Invalid Page) requires
-            // an individual signature — the bundle signature it inherited is not enough.
-            let signResult = runProcess("/usr/bin/codesign", ["--force", "--sign", "-", destinationURL.path])
-            if signResult.status != 0 {
-                appendRuntimeLog("binary-update: codesign warning — \(signResult.output.trimmingCharacters(in: .whitespacesAndNewlines))")
-            } else {
-                appendRuntimeLog("binary-update: ad-hoc signature applied")
-            }
-
             if fileManager.fileExists(atPath: backupURL.path) {
                 try? fileManager.removeItem(at: backupURL)
             }
