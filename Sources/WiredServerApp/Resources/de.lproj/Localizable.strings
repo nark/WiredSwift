@@ -100,6 +100,27 @@
 "error.sql_prepare_failed" = "SQL-Vorbereitung fehlgeschlagen";
 "error.sql_execution_failed" = "SQL-Ausführung fehlgeschlagen";
 
+"pane.advanced" = "Erweitert";
+
+"advanced.daemon.section" = "LaunchDaemon-Modus";
+"advanced.daemon.enable" = "LaunchDaemon-Modus aktivieren";
+"advanced.daemon.enable.help" = "Startet den Server als Systemdienst beim Boot, unabhängig von Benutzeranmeldungen. Erfordert Migration nach /Library/Wired3/. Dies ist eine erweiterte Option — der Standard-LaunchAgent-Modus wird für die meisten Nutzer empfohlen.";
+"advanced.daemon.requires_migration" = "Bitte zuerst nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren.";
+
+"general.execution.see_advanced" = "Steuerung im Tab \"Erweitert\"";
+
+"status.daemon.preparing" = "Vorbereitung…";
+"status.daemon.stopping" = "Server wird gestoppt…";
+"status.daemon.activating" = "LaunchDaemon wird aktiviert…";
+"status.daemon.deactivating" = "LaunchDaemon wird deaktiviert…";
+"status.daemon.done" = "Fertig.";
+
+"error.daemon_conflict" = "Ein weiterer wired3-Prozess läuft noch. Bitte diesen stoppen, bevor der Daemon aktiviert wird.";
+"error.mode_switch_failed" = "Moduswechsel fehlgeschlagen";
+"error.start_daemon_failed" = "Daemon konnte nicht gestartet werden";
+"error.stop_daemon_failed" = "Daemon konnte nicht gestoppt werden";
+"error.daemon_update_failed" = "Daemon konnte nicht aktualisiert werden";
+
 "database.migration.section" = "Migration von Wired 2.5";
 "database.migration.source" = "Wired 2.5-Datenbank";
 "database.migration.source.none" = "Keine Datei ausgewählt";

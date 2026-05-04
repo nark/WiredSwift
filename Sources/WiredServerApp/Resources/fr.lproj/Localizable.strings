@@ -218,3 +218,24 @@
 "error.migration_server_running" = "Arrêtez le serveur avant de lancer la migration.";
 "error.migration_failed" = "Échec de la migration";
 "error.migration_timed_out" = "La migration a expiré après 5 minutes et a été arrêtée.";
+
+"pane.advanced" = "Avancé";
+
+"advanced.daemon.section" = "Mode LaunchDaemon";
+"advanced.daemon.enable" = "Activer le mode LaunchDaemon";
+"advanced.daemon.enable.help" = "Lance le serveur comme service système au démarrage, indépendamment des sessions utilisateur. Nécessite une migration vers /Library/Wired3/. Il s'agit d'une option avancée — le mode LaunchAgent standard est recommandé pour la plupart des utilisateurs.";
+"advanced.daemon.requires_migration" = "Migrez d'abord vers /Library/Wired3/ pour activer le mode LaunchDaemon.";
+
+"general.execution.see_advanced" = "Contrôle dans l'onglet Avancé";
+
+"status.daemon.preparing" = "Préparation…";
+"status.daemon.stopping" = "Arrêt du serveur…";
+"status.daemon.activating" = "Activation du LaunchDaemon…";
+"status.daemon.deactivating" = "Désactivation du LaunchDaemon…";
+"status.daemon.done" = "Terminé.";
+
+"error.daemon_conflict" = "Un autre processus wired3 est toujours en cours d'exécution. Arrêtez-le avant d'activer le démon.";
+"error.mode_switch_failed" = "Échec du changement de mode";
+"error.start_daemon_failed" = "Impossible de démarrer le démon";
+"error.stop_daemon_failed" = "Impossible d'arrêter le démon";
+"error.daemon_update_failed" = "Impossible de mettre à jour le démon";

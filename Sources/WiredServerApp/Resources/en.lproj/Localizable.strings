@@ -218,3 +218,24 @@
 "error.migration_server_running" = "Stop the server before running the migration.";
 "error.migration_failed" = "Migration failed";
 "error.migration_timed_out" = "Migration timed out after 5 minutes and was terminated.";
+
+"pane.advanced" = "Advanced";
+
+"advanced.daemon.section" = "LaunchDaemon Mode";
+"advanced.daemon.enable" = "Enable LaunchDaemon mode";
+"advanced.daemon.enable.help" = "Runs the server as a system service that starts at boot, independently of any user login. Requires data migration to /Library/Wired3/. This is an advanced option — the standard LaunchAgent mode is recommended for most users.";
+"advanced.daemon.requires_migration" = "Migrate to /Library/Wired3/ first to enable LaunchDaemon mode.";
+
+"general.execution.see_advanced" = "Control in Advanced tab";
+
+"status.daemon.preparing" = "Preparing…";
+"status.daemon.stopping" = "Stopping server…";
+"status.daemon.activating" = "Activating LaunchDaemon…";
+"status.daemon.deactivating" = "Deactivating LaunchDaemon…";
+"status.daemon.done" = "Done.";
+
+"error.daemon_conflict" = "Another wired3 process is still running. Stop it before activating the daemon.";
+"error.mode_switch_failed" = "Mode switch failed";
+"error.start_daemon_failed" = "Failed to start daemon";
+"error.stop_daemon_failed" = "Failed to stop daemon";
+"error.daemon_update_failed" = "Failed to update daemon";

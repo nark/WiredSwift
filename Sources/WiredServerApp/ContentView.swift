@@ -86,6 +86,8 @@ struct ContentView: View {
             SecurityTabView()
         case .logs:
             LogsTabView()
+        case .advanced:
+            AdvancedTabView()
         }
     }
 }
@@ -99,6 +101,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
     case database
     case security
     case logs
+    case advanced
 
     var id: String { rawValue }
 
@@ -111,6 +114,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
         case .database: return L("pane.database")
         case .security: return L("pane.security")
         case .logs: return L("pane.logs")
+        case .advanced: return L("pane.advanced")
         }
     }
 
@@ -123,6 +127,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
         case .database: return "cylinder.split.1x2"
         case .security: return "key.horizontal"
         case .logs: return "doc.text"
+        case .advanced: return "gearshape.2"
         }
     }
 }
