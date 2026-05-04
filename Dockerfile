@@ -70,6 +70,7 @@ FROM ubuntu:22.04 AS runtime
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_MIRROR=http://fr.archive.ubuntu.com/ubuntu
 ARG UBUNTU_SECURITY_MIRROR=http://fr.archive.ubuntu.com/ubuntu
+SHELL ["/bin/bash", "-lc"]
 
 RUN set -euo pipefail; \
   sed -i \
