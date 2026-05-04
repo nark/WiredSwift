@@ -98,6 +98,7 @@ final class WiredServerViewModel: ObservableObject {
     private let fileManager = FileManager.default
     private var pollTimer: Timer?
     private var process: Process?
+    private var isPolling = false
 
     private let userDefaults = UserDefaults.standard
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
@@ -109,6 +110,8 @@ final class WiredServerViewModel: ObservableObject {
     private let launchAgentLabel = "fr.read-write.wired3.server"
     private let launchDaemonPlistPath = "/Library/LaunchDaemons/fr.read-write.wired3.server.plist"
     private let embeddedBinarySHAKey = "Wired3EmbeddedSHA256"
+    private let daemonUserCreatedKey = "wired3DaemonUserWasCreated"
+    private let daemonGroupCreatedKey = "wired3DaemonGroupWasCreated"
 
     static let systemDataDirectory = "/Library/Wired3"
 
@@ -530,16 +533,16 @@ final class WiredServerViewModel: ObservableObject {
     func switchInstallMode(to mode: ServerInstallMode) async {
         guard mode != installMode, !isSwitchingMode else { return }
         guard isUsingSystemDirectory else {
-            publishError("Please migrate data to /Library/Wired3/ before switching to LaunchDaemon mode.")
+            publishError(L("general.install_mode.migrate_warning"))
             return
         }
         isSwitchingMode = true
-        modeSwitchStatus = "Preparing..."
+        modeSwitchStatus = L("status.daemon.preparing")
         refreshDaemonStatus()
 
         do {
             if isRunning {
-                modeSwitchStatus = "Stopping server..."
+                modeSwitchStatus = L("status.daemon.stopping")
                 stopServer()
                 try await Task.sleep(for: .seconds(2))
             }
@@ -550,20 +553,20 @@ final class WiredServerViewModel: ObservableObject {
                     try configureLaunchAtLogin(enabled: false)
                     launchAtLogin = false
                 }
-                modeSwitchStatus = "Activating LaunchDaemon (one admin dialog)..."
+                modeSwitchStatus = L("status.daemon.activating")
                 try activateLaunchDaemon(name: daemonUserName, createUser: !isDaemonUserExists)
 
             case .launchAgent:
-                modeSwitchStatus = "Deactivating LaunchDaemon (one admin dialog)..."
+                modeSwitchStatus = L("status.daemon.deactivating")
                 try deactivateLaunchDaemon(restoreUser: NSUserName())
             }
 
             installMode = mode
             userDefaults.set(mode.rawValue, forKey: installModeKey)
-            modeSwitchStatus = "Done."
+            modeSwitchStatus = L("status.daemon.done")
         } catch {
-            modeSwitchStatus = "Failed: \(error.localizedDescription)"
-            publishError("Mode switch failed: \(error.localizedDescription)")
+            modeSwitchStatus = "\(L("error.mode_switch_failed")): \(error.localizedDescription)"
+            publishError("\(L("error.mode_switch_failed")): \(error.localizedDescription)")
         }
 
         isSwitchingMode = false
@@ -577,26 +580,31 @@ final class WiredServerViewModel: ObservableObject {
         do {
             try reinstallDaemonPlist()
         } catch {
-            publishError("Failed to update LaunchDaemon: \(error.localizedDescription)")
+            publishError("\(L("error.daemon_update_failed")): \(error.localizedDescription)")
         }
     }
 
     func startDaemon() {
-        // Kill any stale LaunchAgent wired3 process (running from user home, not /Library/Wired3/).
-        // This can happen when switching from LaunchAgent to LaunchDaemon mode while a server
-        // is still running, or if stopServer() was skipped. Without this the daemon cannot
-        // bind port 4871.
+        // Unregister any still-loaded LaunchAgent so it cannot restart and race with the daemon.
+        let uid = getuid()
+        _ = runProcess("/bin/launchctl", ["bootout", "user/\(uid)/\(launchAgentLabel)"])
+
+        // Terminate any wired3 process not managed by /Library/Wired3/ (stale LaunchAgent leftovers).
         let pgrepOut = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).output
         let allWiredPIDs = pgrepOut.split(separator: "\n").compactMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
-        let staleAgentPIDs = allWiredPIDs.filter { pid in
+        let unmanagedPIDs = allWiredPIDs.filter { pid in
             let args = runProcess("/bin/ps", ["-p", "\(pid)", "-o", "args="]).output.trimmingCharacters(in: .whitespacesAndNewlines)
             return !args.hasPrefix("/Library/Wired3/bin/wired3")
         }
-        for pid in staleAgentPIDs {
-            kill(pid, SIGTERM)
-        }
-        if !staleAgentPIDs.isEmpty {
-            Thread.sleep(forTimeInterval: 0.5)
+        for pid in unmanagedPIDs { kill(pid, SIGTERM) }
+        if !unmanagedPIDs.isEmpty {
+            Thread.sleep(forTimeInterval: 1.0)
+            // Refuse activation if a non-managed process is still alive after SIGTERM
+            let stillAlive = unmanagedPIDs.filter { kill($0, 0) == 0 }
+            if !stillAlive.isEmpty {
+                publishError(L("error.daemon_conflict"))
+                return
+            }
         }
 
         // bootstrap registers the service (no-op if already registered).
@@ -631,7 +639,7 @@ final class WiredServerViewModel: ObservableObject {
                 wired3HasFullDiskAccess = raw.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
             }
         } catch {
-            publishError("Failed to start daemon: \(error.localizedDescription)")
+            publishError("\(L("error.start_daemon_failed")): \(error.localizedDescription)")
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
             self?.refreshDaemonStatus()
@@ -643,7 +651,7 @@ final class WiredServerViewModel: ObservableObject {
             try runPrivileged("launchctl bootout system/\(launchAgentLabel) 2>/dev/null; true",
                               error: .launchDaemonRemoveFailed("stop"))
         } catch {
-            publishError("Failed to stop daemon: \(error.localizedDescription)")
+            publishError("\(L("error.stop_daemon_failed")): \(error.localizedDescription)")
         }
         // Use refreshAll so a pending binary update is detected now that the daemon is stopped.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
@@ -716,18 +724,35 @@ final class WiredServerViewModel: ObservableObject {
 
         try runPrivileged(cmds.joined(separator: " && "),
                           error: WiredServerError.launchDaemonInstallFailed(""))
+        userDefaults.set(createUser, forKey: daemonUserCreatedKey)
+        userDefaults.set(createGroup, forKey: daemonGroupCreatedKey)
         daemonAccountsVerified = false
     }
 
-    // One admin dialog: bootout + remove plist + chown back to current user
+    // One admin dialog: bootout + remove plist + chown back to current user + optional user/group cleanup
     private func deactivateLaunchDaemon(restoreUser: String) throws {
-        let cmds = [
+        var cmds = [
             "launchctl bootout system/\(launchAgentLabel) 2>/dev/null",
             "rm -f '\(launchDaemonPlistPath)'",
-            "chown -R \(restoreUser):staff /Library/Wired3"  // back to staff for LaunchAgent
-        ].joined(separator: " && ")
-
-        try runPrivileged(cmds, error: WiredServerError.launchDaemonRemoveFailed(""))
+            "chown -R \(restoreUser):staff /Library/Wired3",
+            // Restore mode bits that activateLaunchDaemon widened for daemon operation
+            "chmod 755 /Library/Wired3/bin 2>/dev/null || true",
+            "chmod 755 /Library/Wired3/etc 2>/dev/null || true",
+            "chmod 644 /Library/Wired3/etc/config.ini 2>/dev/null || true"
+        ]
+        if userDefaults.bool(forKey: daemonUserCreatedKey) {
+            // Kill all processes owned by the daemon user before deleting the account.
+            // dscl . -delete hangs if the user has an active session (e.g. distnoted agent).
+            cmds.append("pkill -u \(daemonUserName) 2>/dev/null || true")
+            cmds.append("sleep 0.3")
+            cmds.append("dscl . -delete /Users/\(daemonUserName) 2>/dev/null || true")
+        }
+        if userDefaults.bool(forKey: daemonGroupCreatedKey) {
+            cmds.append("dscl . -delete /Groups/\(daemonGroupName) 2>/dev/null || true")
+        }
+        try runPrivileged(cmds.joined(separator: " && "), error: WiredServerError.launchDaemonRemoveFailed(""))
+        userDefaults.removeObject(forKey: daemonUserCreatedKey)
+        userDefaults.removeObject(forKey: daemonGroupCreatedKey)
         daemonAccountsVerified = false
     }
 
@@ -872,8 +897,9 @@ final class WiredServerViewModel: ObservableObject {
         alert.addButton(withTitle: L("touchid.save.enable"))
         alert.addButton(withTitle: L("common.cancel"))
         if alert.runModal() == .alertFirstButtonReturn {
-            BiometricCredentialStore.save(password: password)
-            hasTouchIDCredential = true
+            if BiometricCredentialStore.save(password: password) {
+                hasTouchIDCredential = true
+            }
         }
     }
 
@@ -1390,6 +1416,9 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     private func pollState() {
+        guard !isPolling else { return }
+        isPolling = true
+        defer { isPolling = false }
         refreshRunningStatus()
         if installMode == .launchDaemon {
             refreshDaemonStatus()

@@ -33,8 +33,9 @@ struct BiometricCredentialStore {
 
     /// Save password to Keychain with a biometric ACL so that reading the item requires
     /// Touch ID / Apple Watch at the Keychain layer, not just at the UI layer.
-    static func save(password: String) {
-        guard let data = password.data(using: .utf8) else { return }
+    @discardableResult
+    static func save(password: String) -> Bool {
+        guard let data = password.data(using: .utf8) else { return false }
 
         let deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -49,7 +50,7 @@ struct BiometricCredentialStore {
             kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             .biometryCurrentSet,
             &cfError
-        ) else { return }
+        ) else { return false }
 
         let attrs: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -58,7 +59,7 @@ struct BiometricCredentialStore {
             kSecValueData as String: data,
             kSecAttrAccessControl as String: access
         ]
-        SecItemAdd(attrs as CFDictionary, nil)
+        return SecItemAdd(attrs as CFDictionary, nil) == errSecSuccess
     }
 
     /// Retrieve the stored password. Shows the Touch ID / Apple Watch sheet first.

@@ -302,7 +302,7 @@ struct GeneralTabView: View {
                     }
                 }
 
-                Section("Versions") {
+                Section(L("general.versions.section")) {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))
                             .bold()
@@ -341,7 +341,7 @@ struct GeneralTabView: View {
                             StatusDot(color: model.isDaemonRunning ? .green : .red)
                             Text(model.isDaemonRunning ? "Running (daemon)" : "Stopped (daemon)")
                             Spacer()
-                            Button(model.isDaemonRunning ? "Stop" : "Start") {
+                            Button(model.isDaemonRunning ? L("general.execution.stop") : L("general.execution.start")) {
                                 if model.isDaemonRunning { model.stopDaemon() }
                                 else { model.startDaemon() }
                             }
@@ -377,6 +377,132 @@ struct GeneralTabView: View {
 //                        .foregroundStyle(.secondary)
 //                        .frame(maxWidth: .infinity, alignment: .leading)
 //                }
+            }
+            .formStyle(.grouped)
+        }
+    }
+}
+
+@available(macOS 12.0, *)
+struct AdvancedTabView: View {
+    @EnvironmentObject private var model: WiredServerViewModel
+
+    var body: some View {
+        SettingsScrollPane {
+            Form {
+                Section(L("advanced.daemon.section")) {
+                    if !model.isUsingSystemDirectory {
+                        Label(L("advanced.daemon.requires_migration"), systemImage: "info.circle")
+                            .foregroundStyle(.secondary)
+                            .font(.footnote)
+
+                        if model.systemMigrationAvailable {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(L("general.system_data_dir.migrate_description"))
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+
+                                HStack(spacing: 10) {
+                                    Button(L("general.system_data_dir.migrate_button")) {
+                                        Task { await model.migrateToSystemDirectory() }
+                                    }
+                                    .disabled(model.isSystemMigrating || model.isBusy)
+
+                                    if model.isSystemMigrating {
+                                        ProgressView().controlSize(.small)
+                                    }
+                                }
+
+                                if !model.systemMigrationStatus.isEmpty {
+                                    Text(model.systemMigrationStatus)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .textSelection(.enabled)
+                                }
+                            }
+                        }
+                    } else {
+                        Toggle(L("advanced.daemon.enable"), isOn: Binding(
+                            get: { model.installMode == .launchDaemon },
+                            set: { enabled in
+                                Task { await model.switchInstallMode(to: enabled ? .launchDaemon : .launchAgent) }
+                            }
+                        ))
+                        .disabled(model.isSwitchingMode || model.isBusy)
+
+                        Text(L("advanced.daemon.enable.help"))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+
+                        if model.isSwitchingMode {
+                            HStack(spacing: 8) {
+                                ProgressView().controlSize(.small)
+                                Text(model.modeSwitchStatus)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if !model.modeSwitchStatus.isEmpty {
+                            Text(model.modeSwitchStatus)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+
+                        if model.installMode == .launchDaemon {
+                            Divider()
+
+                            HStack(spacing: 8) {
+                                Text(L("general.install_mode.daemon_user"))
+                                    .bold()
+                                    .frame(width: 90, alignment: .leading)
+                                TextField("_wired", text: $model.daemonUserName)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 100)
+                                    .disabled(model.isSwitchingMode)
+                                Image(systemName: model.isDaemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
+                                    .foregroundStyle(model.isDaemonUserExists ? .green : .secondary)
+
+                                Text(L("general.install_mode.group"))
+                                    .bold()
+                                    .frame(width: 52, alignment: .leading)
+                                TextField("daemon", text: $model.daemonGroupName)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 100)
+                                    .disabled(model.isSwitchingMode)
+                                Image(systemName: model.isDaemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
+                                    .foregroundStyle(model.isDaemonGroupExists ? .green : .secondary)
+
+                                Spacer()
+                                Button(L("common.save")) { model.saveDaemonSettings() }
+                                    .disabled(model.isSwitchingMode)
+                            }
+                            .labelsHidden()
+
+                            if model.filesDirectoryIsOnExternalVolume {
+                                ExternalVolumeWarningView(hasFDA: model.wired3HasFullDiskAccess) {
+                                    model.openFullDiskAccessSettings()
+                                }
+                            }
+
+                            HStack {
+                                StatusDot(color: model.isDaemonRunning ? .green : .red)
+                                Text(model.isDaemonRunning ? L("general.execution.running_daemon") : L("general.execution.stopped_daemon"))
+                                Spacer()
+                                Button(model.isDaemonRunning ? L("general.execution.stop") : L("general.execution.start")) {
+                                    if model.isDaemonRunning { model.stopDaemon() }
+                                    else { model.startDaemon() }
+                                }
+                                .disabled(!model.launchDaemonInstalled)
+                            }
+
+                            Toggle(L("general.execution.start_at_boot"), isOn: Binding(
+                                get: { model.daemonStartAtBoot },
+                                set: { model.toggleDaemonStartAtBoot($0) }
+                            ))
+                            .disabled(!model.launchDaemonInstalled)
+                        }
+                    }
+                }
             }
             .formStyle(.grouped)
         }
