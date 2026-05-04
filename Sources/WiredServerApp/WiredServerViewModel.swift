@@ -28,6 +28,7 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var serverPort: Int = 4871
     @Published var portStatus: PortStatus = .unknown
+    @Published var showPortCheckConsentAlert = false
 
     @Published var filesDirectory: String = ""
     @Published var filesReindexInterval: Int = 3600
@@ -224,8 +225,6 @@ final class WiredServerViewModel: ObservableObject {
         refreshAdminStatus()
         refreshLogText()
         refreshDashboard(force: true)
-        checkPort()
-
         if binaryWasUpdated && isRunning {
             showRestartAfterUpdateAlert = true
         }
@@ -546,9 +545,12 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func checkPort() {
-        let port = serverPort
-        portStatus = .unknown
+        showPortCheckConsentAlert = true
+    }
 
+    func confirmPortCheckConsent() {
+        let port = serverPort
+        portStatus = .checking
         Task.detached {
             let status = await Self.probePort(port: port)
             await MainActor.run {
@@ -673,6 +675,7 @@ final class WiredServerViewModel: ObservableObject {
 
     func setAdminPassword() {
         let password = newAdminPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        defer { newAdminPassword = "" }
         guard !password.isEmpty else {
             publishError(L("error.admin_password_empty"))
             return
@@ -684,7 +687,6 @@ final class WiredServerViewModel: ObservableObject {
                 let hash = sha256(password)
                 try executeSQL(db, "UPDATE users SET password = ?, modification_time = CURRENT_TIMESTAMP WHERE username = 'admin';", values: [hash])
             }
-            newAdminPassword = ""
             refreshAdminStatus()
             statusMessage = L("status.admin_password_updated")
         } catch {
@@ -693,6 +695,7 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func createAdminUser() {
+        defer { newAdminPassword = "" }
         do {
             try openDatabase { db in
                 let existing = try querySingleString(db, "SELECT username FROM users WHERE username = 'admin' LIMIT 1;")
@@ -2071,49 +2074,39 @@ strict_identity = yes
         return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.files.ok"))
     }
 
+    // MARK: - External port reachability check (opt-in, EU-hosted)
+
+    /// Two-step external port check (requires prior user consent):
+    ///   1. Resolve external IP via api.seeip.org (Netherlands)
+    ///   2. Probe TCP reachability via portchecker.co (Netherlands)
     private static func probePort(port: Int) async -> PortStatus {
-        guard let nwPort = NWEndpoint.Port(rawValue: UInt16(max(0, min(port, 65_535)))) else {
-            return .closed
-        }
+        guard (1...65_535).contains(port) else { return .closed }
+        guard let externalIP = await fetchExternalIP() else { return .error }
+        return await checkPortExternal(ip: externalIP, port: port)
+    }
 
-        return await withCheckedContinuation { continuation in
-            let connection = NWConnection(host: .ipv4(.loopback), port: nwPort, using: .tcp)
-            let queue = DispatchQueue(label: "wired.server.port.check")
-            final class ResolutionState: @unchecked Sendable {
-                let lock = NSLock()
-                var resolved = false
-            }
-            let state = ResolutionState()
+    /// Fetches the machine's external IP from api.seeip.org (Netherlands, EU).
+    private static func fetchExternalIP() async -> String? {
+        guard let url = URL(string: "https://api.seeip.org/json") else { return nil }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        guard let (data, _) = try? await URLSession.shared.data(for: req) else { return nil }
+        struct IPResponse: Decodable { let ip: String }
+        return (try? JSONDecoder().decode(IPResponse.self, from: data))?.ip
+    }
 
-            @Sendable func finish(_ status: PortStatus) {
-                state.lock.lock()
-                if state.resolved {
-                    state.lock.unlock()
-                    return
-                }
-                state.resolved = true
-                state.lock.unlock()
-                connection.cancel()
-                continuation.resume(returning: status)
-            }
-
-            connection.stateUpdateHandler = { state in
-                switch state {
-                case .ready:
-                    finish(.open)
-                case .failed, .waiting, .cancelled:
-                    finish(.closed)
-                default:
-                    break
-                }
-            }
-
-            queue.asyncAfter(deadline: .now() + 1.5) {
-                finish(.closed)
-            }
-
-            connection.start(queue: queue)
-        }
+    /// Probes TCP reachability via portchecker.co (Netherlands, EU).
+    /// Single synchronous request — no polling needed.
+    private static func checkPortExternal(ip: String, port: Int) async -> PortStatus {
+        let escaped = ip.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ip
+        guard let url = URL(string: "https://portchecker.co/api/v1/query?host=\(escaped)&port=\(port)") else { return .error }
+        var req = URLRequest(url: url)
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.timeoutInterval = 20
+        guard let (data, _) = try? await URLSession.shared.data(for: req) else { return .error }
+        struct PortCheckResponse: Decodable { let isOpen: Bool }
+        guard let resp = try? JSONDecoder().decode(PortCheckResponse.self, from: data) else { return .error }
+        return resp.isOpen ? .open : .closed
     }
 }
 
@@ -2154,17 +2147,23 @@ enum DashboardHealthLevel {
 
 enum PortStatus {
     case unknown
+    case checking
     case open
     case closed
+    case error
 
     var description: String {
         switch self {
         case .unknown:
             return L("network.port_status.unknown")
+        case .checking:
+            return L("network.port_status.checking")
         case .open:
             return L("network.port_status.open")
         case .closed:
             return L("network.port_status.closed")
+        case .error:
+            return L("network.port_status.error")
         }
     }
 }

@@ -3,6 +3,7 @@ import Foundation
 private enum AppLanguage: String {
     case en
     case fr
+    case de
 }
 
 private final class Localizer {
@@ -17,7 +18,8 @@ private final class Localizer {
         self.selectedLanguage = selected
         self.tableByLanguage = [
             .en: Localizer.loadTable(for: .en),
-            .fr: Localizer.loadTable(for: .fr)
+            .fr: Localizer.loadTable(for: .fr),
+            .de: Localizer.loadTable(for: .de)
         ]
     }
 
@@ -32,22 +34,17 @@ private final class Localizer {
     }
 
     private static func resolveLanguage() -> AppLanguage {
-        let preferred = Bundle.main.preferredLocalizations + Locale.preferredLanguages
-        for value in preferred {
+        for value in Locale.preferredLanguages {
             let languageCode = value
                 .replacingOccurrences(of: "_", with: "-")
                 .split(separator: "-")
                 .first?
                 .lowercased()
 
-            if languageCode == AppLanguage.fr.rawValue {
-                return .fr
-            }
-            if languageCode == AppLanguage.en.rawValue {
-                return .en
-            }
+            if languageCode == AppLanguage.de.rawValue { return .de }
+            if languageCode == AppLanguage.fr.rawValue { return .fr }
+            if languageCode == AppLanguage.en.rawValue { return .en }
         }
-
         return .en
     }
 
@@ -72,17 +69,7 @@ private final class Localizer {
     }
 
     private static func candidateBundles() -> [Bundle] {
-        var bundles: [Bundle] = [Bundle.main]
-
-        if let resourceBundles = Bundle.main.urls(forResourcesWithExtension: "bundle", subdirectory: nil) {
-            for url in resourceBundles {
-                if let bundle = Bundle(url: url) {
-                    bundles.append(bundle)
-                }
-            }
-        }
-
-        return bundles
+        [.module, .main]
     }
 }
 

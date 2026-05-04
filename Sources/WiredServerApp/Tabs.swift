@@ -223,6 +223,7 @@ struct GeneralTabView: View {
 @available(macOS 12.0, *)
 struct NetworkTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
+    @State private var portText: String = ""
 
     var body: some View {
         SettingsScrollPane {
@@ -234,12 +235,16 @@ struct NetworkTabView: View {
 
                         Spacer()
 
-                        TextField("", value: $model.serverPort, formatter: Formatters.integer)
+                        TextField("4871", text: $portText)
                             .textFieldStyle(.roundedBorder)
                             .frame(width: UIConstants.numberFieldWidth)
+                            .onChange(of: portText) { newValue in
+                                portText = String(newValue.filter { $0.isNumber }.prefix(5))
+                            }
+                            .onSubmit { savePort() }
 
                         Button(L("common.save")) {
-                            model.saveNetworkSettings()
+                            savePort()
                         }
                     }
 
@@ -264,16 +269,33 @@ struct NetworkTabView: View {
             }
             .formStyle(.grouped)
         }
+        .alert(L("network.consent.title"), isPresented: $model.showPortCheckConsentAlert) {
+            Button(L("network.consent.agree")) { model.confirmPortCheckConsent() }
+            Button(L("common.cancel"), role: .cancel) { }
+        } message: {
+            Text(L("network.consent.message"))
+        }
+        .onAppear { portText = String(model.serverPort) }
+        .onChange(of: model.serverPort) { portText = String($0) }
+    }
+
+    private func savePort() {
+        let parsed = Int(portText) ?? model.serverPort
+        model.serverPort = max(1, min(parsed, 65_535))
+        portText = String(model.serverPort)
+        model.saveNetworkSettings()
     }
 
     private func color(for status: PortStatus) -> Color {
         switch status {
-        case .unknown:
+        case .unknown, .checking:
             return .gray
         case .open:
             return .green
         case .closed:
             return .red
+        case .error:
+            return .orange
         }
     }
 }
@@ -308,6 +330,12 @@ struct FilesTabView: View {
                         Button(L("common.choose")) {
                             model.chooseFilesDirectory()
                         }
+                    }
+
+                    if model.filesDirectory.hasPrefix("/Users/") {
+                        Label(L("files.daemon_userpath_warning"), systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.footnote)
                     }
                 }
 
@@ -471,6 +499,7 @@ struct DatabaseTabView: View {
 struct SecurityTabView: View {
     @EnvironmentObject private var model: WiredServerViewModel
     @State private var fingerprintCopied = false
+    @State private var passwordText: String = ""
 
     var body: some View {
         SettingsScrollPane {
@@ -482,17 +511,18 @@ struct SecurityTabView: View {
                     }
 
                     HStack(spacing: 8) {
-                        SecureField(L("advanced.admin.password.placeholder"), text: $model.newAdminPassword)
-                            .frame(width: 260)
-
-                        Spacer()
+                        SecureField(L("advanced.admin.password.placeholder"), text: $passwordText)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { applyPassword() }
 
                         Button(L("advanced.admin.set_password")) {
-                            model.setAdminPassword()
+                            applyPassword()
                         }
 
                         Button(L("advanced.admin.create_user")) {
+                            model.newAdminPassword = passwordText
                             model.createAdminUser()
+                            passwordText = ""
                         }
                     }
                 }
@@ -576,6 +606,12 @@ struct SecurityTabView: View {
             .formStyle(.grouped)
         }
         .onAppear { model.refreshIdentityFingerprint() }
+    }
+
+    private func applyPassword() {
+        model.newAdminPassword = passwordText
+        model.setAdminPassword()
+        passwordText = ""
     }
 }
 

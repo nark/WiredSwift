@@ -1,6 +1,10 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Error";
 "alert.binary_updated.title" = "Server Updated";
+"alert.privileged_update.title" = "Server Update Available";
+"alert.privileged_update.message" = "A new version of the server binary is included in this app. Install it now? Your administrator password will be required.";
+"alert.privileged_update.install" = "Install Now";
+"alert.privileged_update.later" = "Later";
 "alert.binary_updated.message" = "A new version of the server binary has been installed. The running server is still using the previous version. Would you like to restart it now?";
 "alert.binary_updated.restart" = "Restart Now";
 "alert.binary_updated.later" = "Later";
@@ -8,6 +12,7 @@
 "alert.initial_password.message" = "The server has been initialized with a random admin password. Save it now — it will not be shown again.";
 "alert.initial_password.copy" = "Copy to Clipboard";
 "common.ok" = "OK";
+"common.cancel" = "Cancel";
 "common.choose" = "Choose";
 "common.select" = "Select";
 "common.save" = "Save";
@@ -41,12 +46,18 @@
 "network.port" = "Listening Port";
 "network.check" = "Check";
 "network.restart_required" = "Server must be restarted after port change.";
-"network.port_status.unknown" = "Unknown port status";
-"network.port_status.open" = "Port is open";
-"network.port_status.closed" = "Port is closed";
+"network.port_status.unknown" = "Press 'Check' to test external reachability";
+"network.port_status.checking" = "Checking external reachability…";
+"network.port_status.open" = "Reachable from internet";
+"network.port_status.closed" = "Not reachable from internet";
+"network.port_status.error" = "Port check failed (no internet?)";
+"network.consent.title" = "External Port Check";
+"network.consent.message" = "Checking port reachability requires sending your public IP address to portchecker.co, a service hosted in the Netherlands (EU). This is used only to verify that your server port is reachable from the internet and is not stored or shared. Do you agree?";
+"network.consent.agree" = "I Agree";
 
 "files.section" = "Files";
 "files.directory" = "Files directory";
+"files.daemon_userpath_warning" = "This path is under /Users/ and may not be accessible to the LaunchDaemon. The daemon starts at boot before login — home directories may not be mounted or decrypted yet. Use a path under /Library/ or /var/ instead.";
 "files.index.section" = "Index";
 "files.index.every" = "Re-index server files every";
 "files.index.seconds" = "sec.";
@@ -110,6 +121,10 @@
 "database.snapshot.interval" = "Snapshot every";
 "database.snapshot.seconds" = "sec.";
 "database.snapshot.help" = "Creates a local SQLite backup copy at the configured interval. Set the interval to 0 to disable automatic snapshots.";
+"database.snapshot.trigger_now" = "Create Snapshot Now";
+"status.snapshot_triggered" = "Database snapshot triggered.";
+"status.snapshot_not_running" = "Server is not running.";
+"status.snapshot_failed" = "Failed to trigger snapshot — PID file not found.";
 "database.events.section" = "Event Retention";
 "database.events.retention" = "Automatically purge events";
 "database.events.help" = "Deletes events older than the selected retention window.";
@@ -127,6 +142,20 @@
 "database.migration.running" = "Migration in progress…";
 "database.migration.server_warning" = "The server must be stopped before running the migration.";
 "database.migration.help" = "Migrates users, groups and bans from a Wired 2.5 SQLite database. Passwords are copied as-is (SHA1) — users must set a new password on first login.";
+
+"touchid.section" = "Touch ID / Apple Watch";
+"touchid.status.enabled" = "Touch ID is enabled for admin operations";
+"touchid.status.disabled" = "Touch ID is not enabled";
+"touchid.description" = "When enabled, admin operations (start/stop daemon, install) use Touch ID instead of a password prompt.";
+"touchid.forget" = "Forget Password";
+"touchid.reason" = "Authenticate to control Wired Server";
+"touchid.dialog.title" = "Administrator Password Required";
+"touchid.dialog.message" = "Enter your macOS administrator password to continue.";
+"touchid.dialog.placeholder" = "Password";
+"touchid.save.title" = "Enable Touch ID?";
+"touchid.save.message" = "Save your administrator password with Touch ID so future operations don't require a password prompt.";
+"touchid.save.enable" = "Enable Touch ID";
+"touchid.wrong_password" = "Authentication failed — wrong password.";
 
 "advanced.admin.section" = "Admin account";
 "advanced.admin.password.placeholder" = "Admin password";
