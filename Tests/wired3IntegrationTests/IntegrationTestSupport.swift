@@ -137,7 +137,12 @@ final class IntegrationServerRuntime {
         self.filesURL = resolvedRoot.appendingPathComponent("files", isDirectory: true)
         self.dbPath = resolvedRoot.appendingPathComponent("wired3.sqlite").path
         self.configPath = resolvedRoot.appendingPathComponent("config.ini").path
-        self.specPath = try XCTUnwrap(WiredProtocolSpec.bundledSpecURL()).path
+        self.specPath = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/WiredSwift/Resources/wired.xml")
+            .path
         self.port = resolvedPort
 
         try FileManager.default.createDirectory(at: filesURL, withIntermediateDirectories: true)
