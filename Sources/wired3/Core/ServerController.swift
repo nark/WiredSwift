@@ -510,6 +510,11 @@ public class ServerController: ServerDelegate {
             self.recordEvent(.userLoggedOut, client: client)
         }
 
+        // Capture identity before we tear the user object down so we can notify
+        // privileged peers that this account is now offline.
+        let leftLogin = client.user?.username
+        let leftNick = client.nick
+
         let app = App
         app?.filesController?.unsubscribeAll(client: client)
         client.isSubscribedToAccounts = false
@@ -519,6 +524,28 @@ public class ServerController: ServerDelegate {
         app?.chatsController?.removeUserFromAllChats(client: client, broadcastLeaves: broadcastLeaves)
         client.state = .DISCONNECTED
         app?.clientsController?.removeClient(client: client)
+
+        if let login = leftLogin, !login.isEmpty,
+           let nick = leftNick, !nick.isEmpty {
+            self.broadcastOfflineUserEntry(login: login, nick: nick)
+        }
+    }
+
+    /// Notifies every currently-connected client that has the
+    /// `wired.account.user.list_offline_users` privilege that a user just went
+    /// offline, so their offline-user list can stay current without re-login.
+    /// Reuses the existing `wired.user.offline_list` message — clients already
+    /// handle it. Skipped if login or nick is empty.
+    private func broadcastOfflineUserEntry(login: String, nick: String) {
+        guard let clients = App.clientsController?.connectedClientsSnapshot() else { return }
+        for peer in clients
+        where peer.state == .LOGGED_IN
+            && peer.user?.hasPrivilege(name: "wired.account.user.list_offline_users") == true {
+            let entry = P7Message(withName: "wired.user.offline_list", spec: self.spec)
+            entry.addParameter(field: "wired.message.offline.recipient_login", value: login)
+            entry.addParameter(field: "wired.user.nick", value: nick)
+            _ = self.send(message: entry, client: peer)
+        }
     }
 
     public func receiveMessage(client: Client, message: P7Message) {
