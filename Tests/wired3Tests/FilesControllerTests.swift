@@ -716,7 +716,12 @@ final class FilesControllerTests: XCTestCase {
     }
 
     private func wiredSpecPath() -> String {
-        WiredProtocolSpec.bundledSpecURL()!.path
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/WiredSwift/Resources/wired.xml")
+            .path
     }
 
     private func configPath() -> String {
