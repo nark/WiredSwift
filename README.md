@@ -65,6 +65,7 @@ Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader 
 
 - **Multiple public chats** instead of a single default public room, with protocol support for listing, creating, and deleting public chats
 - **Live typing indicator** in chat conversations, including protocol-level typing state broadcasts
+- **Offline private messaging** so clients can send encrypted private messages to disconnected users and have them delivered when the recipient next logs in
 - **Board reactions** on posts, with dedicated account privilege support for adding reactions
 - **Continuous folder sync** with a dedicated sync daemon (`wiredsyncd` on macOS) for keeping local folders and remote Wired shares aligned
 - **Remote board search** so clients can query discussions server-side and jump directly to matching threads or snippets
@@ -78,6 +79,7 @@ Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader 
 |---|---|---|
 | Public chats | ⚠️ Single default public room | ✅ Multiple public chats (list/create/delete) |
 | Live typing indicator | ❌ Not available | ✅ Available |
+| Offline private messaging | ❌ Not available | ✅ Available (encrypted, privilege-gated, delivered on login) |
 | Board reactions | ❌ Not available | ✅ Available (with privilege gating) |
 | Continuous folder sync | ❌ Not available | ✅ Available via `wiredsyncd` |
 | Remote board search | ⚠️ Limited / client-side patterns | ✅ Server-side remote search |
@@ -115,6 +117,12 @@ Wired 2.0 supported **DEFLATE** (zlib) compression. Wired 3.0 keeps DEFLATE and 
 Wired 2.0 stored passwords as **unsalted SHA-1 hashes** and sent them directly over the wire, making them vulnerable to rainbow tables, GPU brute-force, and pass-the-hash attacks.
 
 Wired 3.0 stores passwords as **SHA-256 hashes with a per-user random salt**. Authentication uses a **challenge-response protocol with ECDSA proofs**: the client proves it knows the password without ever transmitting the hash. Session salts prevent replay attacks, and a dummy hash is computed on invalid usernames to block timing-based user enumeration.
+
+#### Offline messaging
+
+Wired 3.0 can store **private messages for offline users** and deliver them the next time they log in. The server acts as a **mailbox**: the sender's client **encrypts the message for the recipient** before the server queues it.
+
+The server stores only the **encrypted payload** plus basic delivery metadata, then removes messages after **successful delivery**. If delivery is interrupted, remaining messages stay queued for the next login. Offline messaging and offline-user discovery are **privilege-gated**, with **per-recipient queue limits** to reduce storage-abuse risk.
 
 #### Admin password
 
