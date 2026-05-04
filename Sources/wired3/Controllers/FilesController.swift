@@ -1061,8 +1061,8 @@ public class FilesController {
         }
 
         for file in files {
-            // skip invisible file
-            if file.hasPrefix(".") {
+            // skip dotfiles and the macOS custom-icon sidecar ("Icon\r")
+            if file.hasPrefix(".") || file == "Icon\r" {
                 continue
             }
 
