@@ -963,6 +963,13 @@
                 Indicates whether the account gives the privilege of sending offline private messages.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.account.user.list_offline_users" type="bool" id="8088" version="3.0">
+            <p7:documentation>
+                Indicates whether the account gives the privilege of receiving the offline user list
+                ([message:wired.user.offline_list] entries) after login. Required to enumerate
+                registered users currently disconnected and to address them via offline messaging.
+            </p7:documentation>
+        </p7:field>
         <p7:field name="wired.account.message.broadcast" type="bool" id="8028" version="2.0">
             <p7:documentation>
                 Indicates whether the account gives the privilege to broadcast messages to all users currently
@@ -1602,6 +1609,7 @@
             <p7:member field="wired.account.chat.delete_public_chats" />
             <p7:member field="wired.account.message.send_messages" />
             <p7:member field="wired.account.message.send_offline_messages" />
+            <p7:member field="wired.account.user.list_offline_users" />
             <p7:member field="wired.account.message.broadcast" />
             <p7:member field="wired.account.board.read_boards" />
             <p7:member field="wired.account.board.search_boards" />
@@ -1870,6 +1878,7 @@
             <p7:documentation>
                 One entry in the offline user list sent by the server after login.
                 Each message represents a registered account that is not currently connected.
+                Sent only to clients whose account has [field:wired.account.user.list_offline_users].
             </p7:documentation>
             <p7:parameter field="wired.message.offline.recipient_login" use="required" version="3.0" />
             <p7:parameter field="wired.user.nick" version="3.0" />
