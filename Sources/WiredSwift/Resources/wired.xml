@@ -1103,7 +1103,7 @@
                 Indicates whether the account gives the privilege of searching boards.
             </p7:documentation>
         </p7:field>
-        <p7:field name="wired.account.chat.add_reactions" type="bool" id="8099" version="3.2">
+        <p7:field name="wired.account.chat.add_reactions" type="bool" id="8102" version="3.2">
             <p7:documentation>
                 When set, allows the account to add and remove emoji reactions on chat messages.
                 Mirror of [field:wired.account.board.add_reactions] for the chat surface.
