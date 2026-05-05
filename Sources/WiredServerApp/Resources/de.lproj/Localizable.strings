@@ -170,8 +170,6 @@
 "touchid.save.title" = "Touch ID aktivieren?";
 "touchid.save.message" = "Speichern Sie Ihr Administrator-Passwort mit Touch ID, damit zukünftige Operationen keine Passwort-Eingabe erfordern.";
 "touchid.save.enable" = "Touch ID aktivieren";
-"touchid.save.failed.title" = "Touch ID konnte nicht gespeichert werden";
-"touchid.save.failed.message" = "Das Passwort konnte nicht im Schlüsselbund gespeichert werden. Diese Funktion erfordert einen Developer ID-signierten Build.";
 "touchid.wrong_password" = "Authentifizierung fehlgeschlagen — falsches Passwort.";
 
 "advanced.admin.section" = "Admin-Konto";

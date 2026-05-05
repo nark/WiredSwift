@@ -179,8 +179,6 @@
 "touchid.save.title" = "Enable Touch ID?";
 "touchid.save.message" = "Save your administrator password with Touch ID so future operations don't require a password prompt.";
 "touchid.save.enable" = "Enable Touch ID";
-"touchid.save.failed.title" = "Touch ID Could Not Be Saved";
-"touchid.save.failed.message" = "The password could not be stored in the Keychain. This feature requires a Developer ID-signed build.";
 "touchid.wrong_password" = "Authentication failed — wrong password.";
 
 "advanced.admin.section" = "Admin account";
