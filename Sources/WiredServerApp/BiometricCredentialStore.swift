@@ -33,9 +33,11 @@ struct BiometricCredentialStore {
 
     /// Save password to Keychain with a biometric ACL so that reading the item requires
     /// Touch ID / Apple Watch at the Keychain layer, not just at the UI layer.
-    @discardableResult
-    static func save(password: String) -> Bool {
-        guard let data = password.data(using: .utf8) else { return false }
+    /// Save password to Keychain. Returns nil on success, or a human-readable error string on failure.
+    /// SecItemAdd fails (errSecMissingEntitlement / errSecAuthFailed) when the app is ad-hoc or
+    /// sandbox-signed without a Developer ID — this is expected in dev builds.
+    static func save(password: String) -> String? {
+        guard let data = password.data(using: .utf8) else { return "Password encoding failed" }
 
         let deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -50,7 +52,10 @@ struct BiometricCredentialStore {
             kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             .biometryCurrentSet,
             &cfError
-        ) else { return false }
+        ) else {
+            let msg = cfError?.takeRetainedValue().localizedDescription ?? "SecAccessControlCreateWithFlags failed"
+            return msg
+        }
 
         let attrs: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -59,7 +64,11 @@ struct BiometricCredentialStore {
             kSecValueData as String: data,
             kSecAttrAccessControl as String: access
         ]
-        return SecItemAdd(attrs as CFDictionary, nil) == errSecSuccess
+        let status = SecItemAdd(attrs as CFDictionary, nil)
+        if status == errSecSuccess { return nil }
+        // SecCopyErrorMessageString is available on macOS 10.3+
+        let description = SecCopyErrorMessageString(status, nil) as String? ?? "OSStatus \(status)"
+        return description
     }
 
     /// Retrieve the stored password. Shows the Touch ID / Apple Watch sheet first.

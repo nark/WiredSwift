@@ -201,107 +201,6 @@ struct GeneralTabView: View {
                     }
                 }
 
-                Section("System Data Directory") {
-                    if model.isUsingSystemDirectory {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text("/Library/Wired3/ (system-wide)")
-                                .textSelection(.enabled)
-                        }
-                    } else if model.systemMigrationAvailable {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Migrate server data to /Library/Wired3/ to enable LaunchDaemon support. The original data will be preserved as a backup.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-
-                            HStack(spacing: 10) {
-                                Button("Migrate to /Library/Wired3/") {
-                                    Task { await model.migrateToSystemDirectory() }
-                                }
-                                .disabled(model.isSystemMigrating || model.isBusy)
-
-                                if model.isSystemMigrating {
-                                    ProgressView().controlSize(.small)
-                                }
-                            }
-
-                            if !model.systemMigrationStatus.isEmpty {
-                                Text(model.systemMigrationStatus)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .textSelection(.enabled)
-                            }
-                        }
-                    }
-                }
-
-                Section("Install Mode") {
-                    if !model.isUsingSystemDirectory {
-                        Label("Migrate to /Library/Wired3/ first to enable LaunchDaemon mode.", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.orange)
-                            .font(.footnote)
-                    } else {
-                        Picker("Mode", selection: Binding(
-                            get: { model.installMode },
-                            set: { newMode in
-                                Task { await model.switchInstallMode(to: newMode) }
-                            }
-                        )) {
-                            Text("LaunchAgent (current user)").tag(ServerInstallMode.launchAgent)
-                            Text("LaunchDaemon (system service)").tag(ServerInstallMode.launchDaemon)
-                        }
-                        .disabled(model.isSwitchingMode || model.isBusy)
-
-                        HStack(spacing: 8) {
-                            Text("Daemon User")
-                                .bold()
-                                .frame(width: 90, alignment: .leading)
-                            TextField("_wired", text: $model.daemonUserName)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 100)
-                                .disabled(model.isSwitchingMode)
-                            Image(systemName: model.isDaemonUserExists ? "person.fill.checkmark" : "person.fill.xmark")
-                                .foregroundStyle(model.isDaemonUserExists ? .green : .secondary)
-
-                            Text("Group")
-                                .bold()
-                                .frame(width: 44, alignment: .leading)
-                            TextField("daemon", text: $model.daemonGroupName)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(width: 100)
-                                .disabled(model.isSwitchingMode)
-                            Image(systemName: model.isDaemonGroupExists ? "checkmark.circle.fill" : "xmark.circle")
-                                .foregroundStyle(model.isDaemonGroupExists ? .green : .secondary)
-
-                            Spacer()
-                            Button("Save") { model.saveDaemonSettings() }
-                                .disabled(model.isSwitchingMode)
-                        }
-                        .labelsHidden()
-
-                        if model.installMode == .launchDaemon && model.filesDirectoryIsOnExternalVolume {
-                            ExternalVolumeWarningView(hasFDA: model.wired3HasFullDiskAccess) {
-                                model.openFullDiskAccessSettings()
-                            }
-                        }
-
-                        if model.isSwitchingMode {
-                            HStack(spacing: 8) {
-                                ProgressView().controlSize(.small)
-                                Text(model.modeSwitchStatus)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else if !model.modeSwitchStatus.isEmpty {
-                            Text(model.modeSwitchStatus)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                        }
-                    }
-                }
-
                 Section(L("general.versions.section")) {
                     HStack(spacing: 8) {
                         Text(L("general.install.version"))
@@ -339,20 +238,12 @@ struct GeneralTabView: View {
                     if model.installMode == .launchDaemon {
                         HStack {
                             StatusDot(color: model.isDaemonRunning ? .green : .red)
-                            Text(model.isDaemonRunning ? "Running (daemon)" : "Stopped (daemon)")
+                            Text(model.isDaemonRunning ? L("general.execution.running_daemon") : L("general.execution.stopped_daemon"))
                             Spacer()
-                            Button(model.isDaemonRunning ? L("general.execution.stop") : L("general.execution.start")) {
-                                if model.isDaemonRunning { model.stopDaemon() }
-                                else { model.startDaemon() }
-                            }
-                            .disabled(!model.launchDaemonInstalled)
+                            Text(L("general.execution.see_advanced"))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         }
-
-                        Toggle("Start at Boot", isOn: Binding(
-                            get: { model.daemonStartAtBoot },
-                            set: { model.toggleDaemonStartAtBoot($0) }
-                        ))
-                        .disabled(!model.launchDaemonInstalled)
                     } else {
                         HStack {
                             StatusDot(color: model.isRunning ? .green : .red)

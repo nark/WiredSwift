@@ -904,7 +904,13 @@ final class WiredServerViewModel: ObservableObject {
         alert.addButton(withTitle: L("touchid.save.enable"))
         alert.addButton(withTitle: L("common.cancel"))
         if alert.runModal() == .alertFirstButtonReturn {
-            if BiometricCredentialStore.save(password: password) {
+            if let error = BiometricCredentialStore.save(password: password) {
+                let failAlert = NSAlert()
+                failAlert.alertStyle = .warning
+                failAlert.messageText = L("touchid.save.failed.title")
+                failAlert.informativeText = "\(L("touchid.save.failed.message"))\n\n\(error)"
+                failAlert.runModal()
+            } else {
                 hasTouchIDCredential = true
             }
         }
