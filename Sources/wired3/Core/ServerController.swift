@@ -740,12 +740,6 @@ public class ServerController: ServerDelegate {
             App.chatsController.setTopic(message: message, client: client)
         } else if message.name == "wired.chat.kick_user" {
             App.chatsController.kickUser(message: message, client: client)
-        } else if message.name == "wired.chat.add_reaction" {
-            self.receiveChatAddReaction(client: client, message: message)
-        } else if message.name == "wired.chat.remove_reaction" {
-            self.receiveChatRemoveReaction(client: client, message: message)
-        } else if message.name == "wired.chat.get_reactions" {
-            self.receiveChatGetReactions(client: client, message: message)
         } else if message.name == "wired.message.send_message" {
             self.receiveMessageSendMessage(client: client, message: message)
         } else if message.name == "wired.message.send_offline_message" {

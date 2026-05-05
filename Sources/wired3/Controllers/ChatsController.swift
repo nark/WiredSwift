@@ -43,9 +43,6 @@ extension ChatsController {
 
     func remove(chat: Chat) {
         clearTypingState(forChatID: chat.chatID)
-        chatReactionStores.exclusivelyWrite {
-            self._chatReactionStores.removeValue(forKey: chat.chatID)
-        }
 
         self.chatsLock.exclusivelyWrite {
             self.chats[chat.chatID] = nil
@@ -144,16 +141,6 @@ extension ChatsController {
 
         App.serverController.replyOK(client: client, message: message)
 
-        // 3.2: stamp a stable message ID on every public-chat say/me so
-        // clients can reference it for reactions. Pre-3.2 receivers skip
-        // this length-prefixed string field via receiver tolerance.
-        var stampedMessageID: String?
-        if !(chat is PrivateChat) {
-            let id = UUID().uuidString
-            stampedMessageID = id
-            reactionsStore(for: chat)?.register(messageID: id)
-        }
-
         chat.withClients { toClient in
             let messageName = isSay ? "wired.chat.say" : "wired.chat.me"
             let reply = P7Message(withName: messageName, spec: toClient.socket.spec)
@@ -162,9 +149,6 @@ extension ChatsController {
             reply.addParameter(field: messageName, value: string)
             if let descriptors, !descriptors.isEmpty {
                 reply.addParameter(field: "wired.attachment.descriptors", value: App.attachmentsController.descriptorStrings(descriptors))
-            }
-            if let stampedMessageID {
-                reply.addParameter(field: "wired.chat.message.id", value: stampedMessageID)
             }
             App.serverController.send(message: reply, client: toClient)
         }
@@ -296,11 +280,6 @@ public class ChatsController: TableController {
     private let typingStateLock = Lock()
     private let typingCleanupQueue = DispatchQueue(label: "wired3.chats.typing-cleanup")
     private var typingCleanupTimer: DispatchSourceTimer?
-
-    // Chat reactions (Wired 3.2). Per-public-chat in-memory ring buffer of
-    // recent message IDs and the reactions attached to them.
-    var _chatReactionStores: [UInt32: ChatReactionsStore] = [:]
-    let chatReactionStores: Lock = Lock()
 
     /// Creates a new `ChatsController` and starts the typing-state cleanup timer.
     ///
