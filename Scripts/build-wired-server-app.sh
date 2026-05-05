@@ -242,13 +242,89 @@ sign_app_bundle() {
   codesign --force --deep --timestamp --options runtime --sign "$identity" "$app"
 }
 
+extract_notary_submission_id() {
+  sed -nE 's/^[[:space:]]*id:[[:space:]]*([0-9a-fA-F-]{36})[[:space:]]*$/\1/p' | tail -n 1
+}
+
+is_transient_notary_error() {
+  local output="${1:-}"
+  [[ "$output" == *"HTTPClientError.connectTimeout"* ]] ||
+    [[ "$output" == *"timed out"* ]] ||
+    [[ "$output" == *"timeout"* ]] ||
+    [[ "$output" == *"connection reset"* ]] ||
+    [[ "$output" == *"connection refused"* ]] ||
+    [[ "$output" == *"network connection was lost"* ]] ||
+    [[ "$output" == *"HTTP status code: 500"* ]] ||
+    [[ "$output" == *"HTTP status code: 502"* ]] ||
+    [[ "$output" == *"HTTP status code: 503"* ]] ||
+    [[ "$output" == *"HTTP status code: 504"* ]]
+}
+
+wait_for_notary_submission() {
+  local profile="$1"
+  local submission_id="$2"
+  local max_attempts="${NOTARY_WAIT_RETRY_ATTEMPTS:-4}"
+  local sleep_seconds="${NOTARY_WAIT_RETRY_DELAY_SECONDS:-30}"
+  local attempt=1
+  local output=""
+  local status=0
+
+  while true; do
+    echo "==> Waiting for notarization submission $submission_id"
+    if output="$(xcrun notarytool wait "$submission_id" --keychain-profile "$profile" --timeout "${NOTARY_WAIT_TIMEOUT:-30m}" 2>&1)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    status=$?
+    printf '%s\n' "$output" >&2
+
+    if (( attempt >= max_attempts )) || ! is_transient_notary_error "$output"; then
+      return "$status"
+    fi
+
+    echo "==> Notary wait failed with a transient network error (attempt ${attempt}/${max_attempts}); retrying in ${sleep_seconds}s"
+    sleep "$sleep_seconds"
+    attempt=$((attempt + 1))
+    sleep_seconds=$((sleep_seconds * 2))
+  done
+}
+
 notarize_zip() {
   local profile="$1"
   local zip_path="$2"
   local label="$3"
+  local max_attempts="${NOTARY_SUBMIT_RETRY_ATTEMPTS:-3}"
+  local sleep_seconds="${NOTARY_SUBMIT_RETRY_DELAY_SECONDS:-30}"
+  local attempt=1
+  local output=""
+  local status=0
+  local submission_id=""
 
   echo "==> Notarizing $label"
-  xcrun notarytool submit "$zip_path" --keychain-profile "$profile" --wait
+  while true; do
+    if output="$(xcrun notarytool submit "$zip_path" --keychain-profile "$profile" --wait --timeout "${NOTARY_WAIT_TIMEOUT:-30m}" 2>&1)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    status=$?
+    printf '%s\n' "$output" >&2
+
+    submission_id="$(printf '%s\n' "$output" | extract_notary_submission_id)"
+    if [[ -n "$submission_id" ]]; then
+      echo "==> Notary submission was created before the error: $submission_id"
+      wait_for_notary_submission "$profile" "$submission_id"
+      return $?
+    fi
+
+    if (( attempt >= max_attempts )) || ! is_transient_notary_error "$output"; then
+      return "$status"
+    fi
+
+    echo "==> Notary submit failed with a transient network error (attempt ${attempt}/${max_attempts}); retrying in ${sleep_seconds}s"
+    sleep "$sleep_seconds"
+    attempt=$((attempt + 1))
+    sleep_seconds=$((sleep_seconds * 2))
+  done
 }
 
 SIGNING_IDENTITY="$(resolve_signing_identity || true)"
