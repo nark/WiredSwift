@@ -288,7 +288,7 @@ struct NetworkTabView: View {
 
     private func color(for status: PortStatus) -> Color {
         switch status {
-        case .unknown, .checking:
+        case .idle, .unknown, .checking:
             return .gray
         case .open:
             return .green
