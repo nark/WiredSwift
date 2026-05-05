@@ -42,7 +42,7 @@
 "general.execution.stopped_daemon" = "Arrêté (daemon)";
 "general.execution.start" = "Démarrer";
 "general.execution.stop" = "Arrêter";
-"general.execution.start_on_login" = "Démarrer automatiquement à la connexion macOS";
+"general.execution.start_on_login" = "Démarrer automatiquement à l'ouverture de session";
 "general.execution.start_at_boot" = "Démarrer au démarrage";
 
 "general.system_data_dir.section" = "Répertoire système des données";
@@ -170,8 +170,6 @@
 "touchid.save.title" = "Activer Touch ID ?";
 "touchid.save.message" = "Enregistrez votre mot de passe administrateur avec Touch ID pour éviter de le saisir à chaque opération.";
 "touchid.save.enable" = "Activer Touch ID";
-"touchid.save.failed.title" = "Touch ID non enregistré";
-"touchid.save.failed.message" = "Le mot de passe n'a pas pu être enregistré dans le Trousseau. Cette fonctionnalité nécessite une version signée avec un Developer ID.";
 "touchid.wrong_password" = "Authentification échouée — mot de passe incorrect.";
 
 "advanced.admin.section" = "Compte admin";
