@@ -5,6 +5,8 @@ import Security
 /// Stores the macOS admin password in the Keychain, protected by a biometric access-control
 /// constraint (SecAccessControlCreateWithFlags / .biometryCurrentSet) so that SecItemCopyMatching
 /// itself requires Touch ID or Apple Watch — not just the UI layer.
+/// Requires a Developer ID-signed build: SecItemAdd returns errSecMissingEntitlement on
+/// ad-hoc or development-signed builds. save() surfaces this as a human-readable error string.
 struct BiometricCredentialStore {
     private static let service = "fr.read-write.WiredServer3"
     private static let account = "admin-privilege-password"
@@ -31,11 +33,8 @@ struct BiometricCredentialStore {
         return status == errSecSuccess || status == errSecInteractionNotAllowed
     }
 
-    /// Save password to Keychain with a biometric ACL so that reading the item requires
-    /// Touch ID / Apple Watch at the Keychain layer, not just at the UI layer.
-    /// Save password to Keychain. Returns nil on success, or a human-readable error string on failure.
-    /// SecItemAdd fails (errSecMissingEntitlement / errSecAuthFailed) when the app is ad-hoc or
-    /// sandbox-signed without a Developer ID — this is expected in dev builds.
+    /// Save password to Keychain with a biometric ACL. Returns nil on success, or a
+    /// human-readable error string on failure (e.g. errSecMissingEntitlement on non-Developer-ID builds).
     static func save(password: String) -> String? {
         guard let data = password.data(using: .utf8) else { return "Password encoding failed" }
 

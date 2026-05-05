@@ -42,7 +42,7 @@
 "general.execution.stopped_daemon" = "Stopped (daemon)";
 "general.execution.start" = "Start";
 "general.execution.stop" = "Stop";
-"general.execution.start_on_login" = "Automatically start on system startup";
+"general.execution.start_on_login" = "Automatically start on login";
 "general.execution.start_at_boot" = "Start at Boot";
 
 "general.system_data_dir.section" = "System Data Directory";
