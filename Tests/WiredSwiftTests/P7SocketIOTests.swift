@@ -237,7 +237,7 @@ final class P7SocketIOTests: XCTestCase {
 
         XCTAssertNil(serverError)
         XCTAssertEqual(client.remoteName, "Wired")
-        XCTAssertEqual(client.remoteVersion, "3.1")
+        XCTAssertEqual(client.remoteVersion, "3.2")
         XCTAssertFalse(client.compressionEnabled)
         XCTAssertFalse(client.encryptionEnabled)
         XCTAssertFalse(client.checksumEnabled)
