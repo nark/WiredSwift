@@ -56,6 +56,9 @@ enum WiredMigrations {
         migrator.registerMigration("v16_offline_messages_encrypted") { db in
             try WiredMigrations.v16(db)
         }
+        migrator.registerMigration("v17_add_chat_reactions_privilege") { db in
+            try WiredMigrations.v17(db)
+        }
     }
 
     static func v2(_ db: Database) throws {
@@ -193,6 +196,10 @@ enum WiredMigrations {
         """)
     }
 
+    static func v17(_ db: Database) throws {
+        try backfillChatReactionsPrivilege(db)
+    }
+
     static func v11(_ db: Database) throws {
         try db.create(table: "tracked_servers", ifNotExists: true) { t in
             t.autoIncrementedPrimaryKey("id")
@@ -228,6 +235,24 @@ enum WiredMigrations {
             UPDATE users SET is_legacy = 1
             WHERE (password_salt IS NULL OR password_salt = '')
               AND length(password) = 40
+        """)
+    }
+
+    static func backfillChatReactionsPrivilege(_ db: Database) throws {
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO user_privileges (name, value, user_id)
+            SELECT 'wired.account.chat.add_reactions', COALESCE(ref.value, 0), u.id
+            FROM users u
+            LEFT JOIN user_privileges ref
+                ON ref.user_id = u.id AND ref.name = 'wired.account.message.send_messages'
+        """)
+
+        try db.execute(sql: """
+            INSERT OR IGNORE INTO group_privileges (name, value, group_id)
+            SELECT 'wired.account.chat.add_reactions', COALESCE(ref.value, 0), g.id
+            FROM groups g
+            LEFT JOIN group_privileges ref
+                ON ref.group_id = g.id AND ref.name = 'wired.account.message.send_messages'
         """)
     }
 
