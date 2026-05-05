@@ -733,7 +733,13 @@ final class WiredServerViewModel: ObservableObject {
     // One admin dialog: bootout + remove plist + chown back to current user + optional user/group cleanup
     private func deactivateLaunchDaemon(restoreUser: String) throws {
         var cmds = [
-            "launchctl bootout system/\(launchAgentLabel) 2>/dev/null",
+            // || true: bootout returns non-zero when the service is already unloaded;
+            // without it the && chain would abort before chown runs.
+            "launchctl bootout system/\(launchAgentLabel) 2>/dev/null || true",
+            // Give the daemon process time to finish its SQLite WAL checkpoint before
+            // we chown the files, otherwise a slow-exiting daemon can re-write WAL
+            // files as the daemon user after the chown completes.
+            "sleep 1",
             "rm -f '\(launchDaemonPlistPath)'",
             "chown -R \(restoreUser):staff /Library/Wired3",
             // Restore mode bits that activateLaunchDaemon widened for daemon operation
