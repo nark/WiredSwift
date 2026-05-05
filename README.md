@@ -502,6 +502,8 @@ Wired is built on **P7**, a custom binary protocol designed for low-overhead, st
 
 **Protocol specification:** the full catalog of messages, fields, and data types is declared in `wired.xml`, a machine-readable XML file shipped with every server. Clients load this spec at connection time to know which messages exist and how to encode/decode them. When the protocol evolves, only `wired.xml` needs to be updated — the parser, serializer, and network layer adapt automatically.
 
+**Cross-version interoperability:** clients and servers running different *minor* versions of Wired interoperate. During the handshake, peers exchange their full specs (`p7.compatibility_check.specification`) and compute a diff; senders automatically skip messages or fields the peer doesn't know about, and receivers tolerate unknown items rather than dropping the session. Only major-version mismatches (incompatible wire format) are refused. The full policy and the rules for adding new fields/messages live in [COMPATIBILITY.md](COMPATIBILITY.md).
+
 **Session lifecycle:** a typical session flows through handshake (version and capability negotiation), key exchange (ECDH + optional identity verification), authentication (challenge-response), and then enters steady-state messaging (chat, file transfers, board operations, admin commands). Each phase is a well-defined sequence of P7 messages documented in `wired.xml`.
 
 For implementation details, see `Sources/WiredSwift/P7/` (parser, socket, spec loader) and `Sources/wired3/` (server-side message handlers).

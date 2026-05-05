@@ -302,6 +302,44 @@ public class P7Socket: NSObject {
     public var remoteName: String!
     public var remoteAddress: String?
 
+    /// The Wired protocol version effectively negotiated for this session
+    /// (`min(local, remote)`), set during `connectHandshake`/`acceptHandshake`.
+    /// Senders use this to gate features added in newer minor versions.
+    public var negotiatedProtocolVersion: ProtocolVersion?
+
+    /// The P7 framing version effectively negotiated for this session
+    /// (`min(local, remote)`).
+    public var negotiatedBuiltinProtocolVersion: ProtocolVersion?
+
+    /// The peer's specification, parsed from the
+    /// `p7.compatibility_check.specification` exchange. `nil` when the
+    /// exchange did not happen (versions matched, or peer doesn't support
+    /// it). Senders that need to gate features per peer should prefer
+    /// `peerKnows(messageNamed:)` / `peerKnows(fieldNamed:)`.
+    public var remoteSpec: P7Spec?
+
+    /// The compatibility diff between local and remote specs, computed
+    /// lazily from `remoteSpec`. Empty (`.identical`) when no exchange
+    /// happened — in that case senders fall back on
+    /// `negotiatedProtocolVersion` and the `version` attribute on
+    /// individual spec items to decide what to send.
+    public var compatibilityDiff: CompatibilityDiff = .identical
+
+    /// Returns `true` if the peer's spec advertises the named message.
+    /// When no spec was exchanged, returns `true` (optimistic fallback —
+    /// callers can additionally consult `negotiatedProtocolVersion`).
+    public func peerKnows(messageNamed name: String) -> Bool {
+        guard let remote = self.remoteSpec else { return true }
+        return remote.messagesByName[name] != nil
+    }
+
+    /// Returns `true` if the peer's spec advertises the named field.
+    /// Same fallback semantics as `peerKnows(messageNamed:)`.
+    public func peerKnows(fieldNamed name: String) -> Bool {
+        guard let remote = self.remoteSpec else { return true }
+        return remote.fieldsByName[name] != nil
+    }
+
     public var connected: Bool = false
     public var passwordProvider: SocketPasswordDelegate?
     /// Set to `true` after a successful key exchange in which the server indicated that the
@@ -621,6 +659,17 @@ public class P7Socket: NSObject {
         writeLock.lock()
         defer { writeLock.unlock() }
 
+        // Forward-compat: silently drop messages the peer's spec doesn't
+        // know about. This only happens after a successful
+        // `compatibility_check` exchange — without one, the diff is empty
+        // and nothing is dropped (peerKnows() returns true optimistically).
+        if let messageIDStr = message.id,
+           let messageID = UInt32(messageIDStr),
+           self.compatibilityDiff.messagesUnknownToRemote.contains(messageID) {
+            Logger.warning("Dropping outbound message '\(message.name ?? "?")' (\(messageID)) — unknown to peer's spec")
+            return true
+        }
+
         do {
             if self.serialization == .XML {
                 let xml = message.xml()
@@ -630,7 +679,7 @@ public class P7Socket: NSObject {
                 }
             } else if self.serialization == .BINARY {
                 var lengthData = Data()
-                var messageData = message.bin()
+                var messageData = message.bin(omittingFieldIDs: self.compatibilityDiff.fieldsUnknownToRemote)
 
                 lengthData.append(uint32: UInt32(messageData.count))
 
@@ -997,8 +1046,8 @@ public class P7Socket: NSObject {
 
         var message = P7Message(withName: "p7.handshake.client_handshake", spec: self.spec)
         message.addParameter(field: "p7.handshake.version", value: self.spec.builtinProtocolVersion ?? "1.2")
-        message.addParameter(field: "p7.handshake.protocol.name", value: "Wired")
-        message.addParameter(field: "p7.handshake.protocol.version", value: "3.0")
+        message.addParameter(field: "p7.handshake.protocol.name", value: self.spec.protocolName ?? "Wired")
+        message.addParameter(field: "p7.handshake.protocol.version", value: self.spec.protocolVersion ?? "3.0")
 
         // handshake settings
         if self.serialization == .BINARY {
@@ -1031,16 +1080,46 @@ public class P7Socket: NSObject {
             throw P7SocketError.handshakeFailed(message)
         }
 
-        if p7Version != spec.builtinProtocolVersion {
-            let message = "Handshake Failed: Local version is \(p7Version) but remote version is \(spec.builtinProtocolVersion!)"
+        guard let localBuiltin = spec.parsedBuiltinProtocolVersion,
+              let remoteBuiltin = ProtocolVersion(p7Version) else {
+            let message = "Handshake Failed: Cannot parse P7 version (local=\(spec.builtinProtocolVersion ?? "nil") remote=\(p7Version))"
             Logger.error(message)
             throw P7SocketError.handshakeFailed(message)
         }
 
+        if !localBuiltin.isCompatible(with: remoteBuiltin) {
+            let message = "Handshake Failed: Incompatible P7 framing version — local=\(localBuiltin) remote=\(remoteBuiltin)"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
+        }
+
+        self.negotiatedBuiltinProtocolVersion = .negotiated(localBuiltin, remoteBuiltin)
+
         self.remoteName = response.string(forField: "p7.handshake.protocol.name")
         self.remoteVersion = response.string(forField: "p7.handshake.protocol.version")
 
-        self.localCompatibilityCheck = !spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
+        if let localProto = spec.parsedProtocolVersion,
+           let remoteProto = ProtocolVersion(self.remoteVersion ?? "") {
+            self.negotiatedProtocolVersion = .negotiated(localProto, remoteProto)
+        }
+
+        // Major-version mismatch is a hard incompatibility — the binary
+        // wire format may have diverged (field IDs reused, types changed,
+        // etc.). We refuse to proceed to avoid silent data corruption.
+        if !spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion) {
+            let local = "\(spec.protocolName ?? "?") \(spec.protocolVersion ?? "?")"
+            let remote = "\(self.remoteName ?? "?") \(self.remoteVersion ?? "?")"
+            let message = "Handshake Failed: Incompatible Wired protocol — local=\(local) remote=\(remote)"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
+        }
+
+        // Same-major but different minor → trigger the compatibility_check
+        // exchange so the resulting `CompatibilityDiff` lets senders skip
+        // features the peer doesn't know about. The exchange is now
+        // non-blocking — incompatibility is logged, never thrown. See
+        // COMPATIBILITY.md.
+        self.localCompatibilityCheck = (self.remoteVersion != self.spec.protocolVersion)
 
         if self.serialization == .BINARY {
             if let comp = response.enumeration(forField: "p7.handshake.compression") {
@@ -1113,11 +1192,20 @@ public class P7Socket: NSObject {
             throw P7SocketError.handshakeFailed(message)
         }
 
-        if version != self.spec.builtinProtocolVersion {
-            let message = "Remote P7 protocol \(version) is not compatible"
+        guard let localBuiltin = self.spec.parsedBuiltinProtocolVersion,
+              let remoteBuiltin = ProtocolVersion(version) else {
+            let message = "Remote P7 protocol \(version) cannot be parsed (local=\(self.spec.builtinProtocolVersion ?? "nil"))"
             Logger.error(message)
             throw P7SocketError.handshakeFailed(message)
         }
+
+        if !localBuiltin.isCompatible(with: remoteBuiltin) {
+            let message = "Remote P7 protocol \(remoteBuiltin) is not compatible with local \(localBuiltin)"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
+        }
+
+        self.negotiatedBuiltinProtocolVersion = .negotiated(localBuiltin, remoteBuiltin)
 
         // protocol compatibility check
         guard let remoteName = response.string(forField: "p7.handshake.protocol.name") else {
@@ -1134,7 +1222,23 @@ public class P7Socket: NSObject {
 
         self.remoteName = remoteName
         self.remoteVersion = remoteVersion
-        self.localCompatibilityCheck = !self.spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
+
+        if let localProto = self.spec.parsedProtocolVersion,
+           let remoteProto = ProtocolVersion(remoteVersion) {
+            self.negotiatedProtocolVersion = .negotiated(localProto, remoteProto)
+        }
+
+        // Major mismatch is a hard incompatibility — see client-side comment.
+        if !self.spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion) {
+            let local = "\(self.spec.protocolName ?? "?") \(self.spec.protocolVersion ?? "?")"
+            let remote = "\(self.remoteName ?? "?") \(self.remoteVersion ?? "?")"
+            let message = "Handshake Failed: Incompatible Wired protocol — local=\(local) remote=\(remote)"
+            Logger.error(message)
+            throw P7SocketError.handshakeFailed(message)
+        }
+
+        // Same-major but different minor — trigger compat exchange.
+        self.localCompatibilityCheck = (self.remoteVersion != self.spec.protocolVersion)
 
         if self.serialization == .BINARY {
             if let compression = response.enumeration(forField: "p7.handshake.compression") {
@@ -1667,6 +1771,13 @@ public class P7Socket: NSObject {
     }
 
     // MARK: - COMPATIBILITY CHECK
+    //
+    // Originally an all-or-nothing reject-on-divergence handshake step. Now
+    // a non-blocking spec exchange: each side ships its full XML spec, the
+    // peer parses it, computes a `CompatibilityDiff` against its own spec,
+    // and stores it on the socket for senders to consult. The status field
+    // is preserved on the wire (always `true`) for backwards compatibility
+    // with peers that still expect it. See COMPATIBILITY.md.
     private func sendCompatibilityCheck() throws {
         let message = P7Message(withName: "p7.compatibility_check.specification", spec: self.spec)
 
@@ -1682,16 +1793,12 @@ public class P7Socket: NSObject {
             throw P7SocketError.remoteCompatibilityFailed(message)
         }
 
-        guard let status = response.bool(forField: "p7.compatibility_check.status") else {
-            let message = "Message has no 'p7.compatibility_check.status' field"
-            Logger.error(message)
-            throw P7SocketError.remoteCompatibilityFailed(message)
-        }
-
-        if status == false {
-            let message = "Remote protocol '\(self.remoteName!) \(self.remoteVersion!)' is not compatible with local protocol '\(self.spec.protocolName!) \(self.spec.protocolVersion!)'"
-            Logger.error(message)
-            throw P7SocketError.remoteCompatibilityFailed(message)
+        // We no longer treat `status == false` as a session-fatal error.
+        // Peers running an older WiredSwift may still reject on divergence —
+        // in that case the connection is closed by the peer regardless and
+        // the read loop will surface the disconnect.
+        if let status = response.bool(forField: "p7.compatibility_check.status"), status == false {
+            Logger.warning("Peer reported spec incompatibility — proceeding anyway, behaviour will be gated by the local diff")
         }
     }
 
@@ -1704,19 +1811,32 @@ public class P7Socket: NSObject {
             throw P7SocketError.localCompatibilityFailed(message)
         }
 
-        // Validate the remote spec against our local protocol
-        let compatible = self.spec.isCompatibleWithProtocol(withName: self.remoteName, version: self.remoteVersion)
+        // Parse the peer's spec and compute a diff. We never reject the
+        // session on divergence anymore — minor-version drift is expected.
+        if let xml = response.string(forField: "p7.compatibility_check.specification"),
+           let parsed = P7Spec(withString: xml) {
+            self.remoteSpec = parsed
+            self.compatibilityDiff = CompatibilityDiff.diff(local: self.spec, remote: parsed)
 
-        let reply = P7Message(withName: "p7.compatibility_check.status", spec: self.spec)
-        reply.addParameter(field: "p7.compatibility_check.status", value: compatible)
-        _ = self.write(reply)
-
-        if !compatible {
-            // swiftlint:disable:next line_length
-            let message = "Local protocol '\(self.spec.protocolName ?? "unknown") \(self.spec.protocolVersion ?? "unknown")' is not compatible with remote protocol '\(self.remoteName ?? "unknown") \(self.remoteVersion ?? "unknown")'"
-            Logger.error(message)
-            throw P7SocketError.localCompatibilityFailed(message)
+            if !self.compatibilityDiff.isEmpty {
+                Logger.info(
+                    "Spec diff with peer: " +
+                    "msgs unknown to remote=\(self.compatibilityDiff.messagesUnknownToRemote.count), " +
+                    "msgs unknown to local=\(self.compatibilityDiff.messagesUnknownToLocal.count), " +
+                    "fields unknown to remote=\(self.compatibilityDiff.fieldsUnknownToRemote.count), " +
+                    "fields unknown to local=\(self.compatibilityDiff.fieldsUnknownToLocal.count)"
+                )
+            }
+        } else {
+            Logger.warning("Could not parse peer specification — falling back to optimistic peerKnows() semantics")
         }
+
+        // Always reply `true` — the diff is now informational. The boolean
+        // field is kept on the wire for compatibility with older peers that
+        // would otherwise close the connection.
+        let reply = P7Message(withName: "p7.compatibility_check.status", spec: self.spec)
+        reply.addParameter(field: "p7.compatibility_check.status", value: true)
+        _ = self.write(reply)
     }
 
     // MARK: - CHECKSUM
