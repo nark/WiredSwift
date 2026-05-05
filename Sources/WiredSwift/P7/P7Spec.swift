@@ -307,6 +307,22 @@ public class P7Spec: NSObject, XMLParserDelegate {
         }
     }
 
+    /// Init a spec from an in-memory XML payload (typically a peer's
+    /// specification received via `p7.compatibility_check.specification`).
+    public convenience init?(withData data: Data) {
+        self.init()
+
+        if !self.loadXMLData(data) {
+            return nil
+        }
+    }
+
+    /// Init a spec from an in-memory XML string.
+    public convenience init?(withString xml: String) {
+        guard let data = xml.data(using: .utf8) else { return nil }
+        self.init(withData: data)
+    }
+
     /**
     Check whether the given specification name and version
      are compatible with the current protocol.
@@ -324,26 +340,30 @@ public class P7Spec: NSObject, XMLParserDelegate {
             return false
         }
 
-        // Compare major version numbers for compatibility
-        guard let localVersion = self.protocolVersion else {
-            Logger.error("Local protocol version is nil")
+        // Same-major compatibility — minor differences are tolerated and
+        // resolved via the receiver-side tolerance and capability diff.
+        guard let localVersion = self.protocolVersion.flatMap(ProtocolVersion.init),
+              let remoteVersion = ProtocolVersion(version) else {
+            Logger.error("Cannot parse version: local=\(self.protocolVersion ?? "nil") remote=\(version)")
             return false
         }
 
-        let remoteMajor = version.split(separator: ".").first.flatMap { Int($0) }
-        let localMajor = localVersion.split(separator: ".").first.flatMap { Int($0) }
-
-        guard let rMajor = remoteMajor, let lMajor = localMajor else {
-            Logger.error("Cannot parse version: local=\(localVersion) remote=\(version)")
-            return false
-        }
-
-        if rMajor != lMajor {
-            Logger.error("Incompatible major version: local=\(lMajor) remote=\(rMajor)")
+        if !localVersion.isCompatible(with: remoteVersion) {
+            Logger.error("Incompatible major version: local=\(localVersion.major) remote=\(remoteVersion.major)")
             return false
         }
 
         return true
+    }
+
+    /// The locally-shipped Wired protocol version, parsed.
+    public var parsedProtocolVersion: ProtocolVersion? {
+        protocolVersion.flatMap(ProtocolVersion.init)
+    }
+
+    /// The locally-shipped P7 framing version, parsed.
+    public var parsedBuiltinProtocolVersion: ProtocolVersion? {
+        builtinProtocolVersion.flatMap(ProtocolVersion.init)
     }
 
     /**
@@ -443,24 +463,27 @@ public class P7Spec: NSObject, XMLParserDelegate {
     @discardableResult
     private func loadFile(at url: URL) -> Bool {
         do {
-            self.xml = try String(contentsOf: url, encoding: .utf8)
-
-            guard let xmlParser = XMLParser(contentsOf: url) else {
-                Logger.error("Cannot create XML parser for URL: \(url)")
-                return false
-            }
-            self.parser = xmlParser
-            self.parser.delegate = self
-            self.parser.parse()
-
-            // SECURITY (FINDING_P_011): nil-coalescing instead of force unwrap
-            Logger.debug("Loaded spec \(self.protocolName ?? "unknown") version \(self.protocolVersion ?? "unknown")")
-
+            let data = try Data(contentsOf: url)
+            return loadXMLData(data)
         } catch let e {
             Logger.error("Cannot load spec at URL: \(e.localizedDescription)")
             return false
         }
-        return true
+    }
+
+    @discardableResult
+    private func loadXMLData(_ data: Data) -> Bool {
+        self.xml = String(data: data, encoding: .utf8)
+
+        let xmlParser = XMLParser(data: data)
+        self.parser = xmlParser
+        self.parser.delegate = self
+        self.parser.parse()
+
+        // SECURITY (FINDING_P_011): nil-coalescing instead of force unwrap
+        Logger.debug("Loaded spec \(self.protocolName ?? "unknown") version \(self.protocolVersion ?? "unknown")")
+
+        return self.protocolName != nil
     }
 
     private func loadField(_ attributes: [String: String]) {

@@ -22,6 +22,8 @@ The project is currently in beta. It is already usable, but it is still evolving
 
 Releases: https://github.com/nark/WiredSwift/releases
 
+> **Client compatibility:** Wired 3.0 uses a new version of the P7 protocol and is **not compatible** with older Wired 2.x clients (including Zankasoftware-era clients). Only Wired 3.x clients can connect to a Wired 3.0 server.
+
 ---
 
 ## Table of Contents
@@ -63,6 +65,7 @@ Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader 
 
 - **Multiple public chats** instead of a single default public room, with protocol support for listing, creating, and deleting public chats
 - **Live typing indicator** in chat conversations, including protocol-level typing state broadcasts
+- **Offline private messaging** so clients can send encrypted private messages to disconnected users and have them delivered when the recipient next logs in
 - **Board reactions** on posts, with dedicated account privilege support for adding reactions
 - **Continuous folder sync** with a dedicated sync daemon (`wiredsyncd` on macOS) for keeping local folders and remote Wired shares aligned
 - **Remote board search** so clients can query discussions server-side and jump directly to matching threads or snippets
@@ -76,6 +79,7 @@ Compared to classic Wired 2.0 deployments and clients, Wired 3.0 adds a broader 
 |---|---|---|
 | Public chats | ⚠️ Single default public room | ✅ Multiple public chats (list/create/delete) |
 | Live typing indicator | ❌ Not available | ✅ Available |
+| Offline private messaging | ❌ Not available | ✅ Available (encrypted, privilege-gated, delivered on login) |
 | Board reactions | ❌ Not available | ✅ Available (with privilege gating) |
 | Continuous folder sync | ❌ Not available | ✅ Available via `wiredsyncd` |
 | Remote board search | ⚠️ Limited / client-side patterns | ✅ Server-side remote search |
@@ -113,6 +117,12 @@ Wired 2.0 supported **DEFLATE** (zlib) compression. Wired 3.0 keeps DEFLATE and 
 Wired 2.0 stored passwords as **unsalted SHA-1 hashes** and sent them directly over the wire, making them vulnerable to rainbow tables, GPU brute-force, and pass-the-hash attacks.
 
 Wired 3.0 stores passwords as **SHA-256 hashes with a per-user random salt**. Authentication uses a **challenge-response protocol with ECDSA proofs**: the client proves it knows the password without ever transmitting the hash. Session salts prevent replay attacks, and a dummy hash is computed on invalid usernames to block timing-based user enumeration.
+
+#### Offline messaging
+
+Wired 3.0 can store **private messages for offline users** and deliver them the next time they log in. The server acts as a **mailbox**: the sender's client **encrypts the message for the recipient** before the server queues it.
+
+The server stores only the **encrypted payload** plus basic delivery metadata, then removes messages after **successful delivery**. If delivery is interrupted, remaining messages stay queued for the next login. Offline messaging and offline-user discovery are **privilege-gated**, with **per-recipient queue limits** to reduce storage-abuse risk.
 
 #### Admin password
 
@@ -491,6 +501,8 @@ Wired is built on **P7**, a custom binary protocol designed for low-overhead, st
 **Message format:** each P7 message is a binary frame consisting of a 4-byte message ID (big-endian), a 4-byte total length, and a sequence of TLV (type-length-value) fields. Each field carries a 4-byte field ID, a 4-byte value length, and the raw value bytes. This compact encoding avoids the overhead of text-based formats like XML or JSON while remaining easy to parse.
 
 **Protocol specification:** the full catalog of messages, fields, and data types is declared in `wired.xml`, a machine-readable XML file shipped with every server. Clients load this spec at connection time to know which messages exist and how to encode/decode them. When the protocol evolves, only `wired.xml` needs to be updated — the parser, serializer, and network layer adapt automatically.
+
+**Cross-version interoperability:** clients and servers running different *minor* versions of Wired interoperate. During the handshake, peers exchange their full specs (`p7.compatibility_check.specification`) and compute a diff; senders automatically skip messages or fields the peer doesn't know about, and receivers tolerate unknown items rather than dropping the session. Only major-version mismatches (incompatible wire format) are refused. The full policy and the rules for adding new fields/messages live in [COMPATIBILITY.md](COMPATIBILITY.md).
 
 **Session lifecycle:** a typical session flows through handshake (version and capability negotiation), key exchange (ECDH + optional identity verification), authentication (challenge-response), and then enters steady-state messaging (chat, file transfers, board operations, admin commands). Each phase is a well-defined sequence of P7 messages documented in `wired.xml`.
 

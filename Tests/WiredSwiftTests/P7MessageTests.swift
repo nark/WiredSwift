@@ -6,7 +6,8 @@ final class P7MessageTests: XCTestCase {
     var spec: P7Spec!
 
     override func setUpWithError() throws {
-        spec = try XCTUnwrap(WiredProtocolSpec.bundledSpec(), "Failed to load bundled wired.xml")
+        spec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL),
+                              "Failed to load bundled wired.xml")
     }
 
     // MARK: - init(withName:spec:)

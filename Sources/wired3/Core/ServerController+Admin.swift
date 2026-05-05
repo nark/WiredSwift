@@ -1258,6 +1258,7 @@ extension ServerController {
 
             guard let refreshedUser = userWithPrivileges(matchingUsername: currentName) else { continue }
 
+            let hadOfflineList = connectedClient.user?.hasPrivilege(name: "wired.account.user.list_offline_users") ?? false
             connectedClient.user = refreshedUser
 
             if !refreshedUser.hasPrivilege(name: "wired.account.account.list_accounts") {
@@ -1273,6 +1274,13 @@ extension ServerController {
             }
 
             _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
+
+            // If the offline-list privilege was just granted, push the current
+            // list so the client doesn't have to reconnect to populate the panel.
+            let hasOfflineList = refreshedUser.hasPrivilege(name: "wired.account.user.list_offline_users")
+            if !hadOfflineList && hasOfflineList {
+                self.sendOfflineUserList(to: connectedClient)
+            }
         }
     }
 
@@ -1290,6 +1298,7 @@ extension ServerController {
             guard wasInAffectedGroup else { continue }
 
             guard let refreshedUser = userWithPrivileges(matchingUsername: username) else { continue }
+            let hadOfflineList = currentUser.hasPrivilege(name: "wired.account.user.list_offline_users")
             connectedClient.user = refreshedUser
 
             if !refreshedUser.hasPrivilege(name: "wired.account.account.list_accounts") {
@@ -1305,6 +1314,11 @@ extension ServerController {
             }
 
             _ = self.send(message: self.accountPrivilegesMessage(for: refreshedUser), client: connectedClient)
+
+            let hasOfflineList = refreshedUser.hasPrivilege(name: "wired.account.user.list_offline_users")
+            if !hadOfflineList && hasOfflineList {
+                self.sendOfflineUserList(to: connectedClient)
+            }
         }
     }
 

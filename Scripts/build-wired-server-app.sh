@@ -20,6 +20,15 @@ APP_ZIP_PATH="$ROOT_DIR/dist/Wired-Server.app.zip"
 SERVER_ZIP_PATH="$ROOT_DIR/dist/$SERVER_BINARY_NAME.zip"
 NOTARIZE="${NOTARIZE:-}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+
+# Auto-load notary profile from ~/.wired-notary if not set via environment.
+# File format (shell-sourceable):  NOTARY_PROFILE="<your-profile>"
+if [[ -z "$NOTARY_PROFILE" && -f "${HOME}/.wired-notary" ]]; then
+  # shellcheck source=/dev/null
+  source "${HOME}/.wired-notary"
+  NOTARY_PROFILE="${NOTARY_PROFILE:-}"
+fi
+
 VERSION_SWIFT="$ROOT_DIR/Sources/wired3/Core/Version.swift"
 VERSION_SWIFT_BACKUP=""
 
@@ -28,7 +37,7 @@ if [[ "$BUILD_CONFIG" != "debug" && "$BUILD_CONFIG" != "release" ]]; then
   exit 1
 fi
 
-if [[ ! "$MARKETING_VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+if [[ ! "$MARKETING_VERSION" =~ ^[0-9]+(\.[0-9]+)*(-[a-zA-Z0-9.]+)?$ ]]; then
   echo "Invalid WIRED_MARKETING_VERSION: $MARKETING_VERSION"
   exit 1
 fi
@@ -233,13 +242,89 @@ sign_app_bundle() {
   codesign --force --deep --timestamp --options runtime --sign "$identity" "$app"
 }
 
+extract_notary_submission_id() {
+  sed -nE 's/^[[:space:]]*id:[[:space:]]*([0-9a-fA-F-]{36})[[:space:]]*$/\1/p' | tail -n 1
+}
+
+is_transient_notary_error() {
+  local output="${1:-}"
+  [[ "$output" == *"HTTPClientError.connectTimeout"* ]] ||
+    [[ "$output" == *"timed out"* ]] ||
+    [[ "$output" == *"timeout"* ]] ||
+    [[ "$output" == *"connection reset"* ]] ||
+    [[ "$output" == *"connection refused"* ]] ||
+    [[ "$output" == *"network connection was lost"* ]] ||
+    [[ "$output" == *"HTTP status code: 500"* ]] ||
+    [[ "$output" == *"HTTP status code: 502"* ]] ||
+    [[ "$output" == *"HTTP status code: 503"* ]] ||
+    [[ "$output" == *"HTTP status code: 504"* ]]
+}
+
+wait_for_notary_submission() {
+  local profile="$1"
+  local submission_id="$2"
+  local max_attempts="${NOTARY_WAIT_RETRY_ATTEMPTS:-4}"
+  local sleep_seconds="${NOTARY_WAIT_RETRY_DELAY_SECONDS:-30}"
+  local attempt=1
+  local output=""
+  local status=0
+
+  while true; do
+    echo "==> Waiting for notarization submission $submission_id"
+    if output="$(xcrun notarytool wait "$submission_id" --keychain-profile "$profile" --timeout "${NOTARY_WAIT_TIMEOUT:-30m}" 2>&1)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    status=$?
+    printf '%s\n' "$output" >&2
+
+    if (( attempt >= max_attempts )) || ! is_transient_notary_error "$output"; then
+      return "$status"
+    fi
+
+    echo "==> Notary wait failed with a transient network error (attempt ${attempt}/${max_attempts}); retrying in ${sleep_seconds}s"
+    sleep "$sleep_seconds"
+    attempt=$((attempt + 1))
+    sleep_seconds=$((sleep_seconds * 2))
+  done
+}
+
 notarize_zip() {
   local profile="$1"
   local zip_path="$2"
   local label="$3"
+  local max_attempts="${NOTARY_SUBMIT_RETRY_ATTEMPTS:-3}"
+  local sleep_seconds="${NOTARY_SUBMIT_RETRY_DELAY_SECONDS:-30}"
+  local attempt=1
+  local output=""
+  local status=0
+  local submission_id=""
 
   echo "==> Notarizing $label"
-  xcrun notarytool submit "$zip_path" --keychain-profile "$profile" --wait
+  while true; do
+    if output="$(xcrun notarytool submit "$zip_path" --keychain-profile "$profile" --wait --timeout "${NOTARY_WAIT_TIMEOUT:-30m}" 2>&1)"; then
+      printf '%s\n' "$output"
+      return 0
+    fi
+    status=$?
+    printf '%s\n' "$output" >&2
+
+    submission_id="$(printf '%s\n' "$output" | extract_notary_submission_id)"
+    if [[ -n "$submission_id" ]]; then
+      echo "==> Notary submission was created before the error: $submission_id"
+      wait_for_notary_submission "$profile" "$submission_id"
+      return $?
+    fi
+
+    if (( attempt >= max_attempts )) || ! is_transient_notary_error "$output"; then
+      return "$status"
+    fi
+
+    echo "==> Notary submit failed with a transient network error (attempt ${attempt}/${max_attempts}); retrying in ${sleep_seconds}s"
+    sleep "$sleep_seconds"
+    attempt=$((attempt + 1))
+    sleep_seconds=$((sleep_seconds * 2))
+  done
 }
 
 SIGNING_IDENTITY="$(resolve_signing_identity || true)"
@@ -259,6 +344,15 @@ else
   codesign --force --sign - "$DIST_SERVER_BINARY"
   codesign --force --sign - "$RESOURCES_DIR/$SERVER_BINARY_NAME"
   codesign --force --deep --sign - "$APP_DIR"
+fi
+
+if [[ "$SIGNING_MODE" == "developer-id" && -z "$NOTARY_PROFILE" ]]; then
+  echo ""
+  echo "    TIP: Notarization is disabled. To enable it, create ~/.wired-notary:"
+  echo "         NOTARY_PROFILE=\"<profile-name>\""
+  echo "         Then store the credentials once with:"
+  echo "         xcrun notarytool store-credentials \"<profile-name>\" --apple-id <id> --team-id <team>"
+  echo ""
 fi
 
 if [[ -z "$NOTARIZE" ]]; then

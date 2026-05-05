@@ -6,7 +6,8 @@ final class P7SocketIOTests: XCTestCase {
     private var spec: P7Spec!
 
     override func setUpWithError() throws {
-        spec = try XCTUnwrap(WiredProtocolSpec.bundledSpec(), "Failed to load bundled wired.xml")
+        spec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL),
+                              "Failed to load bundled wired.xml")
     }
 
     func testWriteAndReadMessageRoundTripAcrossLocalSocketPair() throws {
@@ -342,6 +343,6 @@ final class P7SocketIOTests: XCTestCase {
     }
 
     private func loadSpec() -> P7Spec? {
-        WiredProtocolSpec.bundledSpec()
+        P7Spec(withUrl: TestResources.specURL)
     }
 }

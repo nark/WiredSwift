@@ -2,29 +2,36 @@ import Foundation
 
 public enum WiredProtocolSpec {
     public static func bundledSpecURL() -> URL? {
-        // Bundle.module crashes with assertionFailure when the SPM .bundle directory
-        // is missing from the app package. Search manually instead.
-        //
-        // Path reasoning:
-        //  - Production app:    Bundle.main.resourceURL / Contents/Resources
-        //  - Linux swift test:  executable is in .build/debug/, bundle is beside it
-        //  - macOS swift test:  Bundle.main.bundleURL is the .xctest package;
-        //                       its parent directory is .build/debug/ where the
-        //                       WiredSwift_WiredSwift.bundle actually lives
+        // Bundle.module crashes with fatalError when the .bundle directory is
+        // missing (e.g. standalone wired3 binary without an app bundle alongside).
+        // This replicates the same search but returns nil gracefully.
         let bundleName = "WiredSwift_WiredSwift"
-        let candidates: [URL?] = [
-            Bundle.main.resourceURL?.appendingPathComponent("\(bundleName).bundle"),
-            Bundle.main.executableURL?.deletingLastPathComponent()
-                .appendingPathComponent("\(bundleName).bundle"),
-            Bundle.main.bundleURL.deletingLastPathComponent()
-                .appendingPathComponent("\(bundleName).bundle"),
-        ]
-        for case let bundleURL? in candidates {
-            if let b = Bundle(url: bundleURL),
+
+        // macOS app bundle: SPM places the resource bundle inside Contents/Resources/.
+        if let resourceURL = Bundle.main.resourceURL {
+            let candidate = resourceURL.appendingPathComponent("\(bundleName).bundle")
+            if let b = Bundle(path: candidate.path),
                let url = b.url(forResource: "wired", withExtension: "xml") {
                 return url
             }
         }
+
+        // macOS swift test: executable lives at xctest/Contents/MacOS/<name>,
+        // so the build-output directory (where the bundle actually is) is 4 hops up.
+        // Linux swift test: executable is directly in the build dir (1 hop up).
+        // Walk up from the executable until we find the bundle or exhaust candidates.
+        let execURL = Bundle.main.executableURL
+            ?? URL(fileURLWithPath: CommandLine.arguments[0])
+        var searchDir = execURL
+        for _ in 0..<5 {
+            searchDir = searchDir.deletingLastPathComponent()
+            let candidate = searchDir.appendingPathComponent("\(bundleName).bundle")
+            if let b = Bundle(path: candidate.path),
+               let url = b.url(forResource: "wired", withExtension: "xml") {
+                return url
+            }
+        }
+
         return Bundle.main.url(forResource: "wired", withExtension: "xml")
     }
 

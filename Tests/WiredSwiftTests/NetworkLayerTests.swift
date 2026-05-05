@@ -6,7 +6,8 @@ final class NetworkLayerTests: XCTestCase {
     private var spec: P7Spec!
 
     override func setUpWithError() throws {
-        spec = try XCTUnwrap(WiredProtocolSpec.bundledSpec(), "Failed to load bundled wired.xml")
+        spec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL),
+                              "Failed to load bundled wired.xml")
     }
 
     func testConnectionAddAndRemoveDelegateAvoidsDuplicates() {
@@ -188,7 +189,7 @@ final class NetworkLayerTests: XCTestCase {
     func testConnectionConnectCompletesHandshakeUserSetupAndLoginFlow() throws {
         let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
         let port = Int(try listener.port())
-        let serverSpec = try XCTUnwrap(WiredProtocolSpec.bundledSpec())
+        let serverSpec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL))
 
         var serverError: Error?
         let serverDone = expectation(description: "server done")
@@ -234,7 +235,7 @@ final class NetworkLayerTests: XCTestCase {
     func testConnectionReconnectReestablishesSession() throws {
         let listener = try Socket.tcpListening(port: 0, address: "127.0.0.1")
         let port = Int(try listener.port())
-        let serverSpec = try XCTUnwrap(WiredProtocolSpec.bundledSpec())
+        let serverSpec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL))
 
         var serverError: Error?
         let serverDone = expectation(description: "server done twice")
