@@ -13,6 +13,7 @@ This document covers setup, conventions, and the PR workflow.
 - [Commit conventions](#commit-conventions)
 - [Pull request workflow](#pull-request-workflow)
 - [Architecture overview](#architecture-overview)
+- [Evolving the Wired protocol](#evolving-the-wired-protocol)
 
 ---
 
@@ -152,5 +153,30 @@ Sources/WiredSwift/
 └── Core/      Logger, Config, errors, server events
 ```
 
-The binary protocol format is defined in `Sources/WiredSwift/Resources/wired.xml`
-(P7 spec — do not modify this file).
+The binary protocol format is defined in `Sources/WiredSwift/Resources/wired.xml`.
+
+---
+
+## Evolving the Wired protocol
+
+`wired.xml` is **not** frozen — but every change must follow the rules in
+[COMPATIBILITY.md](COMPATIBILITY.md). In short:
+
+- **Every new `<p7:field>`, `<p7:message>` or `<p7:enum>` carries a
+  `version="X.Y"` attribute** matching the next minor version of the protocol.
+- **Prefer length-prefixed types** (`string`, `data`, `list`) for new optional
+  fields so older peers can ignore them without aborting the decode of the
+  rest of the message.
+- **Bump the `version=""` attribute on the `<p7:protocol>` root** in the same
+  PR that adds new items.
+- **Field and message IDs are permanent within a major.** Removing or
+  repurposing an ID is a major version break.
+- **Removing or renaming spec items is a major bump.** Deprecate first.
+
+Any PR that touches `wired.xml` must:
+
+1. Update the `version` attribute on every modified or added entry.
+2. Bump the protocol version on the root element when adding items.
+3. Add or update tests under `Tests/WiredSwiftTests/CompatibilityTests.swift`
+   covering the new behaviour cross-version.
+4. Reference [COMPATIBILITY.md](COMPATIBILITY.md) in the PR description.

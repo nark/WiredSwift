@@ -26,6 +26,17 @@ public class P7Message: NSObject {
     public var specMessage: SpecMessage!
     public var size: Int = 0
 
+    /// Field IDs that were present on the wire but unknown to the local
+    /// spec — recorded so upper layers can log them or feed diagnostics.
+    /// When this is non-empty, parsing of the rest of the message body was
+    /// aborted (we cannot skip an unknown field without knowing its size).
+    public var unknownFieldIDs: [UInt32] = []
+
+    /// `true` when the message ID itself was not in the local spec. The
+    /// message is delivered with whatever fields could still be decoded
+    /// (notably `wired.transaction`) so the receiver can react sensibly.
+    public var hasUnknownMessageID: Bool = false
+
     private var parameters: [String: Any] = [String: Any](minimumCapacity: 50)
 
     /// The number of field parameters currently stored in the message.
@@ -317,6 +328,13 @@ public class P7Message: NSObject {
     ///
     /// - Returns: The binary representation of the message, ready to transmit over the wire.
     public func bin() -> Data {
+        return bin(omittingFieldIDs: [])
+    }
+
+    /// Variant of `bin()` that strips any TLV whose field ID is in
+    /// `omittingFieldIDs`. Used by `P7Socket.write(_:)` to silently drop
+    /// fields the peer's spec doesn't know about (forward-compat).
+    public func bin(omittingFieldIDs: Set<UInt32>) -> Data {
         var data = Data()
 
         // append message ID
@@ -330,6 +348,7 @@ public class P7Message: NSObject {
                     if let fieldIDStr = specField.id {
                         // append field ID
                         if let fieldID = UInt32(fieldIDStr) {
+                            if omittingFieldIDs.contains(fieldID) { continue }
                             data.append(uint32: fieldID, bigEndian: true)
 
                             // append value
@@ -545,7 +564,18 @@ public class P7Message: NSObject {
         if let specMessage = spec.messagesByID[Int(messageIDValue)] {
             self.name = specMessage.name!
             self.specMessage = specMessage
+        } else {
+            // Forward-compat: a peer running a newer minor version may send
+            // message IDs we don't know yet. We don't drop the frame — we
+            // still parse any fields we recognise (notably wired.transaction)
+            // so the upper layer can decide what to do, e.g. send a
+            // wired.error.unrecognized_message reply with the right
+            // transaction id. See COMPATIBILITY.md.
+            self.hasUnknownMessageID = true
+            Logger.error("WARNING: Unknown message ID \(messageIDValue) — fields will still be decoded best-effort")
+        }
 
+        do {
             var fieldIDData: Data!
             var fieldID: UInt32!
 
@@ -675,15 +705,19 @@ public class P7Message: NSObject {
                     offset += fieldLength
 
                 } else {
-                    Logger.error("ERROR : Unknow field ID: \(String(describing: fieldID))")
-                    return
+                    // Unknown field ID. The wire format only length-prefixes
+                    // string/data/list types, so we cannot reliably skip an
+                    // unknown field whose type might be fixed-size. Record
+                    // it and abort decoding the rest of the body — the
+                    // fields we already decoded remain available. See
+                    // COMPATIBILITY.md for the rule that new optional
+                    // fields must be a length-prefixed type.
+                    self.unknownFieldIDs.append(fieldID)
+                    Logger.error("WARNING: Unknown field ID \(fieldID) in message '\(self.name ?? "?")' — aborting decode of remaining fields")
+                    break
                 }
 
             }
-
-        } else {
-            Logger.error("ERROR : Unknow message ID \(String(describing: self.id))")
-            return
         }
     }
 }

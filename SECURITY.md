@@ -36,7 +36,8 @@ You will be credited in the release notes and GitHub Security Advisory unless yo
 
 WiredSwift implements the **Wired 3 (P7) binary protocol** over TCP. Key areas of concern:
 
-- **Protocol parser** (`Sources/WiredSwift/P7/`) — TLV field parsing, length bounds checking
+- **Protocol parser** (`Sources/WiredSwift/P7/`) — TLV field parsing, length bounds checking, forward-compat tolerance for unknown messages and length-prefixed fields (see [COMPATIBILITY.md](COMPATIBILITY.md))
+- **Spec exchange** (`p7.compatibility_check.specification`) — peer-supplied XML is parsed into a `P7Spec` to drive sender-side feature gating; treat the parsed spec as untrusted (only message/field IDs are honoured, behaviour is never delegated to it)
 - **Cryptography** (`Sources/WiredSwift/Crypto/`) — ECDH key exchange, ECDSA signatures, symmetric ciphers
 - **Authentication** — `wired.send_login` state machine, password hashing
 - **File paths** — path traversal on `wired.file.path` fields
