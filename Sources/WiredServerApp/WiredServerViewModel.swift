@@ -1287,8 +1287,13 @@ final class WiredServerViewModel: ObservableObject {
     private func refreshDashboardLightweight() {
         dashboardHostUptime = formattedDuration(ProcessInfo.processInfo.systemUptime)
 
-        let activePIDs = activeServerPIDs()
-        if let pid = activePIDs.first {
+        // In daemon mode lsof can't cross the user boundary (_wired vs. maertin),
+        // so read the PID directly from the PID file the server writes on startup.
+        let pid: Int32? = installMode == .launchDaemon
+            ? serverPIDFromFile()
+            : activeServerPIDs().first
+
+        if let pid {
             dashboardServerPID = String(pid)
             let metrics = processMetrics(for: pid)
             dashboardServerUptime = metrics.uptime
@@ -1304,6 +1309,13 @@ final class WiredServerViewModel: ObservableObject {
         }
 
         dashboardLastErrorLine = extractLastErrorLine(from: logsText)
+    }
+
+    private func serverPIDFromFile() -> Int32? {
+        let pidPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired3.pid").path
+        guard let raw = try? String(contentsOfFile: pidPath, encoding: .utf8) else { return nil }
+        return pid_t(raw.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private func refreshDashboardHeavyweight() {
