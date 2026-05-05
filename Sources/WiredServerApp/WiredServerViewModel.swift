@@ -27,7 +27,7 @@ final class WiredServerViewModel: ObservableObject {
     @Published var launchServerAtAppStart: Bool = false
 
     @Published var serverPort: Int = 4871
-    @Published var portStatus: PortStatus = .unknown
+    @Published var portStatus: PortStatus = .idle
     @Published var showPortCheckConsentAlert = false
 
     @Published var filesDirectory: String = ""
@@ -2146,6 +2146,7 @@ enum DashboardHealthLevel {
 }
 
 enum PortStatus {
+    case idle
     case unknown
     case checking
     case open
@@ -2154,6 +2155,8 @@ enum PortStatus {
 
     var description: String {
         switch self {
+        case .idle:
+            return L("network.port_status.idle")
         case .unknown:
             return L("network.port_status.unknown")
         case .checking:
