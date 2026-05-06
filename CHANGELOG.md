@@ -2,6 +2,27 @@
 
 All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+## [Unreleased]
+
+### Protocol — Wired 3.2
+
+- Bumped `<p7:protocol version="3.2">`. The 3.2 spec is wire-compatible with 3.1
+  via the per-session compatibility diff introduced in #87 — a 3.2 server can
+  serve a 3.1 client and vice-versa with the new fields/messages filtered
+  transparently on the wire.
+- Public-chat broadcasts now carry a server-stamped `wired.chat.message.id`
+  (length-prefixed string, UUID rendered as text). 3.1 receivers silently skip
+  it via the receiver-tolerance machinery.
+- New chat reactions API mirroring `wired.board.reaction.*`:
+  `wired.chat.add_reaction`, `wired.chat.remove_reaction`,
+  `wired.chat.get_reactions`, `wired.chat.reaction_list`,
+  `wired.chat.reaction_added`, `wired.chat.reaction_removed`.
+- New permission `wired.account.chat.add_reactions`.
+- Reactions live in an in-memory ring buffer (default 500 messages per chat);
+  when a message scrolls off the buffer its reactions are dropped — consistent
+  with the "chat is a stream" model. No on-disk persistence in 3.2.
+
 ## [3.0-beta.24+50] — 2026-05-05
 
 ### Features

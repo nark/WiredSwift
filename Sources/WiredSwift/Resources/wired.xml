@@ -3,7 +3,7 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://www.read-write.fr/wired/html/p7-specification.xsd"
              name="Wired"
-             version="3.1">
+             version="3.2">
     <p7:documentation>
         TBD
         
@@ -314,6 +314,58 @@
             <p7:documentation>
                 Ephemeral typing state for a user in a chat. True indicates that the user is currently
                 typing, false indicates that typing has stopped.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.message.id" type="string" id="4007" version="3.2">
+            <p7:documentation>
+                Stable identifier for a single chat message, assigned by the server upon receipt of
+                [message:wired.chat.send_say] or [message:wired.chat.send_me] and stamped on the
+                resulting [message:wired.chat.say] / [message:wired.chat.me] broadcast. Encoded as a
+                length-prefixed string (UUID rendered as text) so that 3.1 receivers transparently
+                skip it via the receiver-tolerance machinery — fixed-size types like uuid would
+                desync older parsers.
+
+                Reactions reference this id. Reactions live as long as the message stays in the
+                server's in-memory chat ring buffer; once it is evicted, reactions are dropped.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.reaction.emoji" type="string" id="4020" version="3.2">
+            <p7:documentation>
+                Unicode emoji character(s) identifying a reaction on a chat message. Mirrors
+                [field:wired.board.reaction.emoji].
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.reaction.count" type="uint32" id="4021" version="3.2">
+            <p7:documentation>
+                Total number of distinct accounts that have reacted with a given emoji on the target
+                chat message. Mirrors [field:wired.board.reaction.count]. Scoped to chat reaction
+                messages, which 3.1 peers ignore wholesale, so the fixed-size encoding is safe.
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.reaction.is_own" type="bool" id="4022" version="3.2">
+            <p7:documentation>
+                Whether the currently authenticated account has reacted with this emoji on the
+                target chat message. Mirrors [field:wired.board.reaction.is_own].
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.reaction.nick" type="string" id="4023" version="3.2">
+            <p7:documentation>
+                Public display nick of a user who reacted on a chat message, captured at the moment
+                of the reaction. Mirrors [field:wired.board.reaction.nick].
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.reaction.nicks" type="string" id="4024" version="3.2">
+            <p7:documentation>
+                Pipe-separated list of display nicks that reacted with a specific emoji on a chat
+                message. Mirrors [field:wired.board.reaction.nicks]. Optional field of
+                [message:wired.chat.reaction_list].
+            </p7:documentation>
+        </p7:field>
+        <p7:field name="wired.chat.reaction.emojis" type="string" id="4025" version="3.2">
+            <p7:documentation>
+                Pipe-separated list of distinct emoji characters that have at least one reaction on
+                a chat message. Reserved for compact previews in future chat surfaces; not currently
+                emitted by the server.
             </p7:documentation>
         </p7:field>
 
@@ -1051,6 +1103,12 @@
                 Indicates whether the account gives the privilege of searching boards.
             </p7:documentation>
         </p7:field>
+        <p7:field name="wired.account.chat.add_reactions" type="bool" id="8102" version="3.2">
+            <p7:documentation>
+                When set, allows the account to add and remove emoji reactions on chat messages.
+                Mirror of [field:wired.account.board.add_reactions] for the chat surface.
+            </p7:documentation>
+        </p7:field>
         <p7:field name="wired.account.board.add_reactions" type="bool" id="8095" version="3.1">
             <p7:documentation>
                 Indicates whether the account gives the privilege of adding or removing emoji reactions
@@ -1607,6 +1665,7 @@
             <p7:member field="wired.account.chat.create_chats" />
             <p7:member field="wired.account.chat.create_public_chats" />
             <p7:member field="wired.account.chat.delete_public_chats" />
+            <p7:member field="wired.account.chat.add_reactions" />
             <p7:member field="wired.account.message.send_messages" />
             <p7:member field="wired.account.message.send_offline_messages" />
             <p7:member field="wired.account.user.list_offline_users" />
@@ -2074,11 +2133,16 @@
             <p7:documentation>
                 Normal chat message for a chat. [field:wired.chat.say] may be the empty string if
                 [field:wired.attachment.ids] contains at least one attachment ID.
+
+                As of 3.2 the server stamps every public-chat say with a stable
+                [field:wired.chat.message.id]. Pre-3.2 receivers silently skip it via the
+                receiver-tolerance machinery.
             </p7:documentation>
             <p7:parameter field="wired.chat.id" use="required" version="2.0" />
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
             <p7:parameter field="wired.chat.say" use="required" version="2.0" />
             <p7:parameter field="wired.attachment.descriptors" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.chat.send_me" id="4016" version="2.0">
@@ -2094,11 +2158,15 @@
         <p7:message name="wired.chat.me" id="4017" version="2.0">
             <p7:documentation>
                 Action chat message for a chat. [field:wired.chat.me] may not be the empty string.
+
+                As of 3.2 the server stamps every public-chat me with a stable
+                [field:wired.chat.message.id].
             </p7:documentation>
             <p7:parameter field="wired.chat.id" use="required" version="2.0" />
             <p7:parameter field="wired.user.id" use="required" version="2.0" />
             <p7:parameter field="wired.chat.me" use="required" version="2.0" />
             <p7:parameter field="wired.attachment.descriptors" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.chat.create_chat" id="4018" version="2.0">
@@ -2230,6 +2298,86 @@
             <p7:parameter field="wired.chat.id" use="required" version="3.1" />
             <p7:parameter field="wired.user.id" use="required" version="3.1" />
             <p7:parameter field="wired.chat.typing" use="required" version="3.1" />
+        </p7:message>
+
+        <p7:message name="wired.chat.add_reaction" id="4033" version="3.2">
+            <p7:documentation>
+                Add an emoji reaction on a chat message. The server records the reaction against
+                [field:wired.chat.message.id] in the chat's in-memory ring buffer and broadcasts
+                [message:wired.chat.reaction_added] to every member of the target chat.
+
+                Requires [field:wired.account.chat.add_reactions]. If the message id is unknown
+                (older than the buffer or never seen) the server replies with
+                [enum:wired.error.invalid_message].
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.chat.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.emoji" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.chat.remove_reaction" id="4034" version="3.2">
+            <p7:documentation>
+                Remove the caller's emoji reaction from a chat message. The server broadcasts
+                [message:wired.chat.reaction_removed] to every member of the target chat.
+
+                Requires [field:wired.account.chat.add_reactions].
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.chat.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.emoji" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.chat.get_reactions" id="4035" version="3.2">
+            <p7:documentation>
+                Request the reaction summary for a single chat message. The server replies with
+                zero or more [message:wired.chat.reaction_list] messages — one per distinct emoji —
+                followed by [message:wired.okay].
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.chat.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.chat.reaction_list" id="4036" version="3.2">
+            <p7:documentation>
+                One reaction summary item sent in response to [message:wired.chat.get_reactions].
+                Each message represents a single emoji and its aggregate count for the requested
+                chat message.
+            </p7:documentation>
+            <p7:parameter field="wired.transaction" version="3.2" />
+            <p7:parameter field="wired.chat.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.emoji" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.count" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.is_own" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.nicks" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.chat.reaction_added" id="4037" version="3.2">
+            <p7:documentation>
+                Broadcast to every member of a chat when an emoji reaction is added on a chat
+                message. [field:wired.chat.reaction.count] reflects the updated total count for
+                this emoji on the message after the addition.
+            </p7:documentation>
+            <p7:parameter field="wired.chat.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.emoji" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.count" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.nick" use="required" version="3.2" />
+        </p7:message>
+
+        <p7:message name="wired.chat.reaction_removed" id="4038" version="3.2">
+            <p7:documentation>
+                Broadcast to every member of a chat when an emoji reaction is removed from a chat
+                message. When [field:wired.chat.reaction.count] reaches zero the client should
+                remove the reaction indicator entirely.
+            </p7:documentation>
+            <p7:parameter field="wired.chat.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.message.id" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.emoji" use="required" version="3.2" />
+            <p7:parameter field="wired.chat.reaction.count" use="required" version="3.2" />
         </p7:message>
 
         <p7:message name="wired.message.send_message" id="5000" version="2.0">
