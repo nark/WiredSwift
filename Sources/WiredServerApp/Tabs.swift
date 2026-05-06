@@ -140,6 +140,7 @@ private struct ExternalVolumeWarningView: View {
         .padding(8)
         .background((hasFDA ? Color.green : Color.orange).opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 6))
+        .onAppear { model.refreshFDAStatusPrivileged() }
     }
 }
 
