@@ -112,6 +112,12 @@ private struct ExternalVolumeWarningView: View {
             Spacer()
 
             if !hasFDA {
+                Button(L("fda.open_settings")) {
+                    onOpenSettings()
+                }
+                .font(.footnote)
+                .disabled(model.isCheckingFDA)
+
                 if model.isCheckingFDA {
                     ProgressView().controlSize(.small)
                 } else {
