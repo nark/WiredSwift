@@ -12,6 +12,7 @@
 "alert.initial_password.message" = "Der Server wurde mit einem zufälligen Admin-Passwort initialisiert. Notieren Sie es jetzt — es wird nicht erneut angezeigt.";
 "alert.initial_password.copy" = "In Zwischenablage kopieren";
 "common.ok" = "OK";
+"common.cancel" = "Abbrechen";
 "common.choose" = "Auswählen";
 "common.select" = "Auswählen";
 "common.cancel" = "Abbrechen";
@@ -75,6 +76,7 @@
 "network.restart_required" = "Der Server muss nach einer Port-Änderung neu gestartet werden.";
 "network.port_status.idle" = "Nicht geprüft";
 "network.port_status.unknown" = "Externer Portcheck läuft…";
+"network.port_status.checking" = "Externer Portcheck läuft…";
 "network.port_status.open" = "Von außen erreichbar";
 "network.port_status.closed" = "Von außen nicht erreichbar";
 "network.port_status.error" = "Portcheck fehlgeschlagen (kein Internet?)";
@@ -170,6 +172,8 @@
 "touchid.save.title" = "Touch ID aktivieren?";
 "touchid.save.message" = "Speichern Sie Ihr Administrator-Passwort mit Touch ID, damit zukünftige Operationen keine Passwort-Eingabe erfordern.";
 "touchid.save.enable" = "Touch ID aktivieren";
+"touchid.save.failed.title" = "Touch ID konnte nicht aktiviert werden";
+"touchid.save.failed.message" = "Das Passwort konnte nicht im Schlüsselbund gespeichert werden. Diese Funktion erfordert einen mit Developer ID signierten Build.";
 "touchid.wrong_password" = "Authentifizierung fehlgeschlagen — falsches Passwort.";
 
 "advanced.admin.section" = "Admin-Konto";

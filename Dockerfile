@@ -2,18 +2,28 @@
 FROM swift:6.0-jammy AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_MIRROR=http://fr.archive.ubuntu.com/ubuntu
+ARG UBUNTU_SECURITY_MIRROR=http://fr.archive.ubuntu.com/ubuntu
 ARG WIRED_XML_UPDATE_IF_DIFFERENT=1
 ARG WIRED_MARKETING_VERSION=3.0
 ARG WIRED_BUILD_NUMBER=0
 ARG WIRED_GIT_COMMIT=unknown
 SHELL ["/bin/bash", "-lc"]
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN set -euo pipefail; \
+  sed -i \
+    -e "s|http://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+    -e "s|https://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+    -e "s|http://security.ubuntu.com/ubuntu|${UBUNTU_SECURITY_MIRROR}|g" \
+    -e "s|https://security.ubuntu.com/ubuntu|${UBUNTU_SECURITY_MIRROR}|g" \
+    /etc/apt/sources.list; \
+  apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update; \
+  apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
     liblz4-dev \
     libsqlite3-dev \
     libssl-dev \
-    zlib1g-dev \
-  && rm -rf /var/lib/apt/lists/*
+    zlib1g-dev; \
+  rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
 
@@ -58,8 +68,19 @@ RUN set -euo pipefail; \
 FROM ubuntu:22.04 AS runtime
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_MIRROR=http://fr.archive.ubuntu.com/ubuntu
+ARG UBUNTU_SECURITY_MIRROR=http://fr.archive.ubuntu.com/ubuntu
+SHELL ["/bin/bash", "-lc"]
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN set -euo pipefail; \
+  sed -i \
+    -e "s|http://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+    -e "s|https://archive.ubuntu.com/ubuntu|${UBUNTU_MIRROR}|g" \
+    -e "s|http://security.ubuntu.com/ubuntu|${UBUNTU_SECURITY_MIRROR}|g" \
+    -e "s|https://security.ubuntu.com/ubuntu|${UBUNTU_SECURITY_MIRROR}|g" \
+    /etc/apt/sources.list; \
+  apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update; \
+  apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y --no-install-recommends \
     ca-certificates \
     libcurl4 \
     liblz4-1 \
@@ -67,8 +88,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
     libxml2 \
     tzdata \
-    zlib1g \
-  && rm -rf /var/lib/apt/lists/*
+    zlib1g; \
+  rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system wired3 \
   && useradd --system --gid wired3 --home-dir /var/lib/wired3 --create-home --shell /usr/sbin/nologin wired3 \

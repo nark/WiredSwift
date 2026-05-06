@@ -28,7 +28,8 @@ final class WiredServerViewModel: ObservableObject {
     @Published var launchServerAtAppStart: Bool = false
 
     @Published var serverPort: Int = 4871
-    @Published var portStatus: PortStatus = .unknown
+    @Published var portStatus: PortStatus = .idle
+    @Published var showPortCheckConsentAlert = false
 
     @Published var filesDirectory: String = ""
     @Published var filesReindexInterval: Int = 3600
@@ -298,7 +299,7 @@ final class WiredServerViewModel: ObservableObject {
         refreshDashboard(force: true)
         checkPort()
 
-        if binaryWasUpdated {
+        if binaryWasUpdated && isRunning {
             showRestartAfterUpdateAlert = true
         }
     }
@@ -392,6 +393,7 @@ final class WiredServerViewModel: ObservableObject {
 
     private func createSystemDataDirectory() throws {
         let username = NSUserName()
+        try validateSystemUsername(username)
         try runPrivileged(
             "mkdir -p /Library/Wired3 && chown \(username):staff /Library/Wired3 && chmod 755 /Library/Wired3",
             error: .systemDirectoryCreationFailed("")
@@ -526,6 +528,13 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func saveDaemonSettings() {
+        do {
+            try validateDaemonIdentifier(daemonUserName)
+            try validateDaemonIdentifier(daemonGroupName)
+        } catch {
+            publishError(error.localizedDescription)
+            return
+        }
         userDefaults.set(daemonUserName, forKey: daemonUserNameKey)
         userDefaults.set(daemonGroupName, forKey: daemonGroupNameKey)
         userDefaults.set(daemonStartAtBoot, forKey: daemonStartAtBootKey)
@@ -670,6 +679,19 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
+    /// Validate a macOS system username before interpolating it into a shell command.
+    /// macOS allows mixed-case, digits, dots, hyphens and underscores — looser than the
+    /// daemon identifier regex but still strict enough to rule out shell metacharacters.
+    private func validateSystemUsername(_ value: String) throws {
+        let pattern = "^[A-Za-z_][A-Za-z0-9._-]{0,63}$"
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              regex.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) != nil else {
+            throw WiredServerError.launchDaemonInstallFailed(
+                "Invalid system username '\(value)'."
+            )
+        }
+    }
+
     // One admin dialog: create group (optional) + create user (optional) + chown + install plist
     private func activateLaunchDaemon(name: String, createUser: Bool) throws {
         try validateDaemonIdentifier(name)
@@ -732,6 +754,7 @@ final class WiredServerViewModel: ObservableObject {
 
     // One admin dialog: bootout + remove plist + chown back to current user + optional user/group cleanup
     private func deactivateLaunchDaemon(restoreUser: String) throws {
+        try validateSystemUsername(restoreUser)
         var cmds = [
             // || true: bootout returns non-zero when the service is already unloaded;
             // without it the && chain would abort before chown runs.
@@ -865,6 +888,11 @@ final class WiredServerViewModel: ObservableObject {
     /// Execute a shell command with an explicit admin password via AppleScript.
     /// Returns (success, isAuthFailure). AppleScript error codes < 0 indicate auth/system
     /// failures; positive codes are shell exit statuses (command ran but failed).
+    ///
+    /// TODO: replace with an XPC + SMAppService privileged helper. The helper would expose
+    /// the discrete root operations (chown, dscl, plist write, binary copy) over XPC, with
+    /// a one-time Authorization Services prompt at install. That removes the AppleScript
+    /// round-trip, the password from app memory, and every shell-string interpolation.
     @discardableResult
     private func executePrivileged(shellScript: String, password: String) -> (Bool, Bool) {
         let escapedPw = password
@@ -1246,9 +1274,12 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func checkPort() {
-        let port = serverPort
-        portStatus = .unknown
+        showPortCheckConsentAlert = true
+    }
 
+    func confirmPortCheckConsent() {
+        let port = serverPort
+        portStatus = .checking
         Task.detached {
             let status = await Self.probePort(port: port)
             await MainActor.run {
@@ -1880,16 +1911,59 @@ final class WiredServerViewModel: ObservableObject {
         return installedSHA256 != expectedSHA256
     }
 
-    /// Install the bundled binary into the LaunchDaemon bin dir using a privileged shell copy.
+    /// Install the bundled binary into the LaunchDaemon bin dir using a privileged shell copy,
+    /// going through a SHA-256-verified staging step so a corrupted source is rejected before
+    /// it overwrites the installed binary, and the previous binary is kept as a backup for rollback.
     /// Only safe to call when the daemon is confirmed stopped.
     func applyPrivilegedUpdate() {
         guard let bundledBinary = bundledServerBinaryPath() else { return }
-        let src = bundledBinary.replacingOccurrences(of: "'", with: "'\\''")
-        let dst = installedBinaryPath.replacingOccurrences(of: "'", with: "'\\''")
-        let script = "cp -f '\(src)' '\(dst)' && chmod 755 '\(dst)'"
+
         do {
+            let bundledSHA256 = try normalizedSHA256ForFile(at: bundledBinary)
+            let metadataSHA256 = bundledBinaryExpectedSHA256()
+            let expectedSHA256 = (metadataSHA256 == bundledSHA256 ? metadataSHA256 : nil) ?? bundledSHA256
+
+            // Stage in the user's temp dir first — readable by us, no privilege needed for the hash check.
+            let stagingURL = URL(fileURLWithPath: NSTemporaryDirectory())
+                .appendingPathComponent("wired3.staged.\(UUID().uuidString.lowercased())", isDirectory: false)
+            if fileManager.fileExists(atPath: stagingURL.path) {
+                try? fileManager.removeItem(at: stagingURL)
+            }
+            try fileManager.copyItem(atPath: bundledBinary, toPath: stagingURL.path)
+            defer { try? fileManager.removeItem(at: stagingURL) }
+
+            let stagedHash = try normalizedSHA256ForFile(at: stagingURL.path)
+            guard stagedHash == expectedSHA256 else {
+                appendRuntimeLog("binary-update: staging hash mismatch, aborting privileged update")
+                throw WiredServerError.binaryIntegrityCheckFailed("staging hash mismatch")
+            }
+
+            let stagedQ = stagingURL.path.replacingOccurrences(of: "'", with: "'\\''")
+            let dstQ = installedBinaryPath.replacingOccurrences(of: "'", with: "'\\''")
+            let backupQ = "\(installedBinaryPath).backup".replacingOccurrences(of: "'", with: "'\\''")
+
+            // Single privileged round-trip: keep previous binary as .backup, install staged copy.
+            // If the post-install hash check fails below, we restore from .backup in a second
+            // privileged call.
+            let script = """
+            cp -f '\(dstQ)' '\(backupQ)' 2>/dev/null || true; \
+            cp -f '\(stagedQ)' '\(dstQ)' && chmod 755 '\(dstQ)'
+            """
             try runPrivileged(script, error: .launchDaemonInstallFailed(""))
-            appendRuntimeLog("binary-update: privileged update applied")
+
+            // Verify the installed binary matches what we staged. If it doesn't, roll back.
+            if let installedHash = try? normalizedSHA256ForFile(at: installedBinaryPath),
+               installedHash != expectedSHA256 {
+                appendRuntimeLog("binary-update: post-install hash mismatch, rolling back")
+                let rollback = "cp -f '\(backupQ)' '\(dstQ)' && chmod 755 '\(dstQ)'; rm -f '\(backupQ)'"
+                try? runPrivileged(rollback, error: .launchDaemonInstallFailed(""))
+                throw WiredServerError.binaryIntegrityCheckFailed("installed hash mismatch")
+            }
+
+            // Success — drop the backup.
+            try? runPrivileged("rm -f '\(backupQ)'", error: .launchDaemonInstallFailed(""))
+
+            appendRuntimeLog("binary-update: privileged update applied (\(expectedSHA256.prefix(8)))")
             showPrivilegedUpdateAlert = false
             refreshInstallStatus()
             refreshInstalledVersion()
@@ -2834,49 +2908,39 @@ strict_identity = yes
         return .init(level: .good, title: L("dashboard.health.good"), detail: L("dashboard.health.files.ok"))
     }
 
+    // MARK: - External port reachability check (opt-in, EU-hosted)
+
+    /// Two-step external port check (requires prior user consent):
+    ///   1. Resolve external IP via api.seeip.org (Netherlands)
+    ///   2. Probe TCP reachability via portchecker.co (Netherlands)
     private static func probePort(port: Int) async -> PortStatus {
-        guard let nwPort = NWEndpoint.Port(rawValue: UInt16(max(0, min(port, 65_535)))) else {
-            return .closed
-        }
+        guard (1...65_535).contains(port) else { return .closed }
+        guard let externalIP = await fetchExternalIP() else { return .error }
+        return await checkPortExternal(ip: externalIP, port: port)
+    }
 
-        return await withCheckedContinuation { continuation in
-            let connection = NWConnection(host: .ipv4(.loopback), port: nwPort, using: .tcp)
-            let queue = DispatchQueue(label: "wired.server.port.check")
-            final class ResolutionState: @unchecked Sendable {
-                let lock = NSLock()
-                var resolved = false
-            }
-            let state = ResolutionState()
+    /// Fetches the machine's external IP from api.seeip.org (Netherlands, EU).
+    private static func fetchExternalIP() async -> String? {
+        guard let url = URL(string: "https://api.seeip.org/json") else { return nil }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        guard let (data, _) = try? await URLSession.shared.data(for: req) else { return nil }
+        struct IPResponse: Decodable { let ip: String }
+        return (try? JSONDecoder().decode(IPResponse.self, from: data))?.ip
+    }
 
-            @Sendable func finish(_ status: PortStatus) {
-                state.lock.lock()
-                if state.resolved {
-                    state.lock.unlock()
-                    return
-                }
-                state.resolved = true
-                state.lock.unlock()
-                connection.cancel()
-                continuation.resume(returning: status)
-            }
-
-            connection.stateUpdateHandler = { state in
-                switch state {
-                case .ready:
-                    finish(.open)
-                case .failed, .waiting, .cancelled:
-                    finish(.closed)
-                default:
-                    break
-                }
-            }
-
-            queue.asyncAfter(deadline: .now() + 1.5) {
-                finish(.closed)
-            }
-
-            connection.start(queue: queue)
-        }
+    /// Probes TCP reachability via portchecker.co (Netherlands, EU).
+    /// Single synchronous request — no polling needed.
+    private static func checkPortExternal(ip: String, port: Int) async -> PortStatus {
+        let escaped = ip.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ip
+        guard let url = URL(string: "https://portchecker.co/api/v1/query?host=\(escaped)&port=\(port)") else { return .error }
+        var req = URLRequest(url: url)
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.timeoutInterval = 20
+        guard let (data, _) = try? await URLSession.shared.data(for: req) else { return .error }
+        struct PortCheckResponse: Decodable { let isOpen: Bool }
+        guard let resp = try? JSONDecoder().decode(PortCheckResponse.self, from: data) else { return .error }
+        return resp.isOpen ? .open : .closed
     }
 }
 
@@ -2928,18 +2992,27 @@ enum DashboardHealthLevel {
 }
 
 enum PortStatus {
+    case idle
     case unknown
+    case checking
     case open
     case closed
+    case error
 
     var description: String {
         switch self {
+        case .idle:
+            return L("network.port_status.idle")
         case .unknown:
             return L("network.port_status.unknown")
+        case .checking:
+            return L("network.port_status.checking")
         case .open:
             return L("network.port_status.open")
         case .closed:
             return L("network.port_status.closed")
+        case .error:
+            return L("network.port_status.error")
         }
     }
 }

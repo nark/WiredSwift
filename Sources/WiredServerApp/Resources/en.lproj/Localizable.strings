@@ -12,6 +12,7 @@
 "alert.initial_password.message" = "The server has been initialized with a random admin password. Save it now — it will not be shown again.";
 "alert.initial_password.copy" = "Copy to Clipboard";
 "common.ok" = "OK";
+"common.cancel" = "Cancel";
 "common.choose" = "Choose";
 "common.select" = "Select";
 "common.cancel" = "Cancel";
@@ -75,6 +76,7 @@
 "network.restart_required" = "Server must be restarted after port change.";
 "network.port_status.idle" = "Not checked";
 "network.port_status.unknown" = "Checking external reachability…";
+"network.port_status.checking" = "Checking external reachability…";
 "network.port_status.open" = "Reachable from internet";
 "network.port_status.closed" = "Not reachable from internet";
 "network.port_status.error" = "Port check failed (no internet?)";
@@ -179,6 +181,8 @@
 "touchid.save.title" = "Enable Touch ID?";
 "touchid.save.message" = "Save your administrator password with Touch ID so future operations don't require a password prompt.";
 "touchid.save.enable" = "Enable Touch ID";
+"touchid.save.failed.title" = "Could not enable Touch ID";
+"touchid.save.failed.message" = "The password could not be stored in the Keychain. This feature requires a Developer ID-signed build.";
 "touchid.wrong_password" = "Authentication failed — wrong password.";
 
 "advanced.admin.section" = "Admin account";

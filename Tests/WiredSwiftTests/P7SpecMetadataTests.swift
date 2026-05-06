@@ -42,9 +42,27 @@ final class P7SpecMetadataTests: XCTestCase {
         XCTAssertEqual(withID.description, "[1000] wired.okay")
     }
 
-    func testAccountPrivilegesCollectionIncludesFileLabelPrivilege() {
-        let spec = P7Spec(withPath: nil)
+    func testAccountPrivilegesCollectionIncludesFileLabelPrivilege() throws {
+        let spec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL))
 
         XCTAssertTrue(spec.accountPrivileges?.contains("wired.account.file.set_label") == true)
+    }
+
+    func testAccountPrivilegesCollectionIncludesChatReactionsPrivilege() throws {
+        let spec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL))
+
+        XCTAssertTrue(spec.accountPrivileges?.contains("wired.account.chat.add_reactions") == true)
+    }
+
+    func testFieldIDsAreUnique() throws {
+        let spec = try XCTUnwrap(P7Spec(withUrl: TestResources.specURL))
+        let fieldsByID = Dictionary(grouping: spec.fields, by: { $0.id ?? "" })
+            .filter { !$0.key.isEmpty }
+        let duplicates = fieldsByID
+            .filter { $0.value.count > 1 }
+            .map { id, fields in "\(id): \(fields.map(\.name).joined(separator: ", "))" }
+            .sorted()
+
+        XCTAssertTrue(duplicates.isEmpty, "Duplicate field IDs: \(duplicates.joined(separator: "; "))")
     }
 }

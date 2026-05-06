@@ -147,9 +147,10 @@ extension ServerController {
             return
         }
 
-        // Verify the recipient account exists
+        // Verify the recipient account exists. Reply with permission_denied (not
+        // user_not_found) to avoid leaking which logins are registered on the server.
         guard App.usersController.userExists(withUsername: recipientLogin) else {
-            App.serverController.replyError(client: client, error: "wired.error.user_not_found", message: message)
+            App.serverController.replyError(client: client, error: "wired.error.permission_denied", message: message)
             return
         }
 

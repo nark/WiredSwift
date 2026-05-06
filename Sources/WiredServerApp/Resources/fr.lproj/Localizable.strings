@@ -12,6 +12,7 @@
 "alert.initial_password.message" = "Le serveur a été initialisé avec un mot de passe admin aléatoire. Notez-le maintenant, il ne sera plus affiché.";
 "alert.initial_password.copy" = "Copier";
 "common.ok" = "OK";
+"common.cancel" = "Annuler";
 "common.choose" = "Choisir";
 "common.select" = "Sélectionner";
 "common.cancel" = "Annuler";
@@ -75,6 +76,7 @@
 "network.restart_required" = "Le serveur doit être redémarré après un changement de port.";
 "network.port_status.idle" = "Non vérifié";
 "network.port_status.unknown" = "Vérification de la disponibilité externe…";
+"network.port_status.checking" = "Vérification de la disponibilité externe…";
 "network.port_status.open" = "Accessible depuis internet";
 "network.port_status.closed" = "Non accessible depuis internet";
 "network.port_status.error" = "Vérification échouée (pas d'internet ?)";
@@ -170,6 +172,8 @@
 "touchid.save.title" = "Activer Touch ID ?";
 "touchid.save.message" = "Enregistrez votre mot de passe administrateur avec Touch ID pour éviter de le saisir à chaque opération.";
 "touchid.save.enable" = "Activer Touch ID";
+"touchid.save.failed.title" = "Impossible d'activer Touch ID";
+"touchid.save.failed.message" = "Le mot de passe n'a pas pu être enregistré dans le trousseau. Cette fonctionnalité nécessite une version signée avec un Developer ID.";
 "touchid.wrong_password" = "Authentification échouée — mot de passe incorrect.";
 
 "advanced.admin.section" = "Compte admin";

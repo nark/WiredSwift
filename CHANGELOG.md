@@ -2,13 +2,168 @@
 
 All notable changes to WiredSwift are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
 ## [Unreleased]
 
+### Protocol — Wired 3.2
+
+- Bumped `<p7:protocol version="3.2">`. The 3.2 spec is wire-compatible with 3.1
+  via the per-session compatibility diff introduced in #87 — a 3.2 server can
+  serve a 3.1 client and vice-versa with the new fields/messages filtered
+  transparently on the wire.
+- Public-chat broadcasts now carry a server-stamped `wired.chat.message.id`
+  (length-prefixed string, UUID rendered as text). 3.1 receivers silently skip
+  it via the receiver-tolerance machinery.
+- New chat reactions API mirroring `wired.board.reaction.*`:
+  `wired.chat.add_reaction`, `wired.chat.remove_reaction`,
+  `wired.chat.get_reactions`, `wired.chat.reaction_list`,
+  `wired.chat.reaction_added`, `wired.chat.reaction_removed`.
+- New permission `wired.account.chat.add_reactions`.
+- Reactions live in an in-memory ring buffer (default 500 messages per chat);
+  when a message scrolls off the buffer its reactions are dropped — consistent
+  with the "chat is a stream" model. No on-disk persistence in 3.2.
+
+## [3.0-beta.24+50] — 2026-05-05
+
 ### Features
-- Add Wired 2.5 → Wired 3 database migration (`wired3 --migrate-from <path>`) — migrates users, groups, bans, boards, threads and posts ([`14ff423`](https://github.com/martinmarsian/WiredSwift/commit/14ff42328c0e66f69e66d30434e327a7c7de1bb6))
+- Chat reactions and server-stamped message IDs (Wired 3.2) ([`786893c`](https://github.com/nark/WiredSwift/commit/786893c8261962331adf20f49ea5e2f856c611d2))
 
-- Support legacy SHA1 password authentication for accounts migrated from Wired 2.5; server signals `p7.encryption.legacy_password` in `server_challenge` and sets `wired.user.password_must_change` in the login reply to trigger a mandatory credential upgrade on the client ([`8cf6e3c`](https://github.com/martinmarsian/WiredSwift/commit/8cf6e3ca99f2ae1906fd21e2e25c8222485fee94))
+- Backward/forward compatibility between minor versions ([`411273d`](https://github.com/nark/WiredSwift/commit/411273d3f13d96414cbd92cadde9a623aa15b4a6))
 
+
+### Other
+- Revert "Merge pull request #91 from nark/feature/issue-90-chat-reactions" ([`2b0aeba`](https://github.com/nark/WiredSwift/commit/2b0aeba9a3ef91b7ffeb0da02822c478860ebbe9))
+
+
+### Testing
+- Bump expected handshake remoteVersion to 3.2 ([`05727ef`](https://github.com/nark/WiredSwift/commit/05727efa260409845ddd8fb4134cd7de8e3f2322))
+
+## [3.0-beta.23+49] — 2026-05-05
+
+### Bug Fixes
+- Stop main-thread hang in appendLog during server startup ([`09a1acc`](https://github.com/nark/WiredSwift/commit/09a1accc2e680b8a3b96a1710bb66273491dd377))
+
+- Hide macOS Icon\r sidecar from directory listings ([`42ba97c`](https://github.com/nark/WiredSwift/commit/42ba97c8ff0b5cce101136df27fce9384b3a1c3b))
+
+- Declare wired.account.user.list_offline_users field ([`5f2e4e4`](https://github.com/nark/WiredSwift/commit/5f2e4e42782a3196c972cfc66303b38602b33651))
+
+- Return permission_denied for unknown recipient ([`a02c9fe`](https://github.com/nark/WiredSwift/commit/a02c9feee430f25c346d05954abd09a401622cdd))
+
+- Restrict list_offline_users migration to admin accounts only ([`568e35c`](https://github.com/nark/WiredSwift/commit/568e35c9fefde6420fc585dbdcb94542cab385fc))
+
+- Walk up from executable to find resource bundle in tests ([`223317e`](https://github.com/nark/WiredSwift/commit/223317e3b4f396bca14fd5ba154436d473f7d3d5))
+
+- Use bundleURL not deletingLastPathComponent for xctest discovery ([`af62836`](https://github.com/nark/WiredSwift/commit/af628369afbb71fc695cb5dd8f86a097e7df4501))
+
+- Add Bundle(for:) candidate to fix test bundle discovery on CI ([`2ce4f4f`](https://github.com/nark/WiredSwift/commit/2ce4f4f6c0ac4d5f026153eb9ebe6d373616a68e))
+
+- Restore wired.xml discovery for macOS and Linux SPM tests ([`15bd982`](https://github.com/nark/WiredSwift/commit/15bd982d34726bd64ee8982562d558c6215873d1))
+
+- Use wired.message.offline.recipient_login instead of wired.user.login ([`d13bf47`](https://github.com/nark/WiredSwift/commit/d13bf474323b90b9e430ee5e1663eca94e3532a4))
+
+- Add wired.account.user.list_offline_users privilege ([`d416f9b`](https://github.com/nark/WiredSwift/commit/d416f9b260507b79a2ae58d50a8745bf0ec12e8a))
+
+- Address Nark's security review findings ([`eba3460`](https://github.com/nark/WiredSwift/commit/eba346068d327358abb05d545d994ac2fa6f1de2))
+
+- Set is_legacy=1 in Python migration script ([`f24c32e`](https://github.com/nark/WiredSwift/commit/f24c32e0603f9946e954bc019e00236f87758280))
+
+- Require E2E encryption unconditionally ([`6aa1ed5`](https://github.com/nark/WiredSwift/commit/6aa1ed5073fa80e1b094495310b62b78be03488c))
+
+- Avoid Bundle.module crash when SPM resource bundle is missing ([`995bee3`](https://github.com/nark/WiredSwift/commit/995bee368e21fa0bce61437091508d7a2467ed4a))
+
+- Use GRDB native Date decoding for sent_at column ([`79151a3`](https://github.com/nark/WiredSwift/commit/79151a3bfa13ba04cf280a0edf690242d66deb82))
+
+- Only show last_nick in offline list, never login or full_name ([`845f410`](https://github.com/nark/WiredSwift/commit/845f41086d74330df772fd55a94e826c144d85de))
+
+- Exclude never-logged-in accounts from offline user list ([`43b8028`](https://github.com/nark/WiredSwift/commit/43b80287ac05c9c6896e6f6e3e72ffdc5b261f4a))
+
+- Always drop index_ad trigger before bulk delete ([`bb93e63`](https://github.com/nark/WiredSwift/commit/bb93e635c51f5499311a41e5314dac333ee70321))
+
+- Allow pre-release suffixes in WIRED_MARKETING_VERSION ([`c20a8b3`](https://github.com/nark/WiredSwift/commit/c20a8b331e1c04ccc21a6c36193c6b3291e95ef2))
+
+- Checkpoint WAL on startup and add FTS5 integrity probe ([`ddf444d`](https://github.com/nark/WiredSwift/commit/ddf444dd3071f2f285925a1dd1c88479d458bf24))
+
+- Avoid SQLITE_IOERR on FTS5 cleanup after crash restart ([`8b63515`](https://github.com/nark/WiredSwift/commit/8b635152a95c059454faec246c6f5d76f06ec1dd))
+
+- Report actual CPU architecture instead of hardcoded x86_64 ([`2cd615e`](https://github.com/nark/WiredSwift/commit/2cd615e68a7b0cd5ff4e6f8accf2a766aa426e90))
+
+- Handle .idle case in PortStatus color switch ([`537fa73`](https://github.com/nark/WiredSwift/commit/537fa738703a558299e66b3e45f17f7a8513fa00))
+
+- Restore wired.xml discovery for macOS and Linux SPM tests ([`6afaa5b`](https://github.com/nark/WiredSwift/commit/6afaa5b1fea0985c061241f2a4adcad46c0c675a))
+
+- Avoid Bundle.module crash when SPM resource bundle is missing ([`15bde0f`](https://github.com/nark/WiredSwift/commit/15bde0f30977b1501cfaee349bcf8a1f5c980479))
+
+- Align consent dialog keys with main, add idle port status ([`74edb99`](https://github.com/nark/WiredSwift/commit/74edb994582655f43616646b0dfa6644037d569a))
+
+- Clear newAdminPassword after use in all paths ([`bc04f0b`](https://github.com/nark/WiredSwift/commit/bc04f0b666e794443f120818186559f0d6c973ec))
+
+- Fix port TextField resetting to '4' while typing ([`2fb07cb`](https://github.com/nark/WiredSwift/commit/2fb07cb3074982baadc6c58bdaffdbaf401fa7dd))
+
+- Remove persistent consent — port check asks every time, no auto-check ([`e7f4f16`](https://github.com/nark/WiredSwift/commit/e7f4f16bcc3fbd0bb16ba76ade1d7696c5e48c8a))
+
+- Replace check-host.net with EU-hosted portchecker.co, add opt-in consent ([`6f54c88`](https://github.com/nark/WiredSwift/commit/6f54c889d0b902397e6430d7cb2eee05ed431ecb))
+
+- Strip LaunchDaemon/TouchID code from Tabs.swift not in upstream ([`b6fa1ae`](https://github.com/nark/WiredSwift/commit/b6fa1aea2bceb2149fa4abafc2a7d734ca7a7569))
+
+- Make admin password field visible with roundedBorder style ([`b44297d`](https://github.com/nark/WiredSwift/commit/b44297d83c015bf1c70422ec5a184764f62bbf65))
+
+- Use local @State buffer for admin password field ([`940902c`](https://github.com/nark/WiredSwift/commit/940902c1f0d67da3ed7141f963952d14e5052de0))
+
+- Use Locale.preferredLanguages only for language resolution ([`9726178`](https://github.com/nark/WiredSwift/commit/97261781c854ce43372ebaf9ffd8e666f3afc025))
+
+- Use Bundle.module to find localized strings ([`61e190f`](https://github.com/nark/WiredSwift/commit/61e190ffc9b4e1f4a97f234dad3c240599b510b3))
+
+- Use 3 probe nodes for external port check reliability ([`808ba62`](https://github.com/nark/WiredSwift/commit/808ba62064df5fbf4b289a0f2b11e45e0afb33fa))
+
+- Address review feedback on migration robustness ([`3af6210`](https://github.com/nark/WiredSwift/commit/3af62104a42fe13c7dbf5630952d5564b8c5a9cd))
+
+- Don't assign password salt during legacy login ([`b0bc197`](https://github.com/nark/WiredSwift/commit/b0bc197ece171383912f56ddcbe397ec1c7a1682))
+
+- Avoid SQLITE_IOERR on FTS5 cleanup after crash restart ([`2e3a9ac`](https://github.com/nark/WiredSwift/commit/2e3a9acb49e02136e8563a3da3136a106c8ff7d3))
+
+
+### Documentation
+- Update README offline messaging docs ([`2f81483`](https://github.com/nark/WiredSwift/commit/2f8148336f1bf1b6048330270578a497301853a2))
+
+- Note that Wired 3.0 is not compatible with Wired 2.x clients ([`e77e7f6`](https://github.com/nark/WiredSwift/commit/e77e7f69d43d15ca8050729becf7e7da54dbfc32))
+
+
+### Features
+- Broadcast offline_list updates on disconnect and on privilege grant ([`84b06f0`](https://github.com/nark/WiredSwift/commit/84b06f081f6f5221075e96e1b0bad1bee18f0a9a))
+
+- End-to-end encrypted offline messages via X25519+ChaCha20-Poly1305 ([`8c0096b`](https://github.com/nark/WiredSwift/commit/8c0096b62bd711269913a68046c092016f9fc78e))
+
+- Include sender nick in offline message delivery ([`ea17072`](https://github.com/nark/WiredSwift/commit/ea17072ad83a6f9bb622976eff77348233f4cb14))
+
+- Persist last_nick and use it in offline user list ([`1a4dfcb`](https://github.com/nark/WiredSwift/commit/1a4dfcb7832971cf7c5bfa43913ea034da4494b9))
+
+- Fix click handling, 30-day filter, full name, privilege backfill ([`5093249`](https://github.com/nark/WiredSwift/commit/50932495c9fd1147bd637f3267ffa851b732ea4c))
+
+- Implement server-side offline messaging and offline user list ([`0d8713a`](https://github.com/nark/WiredSwift/commit/0d8713afb153b5bf6380b422ebab24ee9067a2ca))
+
+- Warn when files directory is under /Users/ in daemon mode ([`1195dc6`](https://github.com/nark/WiredSwift/commit/1195dc64b0cc4214e017e8b83779cdee934b0781))
+
+- Add German localization support ([`6323528`](https://github.com/nark/WiredSwift/commit/632352832008550eaf323a79344d0055f341ee80))
+
+- External port reachability check + Network tab UI ([`a195460`](https://github.com/nark/WiredSwift/commit/a195460a9e86211d718b404f69d5a54d3645bf70))
+
+- Replace brittle SHA1-detection heuristic with is_legacy DB column ([`6106eeb`](https://github.com/nark/WiredSwift/commit/6106eebae49d26916e81ff5caf556b2cae71d0d1))
+
+- Support legacy SHA1 passwords from Wired 2.5 migration ([`4d599c7`](https://github.com/nark/WiredSwift/commit/4d599c710f7663acf712c89ec5855573a02dfa93))
+
+- Add Wired 2.5 → Wired 3 database migration ([`1791aa6`](https://github.com/nark/WiredSwift/commit/1791aa66d85dd2737ed6ce72d2a54db9980849ce))
+
+
+### Other
+- Retry notarization on transient network errors ([`537b249`](https://github.com/nark/WiredSwift/commit/537b249b55458cdc9a608e8543de3ba6372759b8))
+
+- Use bash in Docker runtime stage ([`eebcf94`](https://github.com/nark/WiredSwift/commit/eebcf947c51a478773293adee743d8b72788b853))
+
+- Make Docker apt mirror configurable ([`44ec664`](https://github.com/nark/WiredSwift/commit/44ec6645fea0132315f79abed88d75133ffa00bb))
+
+
+### Testing
+- Resolve wired.xml from #filePath instead of Bundle.module ([`6fd836c`](https://github.com/nark/WiredSwift/commit/6fd836c6b80aca4b7302acef09193544d0920e3d))
 
 ## [3.0-beta.22+42] — 2026-04-20
 
@@ -22,6 +177,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactoring
 - Move WiredChatBot in separated repo ([`6166223`](https://github.com/nark/WiredSwift/commit/6166223b5feaef77d760884d4c0718ee73216d1f))
+
 ## [3.0-beta.21+38] — 2026-04-13
 
 ### Bug Fixes
