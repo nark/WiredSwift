@@ -75,6 +75,25 @@ public enum WiredServerVersion {
 }
 SWIFT
 
+# ── i18n lint: catch hardcoded UI strings before spending time on the build ───
+
+echo "==> Checking for hardcoded UI strings"
+I18N_VIOLATIONS="$(grep -rEn \
+  'Text\("[A-Za-z]|Button\("[A-Za-z]|Label\("[A-Za-z]|Section\("[A-Za-z]|Toggle\("[A-Za-z]' \
+  "$ROOT_DIR/Sources/WiredServerApp/" --include="*.swift" 2>/dev/null \
+  | grep -v 'L(' || true)"
+
+if [[ -n "$I18N_VIOLATIONS" ]]; then
+  echo ""
+  echo "  ERROR: Hardcoded UI strings found — wrap every user-visible string with L():"
+  echo "$I18N_VIOLATIONS" | sed 's/^/    /'
+  echo ""
+  exit 1
+fi
+echo "    OK"
+
+# ── Build ─────────────────────────────────────────────────────────────────────
+
 echo "==> Building $EXECUTABLE_NAME ($BUILD_CONFIG)"
 cd "$ROOT_DIR"
 
