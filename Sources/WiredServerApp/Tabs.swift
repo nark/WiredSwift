@@ -101,33 +101,34 @@ private struct ExternalVolumeWarningView: View {
                 .font(.title3)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(hasFDA ? "Daemon access check passed." : "Files directory is on an external volume.")
+                Text(hasFDA ? L("fda.check.passed") : L("fda.external_volume"))
                     .font(.footnote).bold()
                     .foregroundStyle(hasFDA ? Color.primary : Color.orange)
-                Text(hasFDA
-                    ? "The daemon user appears to have read access. After a binary update, re-signing may revoke this — verify by checking the server log for \"0 files, 0 dirs\"."
-                    : "Ensure the files directory is readable by the daemon user, then click Re-check."
-                )
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                Text(hasFDA ? L("fda.check.passed.detail") : L("fda.check.failed.detail"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
 
             if !hasFDA {
-                Button("Re-check") {
-                    model.refreshFDAStatusPrivileged()
+                if model.isCheckingFDA {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Button(L("fda.recheck")) {
+                        model.refreshFDAStatusPrivileged()
+                    }
+                    .font(.footnote)
                 }
-                .font(.footnote)
 
-                Button("Restart Daemon") {
+                Button(L("fda.restart_daemon")) {
                     model.stopDaemon()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         model.startDaemon()
                     }
                 }
                 .font(.footnote)
-                .disabled(!model.isDaemonRunning)
+                .disabled(!model.isDaemonRunning || model.isCheckingFDA)
             }
         }
         .padding(8)

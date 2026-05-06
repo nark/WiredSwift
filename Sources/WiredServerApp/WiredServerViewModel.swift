@@ -128,6 +128,7 @@ final class WiredServerViewModel: ObservableObject {
     @Published var isDaemonUserExists: Bool = false
     @Published var isDaemonGroupExists: Bool = false
     @Published var wired3HasFullDiskAccess: Bool = false
+    @Published var isCheckingFDA: Bool = false
 
     var isServerActive: Bool {
         installMode == .launchDaemon ? isDaemonRunning : isRunning
@@ -510,8 +511,12 @@ final class WiredServerViewModel: ObservableObject {
         let fdaTmpFile = tmpDir.appendingPathComponent("result").path
         let fdaShFile  = tmpDir.appendingPathComponent("check.sh").path
         writeFDACheckScript(filesDir: filesDir, daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
+        isCheckingFDA = true
         Task { @MainActor in
-            defer { try? FileManager.default.removeItem(at: tmpDir) }
+            defer {
+                try? FileManager.default.removeItem(at: tmpDir)
+                isCheckingFDA = false
+            }
             do {
                 try HelperConnection.shared.installIfNeeded()
                 wired3HasFullDiskAccess = try await HelperConnection.shared.runFDACheck(
@@ -519,6 +524,7 @@ final class WiredServerViewModel: ObservableObject {
                 )
             } catch {
                 wired3HasFullDiskAccess = false
+                publishHelperError(L("fda.recheck"), error)
             }
         }
     }
