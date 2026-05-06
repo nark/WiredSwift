@@ -200,6 +200,7 @@ cat > "$INFO_PLIST" <<PLIST
   <array>
     <string>en</string>
     <string>fr</string>
+    <string>de</string>
   </array>
   <key>CFBundleExecutable</key>
   <string>$EXECUTABLE_NAME</string>
