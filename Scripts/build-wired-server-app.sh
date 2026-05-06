@@ -18,6 +18,10 @@ INFO_PLIST="$CONTENTS_DIR/Info.plist"
 DIST_SERVER_BINARY="$ROOT_DIR/dist/$SERVER_BINARY_NAME"
 APP_ZIP_PATH="$ROOT_DIR/dist/Wired-Server.app.zip"
 SERVER_ZIP_PATH="$ROOT_DIR/dist/$SERVER_BINARY_NAME.zip"
+HELPER_BINARY_NAME="WiredServerHelper"
+HELPER_BUNDLE_ID="fr.read-write.WiredServer3.Helper"
+LAUNCH_SERVICES_DIR="$CONTENTS_DIR/Library/LaunchServices"
+BUNDLE_DAEMONS_DIR="$CONTENTS_DIR/Library/LaunchDaemons"
 NOTARIZE="${NOTARIZE:-}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 
@@ -84,10 +88,12 @@ build_for_arch() {
 
   swift build -c "$BUILD_CONFIG" --arch "$arch" --scratch-path "$scratch_path" --product "$EXECUTABLE_NAME"
   swift build -c "$BUILD_CONFIG" --arch "$arch" --scratch-path "$scratch_path" --product "$SERVER_BINARY_NAME"
+  swift build -c "$BUILD_CONFIG" --arch "$arch" --scratch-path "$scratch_path" --product "$HELPER_BINARY_NAME"
 }
 
 declare -a EXEC_SLICES=()
 declare -a SERVER_SLICES=()
+declare -a HELPER_SLICES=()
 
 for arch in "${TARGET_ARCHS[@]}"; do
   echo "==> Building $EXECUTABLE_NAME ($BUILD_CONFIG, $arch)"
@@ -119,15 +125,25 @@ for arch in "${TARGET_ARCHS[@]}"; do
 
   EXEC_SLICES+=("$ARCH_EXECUTABLE")
   SERVER_SLICES+=("$ARCH_SERVER_BINARY")
+
+  ARCH_HELPER_BINARY="$ARCH_BIN_DIR/$HELPER_BINARY_NAME"
+  if [[ ! -x "$ARCH_HELPER_BINARY" ]]; then
+    echo "Binary not found: $ARCH_HELPER_BINARY"
+    exit 1
+  fi
+  HELPER_SLICES+=("$ARCH_HELPER_BINARY")
 done
 
 BINARY_PATH="$UNIVERSAL_BIN_DIR/$EXECUTABLE_NAME"
 SERVER_BINARY_PATH="$UNIVERSAL_BIN_DIR/$SERVER_BINARY_NAME"
 
+HELPER_BINARY_PATH="$UNIVERSAL_BIN_DIR/$HELPER_BINARY_NAME"
+
 echo "==> Creating universal binaries (arm64 + x86_64)"
 lipo -create "${EXEC_SLICES[@]}" -output "$BINARY_PATH"
 lipo -create "${SERVER_SLICES[@]}" -output "$SERVER_BINARY_PATH"
-chmod 755 "$BINARY_PATH" "$SERVER_BINARY_PATH"
+lipo -create "${HELPER_SLICES[@]}" -output "$HELPER_BINARY_PATH"
+chmod 755 "$BINARY_PATH" "$SERVER_BINARY_PATH" "$HELPER_BINARY_PATH"
 
 SERVER_BINARY_SHA256="$(/usr/bin/shasum -a 256 "$SERVER_BINARY_PATH" | awk '{print $1}')"
 if [[ -z "$SERVER_BINARY_SHA256" ]]; then
@@ -138,10 +154,11 @@ fi
 echo "==> Universal binary info"
 lipo -info "$BINARY_PATH"
 lipo -info "$SERVER_BINARY_PATH"
+lipo -info "$HELPER_BINARY_PATH"
 
 echo "==> Creating app bundle at $APP_DIR"
 rm -rf "$APP_DIR"
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$LAUNCH_SERVICES_DIR" "$BUNDLE_DAEMONS_DIR"
 
 cp "$BINARY_PATH" "$MACOS_DIR/$EXECUTABLE_NAME"
 chmod 755 "$MACOS_DIR/$EXECUTABLE_NAME"
@@ -152,6 +169,13 @@ chmod 755 "$DIST_SERVER_BINARY"
 # Embed wired3 inside the app so installation works on machines without source checkout.
 cp "$SERVER_BINARY_PATH" "$RESOURCES_DIR/$SERVER_BINARY_NAME"
 chmod 755 "$RESOURCES_DIR/$SERVER_BINARY_NAME"
+
+# Embed privileged helper for SMAppService.
+cp "$HELPER_BINARY_PATH" "$LAUNCH_SERVICES_DIR/$HELPER_BUNDLE_ID"
+chmod 755 "$LAUNCH_SERVICES_DIR/$HELPER_BUNDLE_ID"
+
+# Bundle daemon plist for SMAppService.daemon registration.
+cp "$ROOT_DIR/Sources/WiredServerHelper/LaunchDaemon.plist" "$BUNDLE_DAEMONS_DIR/$HELPER_BUNDLE_ID.plist"
 
 # Embed default runtime assets used by wired3 bootstrap.
 cp "$ROOT_DIR/Sources/WiredSwift/Resources/wired.xml" "$RESOURCES_DIR/wired.xml"
@@ -201,6 +225,11 @@ cat > "$INFO_PLIST" <<PLIST
   <string>14.0</string>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>SMPrivilegedExecutables</key>
+  <dict>
+    <key>$HELPER_BUNDLE_ID</key>
+    <string>anchor apple generic and identifier "$HELPER_BUNDLE_ID" and certificate leaf[subject.OU] = "VGB467J8DZ"</string>
+  </dict>
 </dict>
 </plist>
 PLIST
@@ -338,11 +367,13 @@ if [[ -n "$SIGNING_IDENTITY" ]]; then
 
   sign_file "$SIGNING_IDENTITY" "$DIST_SERVER_BINARY"
   sign_file "$SIGNING_IDENTITY" "$RESOURCES_DIR/$SERVER_BINARY_NAME"
+  sign_file "$SIGNING_IDENTITY" "$LAUNCH_SERVICES_DIR/$HELPER_BUNDLE_ID"
   sign_app_bundle "$SIGNING_IDENTITY" "$APP_DIR"
 else
   echo "==> No Developer ID identity found, using ad-hoc signing"
   codesign --force --sign - "$DIST_SERVER_BINARY"
   codesign --force --sign - "$RESOURCES_DIR/$SERVER_BINARY_NAME"
+  codesign --force --sign - "$LAUNCH_SERVICES_DIR/$HELPER_BUNDLE_ID"
   codesign --force --deep --sign - "$APP_DIR"
 fi
 

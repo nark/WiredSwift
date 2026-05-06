@@ -1,5 +1,8 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Fehler";
+"alert.helper_setup.title" = "Einmalige Einrichtung erforderlich";
+"alert.helper_setup.message" = "Wired Server benötigt eine einmalige Genehmigung zur Serververwaltung. Klicke auf \"Anmeldeelemente öffnen\" und aktiviere \"Wired Server\" unter \"Im Hintergrund erlauben\".";
+"alert.helper_setup.open" = "Anmeldeelemente öffnen";
 "alert.binary_updated.title" = "Server aktualisiert";
 "alert.binary_updated.message" = "Eine neue Version der Server-Binary wurde installiert. Der laufende Server verwendet noch die alte Version. Möchten Sie ihn jetzt neu starten?";
 "alert.binary_updated.restart" = "Jetzt neu starten";
@@ -269,6 +272,9 @@
 "error.start_daemon_failed" = "Daemon konnte nicht gestartet werden";
 "error.stop_daemon_failed" = "Daemon konnte nicht gestoppt werden";
 "error.daemon_update_failed" = "Daemon konnte nicht aktualisiert werden";
+"error.helper.connection_failed" = "Verbindung zum privilegierten Helfer fehlgeschlagen";
+"error.helper.operation_failed" = "Vorgang fehlgeschlagen";
+"error.helper.install_failed_prefix" = "Helfer konnte nicht installiert werden";
 
 "database.migration.section" = "Migration von Wired 2.5";
 "database.migration.source" = "Wired 2.5-Datenbank";

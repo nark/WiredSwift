@@ -5,6 +5,24 @@
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
+      <PostActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Embed WiredServerHelper in app bundle"
+               scriptText = "HELPER_SRC=&quot;${BUILT_PRODUCTS_DIR}/WiredServerHelper&quot;&#10;LAUNCH_SERVICES=&quot;${BUILT_PRODUCTS_DIR}/WiredServerApp.app/Contents/Library/LaunchServices&quot;&#10;HELPER_NAME=&quot;fr.read-write.WiredServer3.Helper&quot;&#10;&#10;if [ ! -f &quot;${HELPER_SRC}&quot; ]; then&#10;    echo &quot;warning: WiredServerHelper binary not found at ${HELPER_SRC}, skipping embed&quot;&#10;    exit 0&#10;fi&#10;&#10;mkdir -p &quot;${LAUNCH_SERVICES}&quot;&#10;cp -f &quot;${HELPER_SRC}&quot; &quot;${LAUNCH_SERVICES}/${HELPER_NAME}&quot;&#10;chmod 755 &quot;${LAUNCH_SERVICES}/${HELPER_NAME}&quot;&#10;echo &quot;Embedded ${HELPER_NAME} into WiredServerApp.app&quot;&#10;&#10;APP_PLIST=&quot;${BUILT_PRODUCTS_DIR}/WiredServerApp.app/Contents/Info.plist&quot;&#10;if [ ! -f &quot;${APP_PLIST}&quot; ]; then&#10;    echo &quot;warning: App Info.plist not found, skipping SMPrivilegedExecutables injection&quot;&#10;    exit 0&#10;fi&#10;&#10;HELPER_REQ='anchor apple generic and identifier &quot;fr.read-write.WiredServer3.Helper&quot; and certificate leaf[subject.OU] = &quot;VGB467J8DZ&quot;'&#10;/usr/libexec/PlistBuddy -c &quot;Delete :SMPrivilegedExecutables&quot; &quot;${APP_PLIST}&quot; 2&gt;/dev/null || true&#10;/usr/libexec/PlistBuddy -c &quot;Add :SMPrivilegedExecutables dict&quot; &quot;${APP_PLIST}&quot;&#10;/usr/libexec/PlistBuddy -c &quot;Add :SMPrivilegedExecutables:${HELPER_NAME} string ${HELPER_REQ}&quot; &quot;${APP_PLIST}&quot;&#10;echo &quot;Injected SMPrivilegedExecutables into Info.plist&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "WiredServerApp"
+                     BuildableName = "WiredServerApp"
+                     BlueprintName = "WiredServerApp"
+                     ReferencedContainer = "container:">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PostActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -76,6 +94,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "WiredServerHelper"
+               BuildableName = "WiredServerHelper"
+               BlueprintName = "WiredServerHelper"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -136,15 +168,6 @@
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "wired3"
-            BuildableName = "wired3"
-            BlueprintName = "wired3"
-            ReferencedContainer = "container:">
-         </BuildableReference>
-      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

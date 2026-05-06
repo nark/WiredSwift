@@ -2,7 +2,6 @@
 // TODO: Split WiredServerViewModel into focused sub-view-models
 import AppKit
 import Foundation
-import LocalAuthentication
 import Network
 import ServiceManagement
 #if os(Linux)
@@ -81,10 +80,9 @@ final class WiredServerViewModel: ObservableObject {
     @Published var isBusy: Bool = false
     @Published var statusMessage: String = ""
 
-    @Published var hasTouchIDCredential: Bool = BiometricCredentialStore.hasStoredCredential
-
     @Published var showErrorAlert: Bool = false
     @Published var lastErrorMessage: String = ""
+    @Published var showHelperSetupAlert: Bool = false
 
     @Published var showRestartAfterUpdateAlert: Bool = false
     @Published var showPrivilegedUpdateAlert: Bool = false
@@ -360,7 +358,7 @@ final class WiredServerViewModel: ObservableObject {
             }
 
             systemMigrationStatus = "Creating system directory (admin required)..."
-            try createSystemDataDirectory()
+            try await createSystemDataDirectory()
 
             systemMigrationStatus = "Copying data..."
             try copyDirectoryContents(from: source, to: Self.systemDataDirectory)
@@ -391,12 +389,13 @@ final class WiredServerViewModel: ObservableObject {
         isSystemMigrating = false
     }
 
-    private func createSystemDataDirectory() throws {
+    private func createSystemDataDirectory() async throws {
         let username = NSUserName()
         try validateSystemUsername(username)
-        try runPrivileged(
-            "mkdir -p /Library/Wired3 && chown \(username):staff /Library/Wired3 && chmod 755 /Library/Wired3",
-            error: .systemDirectoryCreationFailed("")
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.createSystemDirectory(
+            path: Self.systemDataDirectory,
+            owner: username
         )
         guard fileManager.fileExists(atPath: Self.systemDataDirectory) else {
             throw WiredServerError.systemDirectoryCreationFailed("Directory missing after creation")
@@ -497,7 +496,7 @@ final class WiredServerViewModel: ObservableObject {
         try? sh.write(toFile: scriptPath, atomically: true, encoding: .utf8)
     }
 
-    // Privileged access check — runs as root (AppleScript admin auth) to test _wired user access.
+    // Privileged access check — runs as root via XPC helper to test _wired user access.
     func refreshFDAStatusPrivileged() {
         guard filesDirectoryIsOnExternalVolume else {
             wired3HasFullDiskAccess = false
@@ -508,19 +507,43 @@ final class WiredServerViewModel: ObservableObject {
             wired3HasFullDiskAccess = false
             return
         }
-        defer { try? FileManager.default.removeItem(at: tmpDir) }
         let fdaTmpFile = tmpDir.appendingPathComponent("result").path
         let fdaShFile  = tmpDir.appendingPathComponent("check.sh").path
         writeFDACheckScript(filesDir: filesDir, daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
-        try? runPrivileged("sh '\(fdaShFile)'; true", error: .launchDaemonInstallFailed(""))
-        let raw = (try? String(contentsOfFile: fdaTmpFile, encoding: .utf8)) ?? "0"
-        wired3HasFullDiskAccess = raw.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
+        Task { @MainActor in
+            defer { try? FileManager.default.removeItem(at: tmpDir) }
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                wired3HasFullDiskAccess = try await HelperConnection.shared.runFDACheck(
+                    scriptPath: fdaShFile, outputPath: fdaTmpFile
+                )
+            } catch {
+                wired3HasFullDiskAccess = false
+            }
+        }
     }
 
     func openFullDiskAccessSettings() {
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    func openLoginItemsSettings() {
+        // macOS 13+: General → Login Items
+        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Publish a helper error and, when the helper needs user approval (error 8 / mustBeEnabled),
+    /// also open System Settings → Privacy & Security → Login Items automatically.
+    private func publishHelperError(_ prefix: String, _ error: Error) {
+        if let he = error as? HelperError, case .mustBeEnabled = he {
+            showHelperSetupAlert = true
+            return
+        }
+        publishError("\(prefix): \(error.localizedDescription)")
     }
 
     var launchDaemonInstalled: Bool {
@@ -564,11 +587,11 @@ final class WiredServerViewModel: ObservableObject {
                     launchAtLogin = false
                 }
                 modeSwitchStatus = L("status.daemon.activating")
-                try activateLaunchDaemon(name: daemonUserName, createUser: !isDaemonUserExists)
+                try await activateLaunchDaemon(name: daemonUserName, createUser: !isDaemonUserExists)
 
             case .launchAgent:
                 modeSwitchStatus = L("status.daemon.deactivating")
-                try deactivateLaunchDaemon(restoreUser: NSUserName())
+                try await deactivateLaunchDaemon(restoreUser: NSUserName())
             }
 
             installMode = mode
@@ -576,7 +599,7 @@ final class WiredServerViewModel: ObservableObject {
             modeSwitchStatus = L("status.daemon.done")
         } catch {
             modeSwitchStatus = "\(L("error.mode_switch_failed")): \(error.localizedDescription)"
-            publishError("\(L("error.mode_switch_failed")): \(error.localizedDescription)")
+            publishHelperError(L("error.mode_switch_failed"), error)
         }
 
         isSwitchingMode = false
@@ -587,10 +610,12 @@ final class WiredServerViewModel: ObservableObject {
         daemonStartAtBoot = enabled
         userDefaults.set(enabled, forKey: daemonStartAtBootKey)
         guard launchDaemonInstalled else { return }
-        do {
-            try reinstallDaemonPlist()
-        } catch {
-            publishError("\(L("error.daemon_update_failed")): \(error.localizedDescription)")
+        Task { @MainActor in
+            do {
+                try await reinstallDaemonPlist()
+            } catch {
+                publishError("\(L("error.daemon_update_failed")): \(error.localizedDescription)")
+            }
         }
     }
 
@@ -634,38 +659,47 @@ final class WiredServerViewModel: ObservableObject {
             writeFDACheckScript(filesDir: currentServerRootPath(), daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
         }
 
-        var cmd = "launchctl bootstrap system '\(launchDaemonPlistPath)' 2>/dev/null"
-        cmd += "; launchctl kickstart system/\(launchAgentLabel) 2>/dev/null"
-        if onExternal && !fdaShFile.isEmpty {
-            cmd += "; sh '\(fdaShFile)'"
-        }
-        cmd += "; true"
-
-        do {
-            try runPrivileged(cmd, error: .launchDaemonInstallFailed("start"))
-            if onExternal, let dir = tmpDir {
-                let raw = (try? String(contentsOfFile: fdaTmpFile, encoding: .utf8)) ?? "0"
-                try? FileManager.default.removeItem(at: dir)
-                wired3HasFullDiskAccess = raw.trimmingCharacters(in: .whitespacesAndNewlines) == "1"
+        let plistPath = launchDaemonPlistPath
+        let label = launchAgentLabel
+        let fdaScript = fdaShFile
+        let fdaOutput = fdaTmpFile
+        let onExt = onExternal
+        Task { @MainActor in
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                let fdaGranted = try await HelperConnection.shared.startDaemon(
+                    plistPath: plistPath,
+                    label: label,
+                    fdaScriptPath: fdaScript,
+                    fdaOutputPath: fdaOutput
+                )
+                if onExt {
+                    if let dir = tmpDir { try? FileManager.default.removeItem(at: dir) }
+                    wired3HasFullDiskAccess = fdaGranted
+                }
+            } catch {
+                if let dir = tmpDir { try? FileManager.default.removeItem(at: dir) }
+                publishHelperError(L("error.start_daemon_failed"), error)
             }
-        } catch {
-            publishError("\(L("error.start_daemon_failed")): \(error.localizedDescription)")
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.refreshDaemonStatus()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                self?.refreshDaemonStatus()
+            }
         }
     }
 
     func stopDaemon() {
-        do {
-            try runPrivileged("launchctl bootout system/\(launchAgentLabel) 2>/dev/null; true",
-                              error: .launchDaemonRemoveFailed("stop"))
-        } catch {
-            publishError("\(L("error.stop_daemon_failed")): \(error.localizedDescription)")
-        }
-        // Use refreshAll so a pending binary update is detected now that the daemon is stopped.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            self?.refreshAll()
+        let label = launchAgentLabel
+        Task { @MainActor in
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                try await HelperConnection.shared.stopDaemon(label: label)
+            } catch {
+                publishHelperError(L("error.stop_daemon_failed"), error)
+            }
+            // Use refreshAll so a pending binary update is detected now that the daemon is stopped.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.refreshAll()
+            }
         }
     }
 
@@ -679,7 +713,7 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    /// Validate a macOS system username before interpolating it into a shell command.
+    /// Validate a macOS system username before passing to the XPC helper.
     /// macOS allows mixed-case, digits, dots, hyphens and underscores — looser than the
     /// daemon identifier regex but still strict enough to rule out shell metacharacters.
     private func validateSystemUsername(_ value: String) throws {
@@ -692,112 +726,59 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    // One admin dialog: create group (optional) + create user (optional) + chown + install plist
-    private func activateLaunchDaemon(name: String, createUser: Bool) throws {
+    private func activateLaunchDaemon(name: String, createUser: Bool) async throws {
         try validateDaemonIdentifier(name)
         try validateDaemonIdentifier(daemonGroupName)
-        let tempURL = try writeDaemonPlistToTemp()
+
         let group = daemonGroupName
         let createGroup = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status != 0
 
-        var cmds: [String] = []
+        // Compute free UID/GID before the privileged call (dscl reads don't need root).
+        var uid = 0
+        let gid = createGroup ? try findFreeSystemGID() : groupGID(for: group)
+        if createUser { uid = try findFreeSystemUID() }
 
-        if createGroup {
-            let gid = try findFreeSystemGID()
-            cmds += [
-                "dscl . -create /Groups/\(group)",
-                "dscl . -create /Groups/\(group) PrimaryGroupID \(gid)",
-                "dscl . -create /Groups/\(group) Password '*'",
-                "dscl . -create /Groups/\(group) RealName 'Wired Server'"
-            ]
-        }
-
-        if createUser {
-            let uid = try findFreeSystemUID()
-            let gid = groupGID(for: group)
-            cmds += [
-                "dscl . -create /Users/\(name)",
-                "dscl . -create /Users/\(name) UserShell /usr/bin/false",
-                "dscl . -create /Users/\(name) RealName 'Wired Server'",
-                "dscl . -create /Users/\(name) UniqueID \(uid)",
-                "dscl . -create /Users/\(name) PrimaryGroupID \(gid)",
-                "dscl . -create /Users/\(name) NFSHomeDirectory /var/empty",
-                "dscl . -create /Users/\(name) IsHidden 1"
-            ]
-        }
-
-        cmds += [
-            "chown -R \(name):\(group) /Library/Wired3",
-            // bin/ uses staff group so the admin user can write the binary (admin is not in daemon group)
-            "chown \(name):staff /Library/Wired3/bin",
-            "chmod 775 /Library/Wired3/bin",
-            // Remove stale .updates dir: chown -R would have set it to _wired:daemon,
-            // preventing admin (not in daemon group) from writing inside it.
-            "rm -rf '/Library/Wired3/bin/.updates'",
-            "chmod 755 /Library/Wired3/bin/wired3 2>/dev/null || true",
-            // etc/ uses staff group so the admin user can write config.ini
-            "chown \(name):staff /Library/Wired3/etc",
-            "chmod 775 /Library/Wired3/etc",
-            "chown \(name):staff /Library/Wired3/etc/config.ini 2>/dev/null || true",
-            "chmod 664 /Library/Wired3/etc/config.ini 2>/dev/null || true",
-            "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
-            "chmod 644 '\(launchDaemonPlistPath)'",
-            "chown root:wheel '\(launchDaemonPlistPath)'"
+        let plistData = try makeDaemonPlistData()
+        let config: NSDictionary = [
+            "user": name, "group": group,
+            "uid": uid, "gid": gid,
+            "createUser": createUser, "createGroup": createGroup,
+            "dataPath": Self.systemDataDirectory,
+            "plistPath": launchDaemonPlistPath
         ]
 
-        try runPrivileged(cmds.joined(separator: " && "),
-                          error: WiredServerError.launchDaemonInstallFailed(""))
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.activateDaemon(config: config, plistData: plistData)
         userDefaults.set(createUser, forKey: daemonUserCreatedKey)
         userDefaults.set(createGroup, forKey: daemonGroupCreatedKey)
         daemonAccountsVerified = false
     }
 
-    // One admin dialog: bootout + remove plist + chown back to current user + optional user/group cleanup
-    private func deactivateLaunchDaemon(restoreUser: String) throws {
-        try validateSystemUsername(restoreUser)
-        var cmds = [
-            // || true: bootout returns non-zero when the service is already unloaded;
-            // without it the && chain would abort before chown runs.
-            "launchctl bootout system/\(launchAgentLabel) 2>/dev/null || true",
-            // Give the daemon process time to finish its SQLite WAL checkpoint before
-            // we chown the files, otherwise a slow-exiting daemon can re-write WAL
-            // files as the daemon user after the chown completes.
-            "sleep 1",
-            "rm -f '\(launchDaemonPlistPath)'",
-            "chown -R \(restoreUser):staff /Library/Wired3",
-            // Restore mode bits that activateLaunchDaemon widened for daemon operation
-            "chmod 755 /Library/Wired3/bin 2>/dev/null || true",
-            "chmod 755 /Library/Wired3/etc 2>/dev/null || true",
-            "chmod 644 /Library/Wired3/etc/config.ini 2>/dev/null || true"
+    private func deactivateLaunchDaemon(restoreUser: String) async throws {
+        let config: NSDictionary = [
+            "user": daemonUserName,
+            "group": daemonGroupName,
+            "label": launchAgentLabel,
+            "plistPath": launchDaemonPlistPath,
+            "restoreUser": restoreUser,
+            "dataPath": Self.systemDataDirectory,
+            "deleteUser": userDefaults.bool(forKey: daemonUserCreatedKey),
+            "deleteGroup": userDefaults.bool(forKey: daemonGroupCreatedKey)
         ]
-        if userDefaults.bool(forKey: daemonUserCreatedKey) {
-            // Kill all processes owned by the daemon user before deleting the account.
-            // dscl . -delete hangs if the user has an active session (e.g. distnoted agent).
-            cmds.append("pkill -u \(daemonUserName) 2>/dev/null || true")
-            cmds.append("sleep 0.3")
-            cmds.append("dscl . -delete /Users/\(daemonUserName) 2>/dev/null || true")
-        }
-        if userDefaults.bool(forKey: daemonGroupCreatedKey) {
-            cmds.append("dscl . -delete /Groups/\(daemonGroupName) 2>/dev/null || true")
-        }
-        try runPrivileged(cmds.joined(separator: " && "), error: WiredServerError.launchDaemonRemoveFailed(""))
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.deactivateDaemon(config: config)
         userDefaults.removeObject(forKey: daemonUserCreatedKey)
         userDefaults.removeObject(forKey: daemonGroupCreatedKey)
         daemonAccountsVerified = false
     }
 
-    // Used by toggleDaemonStartAtBoot — updates existing plist with one admin dialog
-    private func reinstallDaemonPlist() throws {
-        let tempURL = try writeDaemonPlistToTemp()
-        let cmds = [
-            "cp '\(tempURL.path)' '\(launchDaemonPlistPath)'",
-            "chmod 644 '\(launchDaemonPlistPath)'",
-            "chown root:wheel '\(launchDaemonPlistPath)'"
-        ].joined(separator: " && ")
-        try runPrivileged(cmds, error: WiredServerError.launchDaemonInstallFailed(""))
+    private func reinstallDaemonPlist() async throws {
+        let data = try makeDaemonPlistData()
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.installPlist(data: data, destinationPath: launchDaemonPlistPath)
     }
 
-    private func writeDaemonPlistToTemp() throws -> URL {
+    private func makeDaemonPlistData() throws -> Data {
         let plist: [String: Any] = [
             "Label": launchAgentLabel,
             "ProgramArguments": [
@@ -814,140 +795,13 @@ final class WiredServerViewModel: ObservableObject {
             "StandardOutPath": logPath,
             "StandardErrorPath": logPath
         ]
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("fr.read-write.wired3.server.plist")
-        guard (plist as NSDictionary).write(to: tempURL, atomically: true) else {
+        do {
+            return try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        } catch {
             throw WiredServerError.launchDaemonWriteFailed
         }
-        return tempURL
     }
 
-    // MARK: - Privileged execution
-
-    // Session cache: password stays valid for 30 s (like sudo timeout)
-    private var sessionPassword: String?
-    private var sessionPasswordExpiry: Date = .distantPast
-
-    private func resolveAdminCredential() -> String? {
-        // 1. In-memory session cache (avoids repeated Touch ID for multi-step operations)
-        if let cached = sessionPassword, Date() < sessionPasswordExpiry {
-            return cached
-        }
-        sessionPassword = nil
-
-        // 2. Keychain via Touch ID
-        if BiometricCredentialStore.isAvailable && BiometricCredentialStore.hasStoredCredential {
-            if let pw = BiometricCredentialStore.load(reason: L("touchid.reason")) {
-                cacheSessionPassword(pw)
-                return pw
-            }
-        }
-
-        // 3. Custom password dialog
-        guard let pw = promptAdminPassword() else { return nil }
-        cacheSessionPassword(pw)
-        return pw
-    }
-
-    private func cacheSessionPassword(_ password: String) {
-        sessionPassword = password
-        sessionPasswordExpiry = Date().addingTimeInterval(30)
-    }
-
-    private func runPrivileged(_ shellScript: String, error fallbackError: WiredServerError) throws {
-        guard let pw = resolveAdminCredential() else {
-            throw fallbackError
-        }
-
-        let (succeeded, isAuthFailure) = executePrivileged(shellScript: shellScript, password: pw)
-        if !succeeded {
-            sessionPassword = nil
-            if isAuthFailure {
-                // Only wipe the keychain entry on confirmed auth failure (wrong password),
-                // not on shell command errors — those leave a valid credential untouched.
-                if BiometricCredentialStore.hasStoredCredential {
-                    BiometricCredentialStore.delete()
-                    hasTouchIDCredential = false
-                }
-            }
-            let msg = L("touchid.wrong_password")
-            switch fallbackError {
-            case .launchDaemonInstallFailed:     throw WiredServerError.launchDaemonInstallFailed(msg)
-            case .launchDaemonRemoveFailed:      throw WiredServerError.launchDaemonRemoveFailed(msg)
-            case .systemDirectoryCreationFailed: throw WiredServerError.systemDirectoryCreationFailed(msg)
-            default:                             throw fallbackError
-            }
-        }
-
-        // Offer to save for Touch ID after first successful manual entry
-        if BiometricCredentialStore.isAvailable && !BiometricCredentialStore.hasStoredCredential {
-            offerTouchIDSave(password: pw)
-        }
-    }
-
-    /// Execute a shell command with an explicit admin password via AppleScript.
-    /// Returns (success, isAuthFailure). AppleScript error codes < 0 indicate auth/system
-    /// failures; positive codes are shell exit statuses (command ran but failed).
-    ///
-    /// TODO: replace with an XPC + SMAppService privileged helper. The helper would expose
-    /// the discrete root operations (chown, dscl, plist write, binary copy) over XPC, with
-    /// a one-time Authorization Services prompt at install. That removes the AppleScript
-    /// round-trip, the password from app memory, and every shell-string interpolation.
-    @discardableResult
-    private func executePrivileged(shellScript: String, password: String) -> (Bool, Bool) {
-        let escapedPw = password
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
-        let appleScript = "do shell script \"\(shellScript)\" with administrator privileges password \"\(escapedPw)\""
-        var errorInfo: NSDictionary?
-        NSAppleScript(source: appleScript)?.executeAndReturnError(&errorInfo)
-        guard let errorInfo else { return (true, false) }
-        let code = errorInfo[NSAppleScript.errorNumber] as? Int ?? 0
-        return (false, code < 0)
-    }
-
-    /// Show a custom password dialog. Returns the entered password, or nil if cancelled.
-    private func promptAdminPassword() -> String? {
-        let alert = NSAlert()
-        alert.messageText = L("touchid.dialog.title")
-        alert.informativeText = L("touchid.dialog.message")
-        alert.addButton(withTitle: L("common.ok"))
-        alert.addButton(withTitle: L("common.cancel"))
-
-        let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
-        field.placeholderString = L("touchid.dialog.placeholder")
-        alert.accessoryView = field
-        alert.window.initialFirstResponder = field
-
-        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
-        let pw = field.stringValue
-        return pw.isEmpty ? nil : pw
-    }
-
-    /// Ask the user once whether to save the password for Touch ID.
-    private func offerTouchIDSave(password: String) {
-        let alert = NSAlert()
-        alert.messageText = L("touchid.save.title")
-        alert.informativeText = L("touchid.save.message")
-        alert.addButton(withTitle: L("touchid.save.enable"))
-        alert.addButton(withTitle: L("common.cancel"))
-        if alert.runModal() == .alertFirstButtonReturn {
-            if let error = BiometricCredentialStore.save(password: password) {
-                let failAlert = NSAlert()
-                failAlert.alertStyle = .warning
-                failAlert.messageText = L("touchid.save.failed.title")
-                failAlert.informativeText = "\(L("touchid.save.failed.message"))\n\n\(error)"
-                failAlert.runModal()
-            } else {
-                hasTouchIDCredential = true
-            }
-        }
-    }
-
-    func forgetTouchIDCredential() {
-        BiometricCredentialStore.delete()
-        hasTouchIDCredential = false
-    }
 
     private func findFreeSystemUID() throws -> Int {
         let output = runCommand("/usr/bin/dscl", [".", "-list", "/Users", "UniqueID"])
@@ -1296,10 +1150,12 @@ final class WiredServerViewModel: ObservableObject {
         // In daemon mode the --root path is baked into the LaunchDaemon plist;
         // regenerate it whenever the files directory changes.
         if installMode == .launchDaemon && launchDaemonInstalled {
-            do {
-                try reinstallDaemonPlist()
-            } catch {
-                publishError("Failed to update LaunchDaemon plist: \(error.localizedDescription)")
+            Task { @MainActor in
+                do {
+                    try await reinstallDaemonPlist()
+                } catch {
+                    publishError("Failed to update LaunchDaemon plist: \(error.localizedDescription)")
+                }
             }
         }
         if launchAtLogin {
@@ -1512,17 +1368,35 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     private func activeServerPIDs() -> [Int32] {
+        // Try lsof first (works when wired3 runs in the same user context).
         let output = runCommand("/usr/sbin/lsof", ["-t", databasePath])
-        guard !output.isEmpty else { return [] }
-
-        let pids = output
-            .split(separator: "\n")
-            .compactMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
-
-        return pids.filter { pid in
-            let command = runCommand("/bin/ps", ["-p", String(pid), "-o", "command="]).lowercased()
-            return command.contains("/wired3") || command.hasSuffix("wired3")
+        if !output.isEmpty {
+            let pids = output
+                .split(separator: "\n")
+                .compactMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            let filtered = pids.filter { pid in
+                let command = runCommand("/bin/ps", ["-p", String(pid), "-o", "command="]).lowercased()
+                return command.contains("/wired3") || command.hasSuffix("wired3")
+            }
+            if !filtered.isEmpty { return filtered }
         }
+
+        // Fallback: query launchd for the system-domain daemon PID.
+        // Works without root; launchctl print outputs "pid = <n>" when the process is running.
+        if let pid = launchctlSystemDaemonPID() { return [pid] }
+        return []
+    }
+
+    /// Parses the PID from `launchctl print system/<label>` output.
+    private func launchctlSystemDaemonPID() -> Int32? {
+        let output = runCommand("/bin/launchctl", ["print", "system/\(launchAgentLabel)"])
+        for line in output.split(separator: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("pid = "), let pid = Int32(trimmed.dropFirst("pid = ".count).trimmingCharacters(in: .whitespaces)) {
+                return pid
+            }
+        }
+        return nil
     }
 
     private var launchAgentPlistURL: URL {
@@ -1911,64 +1785,22 @@ final class WiredServerViewModel: ObservableObject {
         return installedSHA256 != expectedSHA256
     }
 
-    /// Install the bundled binary into the LaunchDaemon bin dir using a privileged shell copy,
-    /// going through a SHA-256-verified staging step so a corrupted source is rejected before
-    /// it overwrites the installed binary, and the previous binary is kept as a backup for rollback.
+    /// Install the bundled binary into the LaunchDaemon bin dir via the XPC helper.
     /// Only safe to call when the daemon is confirmed stopped.
     func applyPrivilegedUpdate() {
-        guard let bundledBinary = bundledServerBinaryPath() else { return }
-
-        do {
-            let bundledSHA256 = try normalizedSHA256ForFile(at: bundledBinary)
-            let metadataSHA256 = bundledBinaryExpectedSHA256()
-            let expectedSHA256 = (metadataSHA256 == bundledSHA256 ? metadataSHA256 : nil) ?? bundledSHA256
-
-            // Stage in the user's temp dir first — readable by us, no privilege needed for the hash check.
-            let stagingURL = URL(fileURLWithPath: NSTemporaryDirectory())
-                .appendingPathComponent("wired3.staged.\(UUID().uuidString.lowercased())", isDirectory: false)
-            if fileManager.fileExists(atPath: stagingURL.path) {
-                try? fileManager.removeItem(at: stagingURL)
+        guard let src = bundledServerBinaryPath() else { return }
+        let dst = installedBinaryPath
+        Task { @MainActor in
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                try await HelperConnection.shared.copyBinary(sourcePath: src, destinationPath: dst)
+                appendRuntimeLog("binary-update: privileged update applied")
+                showPrivilegedUpdateAlert = false
+                refreshInstallStatus()
+                refreshInstalledVersion()
+            } catch {
+                publishHelperError(L("error.install_failed"), error)
             }
-            try fileManager.copyItem(atPath: bundledBinary, toPath: stagingURL.path)
-            defer { try? fileManager.removeItem(at: stagingURL) }
-
-            let stagedHash = try normalizedSHA256ForFile(at: stagingURL.path)
-            guard stagedHash == expectedSHA256 else {
-                appendRuntimeLog("binary-update: staging hash mismatch, aborting privileged update")
-                throw WiredServerError.binaryIntegrityCheckFailed("staging hash mismatch")
-            }
-
-            let stagedQ = stagingURL.path.replacingOccurrences(of: "'", with: "'\\''")
-            let dstQ = installedBinaryPath.replacingOccurrences(of: "'", with: "'\\''")
-            let backupQ = "\(installedBinaryPath).backup".replacingOccurrences(of: "'", with: "'\\''")
-
-            // Single privileged round-trip: keep previous binary as .backup, install staged copy.
-            // If the post-install hash check fails below, we restore from .backup in a second
-            // privileged call.
-            let script = """
-            cp -f '\(dstQ)' '\(backupQ)' 2>/dev/null || true; \
-            cp -f '\(stagedQ)' '\(dstQ)' && chmod 755 '\(dstQ)'
-            """
-            try runPrivileged(script, error: .launchDaemonInstallFailed(""))
-
-            // Verify the installed binary matches what we staged. If it doesn't, roll back.
-            if let installedHash = try? normalizedSHA256ForFile(at: installedBinaryPath),
-               installedHash != expectedSHA256 {
-                appendRuntimeLog("binary-update: post-install hash mismatch, rolling back")
-                let rollback = "cp -f '\(backupQ)' '\(dstQ)' && chmod 755 '\(dstQ)'; rm -f '\(backupQ)'"
-                try? runPrivileged(rollback, error: .launchDaemonInstallFailed(""))
-                throw WiredServerError.binaryIntegrityCheckFailed("installed hash mismatch")
-            }
-
-            // Success — drop the backup.
-            try? runPrivileged("rm -f '\(backupQ)'", error: .launchDaemonInstallFailed(""))
-
-            appendRuntimeLog("binary-update: privileged update applied (\(expectedSHA256.prefix(8)))")
-            showPrivilegedUpdateAlert = false
-            refreshInstallStatus()
-            refreshInstalledVersion()
-        } catch {
-            publishError("\(L("error.install_failed")): \(error.localizedDescription)")
         }
     }
 

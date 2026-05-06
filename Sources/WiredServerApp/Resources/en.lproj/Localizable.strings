@@ -1,5 +1,8 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Error";
+"alert.helper_setup.title" = "One-Time Setup Required";
+"alert.helper_setup.message" = "Wired Server needs a one-time approval to manage the server process. Click \"Open Login Items\", then enable \"Wired Server\" under \"Allow in the Background\".";
+"alert.helper_setup.open" = "Open Login Items";
 "alert.binary_updated.title" = "Server Updated";
 "alert.privileged_update.title" = "Server Update Available";
 "alert.privileged_update.message" = "A new version of the server binary is included in this app. Install it now? Your administrator password will be required.";
@@ -278,3 +281,6 @@
 "error.start_daemon_failed" = "Failed to start daemon";
 "error.stop_daemon_failed" = "Failed to stop daemon";
 "error.daemon_update_failed" = "Failed to update daemon";
+"error.helper.connection_failed" = "Failed to connect to privileged helper";
+"error.helper.operation_failed" = "Operation failed";
+"error.helper.install_failed_prefix" = "Failed to install helper";

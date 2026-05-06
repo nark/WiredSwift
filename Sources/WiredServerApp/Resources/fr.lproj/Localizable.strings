@@ -1,5 +1,8 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Erreur";
+"alert.helper_setup.title" = "Configuration unique requise";
+"alert.helper_setup.message" = "Wired Server a besoin d'une approbation unique pour gérer le processus serveur. Cliquez sur «Ouvrir les éléments de connexion», puis activez «Wired Server» sous «Autoriser en arrière-plan».";
+"alert.helper_setup.open" = "Ouvrir les éléments de connexion";
 "alert.binary_updated.title" = "Serveur mis à jour";
 "alert.privileged_update.title" = "Mise à jour disponible";
 "alert.privileged_update.message" = "Une nouvelle version du binaire serveur est incluse dans cette application. L'installer maintenant ? Votre mot de passe administrateur sera requis.";
@@ -278,3 +281,6 @@
 "error.start_daemon_failed" = "Impossible de démarrer le démon";
 "error.stop_daemon_failed" = "Impossible d'arrêter le démon";
 "error.daemon_update_failed" = "Impossible de mettre à jour le démon";
+"error.helper.connection_failed" = "Connexion au service système échouée";
+"error.helper.operation_failed" = "Opération échouée";
+"error.helper.install_failed_prefix" = "Échec de l'installation du service";
