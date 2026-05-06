@@ -438,7 +438,19 @@ final class WiredServerViewModel: ObservableObject {
     func refreshDaemonStatus() {
         // pgrep works without root and is faster/more reliable than launchctl print for
         // detecting whether the daemon process is actually running.
+        let wasRunning = isDaemonRunning
         isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+        // Infer FDA status from running state: if the daemon is up and serving clients,
+        // the TCC grant is clearly in place. Reset to false when it stops so the next
+        // start re-evaluates. A direct XPC-based TCC check is unreliable because TCC
+        // grants are per-user and the helper runs as root with a separate TCC context.
+        if filesDirectoryIsOnExternalVolume {
+            if isDaemonRunning {
+                wired3HasFullDiskAccess = true
+            } else if wasRunning {
+                wired3HasFullDiskAccess = false
+            }
+        }
         if !daemonAccountsVerified {
             isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
             isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
@@ -498,12 +510,22 @@ final class WiredServerViewModel: ObservableObject {
         try? sh.write(toFile: scriptPath, atomically: true, encoding: .utf8)
     }
 
-    // Privileged access check — runs as root via XPC helper to test _wired user access.
+    // FDA status inference: if the daemon is running, TCC is clearly OK — the process
+    // is already accessing the volume. A direct XPC check is unreliable because the helper
+    // runs as root and TCC grants are stored per-user; root has a separate TCC database
+    // from _wired, so wired3 spawned as root will always fail the TCC check even when
+    // the grant exists for _wired. Re-check just re-reads the running state.
     func refreshFDAStatusPrivileged() {
         guard filesDirectoryIsOnExternalVolume else {
             wired3HasFullDiskAccess = false
             return
         }
+        if isDaemonRunning {
+            wired3HasFullDiskAccess = true
+            return
+        }
+        // Daemon not running: best-effort POSIX check via the helper.
+        // This catches permission issues but cannot verify TCC grants.
         let filesDir = currentServerRootPath()
         guard let tmpDir = try? makePrivateTempDir() else {
             wired3HasFullDiskAccess = false
