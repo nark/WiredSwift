@@ -482,13 +482,14 @@ final class WiredServerViewModel: ObservableObject {
         #!/bin/sh
         OUT='\(outputFile)'
         FILES='\(filesDir)'
-        DUSER='\(daemonUser)'
         WIRED3='\(wired3Binary)'
 
-        # Run the actual wired3 binary (which holds the FDA/Removable-Volumes TCC grant)
-        # to probe the files directory. Using /bin/ls would fail on macOS 26+ because the
-        # TCC grant is bound to the wired3 binary path, not to the _wired user.
-        if su -m "$DUSER" -c "\\"$WIRED3\\" --check-access \\"$FILES\\"" >/dev/null 2>&1; then
+        # Run the wired3 binary directly as root (the helper already runs as root).
+        # TCC grants (Removable Volumes / Full Disk Access) are bound to the binary's
+        # code signature, not the UID — so root and _wired see the same TCC result.
+        # The previous su -m approach caused false negatives because su exits non-zero
+        # in non-TTY daemon contexts even when running as root.
+        if "$WIRED3" --check-access "$FILES" >/dev/null 2>&1; then
             echo 1 > "$OUT"
         else
             echo 0 > "$OUT"
