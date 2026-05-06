@@ -23,32 +23,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   when a message scrolls off the buffer its reactions are dropped — consistent
   with the "chat is a stream" model. No on-disk persistence in 3.2.
 
+## [3.0-beta.24+50] — 2026-05-05
+
+### Features
+- Chat reactions and server-stamped message IDs (Wired 3.2) ([`786893c`](https://github.com/nark/WiredSwift/commit/786893c8261962331adf20f49ea5e2f856c611d2))
+
+- Backward/forward compatibility between minor versions ([`411273d`](https://github.com/nark/WiredSwift/commit/411273d3f13d96414cbd92cadde9a623aa15b4a6))
+
+
+### Other
+- Revert "Merge pull request #91 from nark/feature/issue-90-chat-reactions" ([`2b0aeba`](https://github.com/nark/WiredSwift/commit/2b0aeba9a3ef91b7ffeb0da02822c478860ebbe9))
+
+
+### Testing
+- Bump expected handshake remoteVersion to 3.2 ([`05727ef`](https://github.com/nark/WiredSwift/commit/05727efa260409845ddd8fb4134cd7de8e3f2322))
+
 ## [3.0-beta.23+49] — 2026-05-05
 
 ### Bug Fixes
 - Stop main-thread hang in appendLog during server startup ([`09a1acc`](https://github.com/nark/WiredSwift/commit/09a1accc2e680b8a3b96a1710bb66273491dd377))
 
 - Hide macOS Icon\r sidecar from directory listings ([`42ba97c`](https://github.com/nark/WiredSwift/commit/42ba97c8ff0b5cce101136df27fce9384b3a1c3b))
-
-- Clear newAdminPassword after use in all paths ([`bc04f0b`](https://github.com/nark/WiredSwift/commit/bc04f0b666e794443f120818186559f0d6c973ec))
-
-- Fix port TextField resetting to '4' while typing ([`2fb07cb`](https://github.com/nark/WiredSwift/commit/2fb07cb3074982baadc6c58bdaffdbaf401fa7dd))
-
-- Remove persistent consent — port check asks every time, no auto-check ([`e7f4f16`](https://github.com/nark/WiredSwift/commit/e7f4f16bcc3fbd0bb16ba76ade1d7696c5e48c8a))
-
-- Replace check-host.net with EU-hosted portchecker.co, add opt-in consent ([`6f54c88`](https://github.com/nark/WiredSwift/commit/6f54c889d0b902397e6430d7cb2eee05ed431ecb))
-
-- Strip LaunchDaemon/TouchID code from Tabs.swift not in upstream ([`b6fa1ae`](https://github.com/nark/WiredSwift/commit/b6fa1aea2bceb2149fa4abafc2a7d734ca7a7569))
-
-- Make admin password field visible with roundedBorder style ([`b44297d`](https://github.com/nark/WiredSwift/commit/b44297d83c015bf1c70422ec5a184764f62bbf65))
-
-- Use local @State buffer for admin password field ([`940902c`](https://github.com/nark/WiredSwift/commit/940902c1f0d67da3ed7141f963952d14e5052de0))
-
-- Use Locale.preferredLanguages only for language resolution ([`9726178`](https://github.com/nark/WiredSwift/commit/97261781c854ce43372ebaf9ffd8e666f3afc025))
-
-- Use Bundle.module to find localized strings ([`61e190f`](https://github.com/nark/WiredSwift/commit/61e190ffc9b4e1f4a97f234dad3c240599b510b3))
-
-- Use 3 probe nodes for external port check reliability ([`808ba62`](https://github.com/nark/WiredSwift/commit/808ba62064df5fbf4b289a0f2b11e45e0afb33fa))
 
 - Declare wired.account.user.list_offline_users field ([`5f2e4e4`](https://github.com/nark/WiredSwift/commit/5f2e4e42782a3196c972cfc66303b38602b33651))
 
@@ -92,6 +87,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Report actual CPU architecture instead of hardcoded x86_64 ([`2cd615e`](https://github.com/nark/WiredSwift/commit/2cd615e68a7b0cd5ff4e6f8accf2a766aa426e90))
 
+- Handle .idle case in PortStatus color switch ([`537fa73`](https://github.com/nark/WiredSwift/commit/537fa738703a558299e66b3e45f17f7a8513fa00))
+
+- Restore wired.xml discovery for macOS and Linux SPM tests ([`6afaa5b`](https://github.com/nark/WiredSwift/commit/6afaa5b1fea0985c061241f2a4adcad46c0c675a))
+
+- Avoid Bundle.module crash when SPM resource bundle is missing ([`15bde0f`](https://github.com/nark/WiredSwift/commit/15bde0f30977b1501cfaee349bcf8a1f5c980479))
+
+- Align consent dialog keys with main, add idle port status ([`74edb99`](https://github.com/nark/WiredSwift/commit/74edb994582655f43616646b0dfa6644037d569a))
+
+- Clear newAdminPassword after use in all paths ([`bc04f0b`](https://github.com/nark/WiredSwift/commit/bc04f0b666e794443f120818186559f0d6c973ec))
+
+- Fix port TextField resetting to '4' while typing ([`2fb07cb`](https://github.com/nark/WiredSwift/commit/2fb07cb3074982baadc6c58bdaffdbaf401fa7dd))
+
+- Remove persistent consent — port check asks every time, no auto-check ([`e7f4f16`](https://github.com/nark/WiredSwift/commit/e7f4f16bcc3fbd0bb16ba76ade1d7696c5e48c8a))
+
+- Replace check-host.net with EU-hosted portchecker.co, add opt-in consent ([`6f54c88`](https://github.com/nark/WiredSwift/commit/6f54c889d0b902397e6430d7cb2eee05ed431ecb))
+
+- Strip LaunchDaemon/TouchID code from Tabs.swift not in upstream ([`b6fa1ae`](https://github.com/nark/WiredSwift/commit/b6fa1aea2bceb2149fa4abafc2a7d734ca7a7569))
+
+- Make admin password field visible with roundedBorder style ([`b44297d`](https://github.com/nark/WiredSwift/commit/b44297d83c015bf1c70422ec5a184764f62bbf65))
+
+- Use local @State buffer for admin password field ([`940902c`](https://github.com/nark/WiredSwift/commit/940902c1f0d67da3ed7141f963952d14e5052de0))
+
+- Use Locale.preferredLanguages only for language resolution ([`9726178`](https://github.com/nark/WiredSwift/commit/97261781c854ce43372ebaf9ffd8e666f3afc025))
+
+- Use Bundle.module to find localized strings ([`61e190f`](https://github.com/nark/WiredSwift/commit/61e190ffc9b4e1f4a97f234dad3c240599b510b3))
+
+- Use 3 probe nodes for external port check reliability ([`808ba62`](https://github.com/nark/WiredSwift/commit/808ba62064df5fbf4b289a0f2b11e45e0afb33fa))
+
 - Address review feedback on migration robustness ([`3af6210`](https://github.com/nark/WiredSwift/commit/3af62104a42fe13c7dbf5630952d5564b8c5a9cd))
 
 - Don't assign password salt during legacy login ([`b0bc197`](https://github.com/nark/WiredSwift/commit/b0bc197ece171383912f56ddcbe397ec1c7a1682))
@@ -106,12 +129,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 
 ### Features
-- Warn when files directory is under /Users/ in daemon mode ([`1195dc6`](https://github.com/nark/WiredSwift/commit/1195dc64b0cc4214e017e8b83779cdee934b0781))
-
-- Add German localization support ([`6323528`](https://github.com/nark/WiredSwift/commit/632352832008550eaf323a79344d0055f341ee80))
-
-- External port reachability check + Network tab UI ([`a195460`](https://github.com/nark/WiredSwift/commit/a195460a9e86211d718b404f69d5a54d3645bf70))
-
 - Broadcast offline_list updates on disconnect and on privilege grant ([`84b06f0`](https://github.com/nark/WiredSwift/commit/84b06f081f6f5221075e96e1b0bad1bee18f0a9a))
 
 - End-to-end encrypted offline messages via X25519+ChaCha20-Poly1305 ([`8c0096b`](https://github.com/nark/WiredSwift/commit/8c0096b62bd711269913a68046c092016f9fc78e))
@@ -123,6 +140,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fix click handling, 30-day filter, full name, privilege backfill ([`5093249`](https://github.com/nark/WiredSwift/commit/50932495c9fd1147bd637f3267ffa851b732ea4c))
 
 - Implement server-side offline messaging and offline user list ([`0d8713a`](https://github.com/nark/WiredSwift/commit/0d8713afb153b5bf6380b422ebab24ee9067a2ca))
+
+- Warn when files directory is under /Users/ in daemon mode ([`1195dc6`](https://github.com/nark/WiredSwift/commit/1195dc64b0cc4214e017e8b83779cdee934b0781))
+
+- Add German localization support ([`6323528`](https://github.com/nark/WiredSwift/commit/632352832008550eaf323a79344d0055f341ee80))
+
+- External port reachability check + Network tab UI ([`a195460`](https://github.com/nark/WiredSwift/commit/a195460a9e86211d718b404f69d5a54d3645bf70))
 
 - Replace brittle SHA1-detection heuristic with is_legacy DB column ([`6106eeb`](https://github.com/nark/WiredSwift/commit/6106eebae49d26916e81ff5caf556b2cae71d0d1))
 
