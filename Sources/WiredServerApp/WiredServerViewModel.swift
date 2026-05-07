@@ -383,8 +383,16 @@ final class WiredServerViewModel: ObservableObject {
             systemMigrationStatus = "Done. Backup preserved at: \(source)"
             refreshAll()
         } catch {
-            systemMigrationStatus = "Migration failed: \(error.localizedDescription)"
-            publishError("Data migration failed: \(error.localizedDescription)")
+            if let he = error as? HelperError, case .mustBeEnabled = he {
+                // Helper needs one-time user approval — this is expected on first run.
+                // Show the helper setup alert (which explains what to do) and let the
+                // user retry after approval; do not report this as a migration failure.
+                systemMigrationStatus = L("status.migration.awaiting_helper")
+                showHelperSetupAlert = true
+            } else {
+                systemMigrationStatus = "Migration failed: \(error.localizedDescription)"
+                publishError("Data migration failed: \(error.localizedDescription)")
+            }
         }
 
         isSystemMigrating = false

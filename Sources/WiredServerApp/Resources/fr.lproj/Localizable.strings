@@ -284,3 +284,5 @@
 "error.helper.connection_failed" = "Connexion au service système échouée";
 "error.helper.operation_failed" = "Opération échouée";
 "error.helper.install_failed_prefix" = "Échec de l'installation du service";
+
+"status.migration.awaiting_helper" = "Approbation du service requise — approuver dans les Réglages Système, puis réessayer.";

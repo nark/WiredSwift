@@ -276,6 +276,8 @@
 "error.helper.operation_failed" = "Vorgang fehlgeschlagen";
 "error.helper.install_failed_prefix" = "Helfer konnte nicht installiert werden";
 
+"status.migration.awaiting_helper" = "Helper-Genehmigung erforderlich — in den Systemeinstellungen genehmigen, dann erneut versuchen.";
+
 "database.migration.section" = "Migration von Wired 2.5";
 "database.migration.source" = "Wired 2.5-Datenbank";
 "database.migration.source.none" = "Keine Datei ausgewählt";

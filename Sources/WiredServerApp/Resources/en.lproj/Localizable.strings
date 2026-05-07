@@ -284,3 +284,5 @@
 "error.helper.connection_failed" = "Failed to connect to privileged helper";
 "error.helper.operation_failed" = "Operation failed";
 "error.helper.install_failed_prefix" = "Failed to install helper";
+
+"status.migration.awaiting_helper" = "Helper approval required — approve in System Settings, then try again.";
