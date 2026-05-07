@@ -86,7 +86,7 @@
 
 "files.section" = "Dateien";
 "files.directory" = "Dateiverzeichnis";
-"files.daemon_userpath_warning" = "Dieser Pfad liegt unter /Users/ und könnte für den LaunchDaemon nicht zugänglich sein. Der Daemon startet beim Systemstart vor dem Login — Home-Verzeichnisse sind zu diesem Zeitpunkt möglicherweise noch nicht eingehängt oder entschlüsselt. Verwende stattdessen einen Pfad unter /Library/ oder /var/.";
+"files.daemon_userpath_warning" = "Dieser Pfad liegt unter /Users/ und könnte für den LaunchDaemon nicht zugänglich sein. Der Daemon startet beim Systemstart vor dem Login — Home-Verzeichnisse sind zu diesem Zeitpunkt möglicherweise noch nicht eingehängt oder entschlüsselt. Verwende stattdessen einen Pfad unter /Library/, /var/ oder auf einem externen Laufwerk.";
 "files.index.section" = "Index";
 "files.index.every" = "Server-Dateien neu indizieren alle";
 "files.index.seconds" = "Sek.";
