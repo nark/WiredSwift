@@ -1,5 +1,8 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Fehler";
+"alert.helper_setup.title" = "Einmalige Einrichtung erforderlich";
+"alert.helper_setup.message" = "Wired Server benötigt eine einmalige Genehmigung zur Serververwaltung. Klicke auf \"Anmeldeelemente öffnen\" und aktiviere \"Wired Server\" unter \"Im Hintergrund erlauben\".";
+"alert.helper_setup.open" = "Anmeldeelemente öffnen";
 "alert.binary_updated.title" = "Server aktualisiert";
 "alert.binary_updated.message" = "Eine neue Version der Server-Binary wurde installiert. Der laufende Server verwendet noch die alte Version. Möchten Sie ihn jetzt neu starten?";
 "alert.binary_updated.restart" = "Jetzt neu starten";
@@ -15,6 +18,7 @@
 "common.cancel" = "Abbrechen";
 "common.choose" = "Auswählen";
 "common.select" = "Auswählen";
+"common.cancel" = "Abbrechen";
 "common.save" = "Speichern";
 
 "pane.general" = "Allgemein";
@@ -38,15 +42,40 @@
 "general.execution.section" = "Ausführung";
 "general.execution.running" = "Server läuft";
 "general.execution.stopped" = "Server läuft nicht";
+"general.execution.running_daemon" = "Läuft (Daemon)";
+"general.execution.stopped_daemon" = "Gestoppt (Daemon)";
 "general.execution.start" = "Starten";
 "general.execution.stop" = "Stoppen";
-"general.execution.start_on_login" = "Automatisch beim Systemstart starten";
+"general.execution.start_on_login" = "Automatisch beim Login starten";
+"general.execution.start_at_boot" = "Beim Systemstart starten";
+
+"general.system_data_dir.section" = "Systemweites Datenverzeichnis";
+"general.system_data_dir.migrate_description" = "Serverdaten nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren. Die ursprünglichen Daten werden als Backup aufbewahrt.";
+"general.system_data_dir.migrate_button" = "Nach /Library/Wired3/ migrieren";
+
+"general.install_mode.section" = "Installationsmodus";
+"general.install_mode.migrate_warning" = "Zuerst nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren.";
+"general.install_mode.mode" = "Modus";
+"general.install_mode.launch_agent" = "LaunchAgent (aktueller Benutzer)";
+"general.install_mode.launch_daemon" = "LaunchDaemon (Systemdienst)";
+"general.install_mode.daemon_user" = "Daemon-Benutzer";
+"general.install_mode.group" = "Gruppe";
+
+"general.versions.section" = "Versionen";
+
+"fda.check.passed" = "Daemon-Zugriffsprüfung erfolgreich.";
+"fda.external_volume" = "Dateiverzeichnis liegt auf einem externen Volume.";
+"fda.check.passed.detail" = "Der Daemon-Benutzer hat scheinbar Lesezugriff. Nach einem Binary-Update kann eine Neusignierung diesen Zugriff entziehen — prüfe das Server-Protokoll auf \"0 files, 0 dirs\".";
+"fda.check.failed.detail" = "Sicherstellen, dass das Dateiverzeichnis für den Daemon-Benutzer lesbar ist, dann auf \"Erneut prüfen\" klicken.";
+"fda.open_settings" = "Festplattenvollzugriff öffnen…";
+"fda.recheck" = "Erneut prüfen";
+"fda.restart_daemon" = "Daemon neu starten";
 
 "network.section" = "Netzwerk";
 "network.port" = "Listening-Port";
 "network.check" = "Prüfen";
 "network.check.consent.title" = "Externer Portcheck";
-"network.check.consent.message" = "Dabei werden api.ipify.org und check-host.net kontaktiert, um zu prüfen ob dein Server-Port aus dem Internet erreichbar ist. Deine externe IP-Adresse wird an diese Dienste übermittelt.";
+"network.check.consent.message" = "Dabei werden api.ipify.org und portchecker.io kontaktiert, um zu prüfen ob dein Server-Port aus dem Internet erreichbar ist. Deine externe IP-Adresse wird an diese Dienste übermittelt.";
 "network.restart_required" = "Der Server muss nach einer Port-Änderung neu gestartet werden.";
 "network.port_status.idle" = "Nicht geprüft";
 "network.port_status.unknown" = "Externer Portcheck läuft…";
@@ -57,7 +86,7 @@
 
 "files.section" = "Dateien";
 "files.directory" = "Dateiverzeichnis";
-"files.daemon_userpath_warning" = "Dieser Pfad liegt unter /Users/ und könnte für den LaunchDaemon nicht zugänglich sein. Der Daemon startet beim Systemstart vor dem Login — Home-Verzeichnisse sind zu diesem Zeitpunkt möglicherweise noch nicht eingehängt oder entschlüsselt. Verwende stattdessen einen Pfad unter /Library/ oder /var/.";
+"files.daemon_userpath_warning" = "Dieser Pfad liegt unter /Users/ und könnte für den LaunchDaemon nicht zugänglich sein. Der Daemon startet beim Systemstart vor dem Login — Home-Verzeichnisse sind zu diesem Zeitpunkt möglicherweise noch nicht eingehängt oder entschlüsselt. Verwende stattdessen einen Pfad unter /Library/, /var/ oder auf einem externen Laufwerk.";
 "files.index.section" = "Index";
 "files.index.every" = "Server-Dateien neu indizieren alle";
 "files.index.seconds" = "Sek.";
@@ -146,6 +175,8 @@
 "touchid.save.title" = "Touch ID aktivieren?";
 "touchid.save.message" = "Speichern Sie Ihr Administrator-Passwort mit Touch ID, damit zukünftige Operationen keine Passwort-Eingabe erfordern.";
 "touchid.save.enable" = "Touch ID aktivieren";
+"touchid.save.failed.title" = "Touch ID konnte nicht aktiviert werden";
+"touchid.save.failed.message" = "Das Passwort konnte nicht im Schlüsselbund gespeichert werden. Diese Funktion erfordert einen mit Developer ID signierten Build.";
 "touchid.wrong_password" = "Authentifizierung fehlgeschlagen — falsches Passwort.";
 
 "advanced.admin.section" = "Admin-Konto";
@@ -220,6 +251,34 @@
 "error.migration_server_running" = "Stoppen Sie den Server, bevor Sie die Migration starten.";
 "error.migration_failed" = "Migration fehlgeschlagen";
 "error.migration_timed_out" = "Die Migration wurde nach 5 Minuten abgebrochen.";
+
+"pane.advanced" = "Erweitert";
+
+"advanced.daemon.section" = "LaunchDaemon-Modus";
+"advanced.daemon.enable" = "LaunchDaemon-Modus aktivieren";
+"advanced.daemon.enable.help" = "Startet den Server als Systemdienst beim Boot, unabhängig von Benutzeranmeldungen. Erfordert Migration nach /Library/Wired3/. Dies ist eine erweiterte Option — der Standard-LaunchAgent-Modus wird für die meisten Nutzer empfohlen.";
+"advanced.daemon.requires_migration" = "Bitte zuerst nach /Library/Wired3/ migrieren, um den LaunchDaemon-Modus zu aktivieren.";
+
+"general.execution.see_advanced" = "Steuerung im Tab \"Erweitert\"";
+
+"status.daemon.preparing" = "Vorbereitung…";
+"status.daemon.stopping" = "Server wird gestoppt…";
+"status.daemon.activating" = "LaunchDaemon wird aktiviert…";
+"status.daemon.deactivating" = "LaunchDaemon wird deaktiviert…";
+"status.daemon.done" = "Fertig.";
+
+"error.daemon_conflict" = "Ein weiterer wired3-Prozess läuft noch. Bitte diesen stoppen, bevor der Daemon aktiviert wird.";
+"error.mode_switch_failed" = "Moduswechsel fehlgeschlagen";
+"error.start_daemon_failed" = "Daemon konnte nicht gestartet werden";
+"error.stop_daemon_failed" = "Daemon konnte nicht gestoppt werden";
+"error.daemon_update_failed" = "Daemon konnte nicht aktualisiert werden";
+"error.helper.connection_failed" = "Verbindung zum privilegierten Helfer fehlgeschlagen";
+"error.helper.operation_failed" = "Vorgang fehlgeschlagen";
+"error.helper.install_failed_prefix" = "Helfer konnte nicht installiert werden";
+
+"status.migration.awaiting_helper" = "Helper-Genehmigung erforderlich — in den Systemeinstellungen genehmigen, dann erneut versuchen.";
+
+"advanced.daemon.userpath_warning" = "Das Dateiverzeichnis liegt unter /Users/ und könnte für den LaunchDaemon nicht zugänglich sein. Der Daemon startet beim Systemstart vor dem Login — Home-Verzeichnisse sind zu diesem Zeitpunkt möglicherweise noch nicht eingehängt oder entschlüsselt. Verwende stattdessen einen Pfad unter /Library/, /var/ oder auf einem externen Laufwerk. Das Dateiverzeichnis kann unter „Dateien" geändert werden.";
 
 "database.migration.section" = "Migration von Wired 2.5";
 "database.migration.source" = "Wired 2.5-Datenbank";

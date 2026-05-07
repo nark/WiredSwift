@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>fr.read-write.WiredServer3.Helper</string>
+    <key>MachServices</key>
+    <dict>
+        <key>fr.read-write.WiredServer3.Helper</key>
+        <true/>
+    </dict>
+    <key>Program</key>
+    <string>/Applications/Wired Server.app/Contents/Library/LaunchServices/fr.read-write.WiredServer3.Helper</string>
+    <key>AssociatedBundleIdentifiers</key>
+    <array>
+        <string>fr.read-write.WiredServer3</string>
+    </array>
+</dict>
+</plist>

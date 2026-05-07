@@ -1,5 +1,8 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Error";
+"alert.helper_setup.title" = "One-Time Setup Required";
+"alert.helper_setup.message" = "Wired Server needs a one-time approval to manage the server process. Click \"Open Login Items\", then enable \"Wired Server\" under \"Allow in the Background\".";
+"alert.helper_setup.open" = "Open Login Items";
 "alert.binary_updated.title" = "Server Updated";
 "alert.privileged_update.title" = "Server Update Available";
 "alert.privileged_update.message" = "A new version of the server binary is included in this app. Install it now? Your administrator password will be required.";
@@ -15,6 +18,7 @@
 "common.cancel" = "Cancel";
 "common.choose" = "Choose";
 "common.select" = "Select";
+"common.cancel" = "Cancel";
 "common.save" = "Save";
 
 "pane.general" = "General";
@@ -38,15 +42,40 @@
 "general.execution.section" = "Execution";
 "general.execution.running" = "Server is running";
 "general.execution.stopped" = "Server is not running";
+"general.execution.running_daemon" = "Running (daemon)";
+"general.execution.stopped_daemon" = "Stopped (daemon)";
 "general.execution.start" = "Start";
 "general.execution.stop" = "Stop";
-"general.execution.start_on_login" = "Automatically start on system startup";
+"general.execution.start_on_login" = "Automatically start on login";
+"general.execution.start_at_boot" = "Start at Boot";
+
+"general.system_data_dir.section" = "System Data Directory";
+"general.system_data_dir.migrate_description" = "Migrate server data to /Library/Wired3/ to enable LaunchDaemon support. The original data will be preserved as a backup.";
+"general.system_data_dir.migrate_button" = "Migrate to /Library/Wired3/";
+
+"general.install_mode.section" = "Install Mode";
+"general.install_mode.migrate_warning" = "Migrate to /Library/Wired3/ first to enable LaunchDaemon mode.";
+"general.install_mode.mode" = "Mode";
+"general.install_mode.launch_agent" = "LaunchAgent (current user)";
+"general.install_mode.launch_daemon" = "LaunchDaemon (system service)";
+"general.install_mode.daemon_user" = "Daemon User";
+"general.install_mode.group" = "Group";
+
+"general.versions.section" = "Versions";
+
+"fda.check.passed" = "Daemon access check passed.";
+"fda.external_volume" = "Files directory is on an external volume.";
+"fda.check.passed.detail" = "The daemon user appears to have read access. After a binary update, re-signing may revoke this — verify by checking the server log for \"0 files, 0 dirs\".";
+"fda.check.failed.detail" = "Ensure the files directory is readable by the daemon user, then click Re-check.";
+"fda.open_settings" = "Open Full Disk Access…";
+"fda.recheck" = "Re-check";
+"fda.restart_daemon" = "Restart Daemon";
 
 "network.section" = "Network";
 "network.port" = "Listening Port";
 "network.check" = "Check";
 "network.check.consent.title" = "External Port Check";
-"network.check.consent.message" = "This will contact api.ipify.org and check-host.net to verify if your server port is reachable from the internet. Your external IP address will be shared with these services.";
+"network.check.consent.message" = "This will contact api.ipify.org and portchecker.io to verify if your server port is reachable from the internet. Your external IP address will be shared with these services.";
 "network.restart_required" = "Server must be restarted after port change.";
 "network.port_status.idle" = "Not checked";
 "network.port_status.unknown" = "Checking external reachability…";
@@ -57,7 +86,7 @@
 
 "files.section" = "Files";
 "files.directory" = "Files directory";
-"files.daemon_userpath_warning" = "This path is under /Users/ and may not be accessible to the LaunchDaemon. The daemon starts at boot before login — home directories may not be mounted or decrypted yet. Use a path under /Library/ or /var/ instead.";
+"files.daemon_userpath_warning" = "This path is under /Users/ and may not be accessible to the LaunchDaemon. The daemon starts at boot before login — home directories may not be mounted or decrypted yet. Use a path under /Library/, /var/, or an external volume instead.";
 "files.index.section" = "Index";
 "files.index.every" = "Re-index server files every";
 "files.index.seconds" = "sec.";
@@ -155,6 +184,8 @@
 "touchid.save.title" = "Enable Touch ID?";
 "touchid.save.message" = "Save your administrator password with Touch ID so future operations don't require a password prompt.";
 "touchid.save.enable" = "Enable Touch ID";
+"touchid.save.failed.title" = "Could not enable Touch ID";
+"touchid.save.failed.message" = "The password could not be stored in the Keychain. This feature requires a Developer ID-signed build.";
 "touchid.wrong_password" = "Authentication failed — wrong password.";
 
 "advanced.admin.section" = "Admin account";
@@ -229,3 +260,31 @@
 "error.migration_server_running" = "Stop the server before running the migration.";
 "error.migration_failed" = "Migration failed";
 "error.migration_timed_out" = "Migration timed out after 5 minutes and was terminated.";
+
+"pane.advanced" = "Advanced";
+
+"advanced.daemon.section" = "LaunchDaemon Mode";
+"advanced.daemon.enable" = "Enable LaunchDaemon mode";
+"advanced.daemon.enable.help" = "Runs the server as a system service that starts at boot, independently of any user login. Requires data migration to /Library/Wired3/. This is an advanced option — the standard LaunchAgent mode is recommended for most users.";
+"advanced.daemon.requires_migration" = "Migrate to /Library/Wired3/ first to enable LaunchDaemon mode.";
+
+"general.execution.see_advanced" = "Control in Advanced tab";
+
+"status.daemon.preparing" = "Preparing…";
+"status.daemon.stopping" = "Stopping server…";
+"status.daemon.activating" = "Activating LaunchDaemon…";
+"status.daemon.deactivating" = "Deactivating LaunchDaemon…";
+"status.daemon.done" = "Done.";
+
+"error.daemon_conflict" = "Another wired3 process is still running. Stop it before activating the daemon.";
+"error.mode_switch_failed" = "Mode switch failed";
+"error.start_daemon_failed" = "Failed to start daemon";
+"error.stop_daemon_failed" = "Failed to stop daemon";
+"error.daemon_update_failed" = "Failed to update daemon";
+"error.helper.connection_failed" = "Failed to connect to privileged helper";
+"error.helper.operation_failed" = "Operation failed";
+"error.helper.install_failed_prefix" = "Failed to install helper";
+
+"status.migration.awaiting_helper" = "Helper approval required — approve in System Settings, then try again.";
+
+"advanced.daemon.userpath_warning" = "The files directory is under /Users/ and may not be accessible to the LaunchDaemon. The daemon starts at boot before login — home directories may not be mounted or decrypted yet. Use a path under /Library/, /var/, or an external volume instead. The files directory can be changed in the Files tab.";

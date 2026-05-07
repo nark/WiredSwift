@@ -42,6 +42,14 @@ struct ContentView: View {
         } message: {
             Text(model.lastErrorMessage)
         }
+        .alert(L("alert.helper_setup.title"), isPresented: $model.showHelperSetupAlert) {
+            Button(L("alert.helper_setup.open")) {
+                model.openLoginItemsSettings()
+            }
+            Button(L("common.cancel"), role: .cancel) {}
+        } message: {
+            Text(L("alert.helper_setup.message"))
+        }
         .alert(L("alert.binary_updated.title"), isPresented: $model.showRestartAfterUpdateAlert) {
             Button(L("alert.binary_updated.restart")) {
                 Task { await model.restartServer() }
@@ -49,6 +57,14 @@ struct ContentView: View {
             Button(L("alert.binary_updated.later"), role: .cancel) {}
         } message: {
             Text(L("alert.binary_updated.message"))
+        }
+        .alert(L("alert.privileged_update.title"), isPresented: $model.showPrivilegedUpdateAlert) {
+            Button(L("alert.privileged_update.install")) {
+                model.applyPrivilegedUpdate()
+            }
+            Button(L("alert.privileged_update.later"), role: .cancel) {}
+        } message: {
+            Text(L("alert.privileged_update.message"))
         }
         .alert(L("alert.initial_password.title"), isPresented: $model.showInitialPasswordAlert) {
             Button(L("alert.initial_password.copy")) {
@@ -78,6 +94,8 @@ struct ContentView: View {
             SecurityTabView()
         case .logs:
             LogsTabView()
+        case .advanced:
+            AdvancedTabView()
         }
     }
 }
@@ -91,6 +109,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
     case database
     case security
     case logs
+    case advanced
 
     var id: String { rawValue }
 
@@ -103,6 +122,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
         case .database: return L("pane.database")
         case .security: return L("pane.security")
         case .logs: return L("pane.logs")
+        case .advanced: return L("pane.advanced")
         }
     }
 
@@ -115,6 +135,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable, Hashable {
         case .database: return "cylinder.split.1x2"
         case .security: return "key.horizontal"
         case .logs: return "doc.text"
+        case .advanced: return "gearshape.2"
         }
     }
 }

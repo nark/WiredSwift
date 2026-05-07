@@ -2,11 +2,15 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
 
 var dependencies: [Package.Dependency] = []
 var products: [Product] = []
 var targetDependencies: [Target.Dependency] = []
 var targets: [Target] = []
+
+// Absolute path to this Package.swift, used for embedding the helper's Info.plist at link time.
+let packageDir = URL(fileURLWithPath: #file).deletingLastPathComponent().path
 
     
 
@@ -106,6 +110,25 @@ targets.append(
         ]
     )
 )
+// Privileged XPC helper installed via SMJobBless.
+// The helper's launchd plist is embedded in the __TEXT __info_plist Mach-O section so that
+// launchd can read the MachServices and SMAuthorizedClients keys without a separate file.
+// NOTE: After building, copy the WiredServerHelper binary into the app bundle under
+//       Contents/Library/LaunchServices/ so that SMJobBless can find and install it.
+targets.append(
+    .executableTarget(
+        name: "WiredServerHelper",
+        path: "Sources/WiredServerHelper",
+        linkerSettings: [
+            .unsafeFlags([
+                "-Xlinker", "-sectcreate",
+                "-Xlinker", "__TEXT",
+                "-Xlinker", "__info_plist",
+                "-Xlinker", "\(packageDir)/Sources/WiredServerHelper/Info.plist"
+            ])
+        ]
+    )
+)
 #endif
 products.append(
     .library(
@@ -127,6 +150,11 @@ products.append(
     .executable(
         name: "WiredServerApp",
         targets: ["WiredServerApp"])
+)
+products.append(
+    .executable(
+        name: "WiredServerHelper",
+        targets: ["WiredServerHelper"])
 )
 #endif
 #if os(Linux)

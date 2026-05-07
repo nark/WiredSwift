@@ -82,8 +82,10 @@ final class WiredServerViewModel: ObservableObject {
 
     @Published var showErrorAlert: Bool = false
     @Published var lastErrorMessage: String = ""
+    @Published var showHelperSetupAlert: Bool = false
 
     @Published var showRestartAfterUpdateAlert: Bool = false
+    @Published var showPrivilegedUpdateAlert: Bool = false
     @Published var showInitialPasswordAlert: Bool = false
     @Published var initialAdminPassword: String = ""
 
@@ -100,8 +102,38 @@ final class WiredServerViewModel: ObservableObject {
 
     private let userDefaults = UserDefaults.standard
     private let launchAtAppStartKey = "wiredswift.server.launchAtAppStart"
+    private let workingDirectoryKey = "wired3WorkingDirectory"
+    private let installModeKey = "wired3InstallMode"
+    private let daemonUserNameKey = "wired3DaemonUserName"
+    private let daemonGroupNameKey = "wired3DaemonGroupName"
+    private let daemonStartAtBootKey = "wired3DaemonStartAtBoot"
     private let launchAgentLabel = "fr.read-write.wired3.server"
+    private let launchDaemonPlistPath = "/Library/LaunchDaemons/fr.read-write.wired3.server.plist"
     private let embeddedBinarySHAKey = "Wired3EmbeddedSHA256"
+    private let daemonUserCreatedKey = "wired3DaemonUserWasCreated"
+    private let daemonGroupCreatedKey = "wired3DaemonGroupWasCreated"
+
+    static let systemDataDirectory = "/Library/Wired3"
+
+    @Published var isSystemMigrating: Bool = false
+    @Published var systemMigrationStatus: String = ""
+
+    @Published var installMode: ServerInstallMode = .launchAgent
+    @Published var daemonUserName: String = "_wired"
+    @Published var daemonGroupName: String = "daemon"
+    @Published var daemonStartAtBoot: Bool = false
+    @Published var isSwitchingMode: Bool = false
+    @Published var modeSwitchStatus: String = ""
+    @Published var isDaemonRunning: Bool = false
+    @Published var isDaemonUserExists: Bool = false
+    @Published var isDaemonGroupExists: Bool = false
+    @Published var wired3HasFullDiskAccess: Bool = false
+    @Published var isCheckingFDA: Bool = false
+
+    var isServerActive: Bool {
+        installMode == .launchDaemon ? isDaemonRunning : isRunning
+    }
+
     private var lastDashboardLightRefresh = Date.distantPast
     private var lastDashboardHeavyRefresh = Date.distantPast
 
@@ -150,10 +182,30 @@ final class WiredServerViewModel: ObservableObject {
         .init(id: "yearly", title: L("database.events.retention.yearly"))
     ]
 
+    var legacyDataDirectory: String {
+        fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Wired3", isDirectory: true).path
+    }
+
+    var isUsingSystemDirectory: Bool {
+        workingDirectory == Self.systemDataDirectory
+    }
+
+    var systemMigrationAvailable: Bool {
+        !isUsingSystemDirectory && fileManager.fileExists(atPath: workingDirectory)
+    }
+
     init() {
-        let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        self.workingDirectory = appSupport.appendingPathComponent("Wired3", isDirectory: true).path
-        self.launchServerAtAppStart = userDefaults.bool(forKey: launchAtAppStartKey)
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let defaultDirectory = appSupport.appendingPathComponent("Wired3", isDirectory: true).path
+        self.workingDirectory = UserDefaults.standard.string(forKey: "wired3WorkingDirectory") ?? defaultDirectory
+        self.launchServerAtAppStart = UserDefaults.standard.bool(forKey: launchAtAppStartKey)
+
+        let savedMode = UserDefaults.standard.string(forKey: "wired3InstallMode")
+        self.installMode = ServerInstallMode(rawValue: savedMode ?? "") ?? .launchAgent
+        self.daemonUserName = UserDefaults.standard.string(forKey: "wired3DaemonUserName") ?? "_wired"
+        self.daemonGroupName = UserDefaults.standard.string(forKey: "wired3DaemonGroupName") ?? "daemon"
+        self.daemonStartAtBoot = UserDefaults.standard.bool(forKey: "wired3DaemonStartAtBoot")
 
         if #available(macOS 13.0, *) {
             try? SMAppService.mainApp.unregister()
@@ -213,11 +265,28 @@ final class WiredServerViewModel: ObservableObject {
 
     func refreshAll() {
         bootstrapRuntimeIfNeeded()
+        // Quick pgrep check to get a fresh isDaemonRunning before the auto-update guard.
+        // pgrep works without root; launchctl print system/... can return non-zero for
+        // non-root users even when the daemon is running, causing false negatives.
+        if installMode == .launchDaemon {
+            isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+        }
         var binaryWasUpdated = false
-        do {
-            binaryWasUpdated = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
-        } catch {
-            publishError("\(L("error.install_failed")): \(error.localizedDescription)")
+        let binDir = URL(fileURLWithPath: installedBinaryPath).deletingLastPathComponent().path
+        let canWrite = fileManager.isWritableFile(atPath: binDir)
+        if installMode == .launchAgent && canWrite {
+            // LaunchAgent mode: update binary in-place (user owns the bin dir).
+            do {
+                binaryWasUpdated = try synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: false)
+            } catch {
+                publishError("\(L("error.install_failed")): \(error.localizedDescription)")
+            }
+        } else if installMode == .launchDaemon && !isDaemonRunning && !canWrite {
+            // LaunchDaemon mode: bin dir is root-owned. When the daemon is stopped,
+            // detect if an update is available and offer a privileged install via alert.
+            if !showPrivilegedUpdateAlert, isBinaryUpdateAvailable() {
+                showPrivilegedUpdateAlert = true
+            }
         }
         refreshInstallStatus()
         refreshInstalledVersion()
@@ -227,6 +296,8 @@ final class WiredServerViewModel: ObservableObject {
         refreshAdminStatus()
         refreshLogText()
         refreshDashboard(force: true)
+        checkPort()
+
         if binaryWasUpdated && isRunning {
             showRestartAfterUpdateAlert = true
         }
@@ -267,7 +338,546 @@ final class WiredServerViewModel: ObservableObject {
         }
     }
 
-    func chooseMigrationSource() {
+    // MARK: - System Data Directory Migration
+
+    func persistWorkingDirectory() {
+        userDefaults.set(workingDirectory, forKey: workingDirectoryKey)
+    }
+
+    func migrateToSystemDirectory() async {
+        guard !isSystemMigrating, systemMigrationAvailable else { return }
+        isSystemMigrating = true
+        systemMigrationStatus = "Preparing..."
+
+        let source = workingDirectory
+
+        do {
+            if isRunning {
+                systemMigrationStatus = "Stopping server..."
+                stopServer()
+                try await Task.sleep(for: .seconds(2))
+            }
+
+            systemMigrationStatus = "Creating system directory (admin required)..."
+            try await createSystemDataDirectory()
+
+            systemMigrationStatus = "Copying data..."
+            try copyDirectoryContents(from: source, to: Self.systemDataDirectory)
+
+            systemMigrationStatus = "Verifying database integrity..."
+            let newDBPath = URL(fileURLWithPath: Self.systemDataDirectory)
+                .appendingPathComponent("wired3.db").path
+            if fileManager.fileExists(atPath: newDBPath) {
+                try verifySystemDatabaseIntegrity(at: newDBPath)
+            }
+
+            systemMigrationStatus = "Switching to system directory..."
+            workingDirectory = Self.systemDataDirectory
+            persistWorkingDirectory()
+            binaryPath = installedBinaryPath
+
+            if launchAtLogin {
+                try configureLaunchAtLogin(enabled: true)
+            }
+
+            systemMigrationStatus = "Done. Backup preserved at: \(source)"
+            refreshAll()
+        } catch {
+            if let he = error as? HelperError, case .mustBeEnabled = he {
+                // Helper needs one-time user approval — this is expected on first run.
+                // Show the helper setup alert (which explains what to do) and let the
+                // user retry after approval; do not report this as a migration failure.
+                systemMigrationStatus = L("status.migration.awaiting_helper")
+                showHelperSetupAlert = true
+            } else {
+                systemMigrationStatus = "Migration failed: \(error.localizedDescription)"
+                publishError("Data migration failed: \(error.localizedDescription)")
+            }
+        }
+
+        isSystemMigrating = false
+    }
+
+    private func createSystemDataDirectory() async throws {
+        let username = NSUserName()
+        try validateSystemUsername(username)
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.createSystemDirectory(
+            path: Self.systemDataDirectory,
+            owner: username
+        )
+        guard fileManager.fileExists(atPath: Self.systemDataDirectory) else {
+            throw WiredServerError.systemDirectoryCreationFailed("Directory missing after creation")
+        }
+    }
+
+    private func copyDirectoryContents(from source: String, to destination: String) throws {
+        let sourceURL = URL(fileURLWithPath: source)
+        let destURL = URL(fileURLWithPath: destination)
+        let items = try fileManager.contentsOfDirectory(at: sourceURL, includingPropertiesForKeys: nil)
+        for item in items {
+            let dest = destURL.appendingPathComponent(item.lastPathComponent)
+            if fileManager.fileExists(atPath: dest.path) {
+                try fileManager.removeItem(at: dest)
+            }
+            try fileManager.copyItem(at: item, to: dest)
+        }
+    }
+
+    private func verifySystemDatabaseIntegrity(at path: String) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+            throw WiredServerError.systemMigrationFailed("Cannot open database for verification")
+        }
+        defer { sqlite3_close(db) }
+        var stmt: OpaquePointer?
+        sqlite3_prepare_v2(db, "PRAGMA integrity_check", -1, &stmt, nil)
+        defer { sqlite3_finalize(stmt) }
+        if sqlite3_step(stmt) == SQLITE_ROW,
+           let result = sqlite3_column_text(stmt, 0),
+           String(cString: result) == "ok" { return }
+        throw WiredServerError.systemMigrationFailed("Database integrity check failed")
+    }
+
+    // MARK: - LaunchDaemon / LaunchAgent Mode Switching
+
+    private var daemonAccountsVerified = false
+
+    func refreshDaemonStatus() {
+        // pgrep works without root and is faster/more reliable than launchctl print for
+        // detecting whether the daemon process is actually running.
+        let wasRunning = isDaemonRunning
+        isDaemonRunning = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+        // Infer FDA status from running state: if the daemon is up and serving clients,
+        // the TCC grant is clearly in place. Reset to false when it stops so the next
+        // start re-evaluates. A direct XPC-based TCC check is unreliable because TCC
+        // grants are per-user and the helper runs as root with a separate TCC context.
+        if filesDirectoryIsOnExternalVolume {
+            if isDaemonRunning {
+                wired3HasFullDiskAccess = true
+            } else if wasRunning {
+                wired3HasFullDiskAccess = false
+            }
+        }
+        if !daemonAccountsVerified {
+            isDaemonUserExists = runProcess("/usr/bin/dscl", [".", "-read", "/Users/\(daemonUserName)"]).status == 0
+            isDaemonGroupExists = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status == 0
+            daemonAccountsVerified = true
+        }
+    }
+
+    func invalidateDaemonAccountsCache() {
+        daemonAccountsVerified = false
+    }
+
+    // MARK: - External Volume / FDA
+
+    var filesDirectoryIsOnExternalVolume: Bool {
+        let path = currentServerRootPath()
+        return path.hasPrefix("/Volumes/")
+    }
+
+    // Creates a private 0700 temporary directory via mkdtemp so that neither the output file
+    // nor the script file can be symlink-raced by an unprivileged local user before root runs them.
+    private func makePrivateTempDir() throws -> URL {
+        // mkdtemp(3) requires a mutable C-string buffer ending in "XXXXXX".
+        var template = Array((NSTemporaryDirectory() + "wired3fda.XXXXXX").utf8CString)
+        guard mkdtemp(&template) != nil else {
+            throw NSError(domain: POSIXError.errorDomain, code: Int(errno),
+                          userInfo: [NSLocalizedDescriptionKey: "mkdtemp failed: \(errno)"])
+        }
+        return URL(fileURLWithPath: String(cString: template), isDirectory: true)
+    }
+
+    // Writes a shell script that tests whether the daemon user can list the files directory.
+    // Uses `su -m` rather than `sudo -u` so the subprocess runs with the daemon user's process
+    // identity — `sudo -u` launched from root inherits root's TCC context and can bypass macOS
+    // Removable Volumes / Full Disk Access checks that the actual daemon binary would hit.
+    // NOTE: This check is still approximate. If the server log shows "0 files, 0 dirs" after
+    // a binary update, re-grant FDA to /Library/Wired3/bin/wired3 in
+    // System Settings → Privacy & Security → Full Disk Access.
+    private func writeFDACheckScript(filesDir: String, daemonUser: String, outputFile: String, to scriptPath: String) {
+        let wired3Binary = installedBinaryPath
+        let sh = """
+        #!/bin/sh
+        OUT='\(outputFile)'
+        FILES='\(filesDir)'
+        WIRED3='\(wired3Binary)'
+
+        # Run the wired3 binary directly as root (the helper already runs as root).
+        # TCC grants (Removable Volumes / Full Disk Access) are bound to the binary's
+        # code signature, not the UID — so root and _wired see the same TCC result.
+        # The previous su -m approach caused false negatives because su exits non-zero
+        # in non-TTY daemon contexts even when running as root.
+        if "$WIRED3" --check-access "$FILES" >/dev/null 2>&1; then
+            echo 1 > "$OUT"
+        else
+            echo 0 > "$OUT"
+        fi
+        """
+        try? sh.write(toFile: scriptPath, atomically: true, encoding: .utf8)
+    }
+
+    // FDA status inference: if the daemon is running, TCC is clearly OK — the process
+    // is already accessing the volume. A direct XPC check is unreliable because the helper
+    // runs as root and TCC grants are stored per-user; root has a separate TCC database
+    // from _wired, so wired3 spawned as root will always fail the TCC check even when
+    // the grant exists for _wired. Re-check just re-reads the running state.
+    func refreshFDAStatusPrivileged() {
+        guard filesDirectoryIsOnExternalVolume else {
+            wired3HasFullDiskAccess = false
+            return
+        }
+        if isDaemonRunning {
+            wired3HasFullDiskAccess = true
+            return
+        }
+        // Daemon not running: best-effort POSIX check via the helper.
+        // This catches permission issues but cannot verify TCC grants.
+        let filesDir = currentServerRootPath()
+        guard let tmpDir = try? makePrivateTempDir() else {
+            wired3HasFullDiskAccess = false
+            return
+        }
+        let fdaTmpFile = tmpDir.appendingPathComponent("result").path
+        let fdaShFile  = tmpDir.appendingPathComponent("check.sh").path
+        writeFDACheckScript(filesDir: filesDir, daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
+        isCheckingFDA = true
+        Task { @MainActor in
+            defer {
+                try? FileManager.default.removeItem(at: tmpDir)
+                isCheckingFDA = false
+            }
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                wired3HasFullDiskAccess = try await HelperConnection.shared.runFDACheck(
+                    scriptPath: fdaShFile, outputPath: fdaTmpFile
+                )
+            } catch {
+                wired3HasFullDiskAccess = false
+                publishHelperError(L("fda.recheck"), error)
+            }
+        }
+    }
+
+    func openFullDiskAccessSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func openLoginItemsSettings() {
+        // macOS 13+: General → Login Items
+        if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// Publish a helper error and, when the helper needs user approval (error 8 / mustBeEnabled),
+    /// also open System Settings → Privacy & Security → Login Items automatically.
+    private func publishHelperError(_ prefix: String, _ error: Error) {
+        if let he = error as? HelperError, case .mustBeEnabled = he {
+            showHelperSetupAlert = true
+            return
+        }
+        publishError("\(prefix): \(error.localizedDescription)")
+    }
+
+    var launchDaemonInstalled: Bool {
+        fileManager.fileExists(atPath: launchDaemonPlistPath)
+    }
+
+    func saveDaemonSettings() {
+        do {
+            try validateDaemonIdentifier(daemonUserName)
+            try validateDaemonIdentifier(daemonGroupName)
+        } catch {
+            publishError(error.localizedDescription)
+            return
+        }
+        userDefaults.set(daemonUserName, forKey: daemonUserNameKey)
+        userDefaults.set(daemonGroupName, forKey: daemonGroupNameKey)
+        userDefaults.set(daemonStartAtBoot, forKey: daemonStartAtBootKey)
+    }
+
+    func switchInstallMode(to mode: ServerInstallMode) async {
+        guard mode != installMode, !isSwitchingMode else { return }
+        guard isUsingSystemDirectory else {
+            publishError(L("general.install_mode.migrate_warning"))
+            return
+        }
+        isSwitchingMode = true
+        modeSwitchStatus = L("status.daemon.preparing")
+        refreshDaemonStatus()
+
+        do {
+            if isRunning {
+                modeSwitchStatus = L("status.daemon.stopping")
+                stopServer()
+                try await Task.sleep(for: .seconds(2))
+            }
+
+            switch mode {
+            case .launchDaemon:
+                if launchAtLogin {
+                    try configureLaunchAtLogin(enabled: false)
+                    launchAtLogin = false
+                }
+                modeSwitchStatus = L("status.daemon.activating")
+                try await activateLaunchDaemon(name: daemonUserName, createUser: !isDaemonUserExists)
+
+            case .launchAgent:
+                modeSwitchStatus = L("status.daemon.deactivating")
+                try await deactivateLaunchDaemon(restoreUser: NSUserName())
+            }
+
+            installMode = mode
+            userDefaults.set(mode.rawValue, forKey: installModeKey)
+            modeSwitchStatus = L("status.daemon.done")
+        } catch {
+            modeSwitchStatus = "\(L("error.mode_switch_failed")): \(error.localizedDescription)"
+            publishHelperError(L("error.mode_switch_failed"), error)
+        }
+
+        isSwitchingMode = false
+        refreshAll()
+    }
+
+    func toggleDaemonStartAtBoot(_ enabled: Bool) {
+        daemonStartAtBoot = enabled
+        userDefaults.set(enabled, forKey: daemonStartAtBootKey)
+        guard launchDaemonInstalled else { return }
+        Task { @MainActor in
+            do {
+                try await reinstallDaemonPlist()
+            } catch {
+                publishError("\(L("error.daemon_update_failed")): \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func startDaemon() {
+        // Unregister any still-loaded LaunchAgent so it cannot restart and race with the daemon.
+        let uid = getuid()
+        _ = runProcess("/bin/launchctl", ["bootout", "user/\(uid)/\(launchAgentLabel)"])
+
+        // Terminate any wired3 process not managed by /Library/Wired3/ (stale LaunchAgent leftovers).
+        let pgrepOut = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).output
+        let allWiredPIDs = pgrepOut.split(separator: "\n").compactMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        let unmanagedPIDs = allWiredPIDs.filter { pid in
+            let args = runProcess("/bin/ps", ["-p", "\(pid)", "-o", "args="]).output.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !args.hasPrefix("/Library/Wired3/bin/wired3")
+        }
+        for pid in unmanagedPIDs { kill(pid, SIGTERM) }
+        if !unmanagedPIDs.isEmpty {
+            Thread.sleep(forTimeInterval: 1.0)
+            // Refuse activation if a non-managed process is still alive after SIGTERM
+            let stillAlive = unmanagedPIDs.filter { kill($0, 0) == 0 }
+            if !stillAlive.isEmpty {
+                publishError(L("error.daemon_conflict"))
+                return
+            }
+        }
+
+        // bootstrap registers the service (no-op if already registered).
+        // kickstart starts it regardless of RunAtLoad value.
+        // If files dir is on an external volume, embed a TCC/FDA check in the SAME privileged
+        // script so only ONE admin auth dialog is shown.
+        let onExternal = filesDirectoryIsOnExternalVolume
+        // Use a private 0700 temp directory (mkdtemp) so neither the script nor the output
+        // file can be symlink-raced by an unprivileged user before root executes them.
+        var fdaTmpFile = ""
+        var fdaShFile  = ""
+        var tmpDir: URL?
+        if onExternal, let dir = try? makePrivateTempDir() {
+            tmpDir = dir
+            fdaTmpFile = dir.appendingPathComponent("result").path
+            fdaShFile  = dir.appendingPathComponent("check.sh").path
+            writeFDACheckScript(filesDir: currentServerRootPath(), daemonUser: daemonUserName, outputFile: fdaTmpFile, to: fdaShFile)
+        }
+
+        let plistPath = launchDaemonPlistPath
+        let label = launchAgentLabel
+        let fdaScript = fdaShFile
+        let fdaOutput = fdaTmpFile
+        let onExt = onExternal
+        Task { @MainActor in
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                let fdaGranted = try await HelperConnection.shared.startDaemon(
+                    plistPath: plistPath,
+                    label: label,
+                    fdaScriptPath: fdaScript,
+                    fdaOutputPath: fdaOutput
+                )
+                if onExt {
+                    if let dir = tmpDir { try? FileManager.default.removeItem(at: dir) }
+                    wired3HasFullDiskAccess = fdaGranted
+                }
+            } catch {
+                if let dir = tmpDir { try? FileManager.default.removeItem(at: dir) }
+                publishHelperError(L("error.start_daemon_failed"), error)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                self?.refreshDaemonStatus()
+            }
+        }
+    }
+
+    func stopDaemon() {
+        let label = launchAgentLabel
+        Task { @MainActor in
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                try await HelperConnection.shared.stopDaemon(label: label)
+            } catch {
+                publishHelperError(L("error.stop_daemon_failed"), error)
+            }
+            // Use refreshAll so a pending binary update is detected now that the daemon is stopped.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.refreshAll()
+            }
+        }
+    }
+
+    private func validateDaemonIdentifier(_ value: String) throws {
+        let pattern = "^[a-z_][a-z0-9_-]{0,31}$"
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              regex.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) != nil else {
+            throw WiredServerError.launchDaemonInstallFailed(
+                "Invalid account name '\(value)'. Use only lowercase letters, digits, underscores, or hyphens (max 32 chars)."
+            )
+        }
+    }
+
+    /// Validate a macOS system username before passing to the XPC helper.
+    /// macOS allows mixed-case, digits, dots, hyphens and underscores — looser than the
+    /// daemon identifier regex but still strict enough to rule out shell metacharacters.
+    private func validateSystemUsername(_ value: String) throws {
+        let pattern = "^[A-Za-z_][A-Za-z0-9._-]{0,63}$"
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              regex.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) != nil else {
+            throw WiredServerError.launchDaemonInstallFailed(
+                "Invalid system username '\(value)'."
+            )
+        }
+    }
+
+    private func activateLaunchDaemon(name: String, createUser: Bool) async throws {
+        try validateDaemonIdentifier(name)
+        try validateDaemonIdentifier(daemonGroupName)
+
+        let group = daemonGroupName
+        let createGroup = runProcess("/usr/bin/dscl", [".", "-read", "/Groups/\(daemonGroupName)"]).status != 0
+
+        // Compute free UID/GID before the privileged call (dscl reads don't need root).
+        var uid = 0
+        let gid = createGroup ? try findFreeSystemGID() : groupGID(for: group)
+        if createUser { uid = try findFreeSystemUID() }
+
+        let plistData = try makeDaemonPlistData()
+        let config: NSDictionary = [
+            "user": name, "group": group,
+            "uid": uid, "gid": gid,
+            "createUser": createUser, "createGroup": createGroup,
+            "dataPath": Self.systemDataDirectory,
+            "plistPath": launchDaemonPlistPath
+        ]
+
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.activateDaemon(config: config, plistData: plistData)
+        userDefaults.set(createUser, forKey: daemonUserCreatedKey)
+        userDefaults.set(createGroup, forKey: daemonGroupCreatedKey)
+        daemonAccountsVerified = false
+    }
+
+    private func deactivateLaunchDaemon(restoreUser: String) async throws {
+        let config: NSDictionary = [
+            "user": daemonUserName,
+            "group": daemonGroupName,
+            "label": launchAgentLabel,
+            "plistPath": launchDaemonPlistPath,
+            "restoreUser": restoreUser,
+            "dataPath": Self.systemDataDirectory,
+            "deleteUser": userDefaults.bool(forKey: daemonUserCreatedKey),
+            "deleteGroup": userDefaults.bool(forKey: daemonGroupCreatedKey)
+        ]
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.deactivateDaemon(config: config)
+        userDefaults.removeObject(forKey: daemonUserCreatedKey)
+        userDefaults.removeObject(forKey: daemonGroupCreatedKey)
+        daemonAccountsVerified = false
+    }
+
+    private func reinstallDaemonPlist() async throws {
+        let data = try makeDaemonPlistData()
+        try HelperConnection.shared.installIfNeeded()
+        try await HelperConnection.shared.installPlist(data: data, destinationPath: launchDaemonPlistPath)
+    }
+
+    private func makeDaemonPlistData() throws -> Data {
+        let plist: [String: Any] = [
+            "Label": launchAgentLabel,
+            "ProgramArguments": [
+                installedBinaryPath,
+                "--working-directory", workingDirectory,
+                "--db", databasePath,
+                "--config", configPath,
+                "--root", currentServerRootPath()
+            ],
+            "UserName": daemonUserName,
+            "WorkingDirectory": workingDirectory,
+            "RunAtLoad": daemonStartAtBoot,
+            "KeepAlive": false,
+            "StandardOutPath": logPath,
+            "StandardErrorPath": logPath
+        ]
+        do {
+            return try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        } catch {
+            throw WiredServerError.launchDaemonWriteFailed
+        }
+    }
+
+
+    private func findFreeSystemUID() throws -> Int {
+        let output = runCommand("/usr/bin/dscl", [".", "-list", "/Users", "UniqueID"])
+        let used = Set(output.components(separatedBy: .newlines).compactMap { line -> Int? in
+            let parts = line.split(separator: " ").map(String.init)
+            return parts.count >= 2 ? Int(parts.last ?? "") : nil
+        })
+        for uid in 400...499 where !used.contains(uid) { return uid }
+        throw WiredServerError.launchDaemonInstallFailed(
+            "No free UID available in the 400–499 system range. Free a UID and try again."
+        )
+    }
+
+    private func findFreeSystemGID() throws -> Int {
+        let output = runCommand("/usr/bin/dscl", [".", "-list", "/Groups", "PrimaryGroupID"])
+        let used = Set(output.components(separatedBy: .newlines).compactMap { line -> Int? in
+            let parts = line.split(separator: " ").map(String.init)
+            return parts.count >= 2 ? Int(parts.last ?? "") : nil
+        })
+        for gid in 400...499 where !used.contains(gid) { return gid }
+        throw WiredServerError.launchDaemonInstallFailed(
+            "No free GID available in the 400–499 system range. Free a GID and try again."
+        )
+    }
+
+    private func groupGID(for group: String) -> Int {
+        let output = runCommand("/usr/bin/dscl", [".", "-read", "/Groups/\(group)", "PrimaryGroupID"])
+        for line in output.components(separatedBy: .newlines) {
+            let parts = line.split(separator: " ").map(String.init)
+            if parts.first == "PrimaryGroupID:", let gid = Int(parts.last ?? "") {
+                return gid
+            }
+        }
+        return 20  // fall back to staff GID
+    }
+
+    // MARK: - Wired 2.5 Migration
+
+    @MainActor func chooseMigrationSource() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
@@ -440,6 +1050,8 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func startServer() async {
+        // LaunchDaemon is managed by launchd — never start a local process in that mode.
+        guard installMode == .launchAgent else { return }
         refreshRunningStatus()
         guard !isRunning else { return }
 
@@ -527,9 +1139,15 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     func restartServer() async {
-        stopServer()
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        await startServer()
+        if installMode == .launchDaemon {
+            stopDaemon()
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            startDaemon()
+        } else {
+            stopServer()
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await startServer()
+        }
     }
 
     func saveNetworkSettings() {
@@ -565,6 +1183,17 @@ final class WiredServerViewModel: ObservableObject {
         withConfig { config in
             config["server", "files"] = filesDirectory
             config["settings", "reindex_interval"] = String(filesReindexInterval)
+        }
+        // In daemon mode the --root path is baked into the LaunchDaemon plist;
+        // regenerate it whenever the files directory changes.
+        if installMode == .launchDaemon && launchDaemonInstalled {
+            Task { @MainActor in
+                do {
+                    try await reinstallDaemonPlist()
+                } catch {
+                    publishError("Failed to update LaunchDaemon plist: \(error.localizedDescription)")
+                }
+            }
         }
         if launchAtLogin {
             do {
@@ -725,7 +1354,13 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     private func pollState() {
+        guard !isPolling else { return }
+        isPolling = true
+        defer { isPolling = false }
         refreshRunningStatus()
+        if installMode == .launchDaemon {
+            refreshDaemonStatus()
+        }
         refreshLogText()
         refreshDashboard()
     }
@@ -770,17 +1405,35 @@ final class WiredServerViewModel: ObservableObject {
     }
 
     private func activeServerPIDs() -> [Int32] {
+        // Try lsof first (works when wired3 runs in the same user context).
         let output = runCommand("/usr/sbin/lsof", ["-t", databasePath])
-        guard !output.isEmpty else { return [] }
-
-        let pids = output
-            .split(separator: "\n")
-            .compactMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
-
-        return pids.filter { pid in
-            let command = runCommand("/bin/ps", ["-p", String(pid), "-o", "command="]).lowercased()
-            return command.contains("/wired3") || command.hasSuffix("wired3")
+        if !output.isEmpty {
+            let pids = output
+                .split(separator: "\n")
+                .compactMap { Int32($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            let filtered = pids.filter { pid in
+                let command = runCommand("/bin/ps", ["-p", String(pid), "-o", "command="]).lowercased()
+                return command.contains("/wired3") || command.hasSuffix("wired3")
+            }
+            if !filtered.isEmpty { return filtered }
         }
+
+        // Fallback: query launchd for the system-domain daemon PID.
+        // Works without root; launchctl print outputs "pid = <n>" when the process is running.
+        if let pid = launchctlSystemDaemonPID() { return [pid] }
+        return []
+    }
+
+    /// Parses the PID from `launchctl print system/<label>` output.
+    private func launchctlSystemDaemonPID() -> Int32? {
+        let output = runCommand("/bin/launchctl", ["print", "system/\(launchAgentLabel)"])
+        for line in output.split(separator: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("pid = "), let pid = Int32(trimmed.dropFirst("pid = ".count).trimmingCharacters(in: .whitespaces)) {
+                return pid
+            }
+        }
+        return nil
     }
 
     private var launchAgentPlistURL: URL {
@@ -984,9 +1637,14 @@ final class WiredServerViewModel: ObservableObject {
 
     /// Reload the identity fingerprint from the key file on disk.
     func refreshIdentityFingerprint() {
-        let keyPath = URL(fileURLWithPath: workingDirectory)
-            .appendingPathComponent("wired-identity.key").path
-        identityFingerprint = ServerIdentity.fingerprintFromKeyFile(at: keyPath) ?? ""
+        let base = URL(fileURLWithPath: workingDirectory)
+        let pubPath = base.appendingPathComponent("wired-identity.pub").path
+        let keyPath = base.appendingPathComponent("wired-identity.key").path
+        // Prefer the world-readable public key file (written by the daemon alongside the private key).
+        // Fall back to reading the private key directly when running as the same user as the server.
+        identityFingerprint = ServerIdentity.fingerprintFromPublicKeyFile(at: pubPath)
+            ?? ServerIdentity.fingerprintFromKeyFile(at: keyPath)
+            ?? ""
     }
 
     /// Opens a save panel so the admin can export the server's identity public key.
@@ -1113,6 +1771,17 @@ final class WiredServerViewModel: ObservableObject {
 
     @discardableResult
     private func synchronizeInstalledBinaryIfNeeded(allowInstallIfMissing: Bool = true) throws -> Bool {
+        // Never replace the binary while the daemon is running — launchd detects the
+        // replacement and kills the process. Check here as a last-resort guard regardless
+        // of which call path reaches this function.
+        if installMode == .launchDaemon {
+            let daemonLive = runProcess("/usr/bin/pgrep", ["-x", "wired3"]).status == 0
+            if daemonLive {
+                appendRuntimeLog("binary-update: daemon is running, skipping binary replacement")
+                return false
+            }
+        }
+
         guard let bundledBinary = bundledServerBinaryPath() else {
             appendRuntimeLog("binary-update: no bundled wired3 found, skipping synchronization")
             return false
@@ -1141,6 +1810,37 @@ final class WiredServerViewModel: ObservableObject {
         try installBinaryWithStagingRollback(from: bundledBinary, expectedSHA256: expectedSHA256)
         return true
     }
+
+    /// Returns true if the bundled binary differs from the installed binary (update available).
+    private func isBinaryUpdateAvailable() -> Bool {
+        guard let bundledBinary = bundledServerBinaryPath() else { return false }
+        guard let bundledSHA256 = try? normalizedSHA256ForFile(at: bundledBinary) else { return false }
+        let metadataSHA256 = bundledBinaryExpectedSHA256()
+        let expectedSHA256 = (metadataSHA256 == bundledSHA256 ? metadataSHA256 : nil) ?? bundledSHA256
+        guard fileManager.isExecutableFile(atPath: installedBinaryPath),
+              let installedSHA256 = try? normalizedSHA256ForFile(at: installedBinaryPath) else { return true }
+        return installedSHA256 != expectedSHA256
+    }
+
+    /// Install the bundled binary into the LaunchDaemon bin dir via the XPC helper.
+    /// Only safe to call when the daemon is confirmed stopped.
+    func applyPrivilegedUpdate() {
+        guard let src = bundledServerBinaryPath() else { return }
+        let dst = installedBinaryPath
+        Task { @MainActor in
+            do {
+                try HelperConnection.shared.installIfNeeded()
+                try await HelperConnection.shared.copyBinary(sourcePath: src, destinationPath: dst)
+                appendRuntimeLog("binary-update: privileged update applied")
+                showPrivilegedUpdateAlert = false
+                refreshInstallStatus()
+                refreshInstalledVersion()
+            } catch {
+                publishHelperError(L("error.install_failed"), error)
+            }
+        }
+    }
+
 
     private func installBinaryWithStagingRollback(from sourcePath: String, expectedSHA256: String) throws {
         let destinationURL = URL(fileURLWithPath: installedBinaryPath)
@@ -2032,7 +2732,7 @@ strict_identity = yes
         if !isInstalled {
             return .init(level: .critical, title: L("dashboard.health.critical"), detail: L("dashboard.health.server.not_installed"))
         }
-        if !isRunning {
+        if !isServerActive {
             return .init(level: .warning, title: L("dashboard.health.warning"), detail: L("dashboard.health.server.stopped"))
         }
         if portStatus == .closed {
@@ -2080,17 +2780,17 @@ strict_identity = yes
     // MARK: - External port reachability check (opt-in, EU-hosted)
 
     /// Two-step external port check (requires prior user consent):
-    ///   1. Resolve external IP via api.seeip.org (Netherlands)
-    ///   2. Probe TCP reachability via portchecker.co (Netherlands)
+    ///   1. Resolve external IP via api.ipify.org
+    ///   2. Probe TCP reachability via portchecker.io
     private static func probePort(port: Int) async -> PortStatus {
         guard (1...65_535).contains(port) else { return .closed }
         guard let externalIP = await fetchExternalIP() else { return .error }
         return await checkPortExternal(ip: externalIP, port: port)
     }
 
-    /// Fetches the machine's external IP from api.seeip.org (Netherlands, EU).
+    /// Fetches the machine's external IP from api.ipify.org.
     private static func fetchExternalIP() async -> String? {
-        guard let url = URL(string: "https://api.seeip.org/json") else { return nil }
+        guard let url = URL(string: "https://api.ipify.org?format=json") else { return nil }
         var req = URLRequest(url: url)
         req.timeoutInterval = 10
         guard let (data, _) = try? await URLSession.shared.data(for: req) else { return nil }
@@ -2098,18 +2798,23 @@ strict_identity = yes
         return (try? JSONDecoder().decode(IPResponse.self, from: data))?.ip
     }
 
-    /// Probes TCP reachability via portchecker.co (Netherlands, EU).
-    /// Single synchronous request — no polling needed.
+    /// Probes TCP reachability via portchecker.io.
+    /// POST {"host": ip, "ports": [port]} → {"check": [{"port": N, "status": bool}]}
     private static func checkPortExternal(ip: String, port: Int) async -> PortStatus {
-        let escaped = ip.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ip
-        guard let url = URL(string: "https://portchecker.co/api/v1/query?host=\(escaped)&port=\(port)") else { return .error }
+        guard let url = URL(string: "https://portchecker.io/api/v1/query") else { return .error }
         var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.timeoutInterval = 20
+        struct PortCheckRequest: Encodable { let host: String; let ports: [Int] }
+        req.httpBody = try? JSONEncoder().encode(PortCheckRequest(host: ip, ports: [port]))
         guard let (data, _) = try? await URLSession.shared.data(for: req) else { return .error }
-        struct PortCheckResponse: Decodable { let isOpen: Bool }
-        guard let resp = try? JSONDecoder().decode(PortCheckResponse.self, from: data) else { return .error }
-        return resp.isOpen ? .open : .closed
+        struct Entry: Decodable { let port: Int; let status: Bool }
+        struct Response: Decodable { let error: Bool; let check: [Entry] }
+        guard let resp = try? JSONDecoder().decode(Response.self, from: data),
+              !resp.error, let entry = resp.check.first else { return .error }
+        return entry.status ? .open : .closed
     }
 }
 
@@ -2139,6 +2844,18 @@ private struct DashboardProcessMetrics {
     let memory: String
 
     static let empty = DashboardProcessMetrics(uptime: "-", cpu: "-", memory: "-")
+}
+
+enum ServerInstallMode: String {
+    case launchAgent
+    case launchDaemon
+
+    var displayName: String {
+        switch self {
+        case .launchAgent: return "LaunchAgent (current user, starts at login)"
+        case .launchDaemon: return "LaunchDaemon (system service, starts at boot)"
+        }
+    }
 }
 
 enum DashboardHealthLevel {
@@ -2185,6 +2902,13 @@ enum WiredServerError: LocalizedError, Equatable {
     case databaseNotInitialized
     case databaseStatementFailed(String)
     case databaseExecutionFailed(String)
+    case systemDirectoryCreationFailed(String)
+    case systemMigrationFailed(String)
+    case systemDirectoryOwnershipFailed(String)
+    case daemonUserCreationFailed(String)
+    case launchDaemonWriteFailed
+    case launchDaemonInstallFailed(String)
+    case launchDaemonRemoveFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -2208,6 +2932,20 @@ enum WiredServerError: LocalizedError, Equatable {
             return "\(L("error.sql_prepare_failed")): \(sql)"
         case .databaseExecutionFailed(let sql):
             return "\(L("error.sql_execution_failed")): \(sql)"
+        case .systemDirectoryCreationFailed(let msg):
+            return "Failed to create system data directory: \(msg)"
+        case .systemMigrationFailed(let msg):
+            return "Data migration failed: \(msg)"
+        case .systemDirectoryOwnershipFailed(let msg):
+            return "Failed to set directory ownership: \(msg)"
+        case .daemonUserCreationFailed(let msg):
+            return "Failed to create daemon user: \(msg)"
+        case .launchDaemonWriteFailed:
+            return "Failed to write LaunchDaemon plist"
+        case .launchDaemonInstallFailed(let msg):
+            return "Failed to install LaunchDaemon: \(msg)"
+        case .launchDaemonRemoveFailed(let msg):
+            return "Failed to remove LaunchDaemon: \(msg)"
         }
     }
 }

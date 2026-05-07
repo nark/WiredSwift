@@ -1,5 +1,8 @@
 "window.title" = "Wired Server";
 "alert.error.title" = "Erreur";
+"alert.helper_setup.title" = "Configuration unique requise";
+"alert.helper_setup.message" = "Wired Server a besoin d'une approbation unique pour gérer le processus serveur. Cliquez sur «Ouvrir les éléments de connexion», puis activez «Wired Server» sous «Autoriser en arrière-plan».";
+"alert.helper_setup.open" = "Ouvrir les éléments de connexion";
 "alert.binary_updated.title" = "Serveur mis à jour";
 "alert.privileged_update.title" = "Mise à jour disponible";
 "alert.privileged_update.message" = "Une nouvelle version du binaire serveur est incluse dans cette application. L'installer maintenant ? Votre mot de passe administrateur sera requis.";
@@ -15,6 +18,7 @@
 "common.cancel" = "Annuler";
 "common.choose" = "Choisir";
 "common.select" = "Sélectionner";
+"common.cancel" = "Annuler";
 "common.save" = "Enregistrer";
 
 "pane.general" = "Général";
@@ -38,15 +42,40 @@
 "general.execution.section" = "Exécution";
 "general.execution.running" = "Serveur actif";
 "general.execution.stopped" = "Serveur arrêté";
+"general.execution.running_daemon" = "En cours (daemon)";
+"general.execution.stopped_daemon" = "Arrêté (daemon)";
 "general.execution.start" = "Démarrer";
 "general.execution.stop" = "Arrêter";
-"general.execution.start_on_login" = "Démarrer automatiquement à la connexion macOS";
+"general.execution.start_on_login" = "Démarrer automatiquement à l'ouverture de session";
+"general.execution.start_at_boot" = "Démarrer au démarrage";
+
+"general.system_data_dir.section" = "Répertoire système des données";
+"general.system_data_dir.migrate_description" = "Migrer les données du serveur vers /Library/Wired3/ pour activer le mode LaunchDaemon. Les données d'origine seront conservées en sauvegarde.";
+"general.system_data_dir.migrate_button" = "Migrer vers /Library/Wired3/";
+
+"general.install_mode.section" = "Mode d'installation";
+"general.install_mode.migrate_warning" = "Migrer d'abord vers /Library/Wired3/ pour activer le mode LaunchDaemon.";
+"general.install_mode.mode" = "Mode";
+"general.install_mode.launch_agent" = "LaunchAgent (utilisateur courant)";
+"general.install_mode.launch_daemon" = "LaunchDaemon (service système)";
+"general.install_mode.daemon_user" = "Utilisateur daemon";
+"general.install_mode.group" = "Groupe";
+
+"general.versions.section" = "Versions";
+
+"fda.check.passed" = "Vérification d'accès daemon réussie.";
+"fda.external_volume" = "Le répertoire de fichiers est sur un volume externe.";
+"fda.check.passed.detail" = "L'utilisateur daemon semble avoir accès en lecture. Après une mise à jour binaire, la re-signature peut révoquer cet accès — vérifiez le journal serveur pour \"0 files, 0 dirs\".";
+"fda.check.failed.detail" = "Assurez-vous que le répertoire de fichiers est lisible par l'utilisateur daemon, puis cliquez sur Revérifier.";
+"fda.open_settings" = "Ouvrir Accès disque complet…";
+"fda.recheck" = "Revérifier";
+"fda.restart_daemon" = "Redémarrer le daemon";
 
 "network.section" = "Réseau";
 "network.port" = "Port en écoute";
 "network.check" = "Vérifier";
 "network.check.consent.title" = "Vérification de port externe";
-"network.check.consent.message" = "Ceci contactera api.ipify.org et check-host.net pour vérifier si le port de votre serveur est accessible depuis internet. Votre adresse IP externe sera partagée avec ces services.";
+"network.check.consent.message" = "Ceci contactera api.ipify.org et portchecker.io pour vérifier si le port de votre serveur est accessible depuis internet. Votre adresse IP externe sera partagée avec ces services.";
 "network.restart_required" = "Le serveur doit être redémarré après un changement de port.";
 "network.port_status.idle" = "Non vérifié";
 "network.port_status.unknown" = "Vérification de la disponibilité externe…";
@@ -57,7 +86,7 @@
 
 "files.section" = "Fichiers";
 "files.directory" = "Répertoire de fichiers";
-"files.daemon_userpath_warning" = "Ce chemin est sous /Users/ et pourrait ne pas être accessible au LaunchDaemon. Le daemon démarre au boot avant la connexion — les répertoires personnels peuvent ne pas être montés ou déchiffrés à ce stade. Utilise un chemin sous /Library/ ou /var/ à la place.";
+"files.daemon_userpath_warning" = "Ce chemin est sous /Users/ et pourrait ne pas être accessible au LaunchDaemon. Le daemon démarre au boot avant la connexion — les répertoires personnels peuvent ne pas être montés ou déchiffrés à ce stade. Utilise un chemin sous /Library/, /var/ ou sur un volume externe à la place.";
 "files.index.section" = "Index";
 "files.index.every" = "Réindexer les fichiers toutes les";
 "files.index.seconds" = "sec.";
@@ -146,6 +175,8 @@
 "touchid.save.title" = "Activer Touch ID ?";
 "touchid.save.message" = "Enregistrez votre mot de passe administrateur avec Touch ID pour éviter de le saisir à chaque opération.";
 "touchid.save.enable" = "Activer Touch ID";
+"touchid.save.failed.title" = "Impossible d'activer Touch ID";
+"touchid.save.failed.message" = "Le mot de passe n'a pas pu être enregistré dans le trousseau. Cette fonctionnalité nécessite une version signée avec un Developer ID.";
 "touchid.wrong_password" = "Authentification échouée — mot de passe incorrect.";
 
 "advanced.admin.section" = "Compte admin";
@@ -229,3 +260,31 @@
 "error.migration_server_running" = "Arrêtez le serveur avant de lancer la migration.";
 "error.migration_failed" = "Échec de la migration";
 "error.migration_timed_out" = "La migration a expiré après 5 minutes et a été arrêtée.";
+
+"pane.advanced" = "Avancé";
+
+"advanced.daemon.section" = "Mode LaunchDaemon";
+"advanced.daemon.enable" = "Activer le mode LaunchDaemon";
+"advanced.daemon.enable.help" = "Lance le serveur comme service système au démarrage, indépendamment des sessions utilisateur. Nécessite une migration vers /Library/Wired3/. Il s'agit d'une option avancée — le mode LaunchAgent standard est recommandé pour la plupart des utilisateurs.";
+"advanced.daemon.requires_migration" = "Migrez d'abord vers /Library/Wired3/ pour activer le mode LaunchDaemon.";
+
+"general.execution.see_advanced" = "Contrôle dans l'onglet Avancé";
+
+"status.daemon.preparing" = "Préparation…";
+"status.daemon.stopping" = "Arrêt du serveur…";
+"status.daemon.activating" = "Activation du LaunchDaemon…";
+"status.daemon.deactivating" = "Désactivation du LaunchDaemon…";
+"status.daemon.done" = "Terminé.";
+
+"error.daemon_conflict" = "Un autre processus wired3 est toujours en cours d'exécution. Arrêtez-le avant d'activer le démon.";
+"error.mode_switch_failed" = "Échec du changement de mode";
+"error.start_daemon_failed" = "Impossible de démarrer le démon";
+"error.stop_daemon_failed" = "Impossible d'arrêter le démon";
+"error.daemon_update_failed" = "Impossible de mettre à jour le démon";
+"error.helper.connection_failed" = "Connexion au service système échouée";
+"error.helper.operation_failed" = "Opération échouée";
+"error.helper.install_failed_prefix" = "Échec de l'installation du service";
+
+"status.migration.awaiting_helper" = "Approbation du service requise — approuver dans les Réglages Système, puis réessayer.";
+
+"advanced.daemon.userpath_warning" = "Le répertoire de fichiers est sous /Users/ et pourrait ne pas être accessible au LaunchDaemon. Le daemon démarre au boot avant la connexion — les répertoires personnels peuvent ne pas être montés ou déchiffrés à ce stade. Utilise un chemin sous /Library/, /var/ ou sur un volume externe. Le répertoire de fichiers peut être modifié dans l'onglet « Fichiers ».";

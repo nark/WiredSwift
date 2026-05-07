@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>fr.read-write.WiredServer3.Helper</string>
+    <!-- Increment this AND kHelperVersion when the XPC protocol changes.
+         SMJobBless compares this version with the installed helper to trigger reinstallation. -->
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>Label</key>
+    <string>fr.read-write.WiredServer3.Helper</string>
+    <key>MachServices</key>
+    <dict>
+        <key>fr.read-write.WiredServer3.Helper</key>
+        <true/>
+    </dict>
+    <!-- "anchor apple generic" requires an Apple-issued certificate (any Developer ID or development cert).
+         Must match SMPrivilegedExecutables in Sources/WiredServerApp/Resources/Info.plist. -->
+    <key>SMAuthorizedClients</key>
+    <array>
+        <string>anchor apple generic and identifier "fr.read-write.WiredServer3" and certificate leaf[subject.OU] = "VGB467J8DZ"</string>
+    </array>
+</dict>
+</plist>
