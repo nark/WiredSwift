@@ -384,7 +384,7 @@ struct AdvancedTabView: View {
                             }
 
                             if model.filesDirectory.hasPrefix("/Users/") {
-                                Label(L("files.daemon_userpath_warning"), systemImage: "exclamationmark.triangle.fill")
+                                Label(L("advanced.daemon.userpath_warning"), systemImage: "exclamationmark.triangle.fill")
                                     .foregroundStyle(.orange)
                                     .font(.footnote)
                             }

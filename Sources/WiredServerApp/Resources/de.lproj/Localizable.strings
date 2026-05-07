@@ -278,6 +278,8 @@
 
 "status.migration.awaiting_helper" = "Helper-Genehmigung erforderlich — in den Systemeinstellungen genehmigen, dann erneut versuchen.";
 
+"advanced.daemon.userpath_warning" = "Das Dateiverzeichnis liegt unter /Users/ und könnte für den LaunchDaemon nicht zugänglich sein. Der Daemon startet beim Systemstart vor dem Login — Home-Verzeichnisse sind zu diesem Zeitpunkt möglicherweise noch nicht eingehängt oder entschlüsselt. Verwende stattdessen einen Pfad unter /Library/, /var/ oder auf einem externen Laufwerk. Das Dateiverzeichnis kann unter „Dateien" geändert werden.";
+
 "database.migration.section" = "Migration von Wired 2.5";
 "database.migration.source" = "Wired 2.5-Datenbank";
 "database.migration.source.none" = "Keine Datei ausgewählt";

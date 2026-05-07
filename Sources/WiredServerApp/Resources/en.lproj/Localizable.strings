@@ -286,3 +286,5 @@
 "error.helper.install_failed_prefix" = "Failed to install helper";
 
 "status.migration.awaiting_helper" = "Helper approval required — approve in System Settings, then try again.";
+
+"advanced.daemon.userpath_warning" = "The files directory is under /Users/ and may not be accessible to the LaunchDaemon. The daemon starts at boot before login — home directories may not be mounted or decrypted yet. Use a path under /Library/, /var/, or an external volume instead. The files directory can be changed in the Files tab.";

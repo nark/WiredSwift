@@ -286,3 +286,5 @@
 "error.helper.install_failed_prefix" = "Échec de l'installation du service";
 
 "status.migration.awaiting_helper" = "Approbation du service requise — approuver dans les Réglages Système, puis réessayer.";
+
+"advanced.daemon.userpath_warning" = "Le répertoire de fichiers est sous /Users/ et pourrait ne pas être accessible au LaunchDaemon. Le daemon démarre au boot avant la connexion — les répertoires personnels peuvent ne pas être montés ou déchiffrés à ce stade. Utilise un chemin sous /Library/, /var/ ou sur un volume externe. Le répertoire de fichiers peut être modifié dans l'onglet « Fichiers ».";
