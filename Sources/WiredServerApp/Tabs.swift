@@ -383,6 +383,12 @@ struct AdvancedTabView: View {
                                 }
                             }
 
+                            if model.filesDirectory.hasPrefix("/Users/") {
+                                Label(L("files.daemon_userpath_warning"), systemImage: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                    .font(.footnote)
+                            }
+
                             HStack {
                                 StatusDot(color: model.isDaemonRunning ? .green : .red)
                                 Text(model.isDaemonRunning ? L("general.execution.running_daemon") : L("general.execution.stopped_daemon"))
