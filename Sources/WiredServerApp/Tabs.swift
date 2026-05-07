@@ -423,22 +423,18 @@ struct NetworkTabView: View {
         SettingsScrollPane {
             Form {
                 Section(L("network.section")) {
-                    HStack {
-                        Text(L("network.port"))
-                            .bold()
-
-                        Spacer()
-
-                        TextField("4871", text: $portText)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: UIConstants.numberFieldWidth)
-                            .onChange(of: portText) { newValue in
-                                portText = String(newValue.filter { $0.isNumber }.prefix(5))
+                    LabeledContent(L("network.port")) {
+                        HStack(spacing: 6) {
+                            TextField("4871", text: $portText)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: UIConstants.numberFieldWidth)
+                                .onChange(of: portText) { newValue in
+                                    portText = String(newValue.filter { $0.isNumber }.prefix(5))
+                                }
+                                .onSubmit { savePort() }
+                            Button(L("common.save")) {
+                                savePort()
                             }
-                            .onSubmit { savePort() }
-
-                        Button(L("common.save")) {
-                            savePort()
                         }
                     }
 

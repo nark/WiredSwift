@@ -75,7 +75,7 @@
 "network.port" = "Port en écoute";
 "network.check" = "Vérifier";
 "network.check.consent.title" = "Vérification de port externe";
-"network.check.consent.message" = "Ceci contactera api.ipify.org et check-host.net pour vérifier si le port de votre serveur est accessible depuis internet. Votre adresse IP externe sera partagée avec ces services.";
+"network.check.consent.message" = "Ceci contactera api.ipify.org et portchecker.io pour vérifier si le port de votre serveur est accessible depuis internet. Votre adresse IP externe sera partagée avec ces services.";
 "network.restart_required" = "Le serveur doit être redémarré après un changement de port.";
 "network.port_status.idle" = "Non vérifié";
 "network.port_status.unknown" = "Vérification de la disponibilité externe…";

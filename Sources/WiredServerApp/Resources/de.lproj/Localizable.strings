@@ -75,7 +75,7 @@
 "network.port" = "Listening-Port";
 "network.check" = "Prüfen";
 "network.check.consent.title" = "Externer Portcheck";
-"network.check.consent.message" = "Dabei werden api.ipify.org und check-host.net kontaktiert, um zu prüfen ob dein Server-Port aus dem Internet erreichbar ist. Deine externe IP-Adresse wird an diese Dienste übermittelt.";
+"network.check.consent.message" = "Dabei werden api.ipify.org und portchecker.io kontaktiert, um zu prüfen ob dein Server-Port aus dem Internet erreichbar ist. Deine externe IP-Adresse wird an diese Dienste übermittelt.";
 "network.restart_required" = "Der Server muss nach einer Port-Änderung neu gestartet werden.";
 "network.port_status.idle" = "Nicht geprüft";
 "network.port_status.unknown" = "Externer Portcheck läuft…";

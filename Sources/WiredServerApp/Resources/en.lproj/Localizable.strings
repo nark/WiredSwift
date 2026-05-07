@@ -75,7 +75,7 @@
 "network.port" = "Listening Port";
 "network.check" = "Check";
 "network.check.consent.title" = "External Port Check";
-"network.check.consent.message" = "This will contact api.ipify.org and check-host.net to verify if your server port is reachable from the internet. Your external IP address will be shared with these services.";
+"network.check.consent.message" = "This will contact api.ipify.org and portchecker.io to verify if your server port is reachable from the internet. Your external IP address will be shared with these services.";
 "network.restart_required" = "Server must be restarted after port change.";
 "network.port_status.idle" = "Not checked";
 "network.port_status.unknown" = "Checking external reachability…";

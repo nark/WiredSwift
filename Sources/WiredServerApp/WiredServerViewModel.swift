@@ -2780,17 +2780,17 @@ strict_identity = yes
     // MARK: - External port reachability check (opt-in, EU-hosted)
 
     /// Two-step external port check (requires prior user consent):
-    ///   1. Resolve external IP via api.seeip.org (Netherlands)
-    ///   2. Probe TCP reachability via portchecker.co (Netherlands)
+    ///   1. Resolve external IP via api.ipify.org
+    ///   2. Probe TCP reachability via portchecker.io
     private static func probePort(port: Int) async -> PortStatus {
         guard (1...65_535).contains(port) else { return .closed }
         guard let externalIP = await fetchExternalIP() else { return .error }
         return await checkPortExternal(ip: externalIP, port: port)
     }
 
-    /// Fetches the machine's external IP from api.seeip.org (Netherlands, EU).
+    /// Fetches the machine's external IP from api.ipify.org.
     private static func fetchExternalIP() async -> String? {
-        guard let url = URL(string: "https://api.seeip.org/json") else { return nil }
+        guard let url = URL(string: "https://api.ipify.org?format=json") else { return nil }
         var req = URLRequest(url: url)
         req.timeoutInterval = 10
         guard let (data, _) = try? await URLSession.shared.data(for: req) else { return nil }
@@ -2798,18 +2798,23 @@ strict_identity = yes
         return (try? JSONDecoder().decode(IPResponse.self, from: data))?.ip
     }
 
-    /// Probes TCP reachability via portchecker.co (Netherlands, EU).
-    /// Single synchronous request — no polling needed.
+    /// Probes TCP reachability via portchecker.io.
+    /// POST {"host": ip, "ports": [port]} → {"check": [{"port": N, "status": bool}]}
     private static func checkPortExternal(ip: String, port: Int) async -> PortStatus {
-        let escaped = ip.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ip
-        guard let url = URL(string: "https://portchecker.co/api/v1/query?host=\(escaped)&port=\(port)") else { return .error }
+        guard let url = URL(string: "https://portchecker.io/api/v1/query") else { return .error }
         var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.timeoutInterval = 20
+        struct PortCheckRequest: Encodable { let host: String; let ports: [Int] }
+        req.httpBody = try? JSONEncoder().encode(PortCheckRequest(host: ip, ports: [port]))
         guard let (data, _) = try? await URLSession.shared.data(for: req) else { return .error }
-        struct PortCheckResponse: Decodable { let isOpen: Bool }
-        guard let resp = try? JSONDecoder().decode(PortCheckResponse.self, from: data) else { return .error }
-        return resp.isOpen ? .open : .closed
+        struct Entry: Decodable { let port: Int; let status: Bool }
+        struct Response: Decodable { let error: Bool; let check: [Entry] }
+        guard let resp = try? JSONDecoder().decode(Response.self, from: data),
+              !resp.error, let entry = resp.check.first else { return .error }
+        return entry.status ? .open : .closed
     }
 }
 
