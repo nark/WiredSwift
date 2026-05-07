@@ -72,9 +72,25 @@ private final class Localizer {
         // Bundle.module calls assertionFailure when the SPM resource bundle is absent
         // from the app package, crashing at startup. Search for it manually instead
         // so we can fall back to Bundle.main without a crash.
+        // Search roots mirror the 6 paths that SPM's generated Bundle.module checks.
         let spmBundleName = "WiredSwift_WiredServerApp"
-        for root in [Bundle.main.resourceURL,
-                     Bundle(for: Localizer.self).resourceURL].compactMap({ $0 }) {
+        let finder = Localizer.self
+        let roots: [URL?] = [
+            Bundle.main.resourceURL,
+            Bundle(for: finder).resourceURL,
+            Bundle.main.resourceURL?
+                .deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("Resources"),
+            Bundle(for: finder).resourceURL?
+                .deletingLastPathComponent().deletingLastPathComponent()
+                .appendingPathComponent("Resources"),
+            Bundle(for: finder).resourceURL?
+                .deletingLastPathComponent()
+                .appendingPathComponent("Resources"),
+            Bundle(for: finder).resourceURL?
+                .deletingLastPathComponent(),
+        ]
+        for root in roots.compactMap({ $0 }) {
             if let b = Bundle(url: root.appendingPathComponent("\(spmBundleName).bundle")) {
                 return [b, .main]
             }
