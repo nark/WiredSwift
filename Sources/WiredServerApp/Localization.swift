@@ -49,22 +49,18 @@ private final class Localizer {
     }
 
     private static func loadTable(for language: AppLanguage) -> [String: String] {
+        let lproj = "\(language.rawValue).lproj"
+        let filename = "Localizable.strings"
         for bundle in candidateBundles() {
-            guard
-                let path = bundle.path(
-                    forResource: "Localizable",
-                    ofType: "strings",
-                    inDirectory: nil,
-                    forLocalization: language.rawValue
-                ),
-                let table = NSDictionary(contentsOfFile: path) as? [String: String]
-            else {
-                continue
+            // Try both resourceURL and bundleURL: SPM flat bundles expose
+            // resources at bundleURL, app bundles at resourceURL (Contents/Resources/).
+            for root in [bundle.resourceURL, bundle.bundleURL].compactMap({ $0 }) {
+                let url = root.appendingPathComponent(lproj).appendingPathComponent(filename)
+                if let table = NSDictionary(contentsOf: url) as? [String: String] {
+                    return table
+                }
             }
-
-            return table
         }
-
         return [:]
     }
 
