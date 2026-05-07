@@ -208,6 +208,13 @@ for bundle in "$BUNDLE_SOURCE_DIR"/*.bundle; do
 done
 shopt -u nullglob
 
+# Also copy .lproj dirs directly into Contents/Resources so Bundle.main can
+# find strings even when the SPM resource bundle is absent (e.g. after a
+# partial build or a distribution problem).
+for lproj_dir in "$ROOT_DIR/Sources/WiredServerApp/Resources/"*.lproj; do
+  [ -d "$lproj_dir" ] && cp -R "$lproj_dir" "$RESOURCES_DIR/"
+done
+
 cat > "$INFO_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

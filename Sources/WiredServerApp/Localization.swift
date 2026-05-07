@@ -69,7 +69,17 @@ private final class Localizer {
     }
 
     private static func candidateBundles() -> [Bundle] {
-        [.module, .main]
+        // Bundle.module calls assertionFailure when the SPM resource bundle is absent
+        // from the app package, crashing at startup. Search for it manually instead
+        // so we can fall back to Bundle.main without a crash.
+        let spmBundleName = "WiredSwift_WiredServerApp"
+        for root in [Bundle.main.resourceURL,
+                     Bundle(for: Localizer.self).resourceURL].compactMap({ $0 }) {
+            if let b = Bundle(url: root.appendingPathComponent("\(spmBundleName).bundle")) {
+                return [b, .main]
+            }
+        }
+        return [.main]
     }
 }
 
