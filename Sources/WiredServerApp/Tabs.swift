@@ -89,6 +89,61 @@ private struct KeyValueRow<Control: View>: View {
 }
 
 @available(macOS 12.0, *)
+private struct ExternalVolumeWarningView: View {
+    @EnvironmentObject private var model: WiredServerViewModel
+    let hasFDA: Bool
+    let onOpenSettings: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: hasFDA ? "externaldrive.fill.badge.checkmark" : "externaldrive.badge.exclamationmark")
+                .foregroundStyle(hasFDA ? .green : .orange)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(hasFDA ? "Daemon access check passed." : "Files directory is on an external volume.")
+                    .font(.footnote).bold()
+                    .foregroundStyle(hasFDA ? Color.primary : Color.orange)
+                Text(hasFDA
+                    ? "The daemon user appears to have read access. After a binary update, re-signing may revoke this — verify by checking the server log for \"0 files, 0 dirs\"."
+                    : "Ensure the files directory is readable by the daemon user, then click Re-check."
+                )
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            if !hasFDA {
+                VStack(alignment: .trailing, spacing: 6) {
+                    Button(L("fda.open_settings")) {
+                        onOpenSettings()
+                    }
+                    .font(.footnote)
+
+                    Button(L("fda.recheck")) {
+                        model.refreshFDAStatusPrivileged()
+                    }
+                    .font(.footnote)
+
+                    Button(L("fda.restart_daemon")) {
+                        model.stopDaemon()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            model.startDaemon()
+                        }
+                    }
+                    .font(.footnote)
+                    .disabled(!model.isDaemonRunning)
+                }
+            }
+        }
+        .padding(8)
+        .background((hasFDA ? Color.green : Color.orange).opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+    }
+}
+
+@available(macOS 12.0, *)
 private struct StatusDot: View {
     let color: Color
 

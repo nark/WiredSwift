@@ -41,6 +41,29 @@
 "general.execution.start" = "Start";
 "general.execution.stop" = "Stop";
 "general.execution.start_on_login" = "Automatically start on system startup";
+"general.execution.start_at_boot" = "Start at Boot";
+
+"general.system_data_dir.section" = "System Data Directory";
+"general.system_data_dir.migrate_description" = "Migrate server data to /Library/Wired3/ to enable LaunchDaemon support. The original data will be preserved as a backup.";
+"general.system_data_dir.migrate_button" = "Migrate to /Library/Wired3/";
+
+"general.install_mode.section" = "Install Mode";
+"general.install_mode.migrate_warning" = "Migrate to /Library/Wired3/ first to enable LaunchDaemon mode.";
+"general.install_mode.mode" = "Mode";
+"general.install_mode.launch_agent" = "LaunchAgent (current user)";
+"general.install_mode.launch_daemon" = "LaunchDaemon (system service)";
+"general.install_mode.daemon_user" = "Daemon User";
+"general.install_mode.group" = "Group";
+
+"general.versions.section" = "Versions";
+
+"fda.check.passed" = "Daemon access check passed.";
+"fda.external_volume" = "Files directory is on an external volume.";
+"fda.check.passed.detail" = "The daemon user appears to have read access. After a binary update, re-signing may revoke this — verify by checking the server log for \"0 files, 0 dirs\".";
+"fda.check.failed.detail" = "Ensure the files directory is readable by the daemon user, then click Re-check.";
+"fda.open_settings" = "Open Full Disk Access…";
+"fda.recheck" = "Re-check";
+"fda.restart_daemon" = "Restart Daemon";
 
 "network.section" = "Network";
 "network.port" = "Listening Port";
