@@ -45,6 +45,21 @@ final class UrlTests: XCTestCase {
         XCTAssertEqual(url.password, "")
     }
 
+    // MARK: - Percent-encoding
+
+    func testPasswordWithPercentEncodedSpecialChars() {
+        // Passwords containing ?, %, @ must survive the URL round-trip decoded.
+        // URL.password returns the percent-encoded form; URLComponents.password returns plaintext.
+        let url = Url(withString: "wired://user:p%40ss%3F%25@host:4871")
+        XCTAssertEqual(url.password, "p@ss?%")
+    }
+
+    func testLoginWithPercentEncodedAt() {
+        let url = Url(withString: "wired://u%40ser:pass@host:4871")
+        XCTAssertEqual(url.login, "u@ser")
+        XCTAssertEqual(url.password, "pass")
+    }
+
     // MARK: - urlString()
 
     func testUrlString() {
