@@ -83,10 +83,16 @@ public class DatabaseController {
 
         let tmpURL = destinationURL.appendingPathExtension("tmp")
         try? FileManager.default.removeItem(at: tmpURL)
-        try? FileManager.default.removeItem(at: destinationURL)
+        // Do NOT remove the existing backup here — if the write below fails the
+        // previous good backup would already be gone. Only replace it after success.
 
-        let destination = try DatabaseQueue(path: tmpURL.path)
-        try dbQueue.backup(to: destination)
+        do {
+            let destination = try DatabaseQueue(path: tmpURL.path)
+            try dbQueue.backup(to: destination)
+        } catch {
+            try? FileManager.default.removeItem(at: tmpURL)
+            throw error
+        }
 
         if FileManager.default.fileExists(atPath: destinationURL.path) {
             try FileManager.default.removeItem(at: destinationURL)

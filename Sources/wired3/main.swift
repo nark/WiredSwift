@@ -149,10 +149,20 @@ struct Wired: ParsableCommand {
         }
         sigusr1Source.resume()
 
+        // Install SIGUSR2 handler for on-demand database snapshot.
+        signal(SIGUSR2, SIG_IGN)
+        let sigusr2Source = DispatchSource.makeSignalSource(signal: SIGUSR2, queue: DispatchQueue.global())
+        sigusr2Source.setEventHandler {
+            Logger.info("SIGUSR2 received, triggering database snapshot...")
+            App.createDatabaseSnapshot()
+        }
+        sigusr2Source.resume()
+
         App.start()
 
         sighupSource.cancel()
         sigusr1Source.cancel()
+        sigusr2Source.cancel()
         try? FileManager.default.removeItem(atPath: resolved.pidPath)
     }
 

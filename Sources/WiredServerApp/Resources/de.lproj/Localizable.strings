@@ -124,7 +124,7 @@
 "database.snapshot.trigger_now" = "Snapshot jetzt erstellen";
 "status.snapshot_triggered" = "Datenbank-Snapshot ausgelöst.";
 "status.snapshot_not_running" = "Der Server läuft nicht.";
-"status.snapshot_failed" = "Snapshot konnte nicht ausgelöst werden — PID-Datei nicht gefunden.";
+"status.snapshot_failed" = "Snapshot konnte nicht ausgelöst werden — Signal konnte nicht an den Serverprozess gesendet werden.";
 "database.events.section" = "Ereignisaufbewahrung";
 "database.events.retention" = "Ereignisse automatisch löschen";
 "database.events.help" = "Löscht Ereignisse, die älter als das gewählte Aufbewahrungsfenster sind.";

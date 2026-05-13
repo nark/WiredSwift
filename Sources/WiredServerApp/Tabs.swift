@@ -393,6 +393,11 @@ struct DatabaseTabView: View {
                     Text(L("database.snapshot.help"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+
+                    Button(L("database.snapshot.trigger_now")) {
+                        model.triggerSnapshotNow()
+                    }
+                    .disabled(!model.isRunning)
                 }
 
                 Section(L("database.events.section")) {

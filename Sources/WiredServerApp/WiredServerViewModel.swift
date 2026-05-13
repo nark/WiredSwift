@@ -1471,6 +1471,21 @@ final class WiredServerViewModel: ObservableObject {
         sendSignal(SIGUSR1)
     }
 
+    /// Send SIGUSR2 to trigger an immediate database snapshot.
+    func triggerSnapshotNow() {
+        let pidPath = URL(fileURLWithPath: workingDirectory)
+            .appendingPathComponent("wired3.pid").path
+        guard FileManager.default.fileExists(atPath: pidPath) else {
+            statusMessage = L("status.snapshot_not_running")
+            return
+        }
+        if sendSignal(SIGUSR2) {
+            statusMessage = L("status.snapshot_triggered")
+        } else {
+            statusMessage = L("status.snapshot_failed")
+        }
+    }
+
     /// Read the PID file and send `signal` to the running wired3 process.
     @discardableResult
     private func sendSignal(_ signal: Int32) -> Bool {

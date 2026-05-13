@@ -124,7 +124,7 @@
 "database.snapshot.trigger_now" = "Créer un snapshot maintenant";
 "status.snapshot_triggered" = "Snapshot de la base de données déclenché.";
 "status.snapshot_not_running" = "Le serveur n'est pas en cours d'exécution.";
-"status.snapshot_failed" = "Échec du déclenchement du snapshot — fichier PID introuvable.";
+"status.snapshot_failed" = "Échec du déclenchement du snapshot — impossible d'envoyer le signal au processus serveur.";
 "database.events.section" = "Rétention des événements";
 "database.events.retention" = "Purger automatiquement les événements";
 "database.events.help" = "Supprime les événements plus anciens que la durée de rétention choisie.";
