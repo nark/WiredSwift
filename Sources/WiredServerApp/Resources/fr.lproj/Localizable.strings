@@ -7,6 +7,8 @@
 "alert.privileged_update.later" = "Plus tard";
 "alert.binary_updated.message" = "Une nouvelle version du binaire serveur a été installée. Le serveur en cours d'exécution utilise encore l'ancienne version. Voulez-vous le redémarrer maintenant ?";
 "alert.binary_updated.restart" = "Redémarrer maintenant";
+"alert.binary_updated.start" = "Démarrer maintenant";
+"alert.binary_updated.message.stopped" = "Une nouvelle version du binaire serveur a été installée. Voulez-vous démarrer le serveur maintenant ?";
 "alert.binary_updated.later" = "Plus tard";
 "alert.initial_password.title" = "Mot de passe admin initial";
 "alert.initial_password.message" = "Le serveur a été initialisé avec un mot de passe admin aléatoire. Notez-le maintenant, il ne sera plus affiché.";

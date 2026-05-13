@@ -7,6 +7,8 @@
 "alert.privileged_update.later" = "Later";
 "alert.binary_updated.message" = "A new version of the server binary has been installed. The running server is still using the previous version. Would you like to restart it now?";
 "alert.binary_updated.restart" = "Restart Now";
+"alert.binary_updated.start" = "Start Now";
+"alert.binary_updated.message.stopped" = "A new version of the server binary has been installed. Would you like to start the server now?";
 "alert.binary_updated.later" = "Later";
 "alert.initial_password.title" = "Initial Admin Password";
 "alert.initial_password.message" = "The server has been initialized with a random admin password. Save it now — it will not be shown again.";

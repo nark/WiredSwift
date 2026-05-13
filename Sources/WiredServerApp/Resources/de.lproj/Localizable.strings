@@ -3,6 +3,8 @@
 "alert.binary_updated.title" = "Server aktualisiert";
 "alert.binary_updated.message" = "Eine neue Version der Server-Binary wurde installiert. Der laufende Server verwendet noch die alte Version. Möchten Sie ihn jetzt neu starten?";
 "alert.binary_updated.restart" = "Jetzt neu starten";
+"alert.binary_updated.start" = "Jetzt starten";
+"alert.binary_updated.message.stopped" = "Eine neue Version der Server-Binary wurde installiert. Möchten Sie den Server jetzt starten?";
 "alert.binary_updated.later" = "Später";
 "alert.privileged_update.title" = "Server-Update verfügbar";
 "alert.privileged_update.message" = "Eine neue Version der Server-Binary ist in dieser App enthalten. Jetzt installieren? Ihr Administrator-Passwort wird benötigt.";
