@@ -817,6 +817,7 @@ extension ServerController {
                 account.passwordSalt = result.salt
                 passwordChanged = true
             }
+            account.isLegacy = false
         }
         if let group = message.string(forField: "wired.account.group") {
             account.group = group
